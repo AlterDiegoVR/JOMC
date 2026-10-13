@@ -1,0 +1,126 @@
+html {
+  height: 100%;
+  background: 50% 50% no-repeat
+    url('data:image/svg+xml,<svg viewBox="-20 -5 60 40" width="140" xmlns="http://www.w3.org/2000/svg" opacity="0.2"><path d="M1 8l11-7 11 7v8l-11 7-11-7zm0 0l11 8 11-8m0 8L12 8 1 16M12 1v7m0 8v7" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="2"/><text x="-12" y="32" font-size="5" font-family="monospace" fill="currentColor">Built on CodePen</text></svg>');
+}
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&family=VT323&display=swap');
+
+* {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Outfit', sans-serif;
+  user-select: none;
+  -webkit-user-select: none;
+  background-color: #030305;
+  color: #f1f5f9;
+  overflow: hidden;
+  width: 100vw;
+  height: 100vh;
+}
+
+.font-retro { 
+  font-family: 'VT323', monospace; 
+}
+
+input[type=range] {
+  -webkit-appearance: none;
+  width: 100%;
+  background: transparent;
+}
+
+input[type=range]:focus { 
+  outline: none; 
+}
+
+input[type=range]::-webkit-slider-runnable-track {
+  width: 100%; 
+  height: 22px; 
+  cursor: pointer;
+  background: #0f172a; 
+  border-radius: 11px; 
+  border: 2px solid #334155;
+}
+
+input[type=range]::-webkit-slider-thumb {
+  height: 38px; 
+  width: 38px; 
+  border-radius: 50%;
+  background: #f59e0b; 
+  cursor: pointer; 
+  -webkit-appearance: none;
+  margin-top: -9px; 
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.8);
+  border: 3px solid #ffffff;
+}
+
+.sticky-note {
+  background: #fef08a; 
+  color: #1e293b;
+  box-shadow: 4px 6px 15px rgba(0,0,0,0.7);
+  transform: rotate(-3deg);
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.sticky-note:hover { 
+  transform: scale(1.08) rotate(0deg); 
+}
+
+.crumple-anim { 
+  animation: crumpleOut 0.35s ease-in forwards; 
+}
+
+@keyframes crumpleOut {
+  0% { transform: scale(1) rotate(0deg); opacity: 1; }
+  50% { transform: scale(0.4) rotate(45deg); opacity: 0.7; }
+  100% { transform: scale(0) rotate(90deg); opacity: 0; }
+}
+
+.rainbow-text {
+  background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3);
+  -webkit-background-clip: text; 
+  -webkit-text-fill-color: transparent;
+  animation: rainbowShift 3s linear infinite;
+}
+
+@keyframes rainbowShift { 
+  0% { filter: hue-rotate(0deg); } 
+  100% { filter: hue-rotate(360deg); } 
+}
+
+.shake-screen { 
+  animation: screenShake 0.4s ease-in-out; 
+}
+
+@keyframes screenShake {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-6px, 4px); }
+  40% { transform: translate(6px, -4px); }
+  60% { transform: translate(-4px, -2px); }
+  80% { transform: translate(4px, 2px); }
+}
+/* ========================================================================== AJUSTES DE ESCALA EXCLUSIVOS PARA PC ========================================================================== */
+@media (min-width: 1024px) {
+  /* Aumentar el tamaño del contenedor principal del cofre y los textos */
+  #chestActionCard {
+    transform: scale(1); /* Agranda todo el bloque del cofre un 25% */
+    transform-origin: center;
+  }
+
+  /* Aumentar el tamaño de las letras de los títulos y subtítulos */
+  #chestTitle {
+    font-size: 1.25rem !important; /* Títulos más grandes en PC */
+  }
+  
+  #chestSubtitle {
+    font-size: 1.25rem !important;
+  }
+
+  /* Aumentar el tamaño de la barra de recursos del inventario y letras */
+  .font-mono, #goldText, #pickText {
+    /* Puedes escalar contenedores enteros de la UI superior */
+  }
+}
