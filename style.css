@@ -1,9 +1,10 @@
+/* [0.086] @import siempre al principio del archivo (si no, el navegador lo ignora) */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&family=VT323&display=swap');
+
 html {
   height: 100%;
-  background: 50% 50% no-repeat
-    url('data:image/svg+xml,<svg viewBox="-20 -5 60 40" width="140" xmlns="http://www.w3.org/2000/svg" opacity="0.2"><path d="M1 8l11-7 11 7v8l-11 7-11-7zm0 0l11 8 11-8m0 8L12 8 1 16M12 1v7m0 8v7" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="2"/><text x="-12" y="32" font-size="5" font-family="monospace" fill="currentColor">Built on CodePen</text></svg>');
+  background: #05050a;
 }
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&family=VT323&display=swap');
 
 * {
   touch-action: manipulation;
@@ -20,7 +21,51 @@ body {
   overflow: hidden;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
+  margin: 0;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: stretch;
 }
+
+/* ==========================================================================
+   [0.085] MARCO VERTICAL 9:16 + MARQUESINAS LATERALES
+   - #gameFrame: columna 9:16 centrada (en móvil ocupa toda la pantalla).
+   - transform: translateZ(0) hace que los modales "fixed" se queden dentro del marco.
+   - Las marquesinas (laterales) solo se ven si sobra ancho; cada una se ancla al borde del marco.
+   ========================================================================== */
+#gameFrame {
+  flex: none;
+  width: min(100vw, calc(100vh * 9 / 16));
+  width: min(100vw, calc(100dvh * 9 / 16));
+  height: 100vh;
+  height: 100dvh;
+  transform: translateZ(0);
+  position: relative;
+  background: #05060b;
+}
+
+.marquee {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+  background-color: #14141c;
+  background-repeat: no-repeat;
+  background-size: auto 100%;
+  image-rendering: pixelated;
+}
+.marquee-l { background-position: right top; }
+.marquee-r { background-position: left top; }
+
+/* La interfaz crece un poco en pantallas grandes (--uiz lo calcula script.js a partir del ancho del marco) */
+#persistentHUD,
+#chestActionCard {
+  zoom: var(--uiz, 1);
+}
+
+.cover-blink { animation: coverBlink 1.2s steps(2, end) infinite; }
+@keyframes coverBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
 
 .font-retro { 
   font-family: 'VT323', monospace; 
@@ -102,25 +147,22 @@ input[type=range]::-webkit-slider-thumb {
   60% { transform: translate(-4px, -2px); }
   80% { transform: translate(4px, 2px); }
 }
-/* ========================================================================== AJUSTES DE ESCALA EXCLUSIVOS PARA PC ========================================================================== */
-@media (min-width: 1024px) {
-  /* Aumentar el tamaño del contenedor principal del cofre y los textos */
-  #chestActionCard {
-    transform: scale(1); /* Agranda todo el bloque del cofre un 25% */
-    transform-origin: center;
-  }
 
-  /* Aumentar el tamaño de las letras de los títulos y subtítulos */
-  #chestTitle {
-    font-size: 1.25rem !important; /* Títulos más grandes en PC */
-  }
-  
-  #chestSubtitle {
-    font-size: 1.25rem !important;
-  }
+/* ==========================================================================
+   [0.086] TEXTO UN POCO MÁS GRANDE (prueba reversible)
+   Se activa con la clase html.texto-grande, que pone script.js según DATOS_JUEGO.GRAFICOS.TEXTO_GRANDE.
+   Para volver atrás: TEXTO_GRANDE: false (o borrar este bloque).
+   ========================================================================== */
+html.texto-grande .text-\[8px\]  { font-size: 10px; }
+html.texto-grande .text-\[9px\]  { font-size: 11px; }
+html.texto-grande .text-\[10px\] { font-size: 12px; }
+html.texto-grande .text-\[11px\] { font-size: 13px; }
+html.texto-grande .text-xs       { font-size: 0.8125rem; line-height: 1.15rem; }
+html.texto-grande .font-retro    { zoom: 1.08; }
+html.texto-grande .sticky-note   { line-height: 1.25; }
 
-  /* Aumentar el tamaño de la barra de recursos del inventario y letras */
-  .font-mono, #goldText, #pickText {
-    /* Puedes escalar contenedores enteros de la UI superior */
-  }
-}
+/* [0.087] Insignias de pasivas/maestrías: una sola línea, fuente adaptable al ancho (no depende de texto-grande) */
+.perk-badge { font-size: clamp(9px, 2.4vw, 11px); line-height: 1.2; }
+
+.card-pulse { animation: cardPulse 1.1s ease-in-out infinite; }
+@keyframes cardPulse { 0%,100% { transform: scale(1); filter: brightness(1); } 50% { transform: scale(1.06); filter: brightness(1.35); } }
