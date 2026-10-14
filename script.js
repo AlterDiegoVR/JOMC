@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — script.js — VERSIÓN 0.089
+// JUST ONE MORE CHEST — script.js — VERSIÓN 0.089b
 // ==========================================================================
 /* ==========================================================================
    JUST ONE MORE CHEST - ARCHIVO DE CONFIGURACIÓN Y BALANCE (DATOS_JUEGO)
@@ -7,7 +7,7 @@
 
 const DATOS_JUEGO = {
   // [0.088] Versión visible en pantalla (esquina inferior central) para que las capturas la incluyan
-  VERSION: '0.089',
+  VERSION: '0.089b',
 
   // [0.089] Avisos "+N" / "-N" de herramientas. ESPERAR_PANTALLA_LIBRE:true = recupera la idea anterior (esperar a que no haya
   // banners, tiendas ni diálogos encima). Con false salen siempre, por encima de todo.
@@ -23,8 +23,20 @@ const DATOS_JUEGO = {
     'Intentas cambiar la luz, pero la maldición lo cubre todo como sangre seca.'
   ],
 
-  // [0.089] Pitido suave mientras las cartas AUTO / DUENDE palpitan (uno solo para ambas). Se calla tras MAX_REPETICIONES sin que cambie nada.
-  PITIDO_CARTAS: { ACTIVAR: true, CADA_MS: 2000, MAX_REPETICIONES: 5 },
+  // [0.089b] El pitido suena mientras la carta palpite (MAX_REPETICIONES: 0 = sin límite). Se pausa con banners/ventanas encima.
+  PITIDO_CARTAS: { ACTIVAR: true, CADA_MS: 2000, MAX_REPETICIONES: 0 },
+
+  // [0.089b] Zumbido grave que muta despacio, solo cuando el cofre seleccionado es legendario (se calla al empezar el puzle y con el botón de silencio)
+  ZUMBIDO_LEGENDARIO: { ACTIVAR: true, VOLUMEN: 0.07, CAMBIO_NOTA_MS: 5500, NOTAS: [82.4, 73.4, 98, 65.4, 77.8], FUNDIDO_S: 1.2 },
+
+  // [0.089b] Pantalla previa de las cartas: solo en pantallas táctiles (SOLO_TACTIL:false = también en PC)
+  CARTAS_PANTALLA_PREVIA: { ACTIVAR: true, SOLO_TACTIL: true },
+
+  // [0.089b] Maldición: melodía al empezar / terminar y transición gradual del tinte (espera a que se vea la pantalla principal)
+  MALDICION_TRANSICION: { ACTIVAR: true, DURACION_MS: 2600 },
+
+  // [0.089b] Botón "Aceptar" retardado en mensajes de clic compulsivo: solo las primeras VECES por tipo de mensaje y por partida
+  ACEPTAR_RETARDADO: { ACTIVAR: true, VECES: 2, RETARDO_MS: 2000 },
 
   // [0.088] Aviso "gira el móvil": sale solo en pantallas táctiles apaisadas y bajas; el juego se pausa. Frases al azar (voz del Duende).
   AVISO_GIRAR: {
@@ -80,6 +92,9 @@ const DATOS_JUEGO = {
     // [0.087] Flecha + "TOCA EL CERROJO PARA ABRIR" en los primeros cofres abiertos con éxito de cada tipo (solo pantalla ancha).
     // El contador se reinicia al empezar partida nueva y al cambiar de bucle.
     FLECHA_CERROJO: { ACTIVAR: true, COFRES_POR_TIPO: 2, TEXTO: 'TOCA EL CERROJO PARA ABRIR', MENSAJE_SOLO_TIPOS: ['wooden'], COFRES_POR_TIPO_TOCA_OTRA_VEZ: 5 },   // [0.087b] 2 primeros por tipo; mensaje solo en madera
+
+    // [0.089b] Escala de las ventanas informativas en PC: ancho del marco / ANCHO_BASE, con tope MAX. Los puzles (minigameModal) no se escalan.
+    ESCALA_VENTANAS: { ACTIVAR: true, ANCHO_BASE: 390, MAX: 1.7 },
 
     // [0.089] Doble toque también con un solo cofre; el botón "Forzar cerradura" comparte el estado "armado" con la cerradura
     BOTON_ARMADO_TEXTO: 'PULSA DE NUEVO',
@@ -932,7 +947,57 @@ class AudioEngine {
     if (typeId === 'piston') { this._tone(320, 110, 0.16, 'square', 0.1); this._tone(1250, 900, 0.22, 'triangle', 0.06, 0.03); this._noise(0.04, 0.08, 0, 2000); }
     else if (typeId === 'cyber') { [660, 880, 1320].forEach((f, i) => this._tone(f, f * 1.01, 0.11, 'triangle', 0.3, i * 0.06)); }
     else if (typeId === 'hydraulic') { this._noise(0.3, 0.1, 0, 900); this._tone(95, 55, 0.28, 'sawtooth', 0.08); }
-    else { this._tone(150, 62, 0.14, 'sine', 0.2); this._noise(0.05, 0.1, 0, 1500); this._tone(300, 180, 0.06, 'triangle', 0.08, 0.04); }
+    else {   // [0.089b] madera: golpe más agudo (se oye en altavoces de móvil), con armónico, y chasquido más suave
+      this._tone(320, 210, 0.16, 'triangle', 0.22);
+      this._tone(640, 420, 0.1, 'sine', 0.09);
+      this._noise(0.04, 0.05, 0, 1500);
+      this._tone(300, 180, 0.06, 'triangle', 0.08, 0.04);
+    }
+  }
+  // [0.089b] Maldición: melodía lúgubre al empezar, y de cierre con nota final aguda al terminar
+  playCurseStart() {
+    if (!this.ctx || this.muted) return;
+    [196, 185, 165, 123].forEach((f, i) => this._tone(f, f * 0.995, 0.7, 'triangle', 0.14, i * 0.42));
+    this._tone(55, 50, 2.2, 'sawtooth', 0.04);
+  }
+  playCurseEnd() {
+    if (!this.ctx || this.muted) return;
+    [247, 294, 370, 494].forEach((f, i) => this._tone(f, f * 1.003, 0.6, 'sine', 0.12, i * 0.3));
+    this._tone(988, 988, 1.4, 'sine', 0.09, 1.2);
+  }
+  // [0.089b] Melodías de 4 notas para los diálogos: una para el Trapero (grave, menor) y otra para el Duende (traviesa, aguda)
+  playDialogueMelody(who) {
+    if (!this.ctx || this.muted) return;
+    if (who === 'EL TRAPERO') [196, 233, 175, 147].forEach((f, i) => { this._tone(f, f, 0.32, 'triangle', 0.13, i * 0.17); this._tone(f * 2, f * 2, 0.2, 'sine', 0.03, i * 0.17); });
+    else [523, 659, 587, 784].forEach((f, i) => this._tone(f, f * 1.01, 0.2, 'sine', 0.09, i * 0.11));
+  }
+  // [0.089b] Zumbido legendario: dos osciladores graves con filtro y modulación lenta; setLegendHum(true/false) lo funde
+  setLegendHum(on, cfg) {
+    if (!this.ctx) return;
+    if (!this._hum && on) {
+      const c = this.ctx, g = c.createGain(), f = c.createBiquadFilter(), lfo = c.createOscillator(), lg = c.createGain();
+      g.gain.value = 0; f.type = 'lowpass'; f.frequency.value = 520; f.Q.value = 2;
+      const o1 = c.createOscillator(), o2 = c.createOscillator(), o3 = c.createOscillator();
+      o1.type = 'sawtooth'; o2.type = 'triangle'; o3.type = 'sine';
+      lfo.frequency.value = 0.13; lg.gain.value = 260; lfo.connect(lg); lg.connect(f.frequency);
+      [o1, o2, o3].forEach(o => { o.connect(f); o.start(); }); lfo.start();
+      f.connect(g); g.connect(c.destination);
+      this._hum = { g, o1, o2, o3, lastChange: 0, idx: 0 };
+      this._humTune(true, cfg);
+    }
+    const h = this._hum; if (!h) return;
+    const vol = (!on || this.muted) ? 0 : (cfg.VOLUMEN || 0.07);
+    h.g.gain.setTargetAtTime(vol, this.ctx.currentTime, (cfg.FUNDIDO_S || 1.2) / 3);
+    if (on && !this.muted && performance.now() - h.lastChange > (cfg.CAMBIO_NOTA_MS || 5500)) this._humTune(false, cfg);
+  }
+  _humTune(first, cfg) {
+    const h = this._hum, notes = cfg.NOTAS || [82.4];
+    h.idx = first ? 0 : (h.idx + 1 + Math.floor(Math.random() * (notes.length - 1))) % notes.length;
+    const f = notes[h.idx], t = this.ctx.currentTime, tc = first ? 0.01 : 2.2;
+    h.o1.frequency.setTargetAtTime(f, t, tc);
+    h.o2.frequency.setTargetAtTime(f * 1.5 * (1 + (Math.random() - 0.5) * 0.01), t, tc);   // quinta ligeramente desafinada
+    h.o3.frequency.setTargetAtTime(f * 2, t, tc);                                         // octava: se oye en altavoces pequeños
+    h.lastChange = performance.now();
   }
   // [0.087b] Más sonidos: oscuridad, luz, adornos, llaves y melodía de inicio
   playDarkOut() {   // progresión de notas graves al apagarse la bombilla
@@ -1062,7 +1127,7 @@ class AudioEngine {
 }
 const audio = new AudioEngine();
 // [0.087] Registro del último sonido para que el clic de interfaz no se solape con sonidos propios
-['playClick', 'playPaperRustle', 'playDecoyBuzz', 'playBreak', 'playUnlockFanfare', 'playLockCharge', 'playLockOpen', 'playGameOver', 'playDarkOut', 'playLightOn', 'playDecorTap', 'playKeyPickup', 'playKeySpend', 'playCardBeep', 'playCashRegister', 'playIntro'].forEach(n => {
+['playClick', 'playPaperRustle', 'playDecoyBuzz', 'playBreak', 'playUnlockFanfare', 'playLockCharge', 'playLockOpen', 'playGameOver', 'playDarkOut', 'playLightOn', 'playDecorTap', 'playKeyPickup', 'playKeySpend', 'playCardBeep', 'playCashRegister', 'playCurseStart', 'playCurseEnd', 'playDialogueMelody', 'playIntro'].forEach(n => {
   const f = AudioEngine.prototype[n];
   AudioEngine.prototype[n] = function (...a) { this.lastSound = performance.now(); return f.apply(this, a); };
 });
@@ -1155,6 +1220,7 @@ const STATE = {
   activeChestIdx: 0,
   roomDecorations: [],
   roomThemeFilter: 'normal',
+  acceptDelayUses: {},   // [0.089b] veces que se ha retardado el botón Aceptar, por tipo de mensaje (por partida)
   opensByType: {},   // [0.087] cofres abiertos con éxito por tipo (para la flecha del cerrojo)
   roomDarkUntil: 0   // [0.086] la celda está a oscuras mientras chestsOpened < roomDarkUntil
 };
@@ -1279,7 +1345,7 @@ function abandonCurrentMinigame() {
   audio.playBreak();
   hideAllMinigameUI();
   showPersistentFeedback("🚪 Has abandonado el puzle: cuenta como fallo y pierdes la herramienta.");
-  if (isTrapLockpickActive()) showPersistentFeedback(DATOS_JUEGO.MINIJUEGOS.LOCKPICK.MENSAJES_TRAMPA.ABANDONO);
+  if (isTrapLockpickActive()) showPersistentFeedback(DATOS_JUEGO.MINIJUEGOS.LOCKPICK.MENSAJES_TRAMPA.ABANDONO, 'trampa');
   handleFailure(currentPuzzleConsumable);
 }
 
@@ -1410,7 +1476,7 @@ const SAVE_KEYS = [
   'seqStage', 'traperoStrikes', 'climaxPhase', 'sequenceBroken', 'perks', 'abilities',
   'active2XMultiplier', 'activeShield', 'riskModeActive', 'riskPot', 'perdedorActive', 'perdedorLootPending', 'fallosConsecutivos',
   'heavyChestsLeft', 'greedCurseLeft', 'harderPuzzlesLeft', 'traperoBuffs', 'cursedChestsLeft',
-  'roomDecorations', 'roomThemeFilter', 'roomDarkUntil', 'opensByType'
+  'roomDecorations', 'roomThemeFilter', 'roomDarkUntil', 'opensByType', 'acceptDelayUses'
 ];
 
 let autosaveEnabled = false;
@@ -1545,6 +1611,14 @@ function scheduleSave() {
 }
 
 // Solo se guarda cuando no hay ningún puzle, diálogo ni modal abierto
+// [0.089b] "Pantalla principal visible": nada encima (ventanas, banners, recibo, portada)
+function mainScreenFree() {
+  if (!isGameIdle()) return false;
+  const b = document.getElementById('persistentFeedbackBanner');
+  if (b && !b.classList.contains('hidden')) return false;
+  if (document.getElementById('coverScreen')) return false;
+  return true;
+}
 function isGameIdle() {
   if (isLootProcessing || minigameInProgress || STATE.eventQueue.length > 0) return false;
   const blockers = ['minigameModal', 'dialogueModal', 'lootModal', 'levelUpModal', 'merchantModal', 'traperoShopModal', 'traperoModal', 'unfairDealModal', 'gameOverModal'];
@@ -1552,7 +1626,7 @@ function isGameIdle() {
     const el = document.getElementById(id);
     if (el && !el.classList.contains('hidden')) return false;
   }
-  const overlays = ['duendeReceiptModal', 'diffuseEchoOverlay', 'resumeGameModal', 'resetConfirmModal'];
+  const overlays = ['duendeReceiptModal', 'diffuseEchoOverlay', 'resumeGameModal', 'resetConfirmModal', 'cardPreModal'];
   for (const id of overlays) {
     if (document.getElementById(id)) return false;
   }
@@ -1710,6 +1784,7 @@ function resetGame(keepLoop) {
   roomDarkPrev = false;
   keysBaseline = null;
   STATE.opensByType = {};
+  STATE.acceptDelayUses = {};
 
   const notesContainer = document.getElementById('notesContainer');
   if (notesContainer) notesContainer.innerHTML = '';
@@ -1928,6 +2003,10 @@ function resizeCanvas() {
   const maxZ = (DATOS_JUEGO.GRAFICOS && DATOS_JUEGO.GRAFICOS.ESCALA_UI_MAX) || 1;
   const z = Math.max(1, Math.min(maxZ, canvas.width / 430));
   document.documentElement.style.setProperty('--uiz', z.toFixed(3));
+  // [0.089b] Escala de las ventanas informativas (botín, tiendas, tratos, recibo, diálogos...) solo en pantalla ancha. No afecta a los puzles.
+  const wm = DATOS_JUEGO.GRAFICOS.ESCALA_VENTANAS || {};
+  const mz = (wm.ACTIVAR !== false && isWideLayout()) ? Math.max(1, Math.min(wm.MAX || 1.7, canvas.width / (wm.ANCHO_BASE || 390))) : 1;
+  document.documentElement.style.setProperty('--mz', mz.toFixed(3));
   document.documentElement.classList.toggle('narrow-layout', !isWideLayout());   // [0.088] ajustes solo para móvil / ventanas estrechas
 }
 window.addEventListener('resize', resizeCanvas);
@@ -2131,6 +2210,22 @@ function syncOpenButtonArmed() {
   }
 }
 
+// [0.089b] Nivel visual de la maldición: sube al empezar (con melodía lúgubre) y baja al terminar (melodía con nota final aguda).
+// Solo avanza cuando se ve la pantalla principal; si hay un banner o una tienda encima, espera.
+let curseLevel = 0, curseLvlT = 0, curseStartTune = false, curseEndTune = false;
+function updateCurseLevel() {
+  const cfg = DATOS_JUEGO.MALDICION_TRANSICION || {};
+  const now = performance.now(), dt = curseLvlT ? Math.min(100, now - curseLvlT) : 16; curseLvlT = now;
+  if (cfg.ACTIVAR === false) return STATE.cursedChestsLeft > 0 ? 1 : 0;
+  const want = STATE.cursedChestsLeft > 0 ? 1 : 0;
+  if (curseLevel === want) { if (want) curseEndTune = false; else curseStartTune = false; return curseLevel; }
+  if (!mainScreenFree()) return curseLevel;
+  if (want && !curseStartTune) { curseStartTune = true; curseEndTune = false; audio.init(); audio.playCurseStart(); }
+  if (!want && !curseEndTune) { curseEndTune = true; curseStartTune = false; audio.init(); audio.playCurseEnd(); }
+  const step = dt / (cfg.DURACION_MS || 2600);
+  curseLevel = want ? Math.min(1, curseLevel + step) : Math.max(0, curseLevel - step);
+  return curseLevel;
+}
 function renderRoom() {
   if (!canvas || !ctx) return;
   syncOpenButtonArmed();
@@ -2196,8 +2291,9 @@ function renderRoom() {
     else {
       // [0.087] Maldición activa: filtro granate suave (si hay tinte por tier, ese manda)
       const tm = DATOS_JUEGO.GRAFICOS.TINTE_MALDICION || {};
-      if (tm.ACTIVAR && STATE.cursedChestsLeft > 0) {
-        const pa = tm.ALFA + Math.sin(Date.now() * 0.0016) * (tm.PULSO || 0);
+      const lvl = updateCurseLevel();   // [0.089b] 0..1, sube/baja despacio y solo con la pantalla principal visible
+      if (tm.ACTIVAR && lvl > 0) {
+        const pa = (tm.ALFA + Math.sin(Date.now() * 0.0016) * (tm.PULSO || 0)) * lvl;
         ctx.fillStyle = `rgba(${tm.RGB},${pa.toFixed(3)})`; ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
     }
@@ -2663,9 +2759,24 @@ function setHelp(el, text) {
   }
 }
 
-function showPersistentFeedback(message) {
+// [0.089b] delayKey (opcional): tipo de mensaje de "clic compulsivo". Las primeras VECES de cada tipo, por partida, el botón de cerrar aparece tras RETARDO_MS.
+let acceptDelayTimer = null;
+function showPersistentFeedback(message, delayKey = null) {
   const banner = document.getElementById('persistentFeedbackBanner');
   const txt = document.getElementById('feedbackText');
+  const wasVisible = !!(banner && !banner.classList.contains('hidden'));
+  const dBtn = document.getElementById('dismissFeedbackBtn');
+  const dcfg = DATOS_JUEGO.ACEPTAR_RETARDADO || {};
+  if (!wasVisible && dBtn) { clearTimeout(acceptDelayTimer); dBtn.style.visibility = ''; }
+  if (!wasVisible && delayKey && dBtn && dcfg.ACTIVAR) {
+    STATE.acceptDelayUses = STATE.acceptDelayUses || {};
+    const used = STATE.acceptDelayUses[delayKey] || 0;
+    if (used < (dcfg.VECES || 2)) {
+      STATE.acceptDelayUses[delayKey] = used + 1;
+      dBtn.style.visibility = 'hidden';
+      acceptDelayTimer = setTimeout(() => { dBtn.style.visibility = ''; }, dcfg.RETARDO_MS || 2000);
+    }
+  }
   // [0.084] Si el banner ya está visible, el mensaje nuevo se añade debajo en lugar de taparlo
   // (así el aviso del cofre troll no lo pisan Perdedor / Escudo / Apuesta)
   const visible = banner && !banner.classList.contains('hidden');
@@ -2692,6 +2803,7 @@ function triggerSequentialDialogue(speaker, speechText, iconClass, subtitleText,
     const mm = speechText.match(/\s*\{([a-z_]+)\}\s*$/);
     if (mm) { taggedMood = mm[1]; speechText = speechText.slice(0, mm.index); }
   }
+  try { audio.init(); audio.playDialogueMelody(speaker); } catch (e) {}   // [0.089b]
   const npcName = document.getElementById('npcName');
   if (npcName) {
     npcName.textContent = speaker;
@@ -2714,10 +2826,12 @@ function triggerSequentialDialogue(speaker, speechText, iconClass, subtitleText,
   if (avatar && speechBox && closeBtn) {
     if (speaker === "EL TRAPERO") {
       avatar.className = "w-14 h-14 rounded-2xl bg-rose-950 border border-rose-500 flex items-center justify-center text-2xl text-rose-400 shadow-xl";
+      avatar.style.background = '#0b1d3f';   // [0.089b] fondo azul oscuro (la túnica es granate)
       speechBox.className = "w-full text-lg sm:text-xl font-mono leading-relaxed italic bg-rose-950/60 border border-rose-800/80 p-5 rounded-2xl shadow-inner text-center text-rose-200";
       closeBtn.className = "w-full py-4 bg-gradient-to-r from-rose-700 to-amber-700 active:from-rose-600 text-white font-extrabold text-sm rounded-2xl shadow-2xl border border-rose-500/40 cursor-pointer";
     } else {
       avatar.className = "w-14 h-14 rounded-2xl bg-purple-950 border border-purple-500 flex items-center justify-center text-2xl text-purple-400 shadow-xl";
+      avatar.style.background = '';
       speechBox.className = "w-full text-lg sm:text-xl font-mono leading-relaxed italic bg-purple-950/60 border border-purple-800/80 p-5 rounded-2xl shadow-inner text-center text-purple-200";
       closeBtn.className = "w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 active:from-purple-500 text-white font-extrabold text-sm rounded-2xl shadow-2xl border border-purple-400/40 cursor-pointer";
     }
@@ -3585,6 +3699,38 @@ function triggerDuendeNarrativeVisit() {
   });
 }
 
+/* [0.089b] En pantallas táctiles, tocar una carta abre primero una pantalla con su descripción y los botones USAR / VOLVER
+   (en PC se mantiene el clic directo + tooltip). Se intercepta en fase de captura, antes de los manejadores de cada carta. */
+(function () {
+  const ids = { abilityAutoBtn: 'auto', ability2xBtn: 'double', abilityShieldBtn: 'shield', abilityRiskBtn: 'riskPot', abilityPerdedorBtn: 'perdedor', abilitySummonDuendeBtn: 'summonDuende' };
+  const NOMBRES = { auto: 'AUTO', double: '2X', shield: 'ESCUDO', riskPot: 'APUESTA', perdedor: 'PERDEDOR', summonDuende: 'DUENDE' };
+  let bypass = false;
+  document.addEventListener('click', (e) => {
+    const cfg = DATOS_JUEGO.CARTAS_PANTALLA_PREVIA || {};
+    if (!cfg.ACTIVAR || bypass) return;
+    const btn = e.target.closest && e.target.closest(Object.keys(ids).map(i => '#' + i).join(','));
+    if (!btn || btn.disabled) return;
+    const isTouch = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+    if (cfg.SOLO_TACTIL && !isTouch) return;
+    e.stopImmediatePropagation(); e.preventDefault();
+    if (document.getElementById('cardPreModal')) return;
+    const key = ids[btn.id];
+    const m = document.createElement('div');
+    m.id = 'cardPreModal';
+    m.className = 'fixed inset-0 z-[9990] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-5 font-sans';
+    m.innerHTML = `
+      <div class="bg-slate-900 border-2 border-amber-500/70 rounded-3xl p-6 w-full max-w-xs shadow-2xl text-center flex flex-col items-center gap-3">
+        <h3 class="text-xl font-black text-amber-300 font-retro">CARTA ${NOMBRES[key]}</h3>
+        <p class="text-sm font-mono text-slate-200 leading-relaxed">${((DATOS_JUEGO.TEXTOS_AYUDA.cartas || {})[key]) || ''}</p>
+        <button id="cardPreUse" class="w-full py-3 bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-black text-sm rounded-xl shadow-lg cursor-pointer">USAR</button>
+        <button id="cardPreBack" class="w-full py-2.5 bg-slate-800 text-slate-300 font-bold text-xs rounded-xl cursor-pointer">VOLVER</button>
+      </div>`;
+    (uiHost() || document.body).appendChild(m);
+    m.querySelector('#cardPreBack').addEventListener('click', () => m.remove());
+    m.querySelector('#cardPreUse').addEventListener('click', () => { m.remove(); bypass = true; try { btn.click(); } finally { bypass = false; } });
+  }, true);
+})();
+
 /* HABILIDADES TÁCTICAS */
 const btnAuto = document.getElementById('abilityAutoBtn');
 if (btnAuto) {
@@ -3724,7 +3870,7 @@ function startMinigameTimer(seconds, consumableName) {
       audio.playBreak();
       hideAllMinigameUI();
       showPersistentFeedback("⏱️ ¡TIEMPO AGOTADO! Fallo en el puzle.");
-      if (isTrapLockpickActive()) showPersistentFeedback(DATOS_JUEGO.MINIJUEGOS.LOCKPICK.MENSAJES_TRAMPA.TIEMPO);
+      if (isTrapLockpickActive()) showPersistentFeedback(DATOS_JUEGO.MINIJUEGOS.LOCKPICK.MENSAJES_TRAMPA.TIEMPO, 'trampa');
       handleFailure(currentPuzzleConsumable);
     }
   }, 1000);
@@ -3944,21 +4090,6 @@ function updateUI() {
     } else noXpBadge.classList.add('hidden');
   }
 
-  // [0.089] Efecto de XP extra (Cambio de Trabajo: xN cofres; Pacto de la Sombra: permanente)
-  const xpBoostBadge = document.getElementById('xpBoostBadge');
-  if (xpBoostBadge) {
-    const tempXp = STATE.xpBoostChestsLeft > 0;
-    const permXp = !!(STATE.traperoBuffs && STATE.traperoBuffs.bonusXp);
-    if (tempXp || permXp) {
-      xpBoostBadge.classList.remove('hidden');
-      xpBoostBadge.innerHTML = `<i class="fa-solid fa-star"></i> ${tempXp ? 'x' + STATE.xpBoostChestsLeft : '∞'}`;
-      const parts = [];
-      if (tempXp) parts.push(helpText('xpExtra', { n: STATE.xpBoostChestsLeft }));
-      if (permXp) parts.push(helpText('xpPermanente'));
-      setHelp(xpBoostBadge, parts.join(' '));
-    } else xpBoostBadge.classList.add('hidden');
-  }
-
   const curseBadge = document.getElementById('curseBadge');
   if (curseBadge) {
     if (STATE.cursedChestsLeft > 0) {
@@ -4017,6 +4148,16 @@ function updateUI() {
       { active: STATE.torpezas.vapor > 0, text: `⚠️ Torpeza Vapor Lv.${STATE.torpezas.vapor} (-${Math.round(getMasteryTorpezaPct(STATE.torpezas.vapor) * 100)}%)`, shortText: `⚠️🚰 ${STATE.torpezas.vapor}`, desc: `Torpeza en Vapor: -${Math.round(getMasteryTorpezaPct(STATE.torpezas.vapor) * 100)}% botín y EXP en cofres de Vapor.`, isTorpeza: true }
     ];
 
+    // [0.089b] Efectos temporales / penalizaciones de los tratos del Trapero, en la misma barra
+    const tempXp = STATE.xpBoostChestsLeft > 0, permXp = !!(STATE.traperoBuffs && STATE.traperoBuffs.bonusXp);
+    perkList.push(
+      { active: tempXp, text: `⭐ XP x${STATE.xpBoostChestsLeft}`, shortText: `⭐ x${STATE.xpBoostChestsLeft}`, desc: helpText('xpExtra', { n: STATE.xpBoostChestsLeft }), isTorpeza: false, isBoost: true },
+      { active: permXp, text: `⭐ XP ∞`, shortText: `⭐ ∞`, desc: helpText('xpPermanente'), isTorpeza: false, isBoost: true },
+      { active: STATE.harderPuzzlesLeft > 0, text: `💀 Puzles duros x${STATE.harderPuzzlesLeft}`, shortText: `💀 x${STATE.harderPuzzlesLeft}`, desc: `Pacto de la Sombra: los puzles son más difíciles durante los próximos ${STATE.harderPuzzlesLeft} cofres.`, isTorpeza: true },
+      { active: !!(STATE.traperoBuffs && STATE.traperoBuffs.harderMinigames), text: `💀 Puzles duros ∞`, shortText: `💀 ∞`, desc: `Los puzles son más difíciles de forma permanente.`, isTorpeza: true },
+      { active: !!STATE.picksBrokenOnUse, text: `🩹 Dedos Rotos`, shortText: `🩹`, desc: `Dedos Rotos: las ganzúas se rompen al usarse hasta que empiece el siguiente bucle.`, isTorpeza: true },
+      { active: STATE.heavyChestsLeft > 0, text: `📜 Contrato x${STATE.heavyChestsLeft}`, shortText: `📜 x${STATE.heavyChestsLeft}`, desc: `Contrato Leonino: los próximos ${STATE.heavyChestsLeft} cofres Raros o superiores piden +1 herramienta.`, isTorpeza: true }
+    );
     const activePerks = perkList.filter(p => p.active);
     const activePerksCount = activePerks.length;
     const isCompact = activePerksCount >= 4;
@@ -4025,6 +4166,8 @@ function updateUI() {
       const badge = document.createElement('span');
       if (p.isTorpeza) {
         badge.className = "perk-badge bg-rose-950 text-rose-300 px-2 py-0.5 rounded-full border border-rose-700 cursor-pointer select-none font-mono whitespace-nowrap shrink-0 transition-transform hover:scale-105";
+      } else if (p.isBoost) {
+        badge.className = "perk-badge bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-600 cursor-pointer select-none font-mono whitespace-nowrap shrink-0 transition-transform hover:scale-105";
       } else {
         badge.className = "perk-badge bg-indigo-950 text-indigo-300 px-2 py-0.5 rounded-full border border-indigo-700 cursor-pointer select-none font-mono whitespace-nowrap shrink-0 transition-transform hover:scale-105";
       }
@@ -4070,10 +4213,22 @@ function updateUI() {
     if (el) el.classList.toggle('card-pulse', !!blockedNow && !el.disabled && !el.classList.contains('hidden'));
   });
 
+  fitHudTitle();
   trackKeyGains();
   updateShopResourcesUI();
   scheduleSave();
 }
+
+// [0.089b] Si el título no cabe junto a las insignias, pasa a "JOMC" en vez de partirse en dos líneas
+function fitHudTitle() {
+  const root = document.documentElement;
+  const t = document.querySelector('.title-full');
+  if (!t) return;
+  root.classList.remove('title-compact');
+  const box = t.parentElement;
+  if (box && box.scrollWidth > box.clientWidth + 1) root.classList.add('title-compact');
+}
+window.addEventListener('resize', () => { try { fitHudTitle(); } catch (e) {} });
 
 function updateShopResourcesUI() {
   const resHTML = `
@@ -4238,7 +4393,7 @@ function tickLockpick() {
     if (lpState.isTrapChest) {
       lpState.health -= configLP.DECAY_SALUD_DECOY * 1.5;
       if (lpState.health <= 0) {
-        triggerPickBreakSequence(DATOS_JUEGO.MINIJUEGOS.LOCKPICK.MENSAJES_TRAMPA.ROTURA);
+        triggerPickBreakSequence(DATOS_JUEGO.MINIJUEGOS.LOCKPICK.MENSAJES_TRAMPA.ROTURA, 'trampa');
         return;
       }
     } else {
@@ -4250,7 +4405,7 @@ function tickLockpick() {
         lpState.health -= configLP.DECAY_SALUD_DECOY;
         lpState.screwdriver = Math.min(15, lpState.screwdriver + configLP.VELOCIDAD_CILINDRO_DECOY);
         if (lpState.health <= 0) {
-          triggerPickBreakSequence("⚠️ Ganzúa rota: Falso punto dulce.");
+          triggerPickBreakSequence("⚠️ Ganzúa rota: Falso punto dulce.", 'falsoDulce');
           return;
         }
       } else if (diffReal <= lpState.tolerance) {
@@ -4284,7 +4439,7 @@ function tickLockpick() {
   requestAnimationFrame(tickLockpick);
 }
 
-function triggerPickBreakSequence(reasonText) {
+function triggerPickBreakSequence(reasonText, delayKey = null) {
   lpState.isBreaking = true;
   lpState.isTension = false;
   audio.playBreak();
@@ -4294,7 +4449,7 @@ function triggerPickBreakSequence(reasonText) {
   const lpContainer = document.getElementById('lockpickContainer');
   if (lpContainer) lpContainer.classList.add('hidden');
 
-  showPersistentFeedback(reasonText);
+  showPersistentFeedback(reasonText, delayKey);
   handleFailure('picks', reasonText);
 }
 
@@ -6453,8 +6608,8 @@ function showKeyToast(k, d, done) {
     const lc = document.getElementById('loopCounterDisplay');
     if (lc && !lc.classList.contains('hidden')) topPx = Math.round(lc.getBoundingClientRect().bottom - fr.top + 10);
   } catch (e) {}
-  // z-index 90: por encima de modales (z-50), banners y tiendas
-  el.style.cssText = `position:absolute;right:14px;top:${topPx}px;z-index:90;pointer-events:none;display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:12px;background:${neg ? 'rgba(69,10,10,.92)' : 'rgba(2,6,23,.88)'};border:2px solid ${neg ? '#ef4444' : st.color};color:${st.color};font:800 18px 'Outfit',sans-serif;opacity:0;transform:translateY(-14px);transition:opacity .25s ease,transform .25s ease`;
+  // [0.089b] z-index 10050: por encima de modales (z-50), tiendas, banners (9999) y recibo (10001); antes el banner del Trato Injusto tapaba el +N
+  el.style.cssText = `position:absolute;right:14px;top:${topPx}px;z-index:10050;pointer-events:none;display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:12px;background:${neg ? 'rgba(69,10,10,.92)' : 'rgba(2,6,23,.88)'};border:2px solid ${neg ? '#ef4444' : st.color};color:${st.color};font:800 18px 'Outfit',sans-serif;opacity:0;transform:translateY(-14px);transition:opacity .25s ease,transform .25s ease`;
   el.innerHTML = `<span>${neg ? '-' : '+'}${Math.abs(d)}</span><i class="fa-solid ${st.icon}"></i>`;
   host.appendChild(el);
   audio.init(); if (neg) audio.playKeySpend(); else audio.playKeyPickup();
@@ -6478,14 +6633,25 @@ setInterval(() => {
 
 // [0.089] Pitido suave mientras las cartas AUTO / DUENDE palpitan: uno solo para ambas, se calla en pantallas encima y tras unas repeticiones
 let cardBeepCount = 0;
+// [0.089b] Zumbido legendario: suena mientras el cofre seleccionado sea legendario; se calla al empezar el puzle o con el silencio
+(function () {
+  const cfg = DATOS_JUEGO.ZUMBIDO_LEGENDARIO || {};
+  if (!cfg.ACTIVAR) return;
+  setInterval(() => {
+    if (!audio.ctx) return;
+    const a = STATE.screenChests && STATE.screenChests[STATE.activeChestIdx];
+    const on = !!(a && a.rarity && a.rarity.id === 'legendario') && !minigameInProgress && !modalVisible('minigameModal') && !modalVisible('gameOverModal') && !document.getElementById('coverScreen');
+    audio.setLegendHum(on, cfg);
+  }, 250);
+})();
 (function () {
   const cfg = DATOS_JUEGO.PITIDO_CARTAS || {};
   if (!cfg.ACTIVAR) return;
   setInterval(() => {
     const pulsing = ['abilityAutoBtn', 'abilitySummonDuendeBtn'].some(id => { const e = document.getElementById(id); return !!(e && e.classList.contains('card-pulse')); });
     if (!pulsing) { cardBeepCount = 0; return; }
-    if (cardBeepCount >= (cfg.MAX_REPETICIONES || 5)) return;
-    if (!isGameIdle() || minigameInProgress || rotateBlocked || document.getElementById('coverScreen')) return;
+    if (cfg.MAX_REPETICIONES && cardBeepCount >= cfg.MAX_REPETICIONES) return;
+    if (!mainScreenFree() || minigameInProgress || rotateBlocked) return;   // [0.089b] se pausa con banners/ventanas y se reanuda después
     if (!audio.ctx) return;
     audio.playCardBeep(); cardBeepCount++;
   }, cfg.CADA_MS || 2000);

@@ -33,6 +33,16 @@
     html.texto-grande .text-xs       { font-size: 0.8125rem; line-height: 1.15rem; }
     html.texto-grande .font-retro    { zoom: 1.08; }
     html.texto-grande .sticky-note   { line-height: 1.25; }
+    /* [0.089b] */
+
+    /* [0.089b] Ventanas informativas más grandes en PC (--mz lo calcula script.js). Los puzles (#minigameModal) no se tocan. */
+    html:not(.narrow-layout) :is(#lootModal, #levelUpModal, #merchantModal, #traperoShopModal, #unfairDealModal, #gameOverModal, #duendeReceiptModal, #resumeGameModal, #resetConfirmModal) > div,
+    html:not(.narrow-layout) #dialogueModal > * { zoom: var(--mz, 1); }
+    html:not(.narrow-layout) :is(#lootModal, #levelUpModal, #merchantModal, #traperoShopModal, #unfairDealModal, #gameOverModal, #duendeReceiptModal) > div { max-height: calc(94dvh / var(--mz, 1)); overflow-y: auto; }
+    /* [0.089b] Título compacto cuando no cabe junto a las insignias */
+    html.title-compact .title-full { display: none; }
+    html.title-compact .title-short { display: inline; }
+    
     .card-pulse { animation: cardPulse 1.1s ease-in-out infinite; }
     @keyframes cardPulse { 0%,100% { transform: scale(1); filter: brightness(1); } 50% { transform: scale(1.06); filter: brightness(1.35); } }
     /* [0.089] Botón "Forzar cerradura" armado (primer toque dado): palpita con marco del color de la rareza */
@@ -94,7 +104,7 @@
         </div>
         <div>
           <div class="text-[10px] uppercase font-black text-amber-400 tracking-wider flex items-center gap-1 whitespace-nowrap overflow-hidden">
-            JUST ONE MORE CHEST
+            <span class="title-full">JUST ONE MORE CHEST</span><span class="title-short hidden">JOMC</span>
           </div>
           <div class="w-24 sm:w-32 h-2.5 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
             <div id="xpBar" class="h-full bg-gradient-to-r from-amber-500 to-yellow-400 transition-all duration-300 w-0"></div>
@@ -103,10 +113,9 @@
       </div>
 
       <div class="flex items-center gap-1.5 flex-none">
-        <div id="curseBadge" class="hidden px-1.5 py-1 bg-rose-900/60 border border-rose-500/50 rounded-xl text-rose-300 font-bold text-[10px] flex items-center gap-1 whitespace-nowrap flex-none"><i class="fa-solid fa-skull"></i></div>
-        <div id="noXpBadge" class="hidden px-1.5 py-1 bg-slate-800/80 border border-slate-500/50 rounded-xl text-slate-300 font-bold text-[10px] flex items-center gap-1 whitespace-nowrap flex-none"></div>
-        <div id="xpBoostBadge" class="hidden px-1.5 py-1 bg-emerald-900/50 border border-emerald-500/50 rounded-xl text-emerald-300 font-bold text-[10px] flex items-center gap-1 whitespace-nowrap flex-none"></div>
-        <div id="streakBadge" class="hidden px-1.5 py-1 bg-amber-500/20 border border-amber-400/50 rounded-xl text-amber-300 font-bold text-[10px] flex items-center gap-1 whitespace-nowrap flex-none">
+        <div id="curseBadge" class="hidden px-1.5 h-8 bg-rose-900/60 border border-rose-500/50 rounded-xl text-rose-300 font-bold text-[10px] flex items-center gap-1 whitespace-nowrap flex-none"><i class="fa-solid fa-skull"></i></div>
+        <div id="noXpBadge" class="hidden px-1.5 h-8 bg-slate-800/80 border border-slate-500/50 rounded-xl text-slate-300 font-bold text-[10px] flex items-center gap-1 whitespace-nowrap flex-none"></div>
+        <div id="streakBadge" class="hidden px-1.5 h-8 bg-amber-500/20 border border-amber-400/50 rounded-xl text-amber-300 font-bold text-[10px] flex items-center gap-1 whitespace-nowrap flex-none">
           <i class="fa-solid fa-fire text-amber-400"></i> <span id="streakText">x0</span>
         </div>
         <button id="resetGameBtn" title="Reiniciar partida" class="w-8 h-8 bg-rose-950/80 hover:bg-rose-900 active:scale-95 text-rose-300 text-xs rounded-xl border border-rose-700/50 shadow-md transition-all flex items-center justify-center">
