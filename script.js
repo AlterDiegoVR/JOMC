@@ -1,11 +1,23 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — script.js — VERSIÓN 0.087b
+// JUST ONE MORE CHEST — script.js — VERSIÓN 0.088
 // ==========================================================================
 /* ==========================================================================
    JUST ONE MORE CHEST - ARCHIVO DE CONFIGURACIÓN Y BALANCE (DATOS_JUEGO)
    ========================================================================== */
 
 const DATOS_JUEGO = {
+  // [0.088] Versión visible en pantalla (esquina inferior central) para que las capturas la incluyan
+  VERSION: '0.088',
+
+  // [0.088] Aviso "gira el móvil": sale solo en pantallas táctiles apaisadas y bajas; el juego se pausa. Frases al azar (voz del Duende).
+  AVISO_GIRAR: {
+    TITULO: '¡EH, EH! ¡AL REVÉS!',
+    FRASES: [
+      'Así no hay quien cuente monedas, forastero. Gira ese cacharro y ponlo de pie. Los cofres no se abren tumbados... y yo no cobro por esperar.',
+      '¡Cuidado, que se me caen las monedas! Pon el aparato derecho y volvemos al negocio.'
+    ]
+  },
+
   // 🟢 CONFIGURACIÓN E INVENTARIO INICIAL
   CONFIG_INICIAL: {
     NIVEL: 1,
@@ -21,6 +33,7 @@ const DATOS_JUEGO = {
     ACTIVAR_ARTE: true,          // false = vuelve al dibujo provisional (sin sprites ni portada)
     MOSTRAR_PORTADA: true,       // pantalla de inicio antes de "Continuar / Nueva partida"
     COFRE_ANCHO_PCT: 0.46,       // ancho del sprite del cofre respecto al ancho del marco
+    COFRE_SUBE_MOVIL_MULTI: 0.07,   // [0.088] en móvil, con varios cofres, el cofre sube este % del alto para dejar hueco al selector
     COFRE_Y_PCT: 0.50,           // altura del centro del cofre respecto al alto del marco
     ESCALA_UI_MAX: 1.6,          // tope del zoom de la interfaz en pantallas grandes (HUD y tarjeta del cofre)
 
@@ -43,7 +56,7 @@ const DATOS_JUEGO = {
     // El botón "Forzar cerradura" sigue existiendo siempre.
     TOCAR_CERRADURA: {
       ACTIVAR: true,
-      SOLO_PANTALLA_ANCHA: true,
+      SOLO_PANTALLA_ANCHA: false,   // [0.088] también en móvil (con varios cofres el selector baja y el cofre sube)
       ANCHO_MIN_LATERAL_PX: 160,   // pantalla ancha = la ventana supera al marco en al menos esto (se ven marquesinas)
       RADIO_MIN_PX: 26             // la zona táctil mide al menos 2×radio (≥ 48 px de diámetro)
     },
@@ -246,6 +259,7 @@ const DATOS_JUEGO = {
       BONO_MANO_FIRME: 1.5,    // [0.085] tolerancia extra por nivel de Mano Firme (antes 3)
       TOLERANCIA_NORMAL: 9,    // [0.086] ±% del carril (0.085: 7); la banda verde dibujada = zona de acierto real
       TOLERANCIA_DIFICIL: 5,   // [0.086] (0.085: 4)
+      MARGEN_INVISIBLE_PCT: 2.5,   // [0.088] margen NO visible, simétrico (arriba y abajo), que se suma a la tolerancia al juzgar el acierto
       MULT_VELOCIDAD_RAREZA: { epico: 0.9, legendario: 0.9 }  // [0.086] pistones un 10 % más lentos en épico y legendario
     },
 
@@ -1133,7 +1147,6 @@ function getNarrativeTier() {
 
 function processNextQueuedEvent() {
   if (STATE.eventQueue.length > 0) {
-    npcHideUntil = Date.now() + 900;   // [0.087b] el cofre no aparece mientras se prepara el siguiente evento (tienda, diálogo...)
     const nextEvent = STATE.eventQueue.shift();
     setTimeout(() => nextEvent(), 250);
   }
@@ -1874,6 +1887,7 @@ function resizeCanvas() {
   const maxZ = (DATOS_JUEGO.GRAFICOS && DATOS_JUEGO.GRAFICOS.ESCALA_UI_MAX) || 1;
   const z = Math.max(1, Math.min(maxZ, canvas.width / 430));
   document.documentElement.style.setProperty('--uiz', z.toFixed(3));
+  document.documentElement.classList.toggle('narrow-layout', !isWideLayout());   // [0.088] ajustes solo para móvil / ventanas estrechas
 }
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
@@ -1896,6 +1910,31 @@ function spawnParticles(x, y, color, count = 35, isRainbow = false) {
 
 // [0.086] Posición vertical efectiva de un adorno (los guardados con la fila antigua y=210 pasan a la nueva fila superior)
 // [0.087] Opacidad de un adorno que está siendo reemplazado (fundido de 0,7 s)
+// [0.088] Telón oscuro: entre cerrar el botín y abrirse la tienda/diálogo no se ve la habitación
+let sceneVeilEl = null, sceneVeilTimer = null;
+function showSceneVeil() {
+  if (!sceneVeilEl) {
+    sceneVeilEl = document.createElement('div');
+    sceneVeilEl.id = 'sceneVeil';
+    sceneVeilEl.style.cssText = 'position:absolute;inset:0;z-index:49;background:#020617;pointer-events:none;opacity:1;transition:opacity .22s ease';
+    uiHost().appendChild(sceneVeilEl);
+  }
+  sceneVeilEl.style.transition = 'none';
+  sceneVeilEl.style.opacity = '1';
+  clearInterval(sceneVeilTimer);
+  const t0 = Date.now();
+  sceneVeilTimer = setInterval(() => {
+    const open = ['dialogueModal', 'merchantModal', 'traperoShopModal', 'traperoModal', 'levelUpModal', 'unfairDealModal', 'gameOverModal'].some(modalVisible);
+    if (open || Date.now() - t0 > 1300) hideSceneVeil();
+  }, 50);
+}
+function hideSceneVeil() {
+  clearInterval(sceneVeilTimer); sceneVeilTimer = null;
+  if (!sceneVeilEl) return;
+  const el = sceneVeilEl;
+  el.style.transition = 'opacity .22s ease';
+  setTimeout(() => { el.style.opacity = '0'; }, 120);
+}
 // [0.087b] ¿Está entrando el Duende o el Trapero (o hay uno en pantalla)?
 function npcSceneActive() {
   if (Date.now() < npcHideUntil) return true;
@@ -2147,7 +2186,7 @@ function renderRoom() {
   const chestImgKey = activeChest && activeChest.type ? chestSpriteKey(activeChest.type, activeChest.rarity) : null;
   CHEST_LOCK = null;
   // [0.087b] El cofre (y su tarjeta) se ocultan mientras entra el Duende o el Trapero y vuelven con un fundido
-  const npcOn = npcSceneActive();
+  const npcOn = false;   // [0.088] ya no se oculta el cofre: lo tapa el telón de transición
   chestFade += ((npcOn ? 0 : 1) - chestFade) * 0.18;
   if (npcOn && chestFade < 0.02) chestFade = 0;
   if (!npcOn && chestFade > 0.98) chestFade = 1;
@@ -2162,7 +2201,8 @@ function renderRoom() {
     const im = ART[chestImgKey];
     const sc = Math.min((canvas.width * g.COFRE_ANCHO_PCT) / im.naturalWidth, (canvas.height * 0.24) / im.naturalHeight);
     const dw = im.naturalWidth * sc, dh = im.naturalHeight * sc;
-    const ccx = canvas.width / 2, ccy = canvas.height * g.COFRE_Y_PCT;
+    const mobileMulti = !isWideLayout() && STATE.screenChests.length > 1;
+    const ccx = canvas.width / 2, ccy = canvas.height * (g.COFRE_Y_PCT - (mobileMulti ? (g.COFRE_SUBE_MOVIL_MULTI || 0) : 0));
     const bob = Math.sin(Date.now() * 0.002) * 2;
     const halo = (g.HALO_RAREZA || {})[activeChest.rarity.id] || { a: '88', r: 0.85, anillo: false };
     const glowR = dw * halo.r + Math.sin(Date.now() * 0.003) * 6;
@@ -2189,7 +2229,7 @@ function renderRoom() {
     const tl = g.TOCAR_CERRADURA || {};
     const L = (g.CERRADURAS || {})[activeChest.type.id];
     CHEST_LOCK_ZONE = null;
-    if (tl.ACTIVAR && L && isWideLayout()) {
+    if (tl.ACTIVAR && L && (!tl.SOLO_PANTALLA_ANCHA || isWideLayout())) {
       const lx = ccx - dw / 2 + L.x * dw, ly = ccy - dh / 2 + bob + L.y * dh;
       const lr = Math.max(tl.RADIO_MIN_PX || 26, L.r * dw);
       CHEST_LOCK_ZONE = { x: lx, y: ly, r: lr };   // [0.087] siempre disponible (los post-its la esquivan)
@@ -2318,6 +2358,15 @@ function spawnSpookyPerimeterDecoration() {
   return `${chosenDecor.icono} ${chosenDecor.nombre} — "${descriptor}"`;
 }
 
+// [0.088] Cambio de ambiente en espera: se ejecuta cuando el banner de feedback ya está cerrado
+let pendingAmbient = null;
+setInterval(() => {
+  if (!pendingAmbient) return;
+  const b = document.getElementById('persistentFeedbackBanner');
+  if (b && !b.classList.contains('hidden')) return;
+  const fn = pendingAmbient; pendingAmbient = null;
+  setTimeout(fn, 150);
+}, 200);
 function triggerSecretDecorationReward(decor) {
   const roll = Math.random() * 100;
   let msg = `Inspeccionaste ${decor.name}. "${decor.descriptor.toUpperCase()}"`;
@@ -2325,15 +2374,20 @@ function triggerSecretDecorationReward(decor) {
   if (roll < 20) {
     const themes = DATOS_JUEGO.DECORACIONES_SALA.AMBIENTES_AZAR;
     const chosen = themes[Math.floor(Math.random() * themes.length)];
+    // [0.088] El efecto no se aplica hasta cerrar el banner (con el banner delante, la sala está difuminada y no se vería)
     if (chosen === 'apagado') {
-      STATE.roomDarkUntil = STATE.chestsOpened + (DATOS_JUEGO.DECORACIONES_SALA.AMBIENTE_APAGADO_COFRES || 10);
-      darkFlickerT0 = Date.now();
-      setTimeout(() => audio.playDarkOut(), 120);   // [0.087b] progresión de notas graves
+      pendingAmbient = () => {
+        STATE.roomDarkUntil = STATE.chestsOpened + (DATOS_JUEGO.DECORACIONES_SALA.AMBIENTE_APAGADO_COFRES || 10);
+        darkFlickerT0 = Date.now();
+        setTimeout(() => audio.playDarkOut(), 120);   // [0.087b] progresión de notas graves
+      };
       msg += " (¡La bombilla se funde! La celda queda a oscuras un buen rato.)";
     } else {
-      // [0.087b] Cualquier cambio de ambiente enciende la luz si estaba apagada
-      if ((STATE.roomDarkUntil || 0) > STATE.chestsOpened) STATE.roomDarkUntil = 0;
-      STATE.roomThemeFilter = chosen;
+      pendingAmbient = () => {
+        // [0.087b] Cualquier cambio de ambiente enciende la luz si estaba apagada
+        if ((STATE.roomDarkUntil || 0) > STATE.chestsOpened) STATE.roomDarkUntil = 0;
+        STATE.roomThemeFilter = chosen;
+      };
       msg += chosen === 'normal' ? " (La sala recupera su color original.)" : " (¡El ambiente de la sala ha cambiado!)";
     }
     audio.playClick(0.9);
@@ -2484,10 +2538,11 @@ function updateChestSelectionUI() {
     if (subtitle) subtitle.textContent = active.type.desc;
 
     const reqCount = getRequiredToolCount(active.rarity);
-    let toolTitle = "GANZÚAS";
-    if (active.type.consumible === 'proPicks') toolTitle = "PINES DE ACERO";
-    if (active.type.consumible === 'usb') toolTitle = "LLAVES USB";
-    if (active.type.consumible === 'valves') toolTitle = "VÁLVULAS";
+    // [0.088] singular y plural correctos ("1 PIN DE ACERO", "2 PINES DE ACERO")
+    let toolTitle = reqCount === 1 ? "GANZÚA" : "GANZÚAS";
+    if (active.type.consumible === 'proPicks') toolTitle = reqCount === 1 ? "PIN DE ACERO" : "PINES DE ACERO";
+    if (active.type.consumible === 'usb') toolTitle = reqCount === 1 ? "LLAVE USB" : "LLAVES USB";
+    if (active.type.consumible === 'valves') toolTitle = reqCount === 1 ? "VÁLVULA" : "VÁLVULAS";
 
     const reqEl = document.getElementById('chestCostRequirement');
     if (reqEl) {
@@ -2499,7 +2554,7 @@ function updateChestSelectionUI() {
         reqEl.textContent = `REQUIERE: ${reqCount} ${toolTitle}`;
       } else {
         reqEl.className = "text-[10px] font-bold text-amber-400 mb-3 bg-slate-900 px-2.5 py-0.5 rounded-md border border-slate-800";
-        reqEl.textContent = `REQUIERE: ${reqCount} ${toolTitle.slice(0, -1)}`;
+        reqEl.textContent = `REQUIERE: ${reqCount} ${toolTitle}`;
       }
     }
 
@@ -2748,7 +2803,7 @@ function triggerLootExplosion() {
       STATE.cursedChestsLeft--;
       if (STATE.cursedChestsLeft === 0) {
         STATE.salvageCurseActive = false;
-        queueCurseEndMessage();
+        STATE.curseEndPending = true;   // [0.088] se encola al cobrar el botín
       }
     }
     // [CAMBIO] La Maldición de la Codicia se evalúa ANTES de descontar el contador, para que afecte a los 5 cofres
@@ -3097,9 +3152,12 @@ const claimLootBtn = document.getElementById('claimLootBtn');
 if (claimLootBtn) {
   claimLootBtn.addEventListener('click', () => {
     const lootModal = document.getElementById('lootModal');
+    showSceneVeil();   // [0.088] el telón entra antes de cerrar el botín (sin destello de la habitación)
     if (lootModal) lootModal.classList.add('hidden');
 
     STATE.eventQueue = [];
+    // [0.088] El mensaje de fin de maldición se encola al abrir el cofre; antes se borraba aquí
+    if (STATE.curseEndPending) { STATE.curseEndPending = false; queueCurseEndMessage(); }
 
     // [0.082] Explicación del Trapero sobre el tanteo (una vez por bucle), antes que cualquier otro evento
     if (STATE.pendingTanteoPhrase) {
@@ -3187,6 +3245,7 @@ if (claimLootBtn) {
       }
     }
 
+    if (!STATE.eventQueue.length) hideSceneVeil();   // [0.088] sin eventos, el telón se retira enseguida
     processNextQueuedEvent();
     generateScreenChests();
 
@@ -3577,6 +3636,7 @@ function startMinigameTimer(seconds, consumableName) {
   }
 
   globalPuzzleTimerInterval = setInterval(() => {
+    if (typeof rotateBlocked !== 'undefined' && rotateBlocked) return;   // [0.088] pausa mientras se pide girar el móvil
     globalPuzzleTimeLeft--;
     if (timerEl) timerEl.textContent = `⏱️ ${globalPuzzleTimeLeft}s`;
 
@@ -3799,7 +3859,7 @@ function updateUI() {
   if (noXpBadge) {
     if (STATE.noXpChestsLeft > 0) {
       noXpBadge.classList.remove('hidden');
-      noXpBadge.innerHTML = `<i class="fa-solid fa-ban"></i> XP x${STATE.noXpChestsLeft}`;
+      noXpBadge.innerHTML = `<i class="fa-solid fa-ban"></i> x${STATE.noXpChestsLeft}`;
       setHelp(noXpBadge, helpText('sinXp', { n: STATE.noXpChestsLeft }));
     } else noXpBadge.classList.add('hidden');
   }
@@ -3909,7 +3969,7 @@ function updateUI() {
   if (btnSummonEl) { if (STATE.abilities.summonDuende <= 0) btnSummonEl.classList.add('hidden'); else btnSummonEl.classList.remove('hidden'); btnSummonEl.disabled = STATE.abilities.summonDuende <= 0; }
 
   // [0.087b] Las cartas AUTO y DUENDE palpitan cuando ningún cofre en pantalla se puede abrir con las llaves actuales
-  const blockedNow = STATE.screenChests.length > 0 && !checkCanOpenAnyChestOnScreen() && !isClimaxActive();
+  const blockedNow = STATE.screenChests.length > 0 && !isClimaxActive() && !STATE.screenChests.some(c => (STATE[c.type.consumible] || 0) >= getRequiredToolCount(c.rarity));   // [0.088] ya no cuenta la propia carta AUTO
   ['abilityAutoBtn', 'abilitySummonDuendeBtn'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.toggle('card-pulse', !!blockedNow && !el.disabled && !el.classList.contains('hidden'));
@@ -4438,7 +4498,7 @@ function animateTumblerSeal(ts) {
   });
 
   // Si los pistones superan la zona azul sin que el jugador pulse, se ha fallado el sellado
-  if (tumblerSeal.y < tumblerSeal.blueY - tumblerSeal.tol) {
+  if (tumblerSeal.y < tumblerSeal.blueY - tumblerSeal.tol - (DATOS_JUEGO.MINIJUEGOS.TUMBLER.MARGEN_INVISIBLE_PCT || 0)) {
     failTumbler("⚠️ Sellado fallido: los pistones pasaron de largo la línea azul.");
     return;
   }
@@ -4450,7 +4510,7 @@ function handleTumblerSealClick() {
   tumblerPhase = 'done';
   if (tumblerAnimationFrameId) { cancelAnimationFrame(tumblerAnimationFrameId); tumblerAnimationFrameId = null; }
   const diff = Math.abs(tumblerSeal.y - tumblerSeal.blueY);
-  if (diff <= tumblerSeal.tol) {
+  if (diff <= tumblerSeal.tol + (DATOS_JUEGO.MINIJUEGOS.TUMBLER.MARGEN_INVISIBLE_PCT || 0)) {
     audio.playClick(0.9);
     tumblerPinsData.forEach((pin, i) => {
       const notch = document.getElementById(`pinNotch-${i}`);
@@ -4472,8 +4532,9 @@ function triggerFixActivePin() {
   const diff = Math.abs(currentPin.posY - targetShearPosY);
   let allowedTolerance = (STATE.traperoBuffs.harderMinigames || STATE.harderPuzzlesLeft > 0) ? configT.TOLERANCIA_DIFICIL : configT.TOLERANCIA_NORMAL;
   allowedTolerance += (STATE.perks.sweetSpot * (configT.BONO_MANO_FIRME || 1.5));
+  const margenInv = configT.MARGEN_INVISIBLE_PCT || 0;   // [0.088] margen no visible, el mismo por arriba y por abajo
 
-  if (diff <= allowedTolerance) {
+  if (diff <= allowedTolerance + margenInv) {
     audio.playClick(0.9);
     currentPin.locked = true;
     currentPin.posY = targetShearPosY;
@@ -6081,6 +6142,7 @@ function attachCoverClose(cover) {
     cover.style.opacity = '0';
     setTimeout(() => cover.remove(), 450);
     try { audio.init(); audio.playClick(0.8); audio.playIntro(); } catch (e) {}
+    try { requestGameFullscreen(); } catch (e) {}   // [0.088]
   }, { once: true });
 }
 
@@ -6249,12 +6311,21 @@ function showKeyToast(k, d, done) {
   const host = uiHost();
   const st = KEY_TOAST_STYLE[k] || KEY_TOAST_STYLE.picks;
   const el = document.createElement('div');
-  el.style.cssText = `position:absolute;right:14px;bottom:112px;z-index:45;pointer-events:none;display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:12px;background:rgba(2,6,23,.88);border:2px solid ${st.color};color:${st.color};font:800 18px 'Outfit',sans-serif;opacity:0;transform:translateY(14px);transition:opacity .25s ease,transform .25s ease`;
+  // [0.088] Esquina superior derecha, justo bajo la fila de cartas (donde está el contador de cofres)
+  let topPx = 150;
+  try {
+    const row = (document.getElementById('loopCounterDisplay') || document.getElementById('abilityAutoBtn') || {}).parentElement;
+    const fr = host.getBoundingClientRect();
+    if (row) topPx = Math.round(row.getBoundingClientRect().bottom - fr.top + 10);
+    const lc = document.getElementById('loopCounterDisplay');
+    if (lc && !lc.classList.contains('hidden')) topPx = Math.round(lc.getBoundingClientRect().bottom - fr.top + 10);
+  } catch (e) {}
+  el.style.cssText = `position:absolute;right:14px;top:${topPx}px;z-index:45;pointer-events:none;display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:12px;background:rgba(2,6,23,.88);border:2px solid ${st.color};color:${st.color};font:800 18px 'Outfit',sans-serif;opacity:0;transform:translateY(-14px);transition:opacity .25s ease,transform .25s ease`;
   el.innerHTML = `<span>+${d}</span><i class="fa-solid ${st.icon}"></i>`;
   host.appendChild(el);
   audio.init(); audio.playKeyPickup();
   requestAnimationFrame(() => { el.style.opacity = '1'; el.style.transform = 'translateY(0)'; });
-  setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateY(-12px)'; }, 950);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateY(12px)'; }, 950);
   setTimeout(() => { el.remove(); done(); }, 1250);
 }
 // Los avisos salen cuando no hay ninguna pantalla encima (botín cerrado, diálogo cerrado...) y de uno en uno
@@ -6279,3 +6350,62 @@ function showCover() {
   uiHost().appendChild(c);
   attachCoverClose(c);
 }
+
+
+/* ==========================================================================
+   [0.088] VERSIÓN VISIBLE, AVISO "GIRA EL MÓVIL" Y PANTALLA COMPLETA
+   ========================================================================== */
+(function initVersionTag() {
+  const el = document.getElementById('versionTag');
+  if (el) el.textContent = 'v' + (DATOS_JUEGO.VERSION || '');
+})();
+
+// Aviso de girar: solo pantalla táctil + apaisada + poca altura (nunca en PC). El juego se pausa mientras está visible.
+let rotateBlocked = false;
+(function initRotateNotice() {
+  const mq = window.matchMedia ? window.matchMedia('(orientation: landscape) and (pointer: coarse) and (max-height: 520px)') : null;
+  const notice = document.getElementById('rotateNotice');
+  if (!mq || !notice) return;
+  const apply = () => {
+    rotateBlocked = mq.matches;
+    document.documentElement.classList.toggle('rotate-block', rotateBlocked);
+    if (rotateBlocked) {
+      const cfg = DATOS_JUEGO.AVISO_GIRAR || {};
+      const list = cfg.FRASES || [];
+      const t = document.getElementById('rotateTitle'); if (t) t.textContent = cfg.TITULO || '';
+      const m = document.getElementById('rotateText'); if (m && list.length) m.textContent = list[Math.floor(Math.random() * list.length)];
+    }
+  };
+  (mq.addEventListener ? mq.addEventListener('change', apply) : mq.addListener(apply));
+  apply();
+})();
+
+// Pantalla completa (solo táctil y si el navegador lo permite). Se pide al tocar la portada; el botón sirve para volver a entrar.
+function fullscreenSupported() {
+  const d = document.documentElement;
+  return !!(d.requestFullscreen || d.webkitRequestFullscreen) && !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+}
+function isFullscreenNow() { return !!(document.fullscreenElement || document.webkitFullscreenElement); }
+function requestGameFullscreen() {
+  if (!fullscreenSupported() || isFullscreenNow()) return;
+  const d = document.documentElement;
+  try {
+    const p = (d.requestFullscreen || d.webkitRequestFullscreen).call(d);
+    const lockPortrait = () => { try { if (screen.orientation && screen.orientation.lock) screen.orientation.lock('portrait').catch(() => {}); } catch (e) {} };
+    if (p && p.then) p.then(lockPortrait).catch(() => {}); else lockPortrait();
+  } catch (e) {}
+}
+(function initFullscreenButton() {
+  const btn = document.getElementById('fsBtn');
+  if (!btn || !fullscreenSupported()) return;
+  btn.classList.remove('hidden');
+  const icon = () => { btn.innerHTML = isFullscreenNow() ? '<i class="fa-solid fa-compress"></i>' : '<i class="fa-solid fa-expand"></i>'; };
+  icon();
+  document.addEventListener('fullscreenchange', icon);
+  document.addEventListener('webkitfullscreenchange', icon);
+  btn.addEventListener('click', () => {
+    audio.init(); audio.playClick(0.6);
+    if (isFullscreenNow()) { try { (document.exitFullscreen || document.webkitExitFullscreen).call(document); } catch (e) {} }
+    else requestGameFullscreen();
+  });
+})();
