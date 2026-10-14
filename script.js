@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — script.js — VERSIÓN 0.088
+// JUST ONE MORE CHEST — script.js — VERSIÓN 0.089
 // ==========================================================================
 /* ==========================================================================
    JUST ONE MORE CHEST - ARCHIVO DE CONFIGURACIÓN Y BALANCE (DATOS_JUEGO)
@@ -7,7 +7,24 @@
 
 const DATOS_JUEGO = {
   // [0.088] Versión visible en pantalla (esquina inferior central) para que las capturas la incluyan
-  VERSION: '0.088',
+  VERSION: '0.089',
+
+  // [0.089] Avisos "+N" / "-N" de herramientas. ESPERAR_PANTALLA_LIBRE:true = recupera la idea anterior (esperar a que no haya
+  // banners, tiendas ni diálogos encima). Con false salen siempre, por encima de todo.
+  AVISOS_LLAVES: { ESPERAR_PANTALLA_LIBRE: false, DURACION_MS: 1450, DURACION_RAPIDA_MS: 800 },
+
+  // [0.089] Las válvulas no salen en botín ni objetos hasta este nivel (los tratos solo dan herramientas de puzles ya desbloqueados)
+  VALVULAS_NIVEL_MIN_BOTIN: 4,
+
+  // [0.089] Mensajes (al azar) cuando un objeto intenta cambiar el ambiente de la sala mientras hay una maldición activa
+  TEXTOS_AMBIENTE_MALDICION: [
+    'Esta maldición lo impregna todo, como si fuese sangre. Nada más puede teñir esta sala.',
+    'La sala ya está empapada de la maldición. Lo que acabas de tocar se apaga sin dejar rastro.',
+    'Intentas cambiar la luz, pero la maldición lo cubre todo como sangre seca.'
+  ],
+
+  // [0.089] Pitido suave mientras las cartas AUTO / DUENDE palpitan (uno solo para ambas). Se calla tras MAX_REPETICIONES sin que cambie nada.
+  PITIDO_CARTAS: { ACTIVAR: true, CADA_MS: 2000, MAX_REPETICIONES: 5 },
 
   // [0.088] Aviso "gira el móvil": sale solo en pantallas táctiles apaisadas y bajas; el juego se pausa. Frases al azar (voz del Duende).
   AVISO_GIRAR: {
@@ -62,7 +79,10 @@ const DATOS_JUEGO = {
     },
     // [0.087] Flecha + "TOCA EL CERROJO PARA ABRIR" en los primeros cofres abiertos con éxito de cada tipo (solo pantalla ancha).
     // El contador se reinicia al empezar partida nueva y al cambiar de bucle.
-    FLECHA_CERROJO: { ACTIVAR: true, COFRES_POR_TIPO: 2, TEXTO: 'TOCA EL CERROJO PARA ABRIR', MENSAJE_SOLO_TIPOS: ['wooden'] },   // [0.087b] 2 primeros por tipo; mensaje solo en madera
+    FLECHA_CERROJO: { ACTIVAR: true, COFRES_POR_TIPO: 2, TEXTO: 'TOCA EL CERROJO PARA ABRIR', MENSAJE_SOLO_TIPOS: ['wooden'], COFRES_POR_TIPO_TOCA_OTRA_VEZ: 5 },   // [0.087b] 2 primeros por tipo; mensaje solo en madera
+
+    // [0.089] Doble toque también con un solo cofre; el botón "Forzar cerradura" comparte el estado "armado" con la cerradura
+    BOTON_ARMADO_TEXTO: 'PULSA DE NUEVO',
 
     // [0.087] Filtro granate (color del Trapero) mientras hay una maldición activa. El tinte por tier siempre tiene prioridad.
     TINTE_MALDICION: { ACTIVAR: true, RGB: '122,38,57', ALFA: 0.30, PULSO: 0.04 },   // [0.087b] más rojizo y con pulso lento
@@ -88,6 +108,8 @@ const DATOS_JUEGO = {
     usb: "Llaves USB: abren las Arcas Digitales. Los cofres legendarios piden más de una.",
     valvulas: "Válvulas: abren los Cofres de Vapor. Los cofres legendarios piden más de una.",
     sinXp: "Por Amor al Arte: no ganas experiencia durante los próximos {n} cofres.",
+    xpExtra: "Impulso de Trabajo: +25% de experiencia durante los próximos {n} cofres.",
+    xpPermanente: "Pacto de la Sombra: +25% de experiencia permanente.",
     cartas: {
       auto: "Carta AUTO: abre al instante el cofre activo, sin puzle.",
       double: "Carta 2X: duplica la recompensa del siguiente cofre que abras.",
@@ -933,6 +955,25 @@ class AudioEngine {
     this._tone(880, 1320, 0.09, 'triangle', 0.1);
     this._tone(1320, 1760, 0.12, 'sine', 0.08, 0.07);
   }
+  playKeySpend() {  // "-1" de llave: dos notas descendentes
+    if (!this.ctx || this.muted) return;
+    this._tone(620, 400, 0.1, 'triangle', 0.1);
+    this._tone(400, 250, 0.14, 'sine', 0.08, 0.07);
+  }
+  playCardBeep() {  // pitido suave y corto de las cartas que palpitan
+    if (!this.ctx || this.muted) return;
+    this._tone(1175, 1175, 0.09, 'sine', 0.05);
+    this._tone(1568, 1568, 0.07, 'sine', 0.03, 0.06);
+  }
+  playCashRegister() {  // [0.089] "¡cha-ching!": clic mecánico, campanilla y monedas
+    if (!this.ctx || this.muted) return;
+    this._noise(0.035, 0.12, 0, 2500);
+    this._tone(220, 90, 0.07, 'square', 0.07);
+    this._noise(0.05, 0.09, 0.07, 3500);
+    [1568, 2093].forEach(f => this._tone(f, f, 0.65, 'sine', 0.09, 0.12));
+    this._tone(3136, 3136, 0.45, 'sine', 0.035, 0.12);
+    [0.34, 0.41, 0.47, 0.56, 0.62].forEach((d, i) => this._tone(3200 + (i % 3) * 500, 2600 + (i % 2) * 400, 0.06, 'triangle', 0.045, d));
+  }
   playIntro() {     // dungeon synth ascendente al empezar (reverso del game over)
     if (!this.ctx || this.muted) return;
     [185, 196, 233, 277, 311, 370, 392].forEach((f, i) => this._tone(f, f * 1.01, 0.6, 'triangle', 0.1, i * 0.3));
@@ -1021,7 +1062,7 @@ class AudioEngine {
 }
 const audio = new AudioEngine();
 // [0.087] Registro del último sonido para que el clic de interfaz no se solape con sonidos propios
-['playClick', 'playPaperRustle', 'playDecoyBuzz', 'playBreak', 'playUnlockFanfare', 'playLockCharge', 'playLockOpen', 'playGameOver', 'playDarkOut', 'playLightOn', 'playDecorTap', 'playKeyPickup', 'playIntro'].forEach(n => {
+['playClick', 'playPaperRustle', 'playDecoyBuzz', 'playBreak', 'playUnlockFanfare', 'playLockCharge', 'playLockOpen', 'playGameOver', 'playDarkOut', 'playLightOn', 'playDecorTap', 'playKeyPickup', 'playKeySpend', 'playCardBeep', 'playCashRegister', 'playIntro'].forEach(n => {
   const f = AudioEngine.prototype[n];
   AudioEngine.prototype[n] = function (...a) { this.lastSound = performance.now(); return f.apply(this, a); };
 });
@@ -2025,9 +2066,10 @@ function drawLockOverlay(lx, ly, lr, chest) {
       ctx.lineTo(lx - 4, tipY + 26); ctx.lineTo(lx - 4, tipY + 14); ctx.lineTo(lx - 11, tipY + 14); ctx.closePath();
       ctx.fill(); ctx.stroke();
     }
-    if (armed || showMsg) {
-    const txt = armed ? 'TOCA OTRA VEZ PARA ABRIR' : (fl.TEXTO || 'TOCA EL CERROJO PARA ABRIR');
-    const ty = ly + lr + (armed ? 8 : 36);
+    const armedMsg = armed && openedN < (fl.COFRES_POR_TIPO_TOCA_OTRA_VEZ || 5);   // [0.089] se quita tras 5 aciertos por tipo
+    if (armedMsg || showMsg) {
+    const txt = armedMsg ? 'TOCA OTRA VEZ PARA ABRIR' : (fl.TEXTO || 'TOCA EL CERROJO PARA ABRIR');
+    const ty = ly + lr + (armedMsg ? 8 : 36);
     ctx.font = `bold ${fs}px monospace`;
     const hw = ctx.measureText(txt).width + 16;
     ctx.fillStyle = 'rgba(2,6,23,0.88)';
@@ -2041,7 +2083,15 @@ function drawLockOverlay(lx, ly, lr, chest) {
   ctx.restore();
 }
 
-// [0.086] Toque sobre la cerradura. Con varios cofres: el primer toque arma, el segundo abre.
+// [0.089] Estado "armado" compartido entre la cerradura y el botón: el primer toque carga, el segundo abre (también con un solo cofre)
+function lockIsArmed(active) { return !!active && lockArmedChest === active && (Date.now() - lockArmedAt) < 4000; }
+function armLock(active) {
+  const vib = DATOS_JUEGO.GRAFICOS.VIBRACION || {};
+  lockArmedChest = active; lockArmedAt = Date.now();
+  audio.playLockCharge(active.type.id);
+  if (navigator.vibrate && vib.CARGAR) navigator.vibrate(vib.CARGAR);
+}
+// [0.086] Toque sobre la cerradura. Primer toque: arma (sonido propio del tipo + vibración); segundo toque: abre.
 function handleLockTap() {
   const tl = DATOS_JUEGO.GRAFICOS.TOCAR_CERRADURA || {};
   if (!tl.ACTIVAR || !CHEST_LOCK) return false;
@@ -2052,22 +2102,38 @@ function handleLockTap() {
   if (!active) return false;
   audio.init();
   const vib = DATOS_JUEGO.GRAFICOS.VIBRACION || {};
-  if (STATE.screenChests.length > 1 && !(lockArmedChest === active && Date.now() - lockArmedAt < 4000)) {
-    // [0.087] Primer toque con varios cofres: carga la cerradura (sonido propio del tipo + vibración)
-    lockArmedChest = active; lockArmedAt = Date.now();
-    audio.playLockCharge(active.type.id);
-    if (navigator.vibrate && vib.CARGAR) navigator.vibrate(vib.CARGAR);
-    return true;
-  }
+  const hasTools = (STATE[active.type.consumible] || 0) >= getRequiredToolCount(active.rarity);
+  if (hasTools && !lockIsArmed(active)) { armLock(active); return true; }
   lockArmedChest = null;
   if (navigator.vibrate && vib.ABRIR) navigator.vibrate(vib.ABRIR);
-  if ((STATE[active.type.consumible] || 0) < getRequiredToolCount(active.rarity)) lockShakeUntil = Date.now() + 450;
-  btn.click();
+  if (!hasTools) lockShakeUntil = Date.now() + 450;
+  openActiveChest();
   return true;
+}
+
+// [0.089] El botón "Forzar cerradura" cambia de texto, palpita y se enmarca con el color de la rareza mientras está armado
+let armedBtnShown = false, armedBtnPrevText = '', armedBtnTextSet = '';
+function syncOpenButtonArmed() {
+  const btn = document.getElementById('openChestBtn');
+  if (!btn) return;
+  const active = STATE.screenChests[STATE.activeChestIdx];
+  const armed = lockIsArmed(active) && !minigameInProgress;
+  const t = document.getElementById('openChestBtnText');
+  if (armed && !armedBtnShown) {
+    armedBtnShown = true;
+    btn.classList.add('btn-armed');
+    btn.style.setProperty('--armc', (active.rarity && active.rarity.color) || '#ffffff');
+    if (t) { armedBtnPrevText = t.textContent; armedBtnTextSet = DATOS_JUEGO.GRAFICOS.BOTON_ARMADO_TEXTO || 'PULSA DE NUEVO'; t.textContent = armedBtnTextSet; }
+  } else if (!armed && armedBtnShown) {
+    armedBtnShown = false;
+    btn.classList.remove('btn-armed');
+    if (t && t.textContent === armedBtnTextSet) t.textContent = armedBtnPrevText;
+  }
 }
 
 function renderRoom() {
   if (!canvas || !ctx) return;
+  syncOpenButtonArmed();
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   const cx = canvas.width / 2;
@@ -2082,7 +2148,7 @@ function renderRoom() {
     redAlpha = Math.max(0, Math.min(1, (STATE.chestsOpened - U.tier_3) / (U.tier_4 + 1 - U.tier_3))) * maxA;
   }
   const ambientes = DATOS_JUEGO.DECORACIONES_SALA.AMBIENTES;
-  const amb = ambientes[STATE.roomThemeFilter];
+  const amb = (rtier >= 5 || STATE.cursedChestsLeft > 0) ? null : ambientes[STATE.roomThemeFilter];   // [0.089] maldición (y Tier 5) tienen prioridad sobre el ambiente de los objetos
   const roomDark = (STATE.roomDarkUntil || 0) > STATE.chestsOpened;
   if (roomDarkPrev === null) roomDarkPrev = roomDark;
   if (roomDark !== roomDarkPrev) {
@@ -2375,7 +2441,15 @@ function triggerSecretDecorationReward(decor) {
     const themes = DATOS_JUEGO.DECORACIONES_SALA.AMBIENTES_AZAR;
     const chosen = themes[Math.floor(Math.random() * themes.length)];
     // [0.088] El efecto no se aplica hasta cerrar el banner (con el banner delante, la sala está difuminada y no se vería)
-    if (chosen === 'apagado') {
+    const cursedNow = STATE.cursedChestsLeft > 0;
+    const finalTier = getNarrativeTier() >= 5;
+    if (chosen !== 'apagado' && (cursedNow || finalTier)) {
+      // [0.089] El efecto de color del objeto se cancela: la maldición (o la narrativa final desde el Tier 5) manda. La oscuridad sí convive.
+      if (cursedNow && !finalTier) {
+        const lst = DATOS_JUEGO.TEXTOS_AMBIENTE_MALDICION || [];
+        if (lst.length) msg += ' ' + lst[Math.floor(Math.random() * lst.length)];
+      }
+    } else if (chosen === 'apagado') {
       pendingAmbient = () => {
         STATE.roomDarkUntil = STATE.chestsOpened + (DATOS_JUEGO.DECORACIONES_SALA.AMBIENTE_APAGADO_COFRES || 10);
         darkFlickerT0 = Date.now();
@@ -2409,7 +2483,10 @@ function triggerSecretDecorationReward(decor) {
   } else if (roll >= 45 && roll < 65) { STATE.gold += 2; msg += " (+2 GP secretos)"; }
   else if (roll >= 65 && roll < 80) { STATE.picks += 1; msg += " (+1 Ganzúa hallada)"; }
   else if (roll >= 80 && roll < 90) { STATE.usb += 1; msg += " (+1 USB hallado)"; }
-  else if (roll >= 90 && roll < 97) { STATE.valves += 1; msg += " (+1 Válvula hallada)"; }
+  else if (roll >= 90 && roll < 97) {
+    if (STATE.level >= (DATOS_JUEGO.VALVULAS_NIVEL_MIN_BOTIN || 4)) { STATE.valves += 1; msg += " (+1 Válvula hallada)"; }
+    else { STATE.gold += 2; msg += " (+2 GP secretos)"; }   // [0.089] sin válvulas antes del nivel mínimo
+  }
   else {
     msg += " (¡Vibración sísmica en la sala!)";
     const appBody = document.getElementById('appBody');
@@ -3037,6 +3114,9 @@ function triggerLootExplosion() {
         ];
       }
 
+      // [0.089] Sin válvulas en el botín hasta el nivel mínimo
+      availableDrops = availableDrops.filter(d => d.prop !== 'valves' || STATE.level >= (DATOS_JUEGO.VALVULAS_NIVEL_MIN_BOTIN || 4));
+
       if (inGracePeriod) {
         if (STATE.level === 2) availableDrops.push({ name: 'Pin de Acero', prop: 'proPicks', icon: 'fa-screwdriver', color: 'text-emerald-400' });
         if (STATE.level === 3) availableDrops.push({ name: 'Llave USB', prop: 'usb', icon: 'fa-microchip', color: 'text-cyan-400' });
@@ -3251,8 +3331,7 @@ if (claimLootBtn) {
 
     if (!STATE.sequenceBroken && co >= 100 && co < seqConfig.COFRE_AUTO_OPEN_FIN) {
       setTimeout(() => {
-        const btnOpen = document.getElementById('openChestBtn') || document.getElementById('openActiveChestBtn');
-        if (btnOpen) btnOpen.click();
+        openActiveChest();   // [0.089] apertura automática: directa, sin doble toque
       }, 350);
     }
   });
@@ -3573,6 +3652,7 @@ const claimRiskBtn = document.getElementById('claimRiskPotBtn');
 if (claimRiskBtn) {
   claimRiskBtn.addEventListener('click', () => {
     if (STATE.riskModeActive && STATE.riskPot > 0) {
+      audio.init(); audio.playCashRegister();   // [0.089]
       STATE.gold += STATE.riskPot;
       showPersistentFeedback(`💰 ¡Has cobrado el Bote de Riesgo de ${STATE.riskPot} GP!`);
       STATE.riskPot = 0;
@@ -3862,6 +3942,21 @@ function updateUI() {
       noXpBadge.innerHTML = `<i class="fa-solid fa-ban"></i> x${STATE.noXpChestsLeft}`;
       setHelp(noXpBadge, helpText('sinXp', { n: STATE.noXpChestsLeft }));
     } else noXpBadge.classList.add('hidden');
+  }
+
+  // [0.089] Efecto de XP extra (Cambio de Trabajo: xN cofres; Pacto de la Sombra: permanente)
+  const xpBoostBadge = document.getElementById('xpBoostBadge');
+  if (xpBoostBadge) {
+    const tempXp = STATE.xpBoostChestsLeft > 0;
+    const permXp = !!(STATE.traperoBuffs && STATE.traperoBuffs.bonusXp);
+    if (tempXp || permXp) {
+      xpBoostBadge.classList.remove('hidden');
+      xpBoostBadge.innerHTML = `<i class="fa-solid fa-star"></i> ${tempXp ? 'x' + STATE.xpBoostChestsLeft : '∞'}`;
+      const parts = [];
+      if (tempXp) parts.push(helpText('xpExtra', { n: STATE.xpBoostChestsLeft }));
+      if (permXp) parts.push(helpText('xpPermanente'));
+      setHelp(xpBoostBadge, parts.join(' '));
+    } else xpBoostBadge.classList.add('hidden');
   }
 
   const curseBadge = document.getElementById('curseBadge');
@@ -4312,6 +4407,7 @@ function startTumblerGame() {
   }
 
   const configT = DATOS_JUEGO.MINIJUEGOS.TUMBLER;
+  tumblerStartedAt = Date.now();
   const tumblerContainer = document.getElementById('tumblerContainer'); if (tumblerContainer) tumblerContainer.classList.remove('hidden');
   const pinsContainer = document.getElementById('tumblerPins'); if (!pinsContainer) return;
   pinsContainer.innerHTML = '';
@@ -4563,6 +4659,22 @@ function triggerFixActivePin() {
 
 const tapPinBtn = document.getElementById('tapPinBtn');
 if (tapPinBtn) tapPinBtn.addEventListener('click', triggerFixActivePin);
+
+// [0.089] Cualquier pulsación dentro del puzle de pistones también los para (el botón sigue siendo la forma "oficial").
+// Se ignoran los botones (la X, el propio botón: ese ya dispara con su clic) y los primeros 350 ms para no contar el toque que abrió el puzle.
+let tumblerStartedAt = 0;
+(function () {
+  const mm = document.getElementById('minigameModal');
+  if (!mm) return;
+  mm.addEventListener('pointerdown', (e) => {
+    const tc = document.getElementById('tumblerContainer');
+    if (!tc || tc.classList.contains('hidden') || !minigameInProgress) return;
+    if (tumblerPhase !== 'pins' && tumblerPhase !== 'seal') return;
+    if (e.target.closest && e.target.closest('button, a, [role="button"]')) return;
+    if (Date.now() - tumblerStartedAt < 350) return;
+    triggerFixActivePin();
+  });
+})();
 
 /* ==========================================================================
    MINIJUEGO 3: TERMINAL DIGITAL (HACK) - ESCALADO POR RAREZA DE COFRE
@@ -5378,11 +5490,11 @@ function showShopReceipt(onCloseCallback) {
   }
 
   const itemsHTML = validItems.map(item => `
-    <div class="flex items-center justify-between bg-slate-900/80 border border-amber-500/20 px-3 py-2 rounded-lg text-xs font-mono">
+    <div class="flex items-center justify-between bg-slate-900 border border-amber-500/30 px-3 py-3 rounded-xl text-xs font-mono">
       <span class="flex items-center gap-2 text-amber-200">
         <i class="fa-solid ${item.icon || 'fa-box'} text-amber-400"></i> ${item.name}
       </span>
-      <span class="text-amber-400/80 font-bold">${item.costText}</span>
+      <span class="text-amber-400 font-black">${item.costText}</span>
     </div>
   `).join('');
 
@@ -5401,15 +5513,15 @@ function showShopReceipt(onCloseCallback) {
         </div>
       </div>
 
-      <div class="bg-purple-950/40 border border-purple-500/30 p-3 rounded-xl text-xs italic text-purple-200 leading-relaxed font-serif">
+      <div class="receipt-quote bg-purple-950/40 border border-purple-500/30 p-3 rounded-xl text-xs italic text-purple-200 leading-relaxed font-serif">
         ${duendeQuote}
       </div>
 
-      <div class="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+      <div class="space-y-1.5 max-h-48 overflow-y-auto">
         ${itemsHTML}
       </div>
 
-      <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-center justify-between text-xs font-mono border-t border-amber-500/30">
+      <div class="bg-slate-900 border border-amber-500/30 px-3 py-3 rounded-xl flex items-center justify-between text-xs font-mono">
         <span class="text-slate-400 font-bold uppercase">Balance Final:</span>
         <div class="flex items-center gap-3">
           ${session.totalGold > 0 ? `<span class="text-amber-400 font-black"><i class="fa-solid fa-coins"></i> -${session.totalGold} GP</span>` : ''}
@@ -5677,6 +5789,11 @@ function showTraperoDealFeedback(dealTitle, summaryText, onClose) {
   );
 }
 
+// [0.089] Herramientas avanzadas "descubiertas" = las de los cofres cuyo puzle ya está desbloqueado por nivel
+function unlockedAdvancedTools() {
+  return DATOS_JUEGO.COFRES.ESTANDAR.filter(t => t.consumible !== 'picks' && STATE.level >= t.minNivel).map(t => t.consumible);
+}
+
 function openTraperoShop() {
   const grid = document.getElementById('traperoDealsGrid') || document.getElementById('traperoItemsList'); 
   if (!grid) return;
@@ -5688,6 +5805,8 @@ function openTraperoShop() {
     if (deal.id === 'empujon_siniestro' && STATE.gold <= 100) return false;
     // [0.082] Dedos Rotos ya aceptado: no vuelve a aparecer hasta el siguiente bucle (resetGame lo desactiva)
     if (deal.id === 'dedos_rotos' && STATE.picksBrokenOnUse) return false;
+    // [0.089] Los tratos que dan "+N de cada herramienta avanzada" no se ofrecen si aún no hay ninguna desbloqueada
+    if ((deal.id === 'amor_arte' || deal.id === 'pacto_sangre') && unlockedAdvancedTools().length === 0) return false;
     return true;
   });
 
@@ -5798,14 +5917,12 @@ function openTraperoShop() {
           updateUI();
           showTraperoDealFeedback("Contrato Leonino", `Recibes +${DATOS_JUEGO.ECONOMIA.TRAPERO.gp_contrato_leonino} GP inmediatos. Cuidado: los próximos 10 cofres Raros+ requerirán +1 herramienta extra.`);
         } else if (deal.id === 'pacto_sangre') {
-          STATE.proPicks += 3;
-          STATE.usb += 3;
-          STATE.valves += 3;
+          unlockedAdvancedTools().forEach(p => { STATE[p] += 3; });   // [0.089] solo las ya desbloqueadas
           STATE.cursedChestsLeft += 12;
           if (traperoModal) traperoModal.classList.add('hidden');
           audio.playUnlockFanfare('epico');
           updateUI();
-          showTraperoDealFeedback("Pacto de Sangre", "Obtienes +3 de cada herramienta avanzada, pero sufres 12 turnos de Maldición (-50% GP y XP).");
+          showTraperoDealFeedback("Pacto de Sangre", "Obtienes +3 de cada herramienta avanzada que ya has desbloqueado, pero sufres 12 turnos de Maldición (-50% GP y XP).");
         } else if (deal.id === 'pacto_sombra') {
           STATE.harderPuzzlesLeft += 10;
           STATE.traperoBuffs.bonusXp = true;
@@ -5814,14 +5931,12 @@ function openTraperoShop() {
           updateUI();
           showTraperoDealFeedback("Pacto de la Sombra", "+25% Experiencia permanente activado. Los minijuegos de los próximos 10 cofres serán más exigentes.");
         } else if (deal.id === 'amor_arte') {
-          STATE.proPicks += 2;
-          STATE.usb += 2;
-          STATE.valves += 2;
+          unlockedAdvancedTools().forEach(p => { STATE[p] += 2; });   // [0.089] solo las ya desbloqueadas
           STATE.noXpChestsLeft += 5;
           if (traperoModal) traperoModal.classList.add('hidden');
           audio.playUnlockFanfare('epico');
           updateUI();
-          showTraperoDealFeedback("Por Amor al Arte", "Obtienes +2 de cada herramienta avanzada. No ganarás experiencia durante los próximos 5 cofres.");
+          showTraperoDealFeedback("Por Amor al Arte", "Obtienes +2 de cada herramienta avanzada que ya has desbloqueado. No ganarás experiencia durante los próximos 5 cofres.");
         } else if (deal.id === 'empujon_siniestro') {
           STATE.gold = 30;
           if (traperoModal) traperoModal.classList.add('hidden');
@@ -5843,6 +5958,7 @@ function openTraperoShop() {
           updateUI();
           showTraperoDealFeedback("Dedos Rotos", "Recibes +10 Ganzúas Básicas. ¡Atención! A partir de ahora tus ganzúas se consumirán aunque resuelvas el puzle.");
         } else if (deal.id === 'cambio_trabajo') {
+          let lostPerkText = 'una modificación positiva';
           const activePerksList = [];
           if (STATE.perks.sweetSpot > 0) activePerksList.push('sweetSpot');
           if (STATE.perks.rarityBonus > 0) activePerksList.push('rarityBonus');
@@ -5875,6 +5991,10 @@ function openTraperoShop() {
           }
 
           const chosenPerk = activePerksList[Math.floor(Math.random() * activePerksList.length)];
+          // [0.089] Nombre de lo que se pierde, para decirlo en la frase del Trapero
+          const PERK_NOMBRES = { sweetSpot: 'Mano Firme', rarityBonus: 'Ojo de Cazador', discount: 'Regateador', slowerPistons: 'Pistones Lentos', goldStreak: 'Fondo de Bolsillo', extraTime: 'Hombre Tranquilo (-2 s de margen)', oidoClinico: 'Oído Clínico', shopStealFree: 'Ladrón', luckyLootChance: 'Tipo con Suerte', bonusMadera: 'Clásico (maestría de Madera)', bonusAcero: 'Mecánico (maestría de Acero)', bonusDigital: 'Informático (maestría Digital)', bonusVapor: 'Fontanero (maestría de Vapor)' };
+          const lostLevelled = !['shopStealFree', 'luckyLootChance', 'oidoClinico', 'extraTime'].includes(chosenPerk) && (STATE.perks[chosenPerk] || 0) > 1;
+          lostPerkText = (lostLevelled ? '1 nivel de ' : '') + (PERK_NOMBRES[chosenPerk] || chosenPerk);
           if (chosenPerk === 'shopStealFree') STATE.perks.shopStealFree = false;
           else if (chosenPerk === 'extraTime') STATE.perks.extraTime = Math.max(0, STATE.perks.extraTime - 2);
           else if (chosenPerk === 'luckyLootChance') STATE.perks.luckyLootChance = 0;
@@ -5886,7 +6006,7 @@ function openTraperoShop() {
           if (traperoModal) traperoModal.classList.add('hidden');
           audio.playUnlockFanfare('epico');
           updateUI();
-          showTraperoDealFeedback("Cambio de Trabajo", "Has perdido 1 modificación positiva al azar. Recibes +35 GP y +25% XP extra durante 10 cofres.");
+          showTraperoDealFeedback("Cambio de Trabajo", `Has perdido: ${lostPerkText}. Recibes +35 GP y +25% XP extra durante 10 cofres.`);
         } else if (deal.id === 'maestria_doble_filo') {
           const chestTypes = ['madera', 'acero', 'digital', 'vapor'];
           const maestriaType = chestTypes[Math.floor(Math.random() * chestTypes.length)];
@@ -6041,8 +6161,8 @@ function triggerLevelUpChoice() {
 
 const openChestBtn = document.getElementById('openChestBtn') || document.getElementById('openActiveChestBtn');
 
-if (openChestBtn) {
-  openChestBtn.addEventListener('click', () => {
+// [0.089] Lógica de apertura (antes dentro del clic del botón). La usan el segundo toque, la cerradura y la apertura automática.
+function openActiveChest() {
     const active = STATE.screenChests[STATE.activeChestIdx];
     if (!active) return;
 
@@ -6091,8 +6211,18 @@ if (openChestBtn) {
     else if (active.type.juego === 'pipe') startPipeGame();
     minigameInProgress = true;
 
-    const minigameModal = document.getElementById('minigameModal'); 
+    const minigameModal = document.getElementById('minigameModal');
     if (minigameModal) minigameModal.classList.remove('hidden');
+}
+
+if (openChestBtn) {
+  openChestBtn.addEventListener('click', () => {
+    const active = STATE.screenChests[STATE.activeChestIdx];
+    if (!active) return;
+    const hasTools = (STATE[active.type.consumible] || 0) >= getRequiredToolCount(active.rarity);
+    if (hasTools && !lockIsArmed(active) && !minigameInProgress) { audio.init(); armLock(active); return; }
+    lockArmedChest = null;
+    openActiveChest();
   });
 }
 
@@ -6293,15 +6423,15 @@ const KEY_TOAST_STYLE = {
   valves:   { icon: 'fa-faucet',      color: '#fb7185' }
 };
 function modalVisible(id) { const e = document.getElementById(id); return !!(e && !e.classList.contains('hidden')); }
-// Compara las llaves con la última lectura y apunta las ganancias (la tienda del Duende y la del Trapero no cuentan)
+// [0.089] Compara las llaves con la última lectura y apunta ganancias (+N) y gastos (-N). Solo la tienda del Duende queda excluida.
 function trackKeyGains() {
   const cur = { picks: STATE.picks, proPicks: STATE.proPicks, usb: STATE.usb, valves: STATE.valves };
   if (!keysBaseline) { keysBaseline = cur; return; }
-  const inShop = modalVisible('merchantModal') || modalVisible('traperoShopModal') || modalVisible('traperoModal') || specialShopOpen;
+  const inDuendeShop = modalVisible('merchantModal') || specialShopOpen;
   Object.keys(cur).forEach(k => {
     const d = cur[k] - keysBaseline[k];
-    if (d > 0 && !inShop) {
-      const ex = keyToastQueue.find(q => q.k === k);
+    if (d !== 0 && !inDuendeShop) {
+      const ex = keyToastQueue.find(q => q.k === k && Math.sign(q.d) === Math.sign(d));
       if (ex) ex.d += d; else keyToastQueue.push({ k, d });
     }
   });
@@ -6310,8 +6440,11 @@ function trackKeyGains() {
 function showKeyToast(k, d, done) {
   const host = uiHost();
   const st = KEY_TOAST_STYLE[k] || KEY_TOAST_STYLE.picks;
+  const neg = d < 0;
+  const cfgK = DATOS_JUEGO.AVISOS_LLAVES || {};
+  const visibleMs = keyToastQueue.length ? (cfgK.DURACION_RAPIDA_MS || 800) : (cfgK.DURACION_MS || 1450);
   const el = document.createElement('div');
-  // [0.088] Esquina superior derecha, justo bajo la fila de cartas (donde está el contador de cofres)
+  // Esquina superior derecha, justo bajo la fila de cartas (donde está el contador de cofres)
   let topPx = 150;
   try {
     const row = (document.getElementById('loopCounterDisplay') || document.getElementById('abilityAutoBtn') || {}).parentElement;
@@ -6320,23 +6453,43 @@ function showKeyToast(k, d, done) {
     const lc = document.getElementById('loopCounterDisplay');
     if (lc && !lc.classList.contains('hidden')) topPx = Math.round(lc.getBoundingClientRect().bottom - fr.top + 10);
   } catch (e) {}
-  el.style.cssText = `position:absolute;right:14px;top:${topPx}px;z-index:45;pointer-events:none;display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:12px;background:rgba(2,6,23,.88);border:2px solid ${st.color};color:${st.color};font:800 18px 'Outfit',sans-serif;opacity:0;transform:translateY(-14px);transition:opacity .25s ease,transform .25s ease`;
-  el.innerHTML = `<span>+${d}</span><i class="fa-solid ${st.icon}"></i>`;
+  // z-index 90: por encima de modales (z-50), banners y tiendas
+  el.style.cssText = `position:absolute;right:14px;top:${topPx}px;z-index:90;pointer-events:none;display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:12px;background:${neg ? 'rgba(69,10,10,.92)' : 'rgba(2,6,23,.88)'};border:2px solid ${neg ? '#ef4444' : st.color};color:${st.color};font:800 18px 'Outfit',sans-serif;opacity:0;transform:translateY(-14px);transition:opacity .25s ease,transform .25s ease`;
+  el.innerHTML = `<span>${neg ? '-' : '+'}${Math.abs(d)}</span><i class="fa-solid ${st.icon}"></i>`;
   host.appendChild(el);
-  audio.init(); audio.playKeyPickup();
+  audio.init(); if (neg) audio.playKeySpend(); else audio.playKeyPickup();
   requestAnimationFrame(() => { el.style.opacity = '1'; el.style.transform = 'translateY(0)'; });
-  setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateY(12px)'; }, 950);
-  setTimeout(() => { el.remove(); done(); }, 1250);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateY(12px)'; }, visibleMs);
+  setTimeout(() => { el.remove(); done(); }, visibleMs + 300);
 }
-// Los avisos salen cuando no hay ninguna pantalla encima (botín cerrado, diálogo cerrado...) y de uno en uno
+// Los avisos salen de uno en uno. Con ESPERAR_PANTALLA_LIBRE:true esperan a que no haya ninguna pantalla encima.
 setInterval(() => {
   if (keyToastBusy || !keyToastQueue.length) return;
-  const blockers = ['lootModal', 'dialogueModal', 'levelUpModal', 'merchantModal', 'traperoShopModal', 'traperoModal', 'unfairDealModal', 'gameOverModal', 'minigameModal'];
-  if (blockers.some(modalVisible) || document.getElementById('duendeReceiptModal') || document.getElementById('resumeGameModal') || document.getElementById('coverScreen')) return;
+  const cfgK = DATOS_JUEGO.AVISOS_LLAVES || {};
+  if (document.getElementById('resumeGameModal') || document.getElementById('coverScreen')) return;
+  if (cfgK.ESPERAR_PANTALLA_LIBRE) {
+    const blockers = ['lootModal', 'dialogueModal', 'levelUpModal', 'merchantModal', 'traperoShopModal', 'traperoModal', 'unfairDealModal', 'gameOverModal', 'minigameModal'];
+    if (blockers.some(modalVisible) || document.getElementById('duendeReceiptModal')) return;
+  }
   const q = keyToastQueue.shift();
   keyToastBusy = true;
   showKeyToast(q.k, q.d, () => { keyToastBusy = false; });
-}, 300);
+}, 250);
+
+// [0.089] Pitido suave mientras las cartas AUTO / DUENDE palpitan: uno solo para ambas, se calla en pantallas encima y tras unas repeticiones
+let cardBeepCount = 0;
+(function () {
+  const cfg = DATOS_JUEGO.PITIDO_CARTAS || {};
+  if (!cfg.ACTIVAR) return;
+  setInterval(() => {
+    const pulsing = ['abilityAutoBtn', 'abilitySummonDuendeBtn'].some(id => { const e = document.getElementById(id); return !!(e && e.classList.contains('card-pulse')); });
+    if (!pulsing) { cardBeepCount = 0; return; }
+    if (cardBeepCount >= (cfg.MAX_REPETICIONES || 5)) return;
+    if (!isGameIdle() || minigameInProgress || rotateBlocked || document.getElementById('coverScreen')) return;
+    if (!audio.ctx) return;
+    audio.playCardBeep(); cardBeepCount++;
+  }, cfg.CADA_MS || 2000);
+})();
 
 /* ==========================================================================
    [0.087b] PORTADA: se vuelve a mostrar al reiniciar la partida

@@ -167,6 +167,10 @@ html.texto-grande .sticky-note   { line-height: 1.25; }
 .card-pulse { animation: cardPulse 1.1s ease-in-out infinite; }
 @keyframes cardPulse { 0%,100% { transform: scale(1); filter: brightness(1); } 50% { transform: scale(1.06); filter: brightness(1.35); } }
 
+/* [0.089] Botón "Forzar cerradura" armado (primer toque dado): palpita con marco del color de la rareza */
+.btn-armed { animation: armedBtn 0.9s ease-in-out infinite; }
+@keyframes armedBtn { 0%,100% { box-shadow: 0 0 0 3px var(--armc,#fff), 0 0 10px 2px var(--armc,#fff); transform: scale(1); } 50% { box-shadow: 0 0 0 4px var(--armc,#fff), 0 0 22px 6px var(--armc,#fff); transform: scale(1.02); } }
+
 /* ==========================================================================
    [0.088] VERSIÓN VISIBLE, PANTALLA COMPLETA, AVISO DE GIRAR Y AJUSTES DE MÓVIL
    (todo lo de .narrow-layout solo se aplica con el marco estrecho: la versión de PC no cambia)
@@ -183,10 +187,14 @@ html.narrow-layout #multiChestGrid { margin-bottom: 30px; gap: 10px; }
 html.narrow-layout #multiChestGrid > button { flex: 1 1 0; max-width: 104px; min-height: 86px; padding: 8px 6px; }
 html.narrow-layout #multiChestGrid img { width: 58px !important; }
 html.narrow-layout #dialogueModal { padding-bottom: max(24px, 11dvh); }
-html.narrow-layout #merchantModal > div, html.narrow-layout #traperoShopModal > div { max-height: 92vh; max-height: 92dvh; padding: 14px; gap: 8px; }
-html.narrow-layout #shopItemsList, html.narrow-layout #recycleList, html.narrow-layout #traperoItemsList { flex: 1 1 auto; min-height: 0; max-height: none !important; }
-html.narrow-layout #shopItemsList > div, html.narrow-layout #recycleList > div { flex-direction: row !important; align-items: center !important; justify-content: space-between !important; padding: 8px 10px !important; gap: 10px !important; }
-html.narrow-layout #shopItemsList > div button, html.narrow-layout #recycleList > div button { width: auto !important; flex: none; padding: 8px 12px !important; }
-html.narrow-layout #traperoItemsList > div { padding: 8px 10px !important; }
-html.narrow-layout #shopItemsList > div > div:first-child, html.narrow-layout #recycleList > div > div:first-child { flex: 1 1 auto; min-width: 0; }
+#merchantModal > div, #traperoShopModal > div { max-height: 92vh; max-height: 92dvh; padding: 14px; gap: 8px; }
+#shopItemsList, #recycleList, #traperoItemsList { flex: 1 1 auto; min-height: 0; max-height: none !important; }
+#shopItemsList > div, #recycleList > div { flex-direction: row !important; align-items: center !important; justify-content: space-between !important; padding: 8px 10px !important; gap: 10px !important; }
+#shopItemsList > div button, #recycleList > div button { width: auto !important; flex: none; padding: 8px 12px !important; }
+#traperoItemsList > div { padding: 8px 10px !important; }
+#shopItemsList > div > div:first-child, #recycleList > div > div:first-child { flex: 1 1 auto; min-width: 0; }
 html.narrow-layout #merchantModal h3 + p { display: none; }
+/* [0.089] Factura de botín más ancha en pantalla ancha (en móvil ya ocupa casi todo el ancho) */
+html:not(.narrow-layout) #lootModal > div { max-width: 460px; }
+/* [0.089] Frase del Duende en el recibo: más grande y sin cursiva en móvil */
+html.narrow-layout .receipt-quote { font-size: 15px !important; line-height: 1.5 !important; font-style: normal !important; font-family: 'Outfit', sans-serif !important; color: #e9d5ff !important; }
