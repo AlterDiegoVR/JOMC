@@ -7,7 +7,7 @@
 
 const DATOS_JUEGO = {
   // [0.088] Versión visible en pantalla (esquina inferior central) para que las capturas la incluyan
-  VERSION: '0.090',
+  VERSION: '0.091',
 
   // [0.089] Avisos "+N" / "-N" de herramientas. ESPERAR_PANTALLA_LIBRE:true = recupera la idea anterior (esperar a que no haya
   // banners, tiendas ni diálogos encima). Con false salen siempre, por encima de todo.
@@ -27,9 +27,15 @@ const DATOS_JUEGO = {
   MODO_TEST: { LONGITUD: 6, SAL: 'JOMC-7f3a91c2', HUELLA: 'a24aa5d1538936c292ebb6434c149919f1996175a0a06724d40f9e2e3cf7bdbc' },
 
   // [0.090] Golpe de Game Over (antes de que hable el Trapero)
-  GAME_OVER: { GOLPE: { DURACION_MS: 2200, SACUDIDA_PX: 16, SACUDIDA_MS: 650 } },
+  GAME_OVER: { GOLPE: { DURACION_MS: 3000, SACUDIDA_PX: 16, SACUDIDA_MS: 650, CAIDA_MS: 320, ESCALONADO_MS: 90, PAUSA_PALABRAS_MS: 170 } },   // [0.091] 3 s; las letras caen escalonadas (el golpe final suena al caer la última)
 
   // [0.090] Ayudas de las primeras veces (por partida)
+  // [0.091] Ganzúa táctil: el anillo gira la aguja de forma RELATIVA (mueves el dedo en horizontal y gira lo mismo que la barra x SENSIBILIDAD_ANILLO; <1 = más fino)
+  // y avisa del punto dulce (real o falso por igual) con vibración (móvil) o un leve temblor de pantalla (PC) que crece al acercarse.
+  GANZUA_TACTIL: {
+    SENSIBILIDAD_ANILLO: 0.8,
+    HAPTICA: { ACTIVAR: true, ZONA_GRADOS: 35, PERIODO_MS: 110, ON_MIN_MS: 6, CURVA: 1.6, TEMBLOR_PX_MIN: 0.6, TEMBLOR_PX_MAX: 3.2 }
+  },
   AYUDAS: { GANZUA_TACTIL: { VECES: 3, ANILLO: 'ARRASTRA EL ANILLO', CENTRO: 'MANTÉN EL CENTRO' }, PISTONES_TOQUE: { VECES: 3, TEXTO: 'También puedes tocar cualquier punto de la pantalla para fijar el pistón.' } },
 
   // [0.090] Enfado del Duende al NO comprar en la tienda especial (cofres 85/88/90): sacudida (px, ms) y nivel de sonido 1-3
@@ -49,7 +55,7 @@ const DATOS_JUEGO = {
   },
 
   // [0.089b] Zumbido grave que muta despacio, solo cuando el cofre seleccionado es legendario (se calla al empezar el puzle y con el botón de silencio)
-  ZUMBIDO_LEGENDARIO: { ACTIVAR: true, VOLUMEN: 0.05, FUNDIDO_S: 1.0, BASE_HZ: 2300, MOTIVO: [0, 1, 0, 1], NOTA_MS: 140, PAUSA_MS: 90, SUBIDA_CENTS: 20, REPETICIONES: 30, VIBRATO_HZ: 5.2, VIBRATO_CENTS: 28, CORTE_HZ: 5200 },   // [0.090] micro-bucle agudo tipo mellotron: sube un poco en cada repetición y se reinicia (BASE_HZ, MOTIVO en semitonos, SUBIDA_CENTS por repetición)
+  ZUMBIDO_LEGENDARIO: { ACTIVAR: true, VOLUMEN: 0.04, FUNDIDO_S: 1.0, BASE_HZ: 2300, BATIDO_HZ: 3.5, TREMOLO_HZ: 1.7, TREMOLO_PROFUNDIDAD: 0.45, CORTE_HZ: 5200 },   // [0.091] zumbido agudo continuo (más agudo que una flauta) con temblor lento de volumen y leve batido entre dos tonos
 
   // [0.089b] Pantalla previa de las cartas: solo en pantallas táctiles (SOLO_TACTIL:false = también en PC)
   CARTAS_PANTALLA_PREVIA: { ACTIVAR: true, SOLO_TACTIL: true },
@@ -129,6 +135,13 @@ const DATOS_JUEGO = {
 
     // [0.090] Vapor animado del Cofre de Vapor: se borra el humo dibujado en el sprite (zona BORRAR, en píxeles del sprite) y salen bocanadas de la boquilla
     VAPOR_ANIMADO: { ACTIVAR: true, BORRAR: { x0: 20, y0: 0, x1: 38, y1: 7 }, BOQUILLA: { x: 23.5, y: 8 }, BOCANADAS: 9, CICLO_MS: 3000, ALTURA: 14, DERIVA: 6, TAM_MIN: 2, TAM_MAX: 6, COLOR: '236,228,205' },
+    // [0.091] Animaciones de los cofres (coordenadas en píxeles del sprite de 56x48). Se pintan sobre el sprite, igual en todas las rarezas.
+    ANIMACION_COFRES: {
+      ACTIVAR: true,
+      PISTONES: { ACTIVAR: true, X: [13, 21, 29, 37], PERIODOS_S: [2.6, 3.4, 2.1, 3.0], FASES: [0, 1.3, 2.2, 0.7], Y_MIN: 29, Y_MAX: 38 },
+      DIGITAL: { ACTIVAR: true, CAMBIO_MS: 1900, BARAJA_MS: 420, LEDS_PERIODOS_S: [1.1, 1.7, 2.3] },
+      AGUJA: { ACTIVAR: true, CICLO_S: 10, SUBIDA_S: 1.4, ANGULO_REPOSO: -45, ANGULO_PRESION: 46, TEMBLOR_GRADOS: 6 }
+    },
 
     // Zona de la cerradura por tipo de cofre, como fracción del sprite (x, y desde la esquina sup. izq.; r = radio × ancho)
     CERRADURAS: {
@@ -315,6 +328,7 @@ const DATOS_JUEGO = {
         epico: 5,
         legendario: 5
       },
+      VELOCIDAD_FPS_REFERENCIA: 90,   // [0.091] las velocidades de abajo se aplican como si la pantalla fuera a estos fps (movimiento por tiempo real, igual en 60/90/144 Hz). Sube = pistones más rápidos
       VELOCIDAD_BASE_NORMAL: 0.48,
       VELOCIDAD_BASE_DIFICIL: 0.70,
       VELOCIDAD_LEGENDARIA: 0.85,
@@ -626,7 +640,7 @@ const DATOS_JUEGO = {
     // [0.087] Mensajes del Trapero cuando se acaba una maldición (se elige uno al azar, sea cual sea el tier)
     // [0.090] El Trapero al quedarte sin recursos: la primera vez explica qué pasa; después, variantes cortas (editables)
     TRAPERO_GAME_OVER: {
-      PRIMERA: "Ya no te queda nada con lo que abrir otro cofre. Así termina esto: sin llaves, no hay cofre. Pero yo no dejo que un buen cliente se marche con las manos vacías. Te daré lo que necesitas para seguir. A cambio, la maldición se quedará contigo unos cuantos cofres. Piénsalo bien... {sonrisa}",
+      PRIMERA: "Sin llaves no hay cofre. Pero yo no dejo marchar a un buen cliente con las manos vacías: te doy lo que necesitas, y la maldición se queda contigo unos cuantos cofres. {sonrisa}",
       OTRAS: [
         "Otra vez con las manos vacías. Sabía que volverías. Mismo precio, misma maldición. {conspira}",
         "Se acabaron las llaves, y se acaba el juego. A no ser que me dejes ayudarte... otra vez. {codicia}",
@@ -877,6 +891,7 @@ const DATOS_JUEGO = {
 
   // 🟢 DECORACIONES DE SALA
   DECORACIONES_SALA: {
+    TOQUE_EXTRA_PX: 24,   // [0.091] radio de toque extra alrededor de cada adorno (antes 14)
     FILA_SUPERIOR_Y: 350,      // [0.087b] altura máx. (px) de la fila superior de adornos; la central y la inferior se reparten a igual distancia
     AMBIENTE_APAGADO_COFRES: 10, // [0.086] cofres que dura la celda a oscuras tras tocar el adorno "bombilla"
     // [0.086] Ambientes que puede dar un adorno secreto (tinte suave). 'normal' devuelve el color original.
@@ -1041,47 +1056,27 @@ class AudioEngine {
     if (who === 'EL TRAPERO') [196, 233, 175, 147].forEach((f, i) => { this._tone(f, f, 0.32, 'triangle', 0.13, i * 0.17); this._tone(f * 2, f * 2, 0.2, 'sine', 0.03, i * 0.17); });
     else [523, 659, 587, 784].forEach((f, i) => this._tone(f, f * 1.01, 0.2, 'sine', 0.09, i * 0.11));
   }
-  // [0.090] Zumbido legendario: micro-bucle corto tipo mellotron (3-4 notas muy agudas, por encima de una flauta, con intervalos incómodos)
-  // que se repite muchas veces; en cada repetición sube un poco el tono hasta que el ciclo se reinicia de golpe.
+  // [0.091] Zumbido legendario: tono agudo continuo (dos osciladores casi iguales, que "baten" levemente) con un temblor lento de volumen.
   setLegendHum(on, cfg) {
     if (!this.ctx) return;
     const c = this.ctx;
     if (!this._hum && on) {
       const g = c.createGain(); g.gain.value = 0;
       const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = cfg.CORTE_HZ || 5200; lp.Q.value = 0.7;
-      const lfo = c.createOscillator(), lg = c.createGain();   // oscilación de la "cinta" (vibrato lento)
-      lfo.frequency.value = cfg.VIBRATO_HZ || 5.2; lg.gain.value = cfg.VIBRATO_CENTS || 28; lfo.connect(lg); lfo.start();
-      lp.connect(g); g.connect(this.master || c.destination);
-      this._hum = { g, lp, lg, rep: 0, step: 0, nextT: 0 };
+      const depth = Math.max(0, Math.min(0.95, cfg.TREMOLO_PROFUNDIDAD != null ? cfg.TREMOLO_PROFUNDIDAD : 0.45));
+      const trem = c.createGain(); trem.gain.value = 1 - depth / 2;
+      const lfo = c.createOscillator(), lfoG = c.createGain();
+      lfo.frequency.value = cfg.TREMOLO_HZ || 1.7; lfoG.gain.value = depth / 2; lfo.connect(lfoG); lfoG.connect(trem.gain); lfo.start();
+      const f0 = cfg.BASE_HZ || 2300;
+      const o1 = c.createOscillator(), o2 = c.createOscillator(), g2 = c.createGain();
+      o1.type = 'sine'; o2.type = 'triangle'; o1.frequency.value = f0; o2.frequency.value = f0 + (cfg.BATIDO_HZ != null ? cfg.BATIDO_HZ : 3.5);
+      g2.gain.value = 0.5; o1.connect(trem); o2.connect(g2); g2.connect(trem); trem.connect(lp); lp.connect(g); g.connect(this.master || c.destination);
+      o1.start(); o2.start();
+      this._hum = { g };
     }
     const h = this._hum; if (!h) return;
     const vol = (!on || this.muted) ? 0 : (cfg.VOLUMEN || 0.04);
     h.g.gain.setTargetAtTime(vol, c.currentTime, (cfg.FUNDIDO_S || 1) / 3);
-    if (!on || this.muted) { h.nextT = 0; return; }
-    // Programa las notas con antelación (esta función se llama cada 250 ms)
-    const motif = cfg.MOTIVO || [0, 1, 0, 1], noteS = (cfg.NOTA_MS || 140) / 1000, gapS = (cfg.PAUSA_MS || 90) / 1000;
-    if (!h.nextT || h.nextT < c.currentTime) h.nextT = c.currentTime + 0.05;
-    while (h.nextT < c.currentTime + 0.7) {
-      const cents = h.rep * (cfg.SUBIDA_CENTS || 20) + motif[h.step] * 100;
-      const f = (cfg.BASE_HZ || 2300) * Math.pow(2, cents / 1200);
-      this._humNote(f, h.nextT, noteS, cfg);
-      h.nextT += noteS; h.step++;
-      if (h.step >= motif.length) { h.step = 0; h.nextT += gapS; h.rep++; if (h.rep >= (cfg.REPETICIONES || 30)) h.rep = 0; }
-    }
-  }
-  _humNote(f, t, dur, cfg) {
-    const c = this.ctx, h = this._hum;
-    const o1 = c.createOscillator(), o2 = c.createOscillator(), ng = c.createGain();
-    o1.type = 'triangle'; o2.type = 'sine';
-    o1.frequency.value = f; o2.frequency.value = f * 2.003;
-    h.lg.connect(o1.detune); h.lg.connect(o2.detune);
-    const g2 = c.createGain(); g2.gain.value = 0.35;
-    o1.connect(ng); o2.connect(g2); g2.connect(ng); ng.connect(h.lp);
-    ng.gain.setValueAtTime(0.0001, t);
-    ng.gain.linearRampToValueAtTime(1, t + 0.025);
-    ng.gain.exponentialRampToValueAtTime(0.001, t + dur + 0.05);
-    o1.start(t); o2.start(t); o1.stop(t + dur + 0.1); o2.stop(t + dur + 0.1);
-    o1.onended = () => { try { h.lg.disconnect(o1.detune); h.lg.disconnect(o2.detune); } catch (e) {} };
   }
   // [0.090] Swoosh leve al elegir otro cofre en el selector (barrido de ruido que sube)
   playSwoosh() {
@@ -2261,6 +2256,67 @@ function setChestUiOpacity(v) {
     const e = document.getElementById(id);
     if (e) { e.style.opacity = String(q); e.style.pointerEvents = q < 0.5 ? 'none' : ''; }
   });
+  const ob = document.getElementById('openChestBtn'); if (ob) ob.style.pointerEvents = q < 0.5 ? 'none' : '';   // [0.091] la tarjeta deja pasar los toques; solo el botón los recoge
+}
+// [0.091] Fuente hexadecimal 5x7 para la pantalla del Arca Digital
+const HEX_FONT = {
+  '0': ['01110','10001','10011','10101','11001','10001','01110'], '1': ['00100','01100','00100','00100','00100','00100','01110'],
+  '2': ['01110','10001','00001','00010','00100','01000','11111'], '3': ['11110','00001','00001','01110','00001','00001','11110'],
+  '4': ['00010','00110','01010','10010','11111','00010','00010'], '5': ['11111','10000','11110','00001','00001','10001','01110'],
+  '6': ['00110','01000','10000','11110','10001','10001','01110'], '7': ['11111','00001','00010','00100','01000','01000','01000'],
+  '8': ['01110','10001','10001','01110','10001','10001','01110'], '9': ['01110','10001','10001','01111','00001','00010','01100'],
+  'A': ['01110','10001','10001','11111','10001','10001','10001'], 'B': ['11110','10001','10001','11110','10001','10001','11110'],
+  'C': ['01110','10001','10000','10000','10000','10001','01110'], 'D': ['11110','10001','10001','10001','10001','10001','11110'],
+  'E': ['11111','10000','10000','11110','10000','10000','11111'], 'F': ['11111','10000','10000','11110','10000','10000','10000']
+};
+const HEX_CHARS = '0123456789ABCDEF';
+function seededHex(seed, n) { let h = (seed * 2654435761) >>> 0, out = ''; for (let i = 0; i < n; i++) { h = (Math.imul(h ^ (h >>> 15), 2246822519) + 374761393) >>> 0; out += HEX_CHARS[h % 16]; } return out; }
+function drawChestAnim(typeId, R, aco, ctx, ox, oy, px) {
+  const t = Date.now() / 1000;
+  if (typeId === 'piston' && aco.PISTONES && aco.PISTONES.ACTIVAR) {
+    const P = aco.PISTONES;
+    P.X.forEach((X, i) => {
+      const k = (Math.sin(t * Math.PI * 2 / P.PERIODOS_S[i] + P.FASES[i]) + 1) / 2;
+      const h = Math.round(P.Y_MIN + (P.Y_MAX - P.Y_MIN) * k);
+      R(X, 29, 4, 12, '#1f1d2b');                         // hueco vacío
+      R(X, h, 1, 1, '#8a7f6a'); R(X + 1, h, 3, 1, '#b5a888');   // cabeza del pistón
+      R(X, h + 1, 1, 40 - h, '#8a7f6a'); R(X + 1, h + 1, 3, 40 - h, '#5a5768');   // cuerpo
+    });
+  } else if (typeId === 'cyber' && aco.DIGITAL && aco.DIGITAL.ACTIVAR) {
+    const D = aco.DIGITAL, now = Date.now();
+    const cyc = Math.floor(now / D.CAMBIO_MS), ph = now % D.CAMBIO_MS;
+    const target = seededHex(cyc + 11, 4);
+    R(12, 15, 32, 9, '#0a0910');                            // fondo de la pantalla
+    for (let i = 0; i < 4; i++) {
+      const settle = 120 + i * (D.BARAJA_MS - 120) / 3;
+      const scr = ph < settle;
+      const ch = scr ? seededHex(Math.floor(now / 55) * 7 + i * 31, 1) : target[i];
+      const col = scr ? '#3f8a8a' : '#5aa1a0';
+      HEX_FONT[ch].forEach((row, ry) => { for (let rx = 0; rx < 5; rx++) if (row[rx] === '1') R(15 + i * 6 + rx, 15 + ry, 1, 1, col); });
+    }
+    if (Math.floor(now / 450) % 2 === 0) R(39, 22, 4, 1, '#5aa1a0');   // cursor parpadeante
+    const LED = ['#b03a3a', '#5fd08a', '#5a5768', '#c9983a', '#1a1a26'];
+    [42, 44, 46].forEach((X, i) => {
+      const col = LED[Math.floor(t / D.LEDS_PERIODOS_S[i] + i * 1.7) % LED.length];
+      R(X, 30, 1, 1, col);
+      if (col !== '#1a1a26' && col !== '#5a5768') {
+        ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.22; ctx.fillStyle = col;
+        ctx.beginPath(); ctx.arc(ox + (X + 0.5) * px, oy + 30.5 * px, px * 2.2, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+      }
+    });
+  } else if (typeId === 'hydraulic' && aco.AGUJA && aco.AGUJA.ACTIVAR) {
+    const A = aco.AGUJA, tt = t % A.CICLO_S;
+    let ang;
+    if (tt < A.SUBIDA_S) { const u = tt / A.SUBIDA_S, e = 1 + 2.2 * Math.pow(u - 1, 3) + 1.2 * Math.pow(u - 1, 2); ang = A.ANGULO_REPOSO + (A.ANGULO_PRESION - A.ANGULO_REPOSO) * e; }
+    else ang = A.ANGULO_PRESION + A.TEMBLOR_GRADOS * Math.sin((tt - A.SUBIDA_S) * 2.9) * Math.min(1, (tt - A.SUBIDA_S) / 1.2) + 1.8 * Math.sin(tt * 14);
+    [[28, 20], [29, 19], [30, 18], [31, 17]].forEach(([x, y]) => R(x, y, 1, 1, '#dccfae'));   // borra la aguja original
+    const rad = ang * Math.PI / 180, dx = Math.sin(rad), dy = -Math.cos(rad), seen = {};
+    for (let sLen = 0.6; sLen <= 5.6; sLen += 0.35) {
+      const x = Math.floor(27.5 + dx * sLen), y = Math.floor(21.5 + dy * sLen), key = x + ',' + y;
+      if (!seen[key]) { seen[key] = 1; R(x, y, 1, 1, '#0a0910'); }
+    }
+    R(27, 21, 1, 1, '#b03a3a');                              // eje rojo
+  }
 }
 function decorFadeAlpha(d) {
   if (!d.fading) return 1;
@@ -2601,6 +2657,13 @@ function renderRoom() {
         ctx.fillRect(x + w * 0.35, y - w * 0.7, w * 0.6, w * 0.6);
       }
     }
+    // [0.091] Animaciones de cofre: pistones (Acero), pantalla y leds (Digital), aguja de presión (Vapor)
+    const aco = g.ANIMACION_COFRES;
+    if (aco && aco.ACTIVAR && im.naturalWidth === 56) {
+      const pxs = dw / im.naturalWidth, oxs = ccx - dw / 2, oys = ccy - dh / 2 + bob;
+      const R = (X, Y, W, H, col) => { const x0 = Math.round(oxs + X * pxs), y0 = Math.round(oys + Y * pxs); ctx.fillStyle = col; ctx.fillRect(x0, y0, Math.round(oxs + (X + W) * pxs) - x0, Math.round(oys + (Y + H) * pxs) - y0); };
+      drawChestAnim(activeChest.type.id, R, aco, ctx, oxs, oys, pxs);
+    }
 
     // [0.086] Cerradura táctil (solo pantalla ancha)
     const tl = g.TOCAR_CERRADURA || {};
@@ -2690,7 +2753,7 @@ if (canvas) {
     }
 
     for (let decor of STATE.roomDecorations) {
-      if (!decor.used && !decor.fading && Math.hypot(clickX - decor.x, clickY - decorY(decor)) < decor.size + 14) {
+      if (!decor.used && !decor.fading && Math.hypot(clickX - decor.x, clickY - decorY(decor)) < decor.size + (DATOS_JUEGO.DECORACIONES_SALA.TOQUE_EXTRA_PX != null ? DATOS_JUEGO.DECORACIONES_SALA.TOQUE_EXTRA_PX : 14)) {
         decor.used = true;
         audio.init(); audio.playDecorTap();   // [0.087b] sonido al pulsar un adorno
         triggerSecretDecorationReward(decor);
@@ -3177,6 +3240,7 @@ function triggerLootExplosion() {
   // 🟢 CERROJO ANTI-DUPLICACIÓN
   if (isLootProcessing) return;
   isLootProcessing = true;
+  humHoldChest = STATE.screenChests[STATE.activeChestIdx] || null;   // [0.091] sin zumbido en la pantalla de botín
 
   try {
     minigameInProgress = false;
@@ -4110,6 +4174,7 @@ function stopMinigameTimer() {
 
 function handleFailure(toolName = 'picks', reasonText = "Fallo en el puzle.") {
   if (TEST_SERIES.active) { testPuzzleResult(false); return; }   // [0.090] Modo test: no se gasta nada, pasa al siguiente puzle
+  humHoldChest = null;   // [0.091] tras fallar, el cofre sigue ahí y el zumbido puede volver
   if (puzzleStat) { statsPuzzle(puzzleStat, false); puzzleStat = null; }   // [0.090]
   minigameInProgress = false;
   stopMinigameTimer();
@@ -4193,50 +4258,79 @@ function whenBannerClosed(cb) {
   tick();
 }
 function runGameOverStrike(done) {
+  // [0.091] Letras pixel art con volumen (bandas de rojo, borde negro grueso, brillos) que CAEN y rebotan; después gotean.
   const cfg = (DATOS_JUEGO.GAME_OVER || {}).GOLPE || {};
   const host = uiHost();
   const ov = document.createElement('div');
   ov.id = 'gameOverStrike';
-  ov.style.cssText = 'position:absolute;inset:0;z-index:10030;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;pointer-events:auto;opacity:0;transition:opacity .12s ease-out';
+  ov.style.cssText = 'position:absolute;inset:0;z-index:10030;background:rgba(0,0,0,.88);pointer-events:auto;opacity:0;transition:opacity .12s ease-out';
   const cv = document.createElement('canvas');
+  cv.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;image-rendering:pixelated';
   ov.appendChild(cv); host.appendChild(ov);
-  const lines = ['GAME', 'OVER'], uW = 23, uH = 7 * 2 + 3 + 14;
-  const frW = host.clientWidth || 390;
-  const sc = Math.max(4, Math.floor((frW * 0.82) / uW));
-  cv.width = uW * sc; cv.height = uH * sc;
-  cv.style.cssText = 'image-rendering:pixelated;max-width:92%;height:auto';
+  const W = host.clientWidth || 390, H = host.clientHeight || 700;
+  cv.width = W; cv.height = H;
   const c2 = cv.getContext('2d');
-  // Gotas: columnas de la base de cada línea con longitud aleatoria (se calculan una vez)
-  const px = [], drips = [];
-  lines.forEach((word, li) => {
-    const y0 = li * 10;
+  const uW = 23, sc = Math.max(4, Math.floor((W * 0.82) / uW));
+  const ox = Math.round((W - uW * sc) / 2), oy = Math.round(H * 0.36 - 8.5 * sc);
+  const fallMs = cfg.CAIDA_MS || 320, stagger = cfg.ESCALONADO_MS || 90, wordGap = cfg.PAUSA_PALABRAS_MS || 170;
+  const ROW_COL = ['#ff6a5c', '#ff3a3a', '#d6142c', '#d6142c', '#b00d22', '#8a0818', '#6a0012'];
+  const letters = [];
+  ['GAME', 'OVER'].forEach((word, li) => {
     word.split('').forEach((ch, ci) => {
-      const g = PIXEL_FONT[ch], x0 = ci * 6;
-      g.forEach((row, ry) => row.split('').forEach((v, rx) => { if (v === '1') px.push([x0 + rx, y0 + ry]); }));
-      for (let rx = 0; rx < 5; rx++) if (g[6][rx] === '1' && Math.random() < 0.55) drips.push({ x: x0 + rx, y: y0 + 7, len: 2 + Math.floor(Math.random() * 7), delay: Math.random() * 0.35 });
+      const g = PIXEL_FONT[ch], set = new Set(), px = [];
+      g.forEach((row, ry) => row.split('').forEach((v, rx) => { if (v === '1') { set.add(rx + ',' + ry); px.push([rx, ry]); } }));
+      const drips = [];
+      for (let rx = 0; rx < 5; rx++) if (g[6][rx] === '1' && Math.random() < 0.55) drips.push({ x: rx, len: 2 + Math.floor(Math.random() * 7), delay: Math.random() * 0.35 });
+      const start = li * (3 * stagger + fallMs * 0.25 + wordGap) + ci * stagger;
+      letters.push({ px, set, drips, x0: ci * 6, y0: li * 10, start, land: start + fallMs, dist: oy + (li * 10 + 8) * sc });
     });
   });
-  audio.init(); try { audio.playGameOverStrike(); } catch (e) {}
-  screenShake(cfg.SACUDIDA_PX || 16, cfg.SACUDIDA_MS || 650);
-  flashScreen('rgba(200,0,20,.55)', 600);
+  const lastLand = letters[letters.length - 1].land, midLand = letters[3].land;
+  const total = cfg.DURACION_MS || 3000;
+  ov.style.opacity = '0';
   requestAnimationFrame(() => { ov.style.opacity = '1'; });
-  const total = cfg.DURACION_MS || 2200, t0 = performance.now();
+  audio.init();
+  setTimeout(() => { screenShake(Math.round((cfg.SACUDIDA_PX || 16) * 0.4), 220); }, midLand);
+  setTimeout(() => {   // golpe final: sacudida, destello rojo y sonido grave
+    try { audio.playGameOverStrike(); } catch (e) {}
+    screenShake(cfg.SACUDIDA_PX || 16, cfg.SACUDIDA_MS || 650);
+    flashScreen('rgba(200,0,20,.55)', 600);
+  }, lastLand);
+  const t0 = performance.now();
+  const fr = v => Math.round(v);
   (function frame() {
     const t = performance.now() - t0;
-    c2.clearRect(0, 0, cv.width, cv.height);
-    const slam = Math.min(1, t / 160);   // golpe: el texto entra grande y encaja
-    c2.save(); c2.translate(cv.width / 2, cv.height * 0.3); const k = 1 + (1 - slam) * 0.5; c2.scale(k, k); c2.translate(-cv.width / 2, -cv.height * 0.3);
-    const gk = Math.min(1, Math.max(0, (t - 200) / 1300));   // las gotas crecen
-    const draw = (col, off) => {
-      c2.fillStyle = col;
-      px.forEach(([x, y]) => c2.fillRect((x + off) * sc, (y + off) * sc, sc, sc));
-      drips.forEach(d => { const L = Math.floor(d.len * Math.min(1, Math.max(0, (gk - d.delay) / (1 - d.delay)))); for (let j = 0; j < L; j++) c2.fillRect((d.x + off) * sc, (d.y + j + off) * sc, sc, sc); });
-    };
-    draw('#000', 0.35);          // sombra
-    draw('#b3001b', 0);          // sangre
-    c2.fillStyle = '#e0152f';    // brillo de la cara superior
-    px.forEach(([x, y]) => { if (y % 10 === 0 || y % 10 === 1) c2.fillRect(x * sc, y * sc, sc, sc * 0.4); });
-    c2.restore();
+    c2.clearRect(0, 0, W, H);
+    letters.forEach(L => {
+      const p = (t - L.start) / fallMs;
+      if (p < 0) return;
+      let dy = 0;
+      if (p < 1) dy = -L.dist * (1 - p * p);
+      else { const b = (t - L.land) / 260; if (b < 1) dy = -Math.abs(Math.sin(b * Math.PI * 1.5)) * sc * 0.9 * (1 - b); }
+      const X = u => fr(ox + (L.x0 + u) * sc), Y = u => fr(oy + dy + (L.y0 + u) * sc), S = u => Math.max(1, fr(u * sc));
+      // 1) borde negro grueso
+      c2.fillStyle = '#000';
+      L.px.forEach(([x, y]) => c2.fillRect(X(x - 0.55), Y(y - 0.55), S(2.1), S(2.1)));
+      // 2) gotas (tras caer): borde, cuerpo oscuro, brillo y gota redonda al final
+      const gk = Math.min(1, Math.max(0, (t - L.land - 150) / 1100));
+      L.drips.forEach(d => {
+        const len = Math.floor(d.len * Math.min(1, Math.max(0, (gk - d.delay) / (1 - d.delay))));
+        if (len <= 0) return;
+        c2.fillStyle = '#000'; c2.fillRect(X(d.x + 0.05), Y(7 - 0.4), S(0.9), S(len + 0.4 + 0.45));
+        c2.fillStyle = '#a10018'; c2.fillRect(X(d.x + 0.2), Y(7 - 0.4), S(0.6), S(len + 0.2));
+        c2.fillStyle = '#e03a48'; c2.fillRect(X(d.x + 0.2), Y(7), S(0.18), S(len));
+        c2.fillStyle = '#000'; c2.fillRect(X(d.x + 0.05), Y(7 + len - 0.3), S(0.9), S(0.9));
+        c2.fillStyle = '#c0001e'; c2.fillRect(X(d.x + 0.17), Y(7 + len - 0.2), S(0.66), S(0.66));
+      });
+      // 3) relleno en bandas + brillos y sombras de borde
+      L.px.forEach(([x, y]) => { c2.fillStyle = ROW_COL[y]; c2.fillRect(X(x), Y(y), S(1) + 1, S(1) + 1); });
+      L.px.forEach(([x, y]) => {
+        if (!L.set.has(x + ',' + (y - 1))) { c2.fillStyle = '#ffc7b8'; c2.fillRect(X(x), Y(y), S(1) + 1, S(0.26)); }
+        if (!L.set.has((x - 1) + ',' + y)) { c2.fillStyle = '#ff9a8a'; c2.fillRect(X(x), Y(y), S(0.2), S(1) + 1); }
+        if (!L.set.has(x + ',' + (y + 1))) { c2.fillStyle = '#3d000b'; c2.fillRect(X(x), Y(y + 0.72), S(1) + 1, S(0.28) + 1); }
+        if (!L.set.has((x + 1) + ',' + y)) { c2.fillStyle = '#58000d'; c2.fillRect(X(x + 0.8), Y(y), S(0.2) + 1, S(1) + 1); }
+      });
+    });
     if (t < total) requestAnimationFrame(frame);
     else { ov.style.transition = 'opacity .35s ease-in'; ov.style.opacity = '0'; setTimeout(() => { ov.remove(); done(); }, 380); }
   })();
@@ -4948,6 +5042,7 @@ function startTumblerGame() {
   layoutTumblerLines();
   requestAnimationFrame(layoutTumblerLines);
   setTimeout(layoutTumblerLines, 120);
+  tumblerPinsLastTs = null;
   animateSequentialTumblerPins();
 }
 
@@ -4970,14 +5065,20 @@ function updateSequentialPinLights() {
   });
 }
 
-function animateSequentialTumblerPins() {
+let humHoldChest = null;   // [0.091] cofre legendario para el que el zumbido se calló al empezar el puzle; no vuelve en el botín
+let tumblerPinsLastTs = null;
+function animateSequentialTumblerPins(ts) {
   const tumblerContainer = document.getElementById('tumblerContainer');
   if (!tumblerContainer || tumblerContainer.classList.contains('hidden')) return;
   if (tumblerPhase !== 'pins') return;
 
+  if (typeof ts !== 'number') ts = performance.now();
+  const dtPins = tumblerPinsLastTs === null ? 0 : Math.min(0.05, (ts - tumblerPinsLastTs) / 1000);   // [0.091] tiempo real
+  tumblerPinsLastTs = ts;
+  const fpsRef = DATOS_JUEGO.MINIJUEGOS.TUMBLER.VELOCIDAD_FPS_REFERENCIA || 90;
   tumblerPinsData.forEach((pin, i) => {
     if (!pin.locked) {
-      pin.posY += pin.speed;
+      pin.posY += pin.speed * dtPins * fpsRef;
       if (pin.posY >= 82 || pin.posY <= 8) pin.speed *= -1;
       const notch = document.getElementById(`pinNotch-${i}`);
       if (notch) notch.style.top = `${pin.posY}%`;
@@ -6685,6 +6786,7 @@ function openActiveChest() {
     else if (active.type.juego === 'hack') startHackGame();
     else if (active.type.juego === 'pipe') startPipeGame();
     minigameInProgress = true;
+    humHoldChest = active;   // [0.091] el zumbido se calla con este cofre hasta fallar o hasta que salga otro
 
     // [0.090] Herramientas avanzadas (no madera): se pagan AL ENTRAR al puzle (se ve el "-N" al empezar). Ganar no vuelve a cobrar; fallar tampoco; el Escudo las devuelve.
     puzzleToolPaid = null; puzzleStat = active.type.juego;   // [0.090]
@@ -6856,6 +6958,7 @@ function flashScreen(color = 'rgba(255,0,0,.4)', ms = 500) {
 function modalVisible(id) { const e = document.getElementById(id); return !!(e && !e.classList.contains('hidden')); }
 // [0.089] Compara las llaves con la última lectura y apunta ganancias (+N) y gastos (-N). Solo la tienda del Duende queda excluida.
 function trackKeyGains() {
+  if (TEST_SERIES.active) { keysBaseline = null; keyToastQueue.length = 0; return; }   // [0.091] el Modo test no genera avisos de llaves
   const cur = { picks: STATE.picks, proPicks: STATE.proPicks, usb: STATE.usb, valves: STATE.valves };
   if (!keysBaseline) { keysBaseline = cur; return; }
   const inDuendeShop = modalVisible('merchantModal') || specialShopOpen;
@@ -6916,7 +7019,7 @@ let cardBeepCount = 0;
   setInterval(() => {
     if (!audio.ctx) return;
     const a = STATE.screenChests && STATE.screenChests[STATE.activeChestIdx];
-    const on = !!(a && a.rarity && a.rarity.id === 'legendario') && !minigameInProgress && !modalVisible('minigameModal') && !modalVisible('gameOverModal') && !document.getElementById('coverScreen');
+    const on = !!(a && a.rarity && a.rarity.id === 'legendario') && a !== humHoldChest && !isLootProcessing && !minigameInProgress && !modalVisible('minigameModal') && !modalVisible('gameOverModal') && !document.getElementById('coverScreen');
     audio.setLegendHum(on, cfg);
   }, 250);
 })();
@@ -7114,15 +7217,17 @@ function testKeyHash(seq, salt) {
       <div class="bg-slate-900 border-2 border-amber-500/50 rounded-3xl p-5 w-full max-w-xs shadow-2xl flex flex-col gap-2.5">
         <h3 class="text-center text-2xl font-black text-amber-300 font-retro tracking-wide mb-1"><i class="fa-solid fa-gear"></i> OPCIONES</h3>
         ${b('optStats', 'fa-chart-simple', 'ESTADÍSTICAS', 'bg-gradient-to-r from-emerald-800 to-emerald-700 text-white')}
-        ${b('optNew', 'fa-rotate-left', 'EMPEZAR DE NUEVO', 'bg-rose-950/80 active:bg-rose-900 text-rose-200')}
+        ${b('optList', 'fa-trophy', 'LOGROS', 'bg-gradient-to-r from-amber-800 to-amber-700 text-white')}
         ${b('optAch', 'fa-trophy', 'RESETEAR LOGROS')}
         ${b('optCnt', 'fa-eraser', 'RESETEAR CONTADORES')}
+        ${b('optNew', 'fa-rotate-left', 'EMPEZAR DE NUEVO', 'bg-rose-950/80 active:bg-rose-900 text-rose-200')}
         ${b('optTest', 'fa-flask', 'MODO TEST', 'bg-slate-950 text-slate-400')}
         <button id="optClose" class="mt-1 w-full py-2.5 bg-slate-800 active:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl cursor-pointer">Cerrar</button>
       </div>`;
     const q = id => o.querySelector('#' + id);
     q('optClose').addEventListener('click', () => close('optionsModal'));
     q('optStats').addEventListener('click', () => { close('optionsModal'); openStatsBoard(); });
+    q('optList').addEventListener('click', () => { close('optionsModal'); openAchievementsList(); });
     q('optNew').addEventListener('click', () => { close('optionsModal'); showResetConfirm(); });
     q('optAch').addEventListener('click', () => { close('optionsModal'); confirmBox('¿RESETEAR LOGROS?', 'Se borrarán los logros desbloqueados en este navegador. La partida no se toca.', 'SÍ, BORRAR LOGROS', () => { clearAchievements(); showPersistentFeedback('🏆 Logros reseteados.'); }); });
     q('optCnt').addEventListener('click', () => { close('optionsModal'); confirmBox('¿RESETEAR CONTADORES?', 'Se pondrá a cero el apartado ACUMULADO de las estadísticas. La partida no se toca.', 'SÍ, PONER A CERO', () => { lifeStats = blankStats(); lifeStatsDirty = true; saveLifeStats(); showPersistentFeedback('🧮 Contadores acumulados a cero.'); }); });
@@ -7162,6 +7267,28 @@ function testKeyHash(seq, salt) {
       </div>`;
     o.querySelector('#statsClose').addEventListener('click', () => close('statsModal'));
     [0.25, 0.7, 1.2].forEach(d => setTimeout(() => { if (document.getElementById('statsModal')) try { audio.playChalk(); } catch (e) {} }, d * 1000));
+  };
+
+  // ---- [0.091] lista de logros desbloqueados ----
+  window.openAchievementsList = function () {
+    audio.init(); try { audio.playUiClick(); } catch (e) {}
+    const o = overlay('achievementsModal', 10020);
+    o.className += ' bg-slate-950/90 backdrop-blur-md';
+    const all = (DATOS_JUEGO.LOGROS && DATOS_JUEGO.LOGROS.LISTA) || [];
+    const got = all.filter(l => achievementsUnlocked[l.id]).sort((a, b) => achievementsUnlocked[a.id] - achievementsUnlocked[b.id]);
+    const rowsHtml = got.length ? got.map(l => `
+        <div style="display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:12px;background:rgba(2,6,23,.7);border:1px solid rgba(245,158,11,.35)">
+          <div style="font-size:26px;line-height:1">${l.icono || '🏆'}</div>
+          <div style="min-width:0"><div class="font-retro" style="color:#fcd34d;font-size:19px;letter-spacing:.06em;line-height:1.1">${l.titulo}</div><div style="color:#cbd5e1;font-size:12px;line-height:1.25">${l.descripcion || ''}</div></div>
+        </div>`).join('') : `<div style="text-align:center;color:#94a3b8;font-size:13px;padding:18px 6px">Aún no has desbloqueado ningún logro.</div>`;
+    o.innerHTML = `
+      <div class="bg-slate-900 border-2 border-amber-500/50 rounded-3xl p-5 w-full max-w-xs shadow-2xl flex flex-col gap-2.5" style="max-height:86vh">
+        <h3 class="text-center text-2xl font-black text-amber-300 font-retro tracking-wide"><i class="fa-solid fa-trophy"></i> LOGROS</h3>
+        <div style="text-align:center;color:#94a3b8;font-size:11px;margin-top:-4px">${got.length} desbloqueado${got.length === 1 ? '' : 's'}</div>
+        <div style="display:flex;flex-direction:column;gap:7px;overflow-y:auto;min-height:0">${rowsHtml}</div>
+        <button id="achClose" class="mt-1 w-full py-2.5 bg-slate-800 active:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl cursor-pointer">Cerrar</button>
+      </div>`;
+    o.querySelector('#achClose').addEventListener('click', () => close('achievementsModal'));
   };
 
   // ---- clave de flechas del Modo test ----
@@ -7274,7 +7401,7 @@ function testKeyHash(seq, salt) {
     if (any) {
       statsPaused = true; statsGoldPrev = null;   // una partida con trucos no cuenta para las estadísticas
       Object.keys(tmVals).forEach(k => { if (k !== 'pType' && k !== 'pVar') tmVals[k] = (k === 'clearAch') ? false : null; });
-      generateScreenChests(); updateUI();
+      generateScreenChests(); keysBaseline = null; keyToastQueue.length = 0; updateUI();   // [0.091] sin avisos por los ajustes de test
       showPersistentFeedback('🛠️ [MODO TEST] Ajustes aplicados. Esta partida ya no cuenta para las estadísticas.');
     }
     return any;
@@ -7396,6 +7523,7 @@ function testKeyHash(seq, salt) {
     STATE.screenChests = s.chests; STATE.activeChestIdx = s.idx;
     autosaveEnabled = s.autosave; statsPaused = s.statsPaused; statsGoldPrev = null;
     const bar = document.getElementById('testSeriesBar'); if (bar) bar.remove();
+    keysBaseline = null; keyToastQueue.length = 0;   // [0.091] al volver, sin avisos de llaves
     updateChestSelectionUI(); updateUI();
   };
 })();
@@ -7411,6 +7539,7 @@ function testKeyHash(seq, salt) {
   const dial = glow.parentElement;
   dial.style.touchAction = 'none'; dial.style.userSelect = 'none'; dial.style.position = 'relative';
   const roles = {};   // pointerId -> 'ring' | 'center'
+  const ringDrag = {};   // pointerId -> { x0, a0 } (arrastre relativo del anillo)
   let hintRing = null, hintCenter = null;
   const fake = { preventDefault() {} };
   function geom(e) {
@@ -7432,17 +7561,23 @@ function testKeyHash(seq, salt) {
     const g = geom(e);
     const role = g.dist < 0.58 ? 'center' : 'ring';
     roles[e.pointerId] = role;
+    if (role === 'ring') ringDrag[e.pointerId] = { x0: e.clientX, a0: lpState.angle };   // [0.091] control relativo
     try { dial.setPointerCapture(e.pointerId); } catch (x) {}
     e.preventDefault();
     if (role === 'center') { startTension(fake); if (hintCenter) { hintCenter.remove(); hintCenter = null; } }
-    else { setAngle(clampAng(g.ang)); if (hintRing) { hintRing.remove(); hintRing = null; } }
+    else { if (hintRing) { hintRing.remove(); hintRing = null; } }
   });
   dial.addEventListener('pointermove', e => {
     if (roles[e.pointerId] !== 'ring') return;
-    setAngle(clampAng(geom(e).ang));
+    const dr = ringDrag[e.pointerId]; if (!dr) return;
+    // [0.091] grados por píxel = los de la barra (170° a lo ancho de la barra) x SENSIBILIDAD_ANILLO
+    const sl = document.getElementById('angleSlider');
+    const slW = (sl && sl.getBoundingClientRect().width) || (dial.getBoundingClientRect().width * 1.6) || 250;
+    const sens = ((DATOS_JUEGO.GANZUA_TACTIL || {}).SENSIBILIDAD_ANILLO) || 0.8;
+    setAngle(dr.a0 + (e.clientX - dr.x0) * (170 / slW) * sens);
   });
   const up = e => {
-    const role = roles[e.pointerId]; delete roles[e.pointerId];
+    const role = roles[e.pointerId]; delete roles[e.pointerId]; delete ringDrag[e.pointerId];
     if (role === 'center') stopTension(fake);
   };
   ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => dial.addEventListener(ev, up));
@@ -7467,4 +7602,30 @@ function testKeyHash(seq, salt) {
       <div style="position:absolute;left:50%;top:50%;width:112px;height:112px;margin:-56px 0 0 -56px;border:3px dashed #34d399;border-radius:50%;animation:cardPulse 1.1s ease-in-out infinite"></div>
       <div style="position:absolute;left:0;right:0;top:50%;margin-top:34px;text-align:center;font:700 10px Outfit,sans-serif;color:#34d399;text-shadow:0 1px 2px #000">${hc.CENTRO}</div>`);
   };
+
+  // [0.091] Háptica del punto dulce: la intensidad sube al acercarse al punto dulce MÁS CERCANO (real o falso, sin distinguirlos).
+  const hapCfg = (DATOS_JUEGO.GANZUA_TACTIL || {}).HAPTICA || {};
+  if (hapCfg.ACTIVAR) {
+    const touchVib = !!(navigator.vibrate && window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+    let wasVib = false;
+    setInterval(() => {
+      const box = document.getElementById('lockpickContainer');
+      const active = !!(box && !box.classList.contains('hidden')) && minigameInProgress && !lpState.isBreaking && !lpState.isCompleted;
+      if (!active) { if (wasVib) { try { navigator.vibrate(0); } catch (e) {} wasVib = false; } return; }
+      let d = Math.abs(lpState.angle - lpState.sweetSpot);
+      (lpState.decoySpots || []).forEach(ds => { d = Math.min(d, Math.abs(lpState.angle - ds)); });
+      const zone = hapCfg.ZONA_GRADOS || 35, tol = lpState.tolerance || 0;
+      let r = d <= tol ? 1 : Math.max(0, 1 - (d - tol) / zone);
+      r = Math.pow(r, hapCfg.CURVA || 1.6);
+      if (r < 0.03) { if (wasVib) { try { navigator.vibrate(0); } catch (e) {} wasVib = false; } return; }
+      const per = hapCfg.PERIODO_MS || 110;
+      if (touchVib) {
+        const on = Math.round((hapCfg.ON_MIN_MS || 6) + (per - (hapCfg.ON_MIN_MS || 6)) * r);
+        try { navigator.vibrate(on); wasVib = true; } catch (e) {}
+      } else {
+        const px = (hapCfg.TEMBLOR_PX_MIN || 0.6) + ((hapCfg.TEMBLOR_PX_MAX || 3.2) - (hapCfg.TEMBLOR_PX_MIN || 0.6)) * r;
+        screenShake(px, per);
+      }
+    }, (hapCfg.PERIODO_MS || 110));
+  }
 })();

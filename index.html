@@ -18,6 +18,8 @@
     .marquee-l { background-position: right top; }
     .marquee-r { background-position: left top; }
     #persistentHUD, #chestActionCard { zoom: var(--uiz, 1); }
+    #chestActionCard { pointer-events: none; }
+    #chestActionCard #openChestBtn { pointer-events: auto; }   /* [0.091] la tarjeta deja pasar los toques; solo el botón los recoge */
     .cover-blink { animation: coverBlink 1.2s steps(2, end) infinite; }
     @keyframes coverBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
 
@@ -36,9 +38,9 @@
     /* [0.089b] */
 
     /* [0.089b] Ventanas informativas más grandes en PC (--mz lo calcula script.js). Los puzles (#minigameModal) no se tocan. */
-    html:not(.narrow-layout) :is(#lootModal, #levelUpModal, #merchantModal, #traperoShopModal, #unfairDealModal, #gameOverModal, #duendeReceiptModal, #resumeGameModal, #resetConfirmModal, #optionsModal, #statsModal, #confirmModal) > div,
+    html:not(.narrow-layout) :is(#lootModal, #levelUpModal, #merchantModal, #traperoShopModal, #unfairDealModal, #gameOverModal, #duendeReceiptModal, #resumeGameModal, #resetConfirmModal, #optionsModal, #statsModal, #confirmModal, #achievementsModal) > div,
     html:not(.narrow-layout) #dialogueModal > * { zoom: var(--mz, 1); }
-    html:not(.narrow-layout) :is(#lootModal, #levelUpModal, #merchantModal, #traperoShopModal, #unfairDealModal, #gameOverModal, #duendeReceiptModal, #optionsModal, #statsModal, #confirmModal) > div { max-height: calc(94dvh / var(--mz, 1)); overflow-y: auto; }
+    html:not(.narrow-layout) :is(#lootModal, #levelUpModal, #merchantModal, #traperoShopModal, #unfairDealModal, #gameOverModal, #duendeReceiptModal, #optionsModal, #statsModal, #confirmModal, #achievementsModal) > div { max-height: calc(94dvh / var(--mz, 1)); overflow-y: auto; }
     /* [0.089b] Título compacto cuando no cabe junto a las insignias */
     html.title-compact .title-full { display: none; }
     html.title-compact .title-short { display: inline; }
@@ -207,7 +209,7 @@
   <main class="relative z-10 flex-1 flex flex-col items-center justify-end pb-6 p-4 pointer-events-none">
     <div id="multiChestGrid" class="hidden pointer-events-auto flex gap-3 justify-center w-full max-w-sm mb-6 z-20"></div>
 
-    <div id="chestActionCard" class="pointer-events-auto transition-all duration-300 flex flex-col items-center text-center w-full max-w-xs z-20">
+    <div id="chestActionCard" class="pointer-events-none transition-all duration-300 flex flex-col items-center text-center w-full max-w-xs z-20">
       <div id="chestRarityBadge" class="text-[9px] font-extrabold uppercase tracking-widest px-2.5 py-0.5 rounded-full border mb-1 bg-slate-900 border-slate-700 text-slate-300">
         NORMAL
       </div>
@@ -222,7 +224,7 @@
         REQUIERE: 1 GANZÚA
       </div>
 
-      <button id="openChestBtn" class="w-full py-4 bg-gradient-to-r from-amber-500 to-yellow-600 active:from-amber-400 text-slate-950 font-black text-base rounded-2xl shadow-2xl border border-yellow-300/50 flex items-center justify-center gap-2">
+      <button id="openChestBtn" class="pointer-events-auto w-full py-4 bg-gradient-to-r from-amber-500 to-yellow-600 active:from-amber-400 text-slate-950 font-black text-base rounded-2xl shadow-2xl border border-yellow-300/50 flex items-center justify-center gap-2">
         <i id="chestLockIcon" class="fa-solid fa-lock text-lg"></i>
         <span id="openChestBtnText">FORZAR CERRADURA</span>
       </button>
