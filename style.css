@@ -209,3 +209,22 @@ html:not(.narrow-layout) :is(#lootModal, #levelUpModal, #merchantModal, #trapero
 /* [0.089b] Título compacto cuando no cabe junto a las insignias */
 html.title-compact .title-full { display: none; }
 html.title-compact .title-short { display: inline; }
+
+/* ==========================================================================
+   [0.092] SUBIDA DE NIVEL: cartel con rebote, ruleta de wildcards y 3 mejoras como cofres abiertos
+   ========================================================================== */
+.lvl-pop { animation: lvlPop .7s cubic-bezier(.2,1.6,.4,1) both; text-shadow: 0 0 18px rgba(251,191,36,.55); }
+@keyframes lvlPop { 0% { transform: scale(.2) rotate(-8deg); opacity: 0; } 60% { transform: scale(1.18) rotate(2deg); opacity: 1; } 100% { transform: scale(1) rotate(0); } }
+.lvl-card-spin { animation: lvlSpin .12s steps(2, end) infinite; }
+@keyframes lvlSpin { 0% { transform: translateY(-1px); } 100% { transform: translateY(1px); } }
+.lvl-card-win { animation: lvlWin .55s cubic-bezier(.2,1.5,.4,1) both; }
+@keyframes lvlWin { 0% { transform: scale(.85); filter: brightness(2.2); } 100% { transform: scale(1); filter: brightness(1); } }
+.lvl-chest { position: relative; display: block; width: 100%; padding: 0; background: none; border: 0; }
+.lvl-chest-glow { position: absolute; left: 6%; right: 6%; bottom: 8px; height: 34px; border-radius: 50%; background: radial-gradient(ellipse at center, rgba(251,191,36,.55), rgba(251,191,36,0) 70%); }
+.lvl-card { position: relative; z-index: 1; padding: 10px 12px 26px; margin-bottom: -22px; transition: transform .2s ease; }
+.lvl-chest:hover .lvl-card { transform: translateY(-4px); }
+.lvl-chest-front { position: relative; z-index: 2; height: 36px; width: 100%; background-repeat: no-repeat; background-position: center bottom; background-size: 100% 100%; image-rendering: pixelated; box-shadow: 0 6px 12px rgba(0,0,0,.6); }
+.lvl-chest-in .lvl-card { animation: lvlRise .55s cubic-bezier(.2,1.4,.4,1) both; }
+@keyframes lvlRise { 0% { transform: translateY(46px); } 100% { transform: translateY(0); } }
+.lvl-chest-in { animation: lvlFade .25s ease-out both; }
+@keyframes lvlFade { from { opacity: 0; } to { opacity: 1; } }

@@ -7,7 +7,7 @@
 
 const DATOS_JUEGO = {
   // [0.088] Versión visible en pantalla (esquina inferior central) para que las capturas la incluyan
-  VERSION: '0.091',
+  VERSION: '0.092',
 
   // [0.089] Avisos "+N" / "-N" de herramientas. ESPERAR_PANTALLA_LIBRE:true = recupera la idea anterior (esperar a que no haya
   // banners, tiendas ni diálogos encima). Con false salen siempre, por encima de todo.
@@ -27,14 +27,16 @@ const DATOS_JUEGO = {
   MODO_TEST: { LONGITUD: 6, SAL: 'JOMC-7f3a91c2', HUELLA: 'a24aa5d1538936c292ebb6434c149919f1996175a0a06724d40f9e2e3cf7bdbc' },
 
   // [0.090] Golpe de Game Over (antes de que hable el Trapero)
+  // [0.092] Pantalla de subida de nivel: fanfarria + cartel, ruleta de wildcards (pasos, ms entre cambios al inicio/final, curva de frenado) y 3 mejoras como cofres abiertos
+  SUBIDA_NIVEL: { RULETA_PASOS: 20, RULETA_MS_INICIAL: 50, RULETA_MS_FINAL: 340, RULETA_CURVA: 2.5, RULETA_MS_FINAL_PAUSA: 520, PAUSA_TRAS_RULETA_MS: 450, ESCALONADO_COFRES_MS: 260 },
   GAME_OVER: { GOLPE: { DURACION_MS: 3000, SACUDIDA_PX: 16, SACUDIDA_MS: 650, CAIDA_MS: 320, ESCALONADO_MS: 90, PAUSA_PALABRAS_MS: 170 } },   // [0.091] 3 s; las letras caen escalonadas (el golpe final suena al caer la última)
 
   // [0.090] Ayudas de las primeras veces (por partida)
   // [0.091] Ganzúa táctil: el anillo gira la aguja de forma RELATIVA (mueves el dedo en horizontal y gira lo mismo que la barra x SENSIBILIDAD_ANILLO; <1 = más fino)
   // y avisa del punto dulce (real o falso por igual) con vibración (móvil) o un leve temblor de pantalla (PC) que crece al acercarse.
   GANZUA_TACTIL: {
-    SENSIBILIDAD_ANILLO: 0.8,
-    HAPTICA: { ACTIVAR: true, ZONA_GRADOS: 35, PERIODO_MS: 110, ON_MIN_MS: 6, CURVA: 1.6, TEMBLOR_PX_MIN: 0.6, TEMBLOR_PX_MAX: 3.2 }
+    SENSIBILIDAD_ANILLO: 1.8,   // [0.092] antes 0.8 (casi inusable)
+    HAPTICA: { ACTIVAR: true, ZONA_GRADOS: 20, PERIODO_MS: 110, ON_MIN_MS: 6, CURVA: 2.6, TEMBLOR_PX_MIN: 0.6, TEMBLOR_PX_MAX: 3.2 }
   },
   AYUDAS: { GANZUA_TACTIL: { VECES: 3, ANILLO: 'ARRASTRA EL ANILLO', CENTRO: 'MANTÉN EL CENTRO' }, PISTONES_TOQUE: { VECES: 3, TEXTO: 'También puedes tocar cualquier punto de la pantalla para fijar el pistón.' } },
 
@@ -55,7 +57,7 @@ const DATOS_JUEGO = {
   },
 
   // [0.089b] Zumbido grave que muta despacio, solo cuando el cofre seleccionado es legendario (se calla al empezar el puzle y con el botón de silencio)
-  ZUMBIDO_LEGENDARIO: { ACTIVAR: true, VOLUMEN: 0.04, FUNDIDO_S: 1.0, BASE_HZ: 2300, BATIDO_HZ: 3.5, TREMOLO_HZ: 1.7, TREMOLO_PROFUNDIDAD: 0.45, CORTE_HZ: 5200 },   // [0.091] zumbido agudo continuo (más agudo que una flauta) con temblor lento de volumen y leve batido entre dos tonos
+  ZUMBIDO_LEGENDARIO: { ACTIVAR: true, VOLUMEN: 0.05, FUNDIDO_S: 1.5, RESPIRACION_S: 8, RESPIRACION_PROFUNDIDAD: 0.5, CORTE_HZ: 1500, NOTAS_HZ: [220, 330, 440, 554.4], CAMPANILLA: { ACTIVAR: true, VOLUMEN: 0.03, CADA_MIN_S: 4, CADA_MAX_S: 8, COLA_S: 1.8, NOTAS_HZ: [880, 988, 1109, 1319, 1480, 1760] } },   // [0.092] aura luminosa que respira + destello de campanilla
 
   // [0.089b] Pantalla previa de las cartas: solo en pantallas táctiles (SOLO_TACTIL:false = también en PC)
   CARTAS_PANTALLA_PREVIA: { ACTIVAR: true, SOLO_TACTIL: true },
@@ -640,11 +642,15 @@ const DATOS_JUEGO = {
     // [0.087] Mensajes del Trapero cuando se acaba una maldición (se elige uno al azar, sea cual sea el tier)
     // [0.090] El Trapero al quedarte sin recursos: la primera vez explica qué pasa; después, variantes cortas (editables)
     TRAPERO_GAME_OVER: {
-      PRIMERA: "Sin llaves no hay cofre. Pero yo no dejo marchar a un buen cliente con las manos vacías: te doy lo que necesitas, y la maldición se queda contigo unos cuantos cofres. {sonrisa}",
+      PRIMERA: [   // [0.092] primera vez: una de estas tres al azar (tono críptico, sin lenguaje de comercio)
+        "Sin llaves, el cofre no se abre. Pero la sala aún te necesita... y yo conozco un camino. Tiene un precio: la maldición te acompañará unos cofres. {sonrisa}",
+        "Qué pronto vacías las manos. Yo puedo devolverte lo que la sala te quitó. Nada es gratis aquí: algo oscuro te seguirá unos cofres. {conspira}",
+        "Aquí nada termina de verdad. Acepta mi trato y sigue. A cambio, la maldición se queda contigo unos cofres. {sonrisa}"
+      ],
       OTRAS: [
         "Otra vez con las manos vacías. Sabía que volverías. Mismo precio, misma maldición. {conspira}",
         "Se acabaron las llaves, y se acaba el juego. A no ser que me dejes ayudarte... otra vez. {codicia}",
-        "No me mires así. Yo no te empujé al borde: solo vendo la cuerda. ¿Seguimos? {sonrisa}"
+        "No me mires así. Yo no te empujé al borde: solo te proporciono la cuerda y ya está. ¿Seguimos? {sonrisa}"
       ]
     },
 
@@ -856,6 +862,7 @@ const DATOS_JUEGO = {
   //   PERDER_ORO (n) · DAR_ORO (n) · DAR_XP (n) · DAR_XP_PCT_NIVEL (fracción de la XP del nivel) · DAR_HERRAMIENTAS ({propiedad: cantidad})
   //   DAR_CARTA ({habilidad: cantidad}) · COFRES_PESADOS (n cofres) · MALDICION_CODICIA (n cofres)
   //   PUZLES_EXIGENTES (n cofres) · OTORGAR_CARTA_TACTICA_AZAR · OTORGAR_CONSUMIBLE_DOBLE_AZAR (n consumibles)
+  //   PERDER_HERRAMIENTAS ({propiedad: cantidad}; nunca deja menos de 1)
   // Para añadir un wildcard nuevo que reutilice uno de estos efectos basta con añadir una línea aquí.
   WILDCARDS: [
     { id: "cofres_pesados", nombre: "Cofres Pesados", tipo: "PERJUDICIAL", desc: "Próximos 5 cofres Raros+ piden +1 herramienta extra.", efecto: "COFRES_PESADOS", valor: 5 },
@@ -866,7 +873,18 @@ const DATOS_JUEGO = {
     { id: "bono_experiencia", nombre: "Bono de Experiencia", tipo: "BENEFICIOSO", desc: "Recibes por sorpresa el 20% de la XP que exige tu nivel.", efecto: "DAR_XP_PCT_NIVEL", valor: 0.20 },
     { id: "sombra_favorable", nombre: "Sombra Favorable", tipo: "BENEFICIOSO", desc: "Obtienes +1 Carta Auto-Open inmediata.", efecto: "DAR_CARTA", valor: { auto: 1 } },
     { id: "regalo_tactico", nombre: "Hallazgo Táctico", tipo: "BENEFICIOSO", desc: "Encuentras un pergamino ajado: obtienes 1 Carta Táctica aleatoria.", efecto: "OTORGAR_CARTA_TACTICA_AZAR", valor: 1 },
-    { id: "suministros_inesperados", nombre: "Suministros Inesperados", tipo: "BENEFICIOSO", desc: "Encuentras una pequeña bolsa en un rincón: obtienes x2 consumibles al azar.", efecto: "OTORGAR_CONSUMIBLE_DOBLE_AZAR", valor: 2 }
+    { id: "suministros_inesperados", nombre: "Suministros Inesperados", tipo: "BENEFICIOSO", desc: "Encuentras una pequeña bolsa en un rincón: obtienes x2 consumibles al azar.", efecto: "OTORGAR_CONSUMIBLE_DOBLE_AZAR", valor: 2 },
+    // [0.092] Más wildcards (cada una es UNA línea; 'peso' opcional = probabilidad relativa dentro de su grupo, por defecto 1)
+    { id: "bolsa_olvidada", nombre: "Bolsa Olvidada", tipo: "BENEFICIOSO", desc: "Alguien dejó una bolsa de monedas tras una piedra suelta: +30 GP.", efecto: "DAR_ORO", valor: 30 },
+    { id: "ganzuas_cortesia", nombre: "Ganzúas de Cortesía", tipo: "BENEFICIOSO", desc: "Un gancho oxidado asoma de la pared... y no está solo: +3 Ganzúas.", efecto: "DAR_HERRAMIENTAS", valor: { picks: 3 } },
+    { id: "chispa_genio", nombre: "Chispa de Genio", tipo: "BENEFICIOSO", desc: "Una idea te ilumina de golpe: recibes el 35% de la XP que exige tu nivel.", efecto: "DAR_XP_PCT_NIVEL", valor: 0.35, peso: 0.5 },
+    { id: "fortuna_doble", nombre: "Fortuna Doble", tipo: "BENEFICIOSO", desc: "Sientes que hoy todo vale el doble: obtienes +1 Carta Doble o Nada.", efecto: "DAR_CARTA", valor: { double: 1 } },
+    { id: "escudo_prestado", nombre: "Escudo Prestado", tipo: "BENEFICIOSO", desc: "Algo invisible te cubre las espaldas: obtienes +1 Carta Escudo.", efecto: "DAR_CARTA", valor: { shield: 1 } },
+    { id: "recado_duende", nombre: "Recado del Duende", tipo: "BENEFICIOSO", desc: "Un papelito arrugado con un sello conocido: obtienes +1 Carta Invoca al Duende.", efecto: "DAR_CARTA", valor: { summonDuende: 1 }, peso: 0.6 },
+    { id: "peaje_sombras", nombre: "Peaje de las Sombras", tipo: "PERJUDICIAL", desc: "Algo te vacía los bolsillos al pasar: pierdes 20 GP.", efecto: "PERDER_ORO", valor: 20 },
+    { id: "pulso_tembloroso", nombre: "Pulso Tembloroso", tipo: "PERJUDICIAL", desc: "Te tiemblan las manos: minijuegos un 25% más exigentes durante 3 cofres.", efecto: "PUZLES_EXIGENTES", valor: 3 },
+    { id: "cerrojos_oxidados", nombre: "Cerrojos Oxidados", tipo: "PERJUDICIAL", desc: "Los cerrojos se han agarrotado: próximos 3 cofres Raros+ piden +1 herramienta extra.", efecto: "COFRES_PESADOS", valor: 3 },
+    { id: "ganzua_perdida", nombre: "Ganzúa Perdida", tipo: "PERJUDICIAL", desc: "Se te cae una ganzúa por una rendija: pierdes 1 Ganzúa (si tienes más de 1).", efecto: "PERDER_HERRAMIENTAS", valor: { picks: 1 } }
   ],
 
   // 🟢 TRATOS DEL TRAPERO
@@ -1056,27 +1074,48 @@ class AudioEngine {
     if (who === 'EL TRAPERO') [196, 233, 175, 147].forEach((f, i) => { this._tone(f, f, 0.32, 'triangle', 0.13, i * 0.17); this._tone(f * 2, f * 2, 0.2, 'sine', 0.03, i * 0.17); });
     else [523, 659, 587, 784].forEach((f, i) => this._tone(f, f * 1.01, 0.2, 'sine', 0.09, i * 0.11));
   }
-  // [0.091] Zumbido legendario: tono agudo continuo (dos osciladores casi iguales, que "baten" levemente) con un temblor lento de volumen.
+  // [0.092] Aura del cofre legendario: colchón cálido y suave de pocas notas que "respira" (volumen que sube y baja muy despacio)
+  // y, de vez en cuando, un destello de campanilla/celesta. Sin batido ni agudos molestos. Todo ajustable en DATOS_JUEGO.ZUMBIDO_LEGENDARIO.
   setLegendHum(on, cfg) {
     if (!this.ctx) return;
     const c = this.ctx;
     if (!this._hum && on) {
       const g = c.createGain(); g.gain.value = 0;
-      const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = cfg.CORTE_HZ || 5200; lp.Q.value = 0.7;
-      const depth = Math.max(0, Math.min(0.95, cfg.TREMOLO_PROFUNDIDAD != null ? cfg.TREMOLO_PROFUNDIDAD : 0.45));
-      const trem = c.createGain(); trem.gain.value = 1 - depth / 2;
+      const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = cfg.CORTE_HZ || 1500; lp.Q.value = 0.5;
+      const depth = Math.max(0, Math.min(0.95, cfg.RESPIRACION_PROFUNDIDAD != null ? cfg.RESPIRACION_PROFUNDIDAD : 0.5));
+      const breath = c.createGain(); breath.gain.value = 1 - depth / 2;
       const lfo = c.createOscillator(), lfoG = c.createGain();
-      lfo.frequency.value = cfg.TREMOLO_HZ || 1.7; lfoG.gain.value = depth / 2; lfo.connect(lfoG); lfoG.connect(trem.gain); lfo.start();
-      const f0 = cfg.BASE_HZ || 2300;
-      const o1 = c.createOscillator(), o2 = c.createOscillator(), g2 = c.createGain();
-      o1.type = 'sine'; o2.type = 'triangle'; o1.frequency.value = f0; o2.frequency.value = f0 + (cfg.BATIDO_HZ != null ? cfg.BATIDO_HZ : 3.5);
-      g2.gain.value = 0.5; o1.connect(trem); o2.connect(g2); g2.connect(trem); trem.connect(lp); lp.connect(g); g.connect(this.master || c.destination);
-      o1.start(); o2.start();
-      this._hum = { g };
+      lfo.frequency.value = 1 / (cfg.RESPIRACION_S || 8); lfoG.gain.value = depth / 2; lfo.connect(lfoG); lfoG.connect(breath.gain); lfo.start();
+      (cfg.NOTAS_HZ || [220, 330, 440, 554.4]).forEach((f, i) => {
+        [-1, 1].forEach(sg => {
+          const o = c.createOscillator(), og = c.createGain();
+          o.type = 'sine'; o.frequency.value = f; o.detune.value = sg * (3 + i);
+          og.gain.value = 0.25 / (1 + i * 0.35); o.connect(og); og.connect(breath); o.start();
+        });
+      });
+      breath.connect(lp); lp.connect(g); g.connect(this.master || c.destination);
+      this._hum = { g, next: 0 };
     }
     const h = this._hum; if (!h) return;
-    const vol = (!on || this.muted) ? 0 : (cfg.VOLUMEN || 0.04);
-    h.g.gain.setTargetAtTime(vol, c.currentTime, (cfg.FUNDIDO_S || 1) / 3);
+    const vol = (!on || this.muted) ? 0 : (cfg.VOLUMEN || 0.05);
+    h.g.gain.setTargetAtTime(vol, c.currentTime, (cfg.FUNDIDO_S || 1.5) / 3);
+    // Destello de campanilla (celesta): nota alta de una escala pentatónica, ataque rápido y cola larga
+    const ch = cfg.CAMPANILLA || {};
+    if (on && !this.muted && ch.ACTIVAR !== false) {
+      const now = performance.now();
+      if (!h.next) h.next = now + 2500 + Math.random() * 2500;
+      if (now >= h.next) {
+        h.next = now + 1000 * ((ch.CADA_MIN_S || 4) + Math.random() * ((ch.CADA_MAX_S || 8) - (ch.CADA_MIN_S || 4)));
+        const notes = ch.NOTAS_HZ || [880, 988, 1109, 1319, 1480, 1760];
+        const f = notes[Math.floor(Math.random() * notes.length)], t = c.currentTime, v = ch.VOLUMEN != null ? ch.VOLUMEN : 0.03;
+        [[1, 1], [2.76, 0.22], [5.4, 0.08]].forEach(([m, a]) => {
+          const o = c.createOscillator(), og = c.createGain();
+          o.type = 'sine'; o.frequency.value = f * m;
+          og.gain.setValueAtTime(0.0001, t); og.gain.linearRampToValueAtTime(v * a, t + 0.008); og.gain.exponentialRampToValueAtTime(0.0001, t + (ch.COLA_S || 1.8) / m);
+          o.connect(og); og.connect(this.master || c.destination); o.start(t); o.stop(t + (ch.COLA_S || 1.8) + 0.05);
+        });
+      }
+    } else if (h) { h.next = 0; }
   }
   // [0.090] Swoosh leve al elegir otro cofre en el selector (barrido de ruido que sube)
   playSwoosh() {
@@ -1132,6 +1171,27 @@ class AudioEngine {
     this._tone(55, 40, 1.6, 'sawtooth', 0.09, 0.05);
     [392, 370, 311].forEach((f, i) => this._tone(f, f * 0.97, 0.45, 'triangle', 0.13, 0.25 + i * 0.3));
     this._tone(233, 220, 0.9, 'sawtooth', 0.05, 0.3);
+  }
+  // [0.092] Subida de nivel: fanfarria 8/16 bits (arpegio de onda cuadrada, bajo triangular y remate largo)
+  playLevelUpFanfare() {
+    if (!this.ctx || this.muted) return;
+    [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => this._tone(f, f, 0.11, 'square', 0.07, i * 0.09));
+    [659.25, 783.99, 1046.5, 1318.5].forEach((f, i) => this._tone(f, f, 0.11, 'square', 0.07, 0.42 + i * 0.09));
+    this._tone(1046.5, 1046.5, 0.7, 'square', 0.08, 0.82); this._tone(1318.5, 1318.5, 0.7, 'square', 0.05, 0.82); this._tone(1568, 1568, 0.7, 'triangle', 0.07, 0.82);
+    [131, 165, 196, 262].forEach((f, i) => this._tone(f, f, 0.2, 'triangle', 0.16, i * 0.2));
+    this._tone(262, 262, 0.8, 'triangle', 0.16, 0.82);
+  }
+  // [0.092] "Ruidito" de la ruleta: clic agudo corto; el tono sube un poco y se alarga al frenar (p = 0..1)
+  playRouletteTick(p = 0) {
+    if (!this.ctx || this.muted) return;
+    const f = 760 + 380 * p + (Math.random() * 40);
+    this._tone(f, f * 0.72, 0.045 + 0.04 * p, 'square', 0.07);
+  }
+  // [0.092] Un cofre abierto deja salir su carta (destello ascendente)
+  playCardRise() {
+    if (!this.ctx || this.muted) return;
+    this._tone(520, 1040, 0.12, 'triangle', 0.09);
+    this._tone(1560, 2080, 0.16, 'sine', 0.05, 0.05);
   }
   playCardBeep() {  // pitido suave y corto de las cartas que palpitan
     if (!this.ctx || this.muted) return;
@@ -1235,13 +1295,13 @@ class AudioEngine {
 }
 const audio = new AudioEngine();
 // [0.087] Registro del último sonido para que el clic de interfaz no se solape con sonidos propios
-['playClick', 'playPaperRustle', 'playDecoyBuzz', 'playBreak', 'playUnlockFanfare', 'playLockCharge', 'playLockOpen', 'playGameOver', 'playDarkOut', 'playLightOn', 'playDecorTap', 'playKeyPickup', 'playKeySpend', 'playCardBeep', 'playCashRegister', 'playCurseStart', 'playCurseEnd', 'playDialogueMelody', 'playIntro', 'playDuendeAngry', 'playSwoosh', 'playGameOverStrike'].forEach(n => {
+['playClick', 'playPaperRustle', 'playDecoyBuzz', 'playBreak', 'playUnlockFanfare', 'playLockCharge', 'playLockOpen', 'playGameOver', 'playDarkOut', 'playLightOn', 'playDecorTap', 'playKeyPickup', 'playKeySpend', 'playCardBeep', 'playCashRegister', 'playCurseStart', 'playCurseEnd', 'playDialogueMelody', 'playIntro', 'playDuendeAngry', 'playSwoosh', 'playGameOverStrike', 'playLevelUpFanfare', 'playRouletteTick', 'playCardRise'].forEach(n => {
   const f = AudioEngine.prototype[n];
   AudioEngine.prototype[n] = function (...a) { this.lastSound = performance.now(); return f.apply(this, a); };
 });
 // [0.090] Categorías de volumen: los sonidos pequeños (clics, avisos) y los de botín pasan por su bus, con volumen distinto en escritorio y móvil
-[[ 'busSmall', ['playClick', 'playUiClick', 'playDecoyBuzz', 'playPaperRustle', 'playLockCharge', 'playDecorTap', 'playCardBeep', 'playKeyPickup', 'playKeySpend', 'playSwoosh'] ],
- [ 'busLoot', ['playUnlockFanfare', 'playCashRegister'] ]].forEach(([bus, names]) => names.forEach(n => {
+[[ 'busSmall', ['playClick', 'playUiClick', 'playDecoyBuzz', 'playPaperRustle', 'playLockCharge', 'playDecorTap', 'playCardBeep', 'playKeyPickup', 'playKeySpend', 'playSwoosh', 'playRouletteTick', 'playCardRise'] ],
+ [ 'busLoot', ['playUnlockFanfare', 'playCashRegister', 'playLevelUpFanfare'] ]].forEach(([bus, names]) => names.forEach(n => {
   const f = AudioEngine.prototype[n];
   AudioEngine.prototype[n] = function (...a) { const prev = this._bus; this._bus = this[bus] || null; try { return f.apply(this, a); } finally { this._bus = prev; } };
 }));
@@ -1522,6 +1582,12 @@ function applyWildcard(wc) {
     case 'DAR_CARTA':
       Object.keys(wc.valor).forEach(prop => { STATE.abilities[prop] += wc.valor[prop]; });
       break;
+    case 'PERDER_HERRAMIENTAS': {   // [0.092] nunca deja menos de 1 (para no bloquear la partida)
+      const lost = [];
+      Object.keys(wc.valor).forEach(prop => { const n = Math.max(0, Math.min(wc.valor[prop], (STATE[prop] || 0) - 1)); STATE[prop] -= n; if (n) lost.push(`-${n}`); });
+      extra = lost.length ? lost.join(', ') + (wc.valor.picks ? ' Ganzúa' : '') : 'Por suerte, no tenías de sobra';
+      break;
+    }
     case 'COFRES_PESADOS':
       STATE.heavyChestsLeft += wc.valor;
       break;
@@ -1556,32 +1622,56 @@ function applyWildcard(wc) {
   return extra;
 }
 
-// Tira el wildcard de la subida de nivel, lo aplica y lo muestra en el banner (encima de las 3 cartas)
-function rollWildcard() {
-  const banner = document.getElementById('wildcardBanner');
+// [0.092] Elige el wildcard (con 'peso' opcional), lo aplica YA (así el guardado nunca se pierde) y devuelve {wc, extra, isBad}
+function pickWildcard() {
   const wcList = DATOS_JUEGO.WILDCARDS || [];
-  if (!banner || wcList.length === 0) {
-    if (banner) banner.classList.add('hidden');
-    return;
-  }
-
+  if (wcList.length === 0) return null;
   const wantBad = Math.random() < getWildcardBadChance();
   let pool = wcList.filter(w => (w.tipo === 'PERJUDICIAL') === wantBad);
   if (pool.length === 0) pool = wcList;
-  const wc = pool[Math.floor(Math.random() * pool.length)];
+  const tot = pool.reduce((a, w) => a + (w.peso != null ? w.peso : 1), 0);
+  let r = Math.random() * tot, wc = pool[pool.length - 1];
+  for (const w of pool) { r -= (w.peso != null ? w.peso : 1); if (r <= 0) { wc = w; break; } }
   const extra = applyWildcard(wc);
-  const isBad = wc.tipo === 'PERJUDICIAL';
+  return { wc, extra, isBad: wc.tipo === 'PERJUDICIAL' };
+}
 
-  banner.className = 'w-full max-w-xs p-3 rounded-2xl border font-mono text-xs mb-4 text-center shadow-lg transition-all ' +
-    (isBad ? 'bg-rose-950/80 border-rose-500/60 text-rose-200' : 'bg-emerald-950/80 border-emerald-500/60 text-emerald-200');
-  banner.innerHTML = `
-    <div class="font-black uppercase tracking-wider mb-1">${isBad ? '⚠️' : '✨'} ${wc.nombre}</div>
-    <div class="opacity-90">${wc.desc}</div>
-    ${extra ? `<div class="mt-1 font-bold">${extra}</div>` : ''}
-  `;
-
-  if (isBad) audio.playBreak(); else audio.playClick(0.9);
-  updateUI();
+// [0.092] Ruleta de la subida de nivel: la carta cambia con "ruiditos" cada vez más lentos hasta la ganadora (con su sonido y explicación).
+// Después aparece SIGUIENTE para ver las 3 mejoras. Tiempos y número de pasos en DATOS_JUEGO.SUBIDA_NIVEL.
+let lvlTimers = [];
+function lvlClearTimers() { lvlTimers.forEach(t => clearTimeout(t)); lvlTimers = []; }
+function runWildcardRoulette(res, onDone) {
+  const banner = document.getElementById('wildcardBanner');
+  const cfg = DATOS_JUEGO.SUBIDA_NIVEL || {};
+  const wcList = DATOS_JUEGO.WILDCARDS || [];
+  if (!banner || !res) { if (banner) banner.classList.add('hidden'); onDone(); return; }
+  banner.classList.remove('hidden');
+  const paint = (wc, state, extra) => {   // state: 'spin' | 'win'
+    const bad = wc.tipo === 'PERJUDICIAL';
+    const tone = bad ? 'bg-rose-950/80 border-rose-500/60 text-rose-200' : 'bg-emerald-950/80 border-emerald-500/60 text-emerald-200';
+    banner.className = 'w-full max-w-xs p-3 rounded-2xl border-2 font-mono text-xs mb-3 text-center shadow-lg ' + (state === 'win' ? tone + ' lvl-card-win' : tone.replace('/80', '/40').replace('/60', '/50') + ' lvl-card-spin');
+    banner.innerHTML = state === 'win' ? `
+      <div class="text-[9px] tracking-widest opacity-70 mb-1">${bad ? 'EVENTO ADVERSO' : 'EVENTO FAVORABLE'}</div>
+      <div class="font-black uppercase tracking-wider mb-1 text-sm">${bad ? '⚠️' : '✨'} ${wc.nombre}</div>
+      <div class="opacity-90">${wc.desc}</div>
+      ${extra ? `<div class="mt-1 font-bold">${extra}</div>` : ''}` : `
+      <div class="text-[9px] tracking-widest opacity-60 mb-1">EL DESTINO GIRA...</div>
+      <div class="font-black uppercase tracking-wider text-sm py-2">${wc.nombre}</div>`;
+  };
+  const steps = Math.max(6, cfg.RULETA_PASOS || 20), d0 = cfg.RULETA_MS_INICIAL || 50, d1 = cfg.RULETA_MS_FINAL || 340, curve = cfg.RULETA_CURVA || 2.5;
+  const seq = []; let prev = null;
+  for (let i = 0; i < steps; i++) { let w; let guard = 0; do { w = wcList[Math.floor(Math.random() * wcList.length)]; } while ((w === prev || w === res.wc) && wcList.length > 2 && ++guard < 20); seq.push(w); prev = w; }
+  let acc = 0;
+  seq.forEach((w, i) => {
+    acc += d0 + Math.pow(i / steps, curve) * (d1 - d0);
+    lvlTimers.push(setTimeout(() => { paint(w, 'spin'); try { audio.playRouletteTick(i / steps); } catch (e) {} }, acc));
+  });
+  lvlTimers.push(setTimeout(() => {
+    paint(res.wc, 'win', res.extra);
+    try { if (res.isBad) { audio.playBreak(); screenShake(5, 260); } else audio.playUnlockFanfare('raro'); } catch (e) {}
+    updateUI();
+    lvlTimers.push(setTimeout(onDone, cfg.PAUSA_TRAS_RULETA_MS != null ? cfg.PAUSA_TRAS_RULETA_MS : 450));
+  }, acc + (cfg.RULETA_MS_FINAL_PAUSA || 520)));
 }
 
 /* ---------- Guardado de partida (autoguardado en una ranura) ---------- */
@@ -4257,8 +4347,18 @@ function whenBannerClosed(cb) {
   };
   tick();
 }
+const GAME_OVER_GLYPHS = {   // [0.092] letras serifadas 11x15 ('1' = relleno, 'c' = grieta, '.' = vacío), con mellas en los bordes
+  G: ["...111111..", "..1111111..", ".11c..111..", ".111...11..", "111.....11.", "11c........", ".1c........", ".c1...11111", "c11...11111", "111....111.", "111....111.", ".111...111.", ".111..1111.", "..11111111.", "...1111.11."],
+  A: ["....111....", "....111....", "....111....", "....1111...", "...11111...", "...1c.11...", "...c..11...", "...c..c11..", "..1111c11..", "..111c111..", "..1....11..", "..1....111.", ".11....111.", "1111..11111", "1111..11111"],
+  M: ["1111...1111", "1111...1111", ".111...111.", ".1111.11c1.", ".1111.11c1.", ".1111.1c1c.", ".1111.1c1c.", ".1.11.1.cc.", ".1.1111.11.", ".1.1111.11.", ".1..111.11.", ".1..11..11.", ".1..11..11.", "111.11.1111", "111.11.1111"],
+  E: ["111111111..", "1111111111.", ".111...c11.", ".111....11.", ".111..1c.1.", ".111..1....", ".111111....", ".111111....", ".11c..1....", ".11c..11..1", ".111.....11", ".111....11.", ".111...111.", "1111111111.", "1111111111."],
+  O: ["...11111...", "..1111111..", ".1111.1111.", ".111...111.", "111.....111", "11c.....11.", "11c.....111", "1cc.....111", "11c.....111", "111.....111", "111.....111", ".111...111.", ".1111.1111.", "..1111111..", "...11111..."],
+  V: ["11111..1111", "11111..1111", ".111....11.", "..11....11.", "..111...1..", "..111..1c..", "..111..1c..", "...11..11..", "...c1..1...", "...c1111...", "...1c111...", "....c11....", "....111....", "....111....", "....111...."],
+  R: ["11111111...", "111111111..", ".111..1111.", ".111...c11.", ".111...1c1.", ".11c...1c1.", ".11c11111..", ".11c11111..", ".11c1111...", ".1c1.111...", ".111.1111..", ".111..111..", ".111..1111.", "11111..1111", "11111..1111"]
+};
 function runGameOverStrike(done) {
-  // [0.091] Letras pixel art con volumen (bandas de rojo, borde negro grueso, brillos) que CAEN y rebotan; después gotean.
+  // [0.092] Letras serifadas de rejilla fina (11x15) con mellas y grietas, volumen rojo con borde negro, que CAEN y rebotan;
+  // después gotea sangre de forma natural: anchos de 1-2 px, velocidades y aceleraciones distintas, bifurcaciones, gotas sueltas y grietas que supuran.
   const cfg = (DATOS_JUEGO.GAME_OVER || {}).GOLPE || {};
   const host = uiHost();
   const ov = document.createElement('div');
@@ -4270,19 +4370,44 @@ function runGameOverStrike(done) {
   const W = host.clientWidth || 390, H = host.clientHeight || 700;
   cv.width = W; cv.height = H;
   const c2 = cv.getContext('2d');
-  const uW = 23, sc = Math.max(4, Math.floor((W * 0.82) / uW));
-  const ox = Math.round((W - uW * sc) / 2), oy = Math.round(H * 0.36 - 8.5 * sc);
+  const GW = 11, GH = 15, uW = 4 * (GW + 1) - 1, wordH = GH + 11;
+  const sc = Math.max(3, Math.floor((W * 0.84) / uW));
+  const dp = Math.max(2, Math.round(sc / 3));            // píxel fino de las gotas
+  const ox = Math.round((W - uW * sc) / 2), oy = Math.round(H * 0.30);
   const fallMs = cfg.CAIDA_MS || 320, stagger = cfg.ESCALONADO_MS || 90, wordGap = cfg.PAUSA_PALABRAS_MS || 170;
-  const ROW_COL = ['#ff6a5c', '#ff3a3a', '#d6142c', '#d6142c', '#b00d22', '#8a0818', '#6a0012'];
+  const ROW_COL = ['#ff6a5c', '#ff4a42', '#ef2f33', '#d6142c', '#c30f26', '#b00d22', '#9c0a1e', '#8a0818', '#780614', '#6a0012'];
+  const rcol = y => ROW_COL[Math.min(ROW_COL.length - 1, Math.floor(y * ROW_COL.length / GH))];
+  const rnd = (a, b) => a + Math.random() * (b - a);
   const letters = [];
   ['GAME', 'OVER'].forEach((word, li) => {
     word.split('').forEach((ch, ci) => {
-      const g = PIXEL_FONT[ch], set = new Set(), px = [];
-      g.forEach((row, ry) => row.split('').forEach((v, rx) => { if (v === '1') { set.add(rx + ',' + ry); px.push([rx, ry]); } }));
+      const g = GAME_OVER_GLYPHS[ch], set = new Set(), px = [], crack = new Set(), bottoms = {};
+      g.forEach((row, ry) => row.split('').forEach((v, rx) => {
+        if (v === '.') return;
+        set.add(rx + ',' + ry); px.push([rx, ry]); if (v === 'c') crack.add(rx + ',' + ry);
+        bottoms[rx] = Math.max(bottoms[rx] === undefined ? -1 : bottoms[rx], ry);
+      }));
       const drips = [];
-      for (let rx = 0; rx < 5; rx++) if (g[6][rx] === '1' && Math.random() < 0.55) drips.push({ x: rx, len: 2 + Math.floor(Math.random() * 7), delay: Math.random() * 0.35 });
+      Object.keys(bottoms).forEach(k => {
+        const x = +k;
+        if (Math.random() > 0.42) return;
+        const big = Math.random() < 0.28, len = rnd(14, 120) * (big ? 1.2 : 1);
+        drips.push({
+          x: (x + rnd(0.2, 0.55)) * sc, y0: (bottoms[x] + 1) * sc, w: big ? 2 : 1, len,
+          v: rnd(14, 55), a: rnd(20, 90), delay: rnd(0, 0.9),
+          branch: len > 50 && Math.random() < 0.6 ? { at: rnd(0.35, 0.7), dir: Math.random() < 0.5 ? -1 : 1, len: rnd(0.25, 0.5) * len } : null,
+          drop: Math.random() < 0.45 ? { gap: rnd(8, 18), fall: rnd(10, 30) } : null,
+          over: false
+        });
+      });
+      // grietas que supuran: una gota sobre la cara de la letra
+      const cl = [...crack].map(k => k.split(',').map(Number)).sort((p, q) => q[1] - p[1]);
+      if (cl.length && Math.random() < 0.8) {
+        const [cx, cy] = cl[0];
+        drips.push({ x: (cx + 0.35) * sc, y0: (cy + 1) * sc, w: 1, len: rnd(10, 28), v: rnd(10, 30), a: rnd(10, 40), delay: rnd(0.4, 1.1), branch: null, drop: null, over: true });
+      }
       const start = li * (3 * stagger + fallMs * 0.25 + wordGap) + ci * stagger;
-      letters.push({ px, set, drips, x0: ci * 6, y0: li * 10, start, land: start + fallMs, dist: oy + (li * 10 + 8) * sc });
+      letters.push({ px, set, crack, drips, x0: ci * (GW + 1), y0: li * wordH, start, land: start + fallMs, dist: oy + (li * wordH + GH) * sc });
     });
   });
   const lastLand = letters[letters.length - 1].land, midLand = letters[3].land;
@@ -4298,6 +4423,44 @@ function runGameOverStrike(done) {
   }, lastLand);
   const t0 = performance.now();
   const fr = v => Math.round(v);
+  function drawDrip(L, d, tau, X0, Y0) {
+    // longitud actual: aceleración suave hasta el máximo
+    const h = Math.min(d.len, d.v * tau + 0.5 * d.a * tau * tau);
+    if (h <= 0) return;
+    const w = d.w * dp, xx = fr(X0 + d.x), yy = fr(Y0 + d.y0 - sc * 0.4), done = h >= d.len;
+    const body = (x, y, ww, hh) => { c2.fillStyle = '#9c0018'; c2.fillRect(x, y, ww, hh); c2.fillStyle = '#d83a46'; c2.fillRect(x, y, Math.max(1, Math.floor(dp / 2)), hh); };
+    // contorno negro
+    c2.fillStyle = '#000';
+    c2.fillRect(xx - 1, yy - 1, w + 2, fr(h) + 2);
+    const bulb = (done ? 1.8 : 1.5) * dp;
+    c2.beginPath(); c2.arc(xx + w / 2, yy + h, bulb / 2 + 1.5, 0, 6.3); c2.fill();
+    // cuerpo (se afina hacia el final si es ancho)
+    if (d.w === 2) { body(xx, yy, w, fr(h * 0.6)); body(xx + Math.floor(dp / 2), yy + fr(h * 0.6), dp, fr(h * 0.4)); }
+    else body(xx, yy, w, fr(h));
+    c2.fillStyle = '#b30a1e'; c2.beginPath(); c2.arc(xx + w / 2, yy + h, bulb / 2, 0, 6.3); c2.fill();
+    c2.fillStyle = '#f07a7a'; c2.fillRect(fr(xx + w / 2 - bulb / 4), fr(yy + h - bulb / 4), Math.max(1, Math.floor(dp / 2)), Math.max(1, Math.floor(dp / 2)));
+    // bifurcación
+    if (d.branch && h > d.len * d.branch.at) {
+      const by = yy + d.len * d.branch.at, bl = Math.min(d.branch.len, (h - d.len * d.branch.at) * 0.85);
+      for (let k = 0; k < bl; k += dp) {
+        const bx = xx + d.branch.dir * Math.floor(k / (dp * 1.6)) * dp;
+        c2.fillStyle = '#000'; c2.fillRect(bx - 1, fr(by + k) - 1, dp + 2, dp + 2);
+      }
+      for (let k = 0; k < bl; k += dp) {
+        const bx = xx + d.branch.dir * Math.floor(k / (dp * 1.6)) * dp;
+        c2.fillStyle = '#9c0018'; c2.fillRect(bx, fr(by + k), dp, dp);
+      }
+      c2.fillStyle = '#000'; c2.beginPath(); c2.arc(xx + d.branch.dir * Math.floor(bl / (dp * 1.6)) * dp + dp / 2, by + bl + dp * 0.4, dp * 0.95 + 1.2, 0, 6.3); c2.fill();
+      c2.fillStyle = '#b30a1e'; c2.beginPath(); c2.arc(xx + d.branch.dir * Math.floor(bl / (dp * 1.6)) * dp + dp / 2, by + bl + dp * 0.4, dp * 0.95, 0, 6.3); c2.fill();
+    }
+    // gota suelta que se desprende al terminar
+    if (done && d.drop) {
+      const dy = Math.min(d.drop.fall, Math.max(0, (tau - (-d.v / d.a + Math.sqrt((d.v * d.v + 2 * d.a * d.len)) / d.a)) * 60));
+      const gy = fr(yy + d.len + d.drop.gap + dy);
+      c2.fillStyle = '#000'; c2.beginPath(); c2.arc(xx + w / 2, gy, dp * 0.95 + 1.2, 0, 6.3); c2.fill();
+      c2.fillStyle = '#a80c20'; c2.beginPath(); c2.arc(xx + w / 2, gy, dp * 0.95, 0, 6.3); c2.fill();
+    }
+  }
   (function frame() {
     const t = performance.now() - t0;
     c2.clearRect(0, 0, W, H);
@@ -4308,28 +4471,24 @@ function runGameOverStrike(done) {
       if (p < 1) dy = -L.dist * (1 - p * p);
       else { const b = (t - L.land) / 260; if (b < 1) dy = -Math.abs(Math.sin(b * Math.PI * 1.5)) * sc * 0.9 * (1 - b); }
       const X = u => fr(ox + (L.x0 + u) * sc), Y = u => fr(oy + dy + (L.y0 + u) * sc), S = u => Math.max(1, fr(u * sc));
+      const X0 = ox + L.x0 * sc, Y0 = oy + dy + L.y0 * sc;
+      const landed = t >= L.land;
       // 1) borde negro grueso
       c2.fillStyle = '#000';
-      L.px.forEach(([x, y]) => c2.fillRect(X(x - 0.55), Y(y - 0.55), S(2.1), S(2.1)));
-      // 2) gotas (tras caer): borde, cuerpo oscuro, brillo y gota redonda al final
-      const gk = Math.min(1, Math.max(0, (t - L.land - 150) / 1100));
-      L.drips.forEach(d => {
-        const len = Math.floor(d.len * Math.min(1, Math.max(0, (gk - d.delay) / (1 - d.delay))));
-        if (len <= 0) return;
-        c2.fillStyle = '#000'; c2.fillRect(X(d.x + 0.05), Y(7 - 0.4), S(0.9), S(len + 0.4 + 0.45));
-        c2.fillStyle = '#a10018'; c2.fillRect(X(d.x + 0.2), Y(7 - 0.4), S(0.6), S(len + 0.2));
-        c2.fillStyle = '#e03a48'; c2.fillRect(X(d.x + 0.2), Y(7), S(0.18), S(len));
-        c2.fillStyle = '#000'; c2.fillRect(X(d.x + 0.05), Y(7 + len - 0.3), S(0.9), S(0.9));
-        c2.fillStyle = '#c0001e'; c2.fillRect(X(d.x + 0.17), Y(7 + len - 0.2), S(0.66), S(0.66));
-      });
-      // 3) relleno en bandas + brillos y sombras de borde
-      L.px.forEach(([x, y]) => { c2.fillStyle = ROW_COL[y]; c2.fillRect(X(x), Y(y), S(1) + 1, S(1) + 1); });
+      L.px.forEach(([x, y]) => c2.fillRect(X(x - 0.5), Y(y - 0.5), S(2), S(2)));
+      // 2) gotas que salen del borde inferior (tras caer)
+      if (landed) L.drips.filter(d => !d.over).forEach(d => drawDrip(L, d, (t - L.land) / 1000 - d.delay, X0, Y0));
+      // 3) relleno en bandas, grietas, brillos y sombras de borde
+      L.px.forEach(([x, y]) => { c2.fillStyle = L.crack.has(x + ',' + y) ? '#33000a' : rcol(y); c2.fillRect(X(x), Y(y), S(1) + 1, S(1) + 1); });
       L.px.forEach(([x, y]) => {
-        if (!L.set.has(x + ',' + (y - 1))) { c2.fillStyle = '#ffc7b8'; c2.fillRect(X(x), Y(y), S(1) + 1, S(0.26)); }
-        if (!L.set.has((x - 1) + ',' + y)) { c2.fillStyle = '#ff9a8a'; c2.fillRect(X(x), Y(y), S(0.2), S(1) + 1); }
+        if (L.crack.has(x + ',' + y)) return;
+        if (!L.set.has(x + ',' + (y - 1))) { c2.fillStyle = '#ffc7b8'; c2.fillRect(X(x), Y(y), S(1) + 1, Math.max(1, S(0.26))); }
+        if (!L.set.has((x - 1) + ',' + y)) { c2.fillStyle = '#ff9a8a'; c2.fillRect(X(x), Y(y), Math.max(1, S(0.2)), S(1) + 1); }
         if (!L.set.has(x + ',' + (y + 1))) { c2.fillStyle = '#3d000b'; c2.fillRect(X(x), Y(y + 0.72), S(1) + 1, S(0.28) + 1); }
-        if (!L.set.has((x + 1) + ',' + y)) { c2.fillStyle = '#58000d'; c2.fillRect(X(x + 0.8), Y(y), S(0.2) + 1, S(1) + 1); }
+        if (!L.set.has((x + 1) + ',' + y)) { c2.fillStyle = '#58000d'; c2.fillRect(X(x + 0.8), Y(y), Math.max(1, S(0.2)) + 1, S(1) + 1); }
       });
+      // 4) grietas que supuran (sobre la cara)
+      if (landed) L.drips.filter(d => d.over).forEach(d => drawDrip(L, d, (t - L.land) / 1000 - d.delay, X0, Y0));
     });
     if (t < total) requestAnimationFrame(frame);
     else { ov.style.transition = 'opacity .35s ease-in'; ov.style.opacity = '0'; setTimeout(() => { ov.remove(); done(); }, 380); }
@@ -4378,7 +4537,7 @@ function openUnfairDeal() {
   // Diálogo del Trapero (la primera vez más explicativo)
   const fr = (DATOS_JUEGO.NARRATIVA.TRAPERO_GAME_OVER || {});
   const first = STATE.salvageDealsCount === 0;
-  const pool = first ? [fr.PRIMERA] : (fr.OTRAS || []);
+  const pool = first ? [].concat(fr.PRIMERA || []) : (fr.OTRAS || []);
   const phrase = (pool.filter(Boolean).length ? pool.filter(Boolean)[Math.floor(Math.random() * pool.filter(Boolean).length)] : '');
   if (phrase) triggerSequentialDialogue("EL TRAPERO", phrase, "fa-mask", "Última oportunidad", "text-rose-400", null, showDeal);
   else showDeal();
@@ -4635,6 +4794,15 @@ function fitHudTitle() {
   if (box && box.scrollWidth > box.clientWidth + 1) root.classList.add('title-compact');
 }
 window.addEventListener('resize', () => { try { fitHudTitle(); } catch (e) {} });
+// [0.092] Recalcular también cuando cambia el ancho de las insignias (p. ej. x9 -> x17) o su contenido
+(function watchHudTitle() {
+  let raf = 0;
+  const go = () => { if (raf) return; raf = requestAnimationFrame(() => { raf = 0; try { fitHudTitle(); } catch (e) {} }); };
+  const hud = document.getElementById('persistentHUD');
+  if (!hud) return;
+  try { new ResizeObserver(go).observe(hud); } catch (e) {}
+  try { new MutationObserver(go).observe(hud, { childList: true, characterData: true, subtree: true }); } catch (e) {}
+})();
 
 function updateShopResourcesUI() {
   const resHTML = `
@@ -6637,7 +6805,32 @@ function openTraperoShop() {
    CARTAS DE SUBIDA DE NIVEL
    ========================================================================== */
 
+// [0.092] Frontal del cofre de madera (provisional): remata los costados del sprite y repite una tabla de la parte baja (sin la cerradura),
+// para que la carta parezca estar dentro de un cofre abierto de cualquier ancho. Se dibuja una vez y se guarda.
+let chestFrontURL = null;
+function withChestFront(cb) {
+  if (chestFrontURL) { cb(chestFrontURL); return; }
+  const src = (ASSETS.cofres && ASSETS.cofres.wooden) || '';
+  if (!src) return;
+  const im = new Image();
+  im.onload = () => {
+    try {
+      const k = 3, W = 320, r0 = 33, rh = 12, cv = document.createElement('canvas');
+      cv.width = W; cv.height = rh * k;
+      const g = cv.getContext('2d'); g.imageSmoothingEnabled = false;
+      const capW = 11, midX = 15, midW = 8;
+      g.drawImage(im, 4, r0, capW, rh, 0, 0, capW * k, rh * k);
+      g.drawImage(im, 52 - capW + 1, r0, capW, rh, W - capW * k, 0, capW * k, rh * k);
+      for (let x = capW * k; x < W - capW * k; x += midW * k) g.drawImage(im, midX, r0, midW, rh, x, 0, Math.min(midW * k, W - capW * k - x) , rh * k);
+      chestFrontURL = cv.toDataURL('image/png');
+      cb(chestFrontURL);
+    } catch (e) {}
+  };
+  im.src = src;
+}
+
 function triggerLevelUpChoice() {
+  lvlClearTimers();
   const lvlNum = document.getElementById('levelUpNum'); 
   if (lvlNum) {
     lvlNum.textContent = `NIVEL ${STATE.level}`;
@@ -6645,15 +6838,35 @@ function triggerLevelUpChoice() {
   
   const modalHeader = document.querySelector('#levelUpModal h2, #levelUpModal .modal-title, #levelUpModal h3');
   if (modalHeader) {
-    modalHeader.innerHTML = `<span class="text-xs font-mono font-bold text-indigo-400 block tracking-widest uppercase mb-1">¡HAS SUBIDO DE NIVEL!</span><span class="text-2xl sm:text-3xl font-black text-amber-400 tracking-wider font-retro">NIVEL ${STATE.level}</span>`;
+    modalHeader.classList.remove('rainbow-text');   // [0.092] el degradado del título tapaba el número animado
+    modalHeader.innerHTML = `<span class="text-xs font-mono font-bold text-indigo-400 block tracking-widest uppercase mb-1">¡HAS SUBIDO DE NIVEL!</span><span class="lvl-pop text-4xl sm:text-5xl font-black text-amber-400 tracking-wider font-retro block">NIVEL ${STATE.level}</span>`;
   }
 
   const grid = document.getElementById('levelUpCardsGrid') || document.getElementById('chestChoicesGrid'); 
   if (!grid) return;
   grid.innerHTML = '';
+  const choices = document.getElementById('levelUpChoices'), nextBtn = document.getElementById('wildcardNextBtn');
+  if (choices) choices.classList.add('hidden');
+  if (nextBtn) nextBtn.classList.add('hidden');
 
-  // [CAMBIO] Wildcard obligatorio arriba y, debajo, las 3 cartas a elegir (todo en la misma pantalla)
-  rollWildcard();
+  // [0.092] Fanfarria + cartel; ruleta de wildcard (se aplica ya, se muestra al frenar); SIGUIENTE; y entonces las 3 mejoras como cofres abiertos
+  try { audio.init(); audio.playLevelUpFanfare(); } catch (e) {}
+  const wcRes = pickWildcard();
+  updateUI();
+  const revealChoices = () => {
+    if (nextBtn) nextBtn.classList.add('hidden');
+    if (choices) choices.classList.remove('hidden');
+    const step = (DATOS_JUEGO.SUBIDA_NIVEL || {}).ESCALONADO_COFRES_MS || 260;
+    [...grid.children].forEach((el, i) => {
+      el.style.opacity = '0';
+      lvlTimers.push(setTimeout(() => { el.style.opacity = ''; el.classList.add('lvl-chest-in'); try { audio.playCardRise(); } catch (e) {} }, 120 + i * step));
+    });
+  };
+  lvlTimers.push(setTimeout(() => runWildcardRoulette(wcRes, () => {
+    if (!nextBtn) { revealChoices(); return; }
+    nextBtn.classList.remove('hidden');
+    nextBtn.onclick = () => { try { audio.playUiClick(); } catch (e) {} revealChoices(); };
+  }), 1300));
 
   const pool = [...DATOS_JUEGO.CARTAS_NIVEL.PASIVAS, ...DATOS_JUEGO.CARTAS_NIVEL.TACTICAS].sort(() => 0.5 - Math.random()).slice(0, 3);
 
@@ -6677,20 +6890,27 @@ function triggerLevelUpChoice() {
       descText = `Nivel 1: +${basePct}% de botín y EXP en sus cofres.`;
     }
 
+    // [0.092] Cofre abierto (dibujo provisional: el frontal del cofre de madera recorta la parte baja de la carta) con la carta dentro
     const cardEl = document.createElement('button');
-    cardEl.className = "bg-slate-900 border border-indigo-500/50 p-3 rounded-2xl flex flex-col items-center text-center gap-2 active:scale-95 transition-all shadow-xl hover:border-indigo-400 group cursor-pointer";
+    cardEl.className = "lvl-chest group cursor-pointer active:scale-95 transition-transform";
     cardEl.innerHTML = `
-      <div class="w-10 h-10 rounded-xl bg-indigo-950 border border-indigo-500 flex items-center justify-center text-indigo-400 text-lg group-hover:scale-110 transition-transform">
-        <i class="fa-solid ${cardData.icono}"></i>
+      <div class="lvl-chest-glow"></div>
+      <div class="lvl-card bg-slate-900 border border-indigo-500/60 rounded-xl flex items-center gap-2.5 text-left shadow-xl group-hover:border-indigo-300">
+        <div class="w-10 h-10 flex-none rounded-xl bg-indigo-950 border border-indigo-500 flex items-center justify-center text-indigo-400 text-lg">
+          <i class="fa-solid ${cardData.icono}"></i>
+        </div>
+        <div class="min-w-0">
+          <span class="text-[9px] font-extrabold font-mono uppercase px-2 py-0.5 bg-indigo-950 text-indigo-300 rounded-full border border-indigo-800">${cardData.tipo}</span>
+          <div class="text-white font-black text-xs mt-1">${titleText}</div>
+          <div class="text-[10px] text-slate-400 font-mono mt-0.5">${descText}</div>
+        </div>
       </div>
-      <div>
-        <span class="text-[9px] font-extrabold font-mono uppercase px-2 py-0.5 bg-indigo-950 text-indigo-300 rounded-full border border-indigo-800">${cardData.tipo}</span>
-        <div class="text-white font-black text-xs mt-1">${titleText}</div>
-        <div class="text-[10px] text-slate-400 font-mono mt-0.5">${descText}</div>
-      </div>
+      <div class="lvl-chest-front"></div>
     `;
+    withChestFront(url => { const f = cardEl.querySelector('.lvl-chest-front'); if (f) f.style.backgroundImage = `url('${url}')`; });
 
     cardEl.addEventListener('click', () => {
+      lvlClearTimers();
       audio.playUnlockFanfare('raro');
       
       if (cardData.tipo === 'PERK') {
@@ -7019,7 +7239,9 @@ let cardBeepCount = 0;
   setInterval(() => {
     if (!audio.ctx) return;
     const a = STATE.screenChests && STATE.screenChests[STATE.activeChestIdx];
-    const on = !!(a && a.rarity && a.rarity.id === 'legendario') && a !== humHoldChest && !isLootProcessing && !minigameInProgress && !modalVisible('minigameModal') && !modalVisible('gameOverModal') && !document.getElementById('coverScreen');
+    // [0.092] Solo suena con la pantalla libre: sin diálogos, ventanas, banners ni eventos en cola (vuelve con su fundido al cerrarlos)
+    const screenBusy = !mainScreenFree() || ['optionsModal', 'statsModal', 'achievementsModal', 'duendeReceiptModal', 'confirmModal', 'resumeGameModal', 'resetConfirmModal', 'testKeyModal'].some(modalVisible);
+    const on = !!(a && a.rarity && a.rarity.id === 'legendario') && a !== humHoldChest && !screenBusy;
     audio.setLegendHum(on, cfg);
   }, 250);
 })();
@@ -7614,9 +7836,10 @@ function testKeyHash(seq, salt) {
       if (!active) { if (wasVib) { try { navigator.vibrate(0); } catch (e) {} wasVib = false; } return; }
       let d = Math.abs(lpState.angle - lpState.sweetSpot);
       (lpState.decoySpots || []).forEach(ds => { d = Math.min(d, Math.abs(lpState.angle - ds)); });
-      const zone = hapCfg.ZONA_GRADOS || 35, tol = lpState.tolerance || 0;
-      let r = d <= tol ? 1 : Math.max(0, 1 - (d - tol) / zone);
-      r = Math.pow(r, hapCfg.CURVA || 1.6);
+      // [0.092] La intensidad se mide desde el CENTRO exacto del punto dulce: empieza a ZONA_GRADOS y llega al máximo solo en el centro
+      const zone = hapCfg.ZONA_GRADOS || 20;
+      let r = Math.max(0, 1 - d / zone);
+      r = Math.pow(r, hapCfg.CURVA || 2.6);
       if (r < 0.03) { if (wasVib) { try { navigator.vibrate(0); } catch (e) {} wasVib = false; } return; }
       const per = hapCfg.PERIODO_MS || 110;
       if (touchVib) {

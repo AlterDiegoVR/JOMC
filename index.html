@@ -408,18 +408,23 @@
   </div>
 
   <!-- MODAL DE SUBIDA DE NIVEL Y EVENTOS WILDCARD -->
-  <div id="levelUpModal" class="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-xl flex flex-col items-center justify-center p-4 hidden overflow-y-auto">
-    <div class="text-center mb-3">
-      <span class="text-[10px] font-bold uppercase tracking-widest text-indigo-400 bg-indigo-950/80 border border-indigo-800/80 px-3 py-1 rounded-full">
-        ¡SUBIDA DE NIVEL!
-      </span>
-      <h2 class="text-3xl font-black rainbow-text font-retro mt-1">NIVEL ALCANZADO</h2>
+  <div id="levelUpModal" class="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-xl flex flex-col items-center p-4 hidden overflow-y-auto">
+    <div class="m-auto w-full flex flex-col items-center">
+      <div class="text-center mb-3">
+        <span class="text-[10px] font-bold uppercase tracking-widest text-indigo-400 bg-indigo-950/80 border border-indigo-800/80 px-3 py-1 rounded-full">
+          ¡SUBIDA DE NIVEL!
+        </span>
+        <h2 class="text-3xl font-black rainbow-text font-retro mt-1">NIVEL ALCANZADO</h2>
+      </div>
+
+      <div id="wildcardBanner" class="w-full max-w-xs p-3 rounded-2xl border font-mono text-xs mb-3 text-center shadow-lg transition-all"></div>
+      <button id="wildcardNextBtn" class="hidden card-pulse mb-3 px-8 py-2.5 rounded-xl bg-amber-500 text-slate-950 font-black text-sm tracking-widest border-2 border-amber-300 shadow-xl active:scale-95">SIGUIENTE ▶</button>
+
+      <div id="levelUpChoices" class="hidden w-full max-w-xs flex flex-col items-center">
+        <div class="text-[11px] text-slate-400 mb-2 font-bold uppercase tracking-wider">Elige tu mejora activa:</div>
+        <div id="chestChoicesGrid" class="flex flex-col gap-3 w-full max-w-xs"></div>
+      </div>
     </div>
-
-    <div id="wildcardBanner" class="w-full max-w-xs p-3 rounded-2xl border font-mono text-xs mb-4 text-center shadow-lg transition-all"></div>
-
-    <div class="text-[11px] text-slate-400 mb-2 font-bold uppercase tracking-wider">Elige tu mejora activa:</div>
-    <div id="chestChoicesGrid" class="flex flex-col gap-2.5 w-full max-w-xs"></div>
   </div>
 
   <!-- MODAL DE TIENDA Y RECICLAJE DEL DUENDE -->
