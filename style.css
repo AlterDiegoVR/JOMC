@@ -200,9 +200,9 @@ html:not(.narrow-layout) #lootModal > div { max-width: 460px; }
 html.narrow-layout .receipt-quote { font-size: 15px !important; line-height: 1.5 !important; font-style: normal !important; font-family: 'Outfit', sans-serif !important; color: #e9d5ff !important; }
 
 /* [0.089b] Ventanas informativas más grandes en PC (--mz lo calcula script.js). Los puzles (#minigameModal) no se tocan. */
-html:not(.narrow-layout) :is(#lootModal, #levelUpModal, #merchantModal, #traperoShopModal, #unfairDealModal, #gameOverModal, #duendeReceiptModal, #resumeGameModal, #resetConfirmModal) > div,
+html:not(.narrow-layout) :is(#lootModal, #levelUpModal, #merchantModal, #traperoShopModal, #unfairDealModal, #gameOverModal, #duendeReceiptModal, #resumeGameModal, #resetConfirmModal, #optionsModal, #statsModal, #confirmModal) > div,
 html:not(.narrow-layout) #dialogueModal > * { zoom: var(--mz, 1); }
-html:not(.narrow-layout) :is(#lootModal, #levelUpModal, #merchantModal, #traperoShopModal, #unfairDealModal, #gameOverModal, #duendeReceiptModal) > div { max-height: calc(94dvh / var(--mz, 1)); overflow-y: auto; }
+html:not(.narrow-layout) :is(#lootModal, #levelUpModal, #merchantModal, #traperoShopModal, #unfairDealModal, #gameOverModal, #duendeReceiptModal, #optionsModal, #statsModal, #confirmModal) > div { max-height: calc(94dvh / var(--mz, 1)); overflow-y: auto; }
 /* [0.089b] Título compacto cuando no cabe junto a las insignias */
 html.title-compact .title-full { display: none; }
 html.title-compact .title-short { display: inline; }

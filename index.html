@@ -36,9 +36,9 @@
     /* [0.089b] */
 
     /* [0.089b] Ventanas informativas más grandes en PC (--mz lo calcula script.js). Los puzles (#minigameModal) no se tocan. */
-    html:not(.narrow-layout) :is(#lootModal, #levelUpModal, #merchantModal, #traperoShopModal, #unfairDealModal, #gameOverModal, #duendeReceiptModal, #resumeGameModal, #resetConfirmModal) > div,
+    html:not(.narrow-layout) :is(#lootModal, #levelUpModal, #merchantModal, #traperoShopModal, #unfairDealModal, #gameOverModal, #duendeReceiptModal, #resumeGameModal, #resetConfirmModal, #optionsModal, #statsModal, #confirmModal) > div,
     html:not(.narrow-layout) #dialogueModal > * { zoom: var(--mz, 1); }
-    html:not(.narrow-layout) :is(#lootModal, #levelUpModal, #merchantModal, #traperoShopModal, #unfairDealModal, #gameOverModal, #duendeReceiptModal) > div { max-height: calc(94dvh / var(--mz, 1)); overflow-y: auto; }
+    html:not(.narrow-layout) :is(#lootModal, #levelUpModal, #merchantModal, #traperoShopModal, #unfairDealModal, #gameOverModal, #duendeReceiptModal, #optionsModal, #statsModal, #confirmModal) > div { max-height: calc(94dvh / var(--mz, 1)); overflow-y: auto; }
     /* [0.089b] Título compacto cuando no cabe junto a las insignias */
     html.title-compact .title-full { display: none; }
     html.title-compact .title-short { display: inline; }
@@ -118,8 +118,8 @@
         <div id="streakBadge" class="hidden px-1.5 h-8 bg-amber-500/20 border border-amber-400/50 rounded-xl text-amber-300 font-bold text-[10px] flex items-center gap-1 whitespace-nowrap flex-none">
           <i class="fa-solid fa-fire text-amber-400"></i> <span id="streakText">x0</span>
         </div>
-        <button id="resetGameBtn" title="Reiniciar partida" class="w-8 h-8 bg-rose-950/80 hover:bg-rose-900 active:scale-95 text-rose-300 text-xs rounded-xl border border-rose-700/50 shadow-md transition-all flex items-center justify-center">
-          <i class="fa-solid fa-rotate-right"></i>
+        <button id="optionsBtn" title="Opciones" class="w-8 h-8 bg-slate-800 hover:bg-slate-700 active:scale-95 text-amber-300 text-xs rounded-xl border border-slate-600/70 shadow-md transition-all flex items-center justify-center">
+          <i class="fa-solid fa-gear"></i>
         </button>
         <button id="muteBtn" class="w-8 h-8 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-xs flex items-center justify-center">
           <i class="fa-solid fa-volume-high"></i>
@@ -316,6 +316,7 @@
         <p class="text-[10px] text-slate-400 text-center">
           Pulsa para fijar el <span class="text-amber-400 font-bold">pistón activo</span> en la <span class="text-emerald-400 font-bold">línea verde</span>.
         </p>
+        <p id="tumblerTapHint" class="hidden text-[10px] text-emerald-300 font-bold text-center -mt-1"></p>
 
         <div class="relative w-full h-52 bg-slate-900 rounded-xl border border-slate-800 p-2 flex justify-around items-center overflow-hidden">
           <div id="shearLine" class="absolute left-0 right-0 h-3 bg-emerald-500/50 border-y border-emerald-400 z-10 pointer-events-none flex items-center justify-end pr-2 transition-all" style="top: 50%;">
@@ -503,11 +504,11 @@
       </div>
 
       <button id="acceptDealBtn" class="mt-3 w-full py-3.5 bg-gradient-to-r from-amber-600 to-rose-600 active:from-amber-500 text-white font-extrabold text-xs rounded-xl shadow-xl border border-amber-400/40">
-        ACEPTAR TRATO INJUSTO
+        ACEPTAR EL TRATO (seguir jugando)
       </button>
 
       <button id="declineDealBtn" class="mt-2 w-full py-2.5 bg-slate-800 active:bg-slate-700 text-slate-400 font-bold text-xs rounded-xl">
-        Aceptar Game Over
+        ACEPTAR EL FIN
       </button>
     </div>
   </div>
@@ -531,6 +532,10 @@
         <div class="flex justify-between">
           <span>Nivel Alcanzado:</span>
           <span id="goLevel" class="text-indigo-400 font-bold">1</span>
+        </div>
+        <div id="goLoopRow" class="hidden flex justify-between">
+          <span>Bucle:</span>
+          <span id="goLoop" class="text-amber-400 font-bold">1</span>
         </div>
       </div>
 

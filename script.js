@@ -7,7 +7,7 @@
 
 const DATOS_JUEGO = {
   // [0.088] Versión visible en pantalla (esquina inferior central) para que las capturas la incluyan
-  VERSION: '0.089b',
+  VERSION: '0.090',
 
   // [0.089] Avisos "+N" / "-N" de herramientas. ESPERAR_PANTALLA_LIBRE:true = recupera la idea anterior (esperar a que no haya
   // banners, tiendas ni diálogos encima). Con false salen siempre, por encima de todo.
@@ -23,11 +23,33 @@ const DATOS_JUEGO = {
     'Intentas cambiar la luz, pero la maldición lo cubre todo como sangre seca.'
   ],
 
+  // [0.090] Modo test (menú del engranaje): clave de LONGITUD flechas. Solo se guarda su huella (SAL + 2000 rondas de SHA-256), no la secuencia.
+  MODO_TEST: { LONGITUD: 6, SAL: 'JOMC-7f3a91c2', HUELLA: 'a24aa5d1538936c292ebb6434c149919f1996175a0a06724d40f9e2e3cf7bdbc' },
+
+  // [0.090] Golpe de Game Over (antes de que hable el Trapero)
+  GAME_OVER: { GOLPE: { DURACION_MS: 2200, SACUDIDA_PX: 16, SACUDIDA_MS: 650 } },
+
+  // [0.090] Ayudas de las primeras veces (por partida)
+  AYUDAS: { GANZUA_TACTIL: { VECES: 3, ANILLO: 'ARRASTRA EL ANILLO', CENTRO: 'MANTÉN EL CENTRO' }, PISTONES_TOQUE: { VECES: 3, TEXTO: 'También puedes tocar cualquier punto de la pantalla para fijar el pistón.' } },
+
+  // [0.090] Enfado del Duende al NO comprar en la tienda especial (cofres 85/88/90): sacudida (px, ms) y nivel de sonido 1-3
+  ENFADO_DUENDE: { 85: { SACUDIDA_PX: 5, MS: 380, NIVEL: 1 }, 88: { SACUDIDA_PX: 9, MS: 560, NIVEL: 2 }, 90: { SACUDIDA_PX: 15, MS: 900, NIVEL: 3 }, DEFAULT: { SACUDIDA_PX: 5, MS: 380, NIVEL: 1 } },
+
   // [0.089b] El pitido suena mientras la carta palpite (MAX_REPETICIONES: 0 = sin límite). Se pausa con banners/ventanas encima.
   PITIDO_CARTAS: { ACTIVAR: true, CADA_MS: 2000, MAX_REPETICIONES: 0 },
 
+  // [0.090] Sonido por perfil. PEQUENOS = clics y avisos, BOTIN = fanfarrias y caja registradora, GENERAL = todo. Se elige solo: móvil/táctil o escritorio.
+  // CANAL_VIVO: ruido casi inaudible y continuo que mantiene despierto el canal de los auriculares Bluetooth (pon ACTIVAR:false para quitarlo).
+  SONIDO: {
+    PERFILES: {
+      escritorio: { GENERAL: 1, PEQUENOS: 1, BOTIN: 1 },
+      movil:      { GENERAL: 1, PEQUENOS: 2.0, BOTIN: 0.5 }
+    },
+    CANAL_VIVO: { ACTIVAR: true, NIVEL: 0.0015 }
+  },
+
   // [0.089b] Zumbido grave que muta despacio, solo cuando el cofre seleccionado es legendario (se calla al empezar el puzle y con el botón de silencio)
-  ZUMBIDO_LEGENDARIO: { ACTIVAR: true, VOLUMEN: 0.07, CAMBIO_NOTA_MS: 5500, NOTAS: [82.4, 73.4, 98, 65.4, 77.8], FUNDIDO_S: 1.2 },
+  ZUMBIDO_LEGENDARIO: { ACTIVAR: true, VOLUMEN: 0.05, FUNDIDO_S: 1.0, BASE_HZ: 2300, MOTIVO: [0, 1, 0, 1], NOTA_MS: 140, PAUSA_MS: 90, SUBIDA_CENTS: 20, REPETICIONES: 30, VIBRATO_HZ: 5.2, VIBRATO_CENTS: 28, CORTE_HZ: 5200 },   // [0.090] micro-bucle agudo tipo mellotron: sube un poco en cada repetición y se reinicia (BASE_HZ, MOTIVO en semitonos, SUBIDA_CENTS por repetición)
 
   // [0.089b] Pantalla previa de las cartas: solo en pantallas táctiles (SOLO_TACTIL:false = también en PC)
   CARTAS_PANTALLA_PREVIA: { ACTIVAR: true, SOLO_TACTIL: true },
@@ -100,10 +122,13 @@ const DATOS_JUEGO = {
     BOTON_ARMADO_TEXTO: 'PULSA DE NUEVO',
 
     // [0.087] Filtro granate (color del Trapero) mientras hay una maldición activa. El tinte por tier siempre tiene prioridad.
-    TINTE_MALDICION: { ACTIVAR: true, RGB: '122,38,57', ALFA: 0.30, PULSO: 0.04 },   // [0.087b] más rojizo y con pulso lento
+    TINTE_MALDICION: { ACTIVAR: true, RGB: '200,16,28', ALFA: 0.50, PULSO: 0.09, VINETA: 0.55, VINETA_RGB: '90,0,8' },   // [0.090] rojo vivo y rotundo, pulso marcado y viñeta roja (el tinte del tier 5 manda; el del tier 4 se suma)
 
     // [0.087] Vibración (ms) al cargar y al abrir la cerradura (solo móviles que la soporten)
     VIBRACION: { CARGAR: 35, ABRIR: 12 },
+
+    // [0.090] Vapor animado del Cofre de Vapor: se borra el humo dibujado en el sprite (zona BORRAR, en píxeles del sprite) y salen bocanadas de la boquilla
+    VAPOR_ANIMADO: { ACTIVAR: true, BORRAR: { x0: 20, y0: 0, x1: 38, y1: 7 }, BOQUILLA: { x: 23.5, y: 8 }, BOCANADAS: 9, CICLO_MS: 3000, ALTURA: 14, DERIVA: 6, TAM_MIN: 2, TAM_MAX: 6, COLOR: '236,228,205' },
 
     // Zona de la cerradura por tipo de cofre, como fracción del sprite (x, y desde la esquina sup. izq.; r = radio × ancho)
     CERRADURAS: {
@@ -599,6 +624,16 @@ const DATOS_JUEGO = {
     },
 
     // [0.087] Mensajes del Trapero cuando se acaba una maldición (se elige uno al azar, sea cual sea el tier)
+    // [0.090] El Trapero al quedarte sin recursos: la primera vez explica qué pasa; después, variantes cortas (editables)
+    TRAPERO_GAME_OVER: {
+      PRIMERA: "Ya no te queda nada con lo que abrir otro cofre. Así termina esto: sin llaves, no hay cofre. Pero yo no dejo que un buen cliente se marche con las manos vacías. Te daré lo que necesitas para seguir. A cambio, la maldición se quedará contigo unos cuantos cofres. Piénsalo bien... {sonrisa}",
+      OTRAS: [
+        "Otra vez con las manos vacías. Sabía que volverías. Mismo precio, misma maldición. {conspira}",
+        "Se acabaron las llaves, y se acaba el juego. A no ser que me dejes ayudarte... otra vez. {codicia}",
+        "No me mires así. Yo no te empujé al borde: solo vendo la cuerda. ¿Seguimos? {sonrisa}"
+      ]
+    },
+
     TRAPERO_FIN_MALDICION: [
       "La maldición se ha ido. Todo se acaba... salvo lo que tú no sueltas. {sonrisa}",
       "Tus hombros pesan menos. No me des las gracias: volverás a cargar algo peor. {conspira}",
@@ -884,10 +919,48 @@ class AudioEngine {
     if (!this.ctx) {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       this.ctx = new AudioCtx();
+      // [0.090] Buses de volumen por categoría (perfil escritorio / móvil) y canal "vivo" para auriculares Bluetooth
+      this.master = this.ctx.createGain(); this.master.connect(this.ctx.destination);
+      this.busSmall = this.ctx.createGain(); this.busSmall.connect(this.master);
+      this.busLoot = this.ctx.createGain(); this.busLoot.connect(this.master);
+      this._startKeepAlive();
+      this.applyProfile();
     }
     if (this.ctx.state === 'suspended') {
       this.ctx.resume();
     }
+  }
+  // Salida activa: la categoría en curso (pequeños / botín) o el master
+  dest() { return this._bus || this.master || this.ctx.destination; }
+  isMobileProfile() {
+    try { return document.documentElement.classList.contains('narrow-layout') || !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches); } catch (e) { return false; }
+  }
+  // Volúmenes por perfil: se leen de DATOS_JUEGO.SONIDO.PERFILES (escritorio / movil)
+  applyProfile() {
+    if (!this.ctx || !this.master) return;
+    const cfg = (DATOS_JUEGO.SONIDO || {}).PERFILES || {};
+    const pr = (this.isMobileProfile() ? cfg.movil : cfg.escritorio) || { GENERAL: 1, PEQUENOS: 1, BOTIN: 1 };
+    const t = this.ctx.currentTime;
+    this.master.gain.setTargetAtTime(pr.GENERAL, t, 0.05);
+    this.busSmall.gain.setTargetAtTime(pr.PEQUENOS, t, 0.05);
+    this.busLoot.gain.setTargetAtTime(pr.BOTIN, t, 0.05);
+    this.profileName = this.isMobileProfile() ? 'movil' : 'escritorio';
+    if (this._ka) {
+      const kc = (DATOS_JUEGO.SONIDO || {}).CANAL_VIVO || {};
+      this._ka.gain.setTargetAtTime((kc.ACTIVAR === false || this.muted) ? 0 : (kc.NIVEL || 0.0015), t, 0.2);
+    }
+  }
+  // Ruido casi inaudible y continuo: evita que los auriculares Bluetooth "duerman" el canal y se coman el inicio de los sonidos cortos
+  _startKeepAlive() {
+    const kc = (DATOS_JUEGO.SONIDO || {}).CANAL_VIVO || {};
+    if (kc.ACTIVAR === false) return;
+    const c = this.ctx, n = c.sampleRate * 2, buf = c.createBuffer(1, n, c.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+    const src = c.createBufferSource(); src.buffer = buf; src.loop = true;
+    const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 500;
+    const g = c.createGain(); g.gain.value = 0;
+    src.connect(lp); lp.connect(g); g.connect(c.destination); src.start();
+    this._ka = g;
   }
   playClick(proximityRatio = 0) {
     if (!this.ctx || this.muted) return;
@@ -900,7 +973,7 @@ class AudioEngine {
     gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.04);
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(this.dest());
     osc.start();
     osc.stop(this.ctx.currentTime + 0.04);
   }
@@ -914,7 +987,7 @@ class AudioEngine {
     osc.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + dur);
     g.gain.setValueAtTime(vol, t);
     g.gain.exponentialRampToValueAtTime(0.001, t + dur);
-    osc.connect(g); g.connect(this.ctx.destination);
+    osc.connect(g); g.connect(this.dest());
     osc.start(t); osc.stop(t + dur + 0.02);
   }
   _noise(dur, vol = 0.1, delay = 0, hp = 0) {
@@ -930,7 +1003,7 @@ class AudioEngine {
     g.gain.exponentialRampToValueAtTime(0.001, t + dur);
     let last = src;
     if (hp) { const f = this.ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = hp; src.connect(f); last = f; }
-    last.connect(g); g.connect(this.ctx.destination);
+    last.connect(g); g.connect(this.dest());
     src.start(t);
   }
   // Cargar la cerradura (primer toque con varios cofres): sonido corto y "tenso"
@@ -947,11 +1020,8 @@ class AudioEngine {
     if (typeId === 'piston') { this._tone(320, 110, 0.16, 'square', 0.1); this._tone(1250, 900, 0.22, 'triangle', 0.06, 0.03); this._noise(0.04, 0.08, 0, 2000); }
     else if (typeId === 'cyber') { [660, 880, 1320].forEach((f, i) => this._tone(f, f * 1.01, 0.11, 'triangle', 0.3, i * 0.06)); }
     else if (typeId === 'hydraulic') { this._noise(0.3, 0.1, 0, 900); this._tone(95, 55, 0.28, 'sawtooth', 0.08); }
-    else {   // [0.089b] madera: golpe más agudo (se oye en altavoces de móvil), con armónico, y chasquido más suave
-      this._tone(320, 210, 0.16, 'triangle', 0.22);
-      this._tone(640, 420, 0.1, 'sine', 0.09);
-      this._noise(0.04, 0.05, 0, 1500);
-      this._tone(300, 180, 0.06, 'triangle', 0.08, 0.04);
+    else {   // [0.090] madera: vuelve el "barril" de la 0.089 (el ajuste de la 0.089b se descartó)
+      this._tone(150, 62, 0.14, 'sine', 0.2); this._noise(0.05, 0.1, 0, 1500); this._tone(300, 180, 0.06, 'triangle', 0.08, 0.04);
     }
   }
   // [0.089b] Maldición: melodía lúgubre al empezar, y de cierre con nota final aguda al terminar
@@ -971,33 +1041,58 @@ class AudioEngine {
     if (who === 'EL TRAPERO') [196, 233, 175, 147].forEach((f, i) => { this._tone(f, f, 0.32, 'triangle', 0.13, i * 0.17); this._tone(f * 2, f * 2, 0.2, 'sine', 0.03, i * 0.17); });
     else [523, 659, 587, 784].forEach((f, i) => this._tone(f, f * 1.01, 0.2, 'sine', 0.09, i * 0.11));
   }
-  // [0.089b] Zumbido legendario: dos osciladores graves con filtro y modulación lenta; setLegendHum(true/false) lo funde
+  // [0.090] Zumbido legendario: micro-bucle corto tipo mellotron (3-4 notas muy agudas, por encima de una flauta, con intervalos incómodos)
+  // que se repite muchas veces; en cada repetición sube un poco el tono hasta que el ciclo se reinicia de golpe.
   setLegendHum(on, cfg) {
     if (!this.ctx) return;
+    const c = this.ctx;
     if (!this._hum && on) {
-      const c = this.ctx, g = c.createGain(), f = c.createBiquadFilter(), lfo = c.createOscillator(), lg = c.createGain();
-      g.gain.value = 0; f.type = 'lowpass'; f.frequency.value = 520; f.Q.value = 2;
-      const o1 = c.createOscillator(), o2 = c.createOscillator(), o3 = c.createOscillator();
-      o1.type = 'sawtooth'; o2.type = 'triangle'; o3.type = 'sine';
-      lfo.frequency.value = 0.13; lg.gain.value = 260; lfo.connect(lg); lg.connect(f.frequency);
-      [o1, o2, o3].forEach(o => { o.connect(f); o.start(); }); lfo.start();
-      f.connect(g); g.connect(c.destination);
-      this._hum = { g, o1, o2, o3, lastChange: 0, idx: 0 };
-      this._humTune(true, cfg);
+      const g = c.createGain(); g.gain.value = 0;
+      const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = cfg.CORTE_HZ || 5200; lp.Q.value = 0.7;
+      const lfo = c.createOscillator(), lg = c.createGain();   // oscilación de la "cinta" (vibrato lento)
+      lfo.frequency.value = cfg.VIBRATO_HZ || 5.2; lg.gain.value = cfg.VIBRATO_CENTS || 28; lfo.connect(lg); lfo.start();
+      lp.connect(g); g.connect(this.master || c.destination);
+      this._hum = { g, lp, lg, rep: 0, step: 0, nextT: 0 };
     }
     const h = this._hum; if (!h) return;
-    const vol = (!on || this.muted) ? 0 : (cfg.VOLUMEN || 0.07);
-    h.g.gain.setTargetAtTime(vol, this.ctx.currentTime, (cfg.FUNDIDO_S || 1.2) / 3);
-    if (on && !this.muted && performance.now() - h.lastChange > (cfg.CAMBIO_NOTA_MS || 5500)) this._humTune(false, cfg);
+    const vol = (!on || this.muted) ? 0 : (cfg.VOLUMEN || 0.04);
+    h.g.gain.setTargetAtTime(vol, c.currentTime, (cfg.FUNDIDO_S || 1) / 3);
+    if (!on || this.muted) { h.nextT = 0; return; }
+    // Programa las notas con antelación (esta función se llama cada 250 ms)
+    const motif = cfg.MOTIVO || [0, 1, 0, 1], noteS = (cfg.NOTA_MS || 140) / 1000, gapS = (cfg.PAUSA_MS || 90) / 1000;
+    if (!h.nextT || h.nextT < c.currentTime) h.nextT = c.currentTime + 0.05;
+    while (h.nextT < c.currentTime + 0.7) {
+      const cents = h.rep * (cfg.SUBIDA_CENTS || 20) + motif[h.step] * 100;
+      const f = (cfg.BASE_HZ || 2300) * Math.pow(2, cents / 1200);
+      this._humNote(f, h.nextT, noteS, cfg);
+      h.nextT += noteS; h.step++;
+      if (h.step >= motif.length) { h.step = 0; h.nextT += gapS; h.rep++; if (h.rep >= (cfg.REPETICIONES || 30)) h.rep = 0; }
+    }
   }
-  _humTune(first, cfg) {
-    const h = this._hum, notes = cfg.NOTAS || [82.4];
-    h.idx = first ? 0 : (h.idx + 1 + Math.floor(Math.random() * (notes.length - 1))) % notes.length;
-    const f = notes[h.idx], t = this.ctx.currentTime, tc = first ? 0.01 : 2.2;
-    h.o1.frequency.setTargetAtTime(f, t, tc);
-    h.o2.frequency.setTargetAtTime(f * 1.5 * (1 + (Math.random() - 0.5) * 0.01), t, tc);   // quinta ligeramente desafinada
-    h.o3.frequency.setTargetAtTime(f * 2, t, tc);                                         // octava: se oye en altavoces pequeños
-    h.lastChange = performance.now();
+  _humNote(f, t, dur, cfg) {
+    const c = this.ctx, h = this._hum;
+    const o1 = c.createOscillator(), o2 = c.createOscillator(), ng = c.createGain();
+    o1.type = 'triangle'; o2.type = 'sine';
+    o1.frequency.value = f; o2.frequency.value = f * 2.003;
+    h.lg.connect(o1.detune); h.lg.connect(o2.detune);
+    const g2 = c.createGain(); g2.gain.value = 0.35;
+    o1.connect(ng); o2.connect(g2); g2.connect(ng); ng.connect(h.lp);
+    ng.gain.setValueAtTime(0.0001, t);
+    ng.gain.linearRampToValueAtTime(1, t + 0.025);
+    ng.gain.exponentialRampToValueAtTime(0.001, t + dur + 0.05);
+    o1.start(t); o2.start(t); o1.stop(t + dur + 0.1); o2.stop(t + dur + 0.1);
+    o1.onended = () => { try { h.lg.disconnect(o1.detune); h.lg.disconnect(o2.detune); } catch (e) {} };
+  }
+  // [0.090] Swoosh leve al elegir otro cofre en el selector (barrido de ruido que sube)
+  playSwoosh() {
+    if (!this.ctx || this.muted) return;
+    const c = this.ctx, t = c.currentTime, n = Math.floor(c.sampleRate * 0.16), buf = c.createBuffer(1, n, c.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+    const src = c.createBufferSource(); src.buffer = buf;
+    const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 1.4;
+    bp.frequency.setValueAtTime(500, t); bp.frequency.exponentialRampToValueAtTime(2600, t + 0.14);
+    const g = c.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.16, t + 0.05); g.gain.exponentialRampToValueAtTime(0.001, t + 0.16);
+    src.connect(bp); bp.connect(g); g.connect(this.dest()); src.start(t);
   }
   // [0.087b] Más sonidos: oscuridad, luz, adornos, llaves y melodía de inicio
   playDarkOut() {   // progresión de notas graves al apagarse la bombilla
@@ -1024,6 +1119,24 @@ class AudioEngine {
     if (!this.ctx || this.muted) return;
     this._tone(620, 400, 0.1, 'triangle', 0.1);
     this._tone(400, 250, 0.14, 'sine', 0.08, 0.07);
+  }
+  // [0.090] Enfado del Duende: gruñido agudo y desagradable; nivel 1-3 (más golpes y más grave)
+  playDuendeAngry(level = 1) {
+    if (!this.ctx || this.muted) return;
+    this._tone(620, 190, 0.28 + 0.08 * level, 'sawtooth', 0.11 + 0.03 * level);
+    this._tone(640, 200, 0.28 + 0.08 * level, 'square', 0.05 + 0.02 * level, 0.01);
+    this._noise(0.06, 0.12, 0, 1800);
+    for (let i = 1; i < level + 1; i++) { this._tone(480 - i * 40, 150, 0.16, 'sawtooth', 0.1, 0.22 * i + 0.1); this._noise(0.05, 0.1, 0.22 * i + 0.1, 1500); }
+    if (level >= 3) { this._tone(70, 40, 1.0, 'sawtooth', 0.12, 0.1); this._tone(140, 60, 0.7, 'square', 0.06, 0.15); }
+  }
+  // [0.090] Golpe de Game Over: impacto grave, ruido, sting disonante corto (versión corta de la melodía de Game Over)
+  playGameOverStrike() {
+    if (!this.ctx || this.muted) return;
+    this._tone(90, 28, 0.55, 'sine', 0.35);
+    this._noise(0.22, 0.28, 0, 400);
+    this._tone(55, 40, 1.6, 'sawtooth', 0.09, 0.05);
+    [392, 370, 311].forEach((f, i) => this._tone(f, f * 0.97, 0.45, 'triangle', 0.13, 0.25 + i * 0.3));
+    this._tone(233, 220, 0.9, 'sawtooth', 0.05, 0.3);
   }
   playCardBeep() {  // pitido suave y corto de las cartas que palpitan
     if (!this.ctx || this.muted) return;
@@ -1069,7 +1182,7 @@ class AudioEngine {
     gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
     noise.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(this.dest());
     noise.start();
   }
   playDecoyBuzz() {
@@ -1085,7 +1198,7 @@ class AudioEngine {
     gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.04);
 
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(this.dest());
 
     osc.start();
     osc.stop(this.ctx.currentTime + 0.04);
@@ -1102,7 +1215,7 @@ class AudioEngine {
     gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
     noise.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(this.dest());
     noise.start();
   }
   playUnlockFanfare(tier = 'normal') {
@@ -1119,7 +1232,7 @@ class AudioEngine {
       gain.gain.setValueAtTime(0.22, this.ctx.currentTime + idx * 0.05);
       gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + idx * 0.05 + 0.35);
       osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.dest());
       osc.start(this.ctx.currentTime + idx * 0.05);
       osc.stop(this.ctx.currentTime + idx * 0.05 + 0.35);
     });
@@ -1127,10 +1240,17 @@ class AudioEngine {
 }
 const audio = new AudioEngine();
 // [0.087] Registro del último sonido para que el clic de interfaz no se solape con sonidos propios
-['playClick', 'playPaperRustle', 'playDecoyBuzz', 'playBreak', 'playUnlockFanfare', 'playLockCharge', 'playLockOpen', 'playGameOver', 'playDarkOut', 'playLightOn', 'playDecorTap', 'playKeyPickup', 'playKeySpend', 'playCardBeep', 'playCashRegister', 'playCurseStart', 'playCurseEnd', 'playDialogueMelody', 'playIntro'].forEach(n => {
+['playClick', 'playPaperRustle', 'playDecoyBuzz', 'playBreak', 'playUnlockFanfare', 'playLockCharge', 'playLockOpen', 'playGameOver', 'playDarkOut', 'playLightOn', 'playDecorTap', 'playKeyPickup', 'playKeySpend', 'playCardBeep', 'playCashRegister', 'playCurseStart', 'playCurseEnd', 'playDialogueMelody', 'playIntro', 'playDuendeAngry', 'playSwoosh', 'playGameOverStrike'].forEach(n => {
   const f = AudioEngine.prototype[n];
   AudioEngine.prototype[n] = function (...a) { this.lastSound = performance.now(); return f.apply(this, a); };
 });
+// [0.090] Categorías de volumen: los sonidos pequeños (clics, avisos) y los de botín pasan por su bus, con volumen distinto en escritorio y móvil
+[[ 'busSmall', ['playClick', 'playUiClick', 'playDecoyBuzz', 'playPaperRustle', 'playLockCharge', 'playDecorTap', 'playCardBeep', 'playKeyPickup', 'playKeySpend', 'playSwoosh'] ],
+ [ 'busLoot', ['playUnlockFanfare', 'playCashRegister'] ]].forEach(([bus, names]) => names.forEach(n => {
+  const f = AudioEngine.prototype[n];
+  AudioEngine.prototype[n] = function (...a) { const prev = this._bus; this._bus = this[bus] || null; try { return f.apply(this, a); } finally { this._bus = prev; } };
+}));
+window.addEventListener('resize', () => { try { audio.applyProfile(); } catch (e) {} });
 
 function getXpForLevel(lvl) {
   const baseMap = DATOS_JUEGO.PROGRESIÓN.XP_BASE_NIVELES;
@@ -1220,6 +1340,8 @@ const STATE = {
   activeChestIdx: 0,
   roomDecorations: [],
   roomThemeFilter: 'normal',
+  stats: null,   // [0.090] estadísticas de la partida actual (se guardan con la partida)
+  hintUses: {},   // [0.090] veces que se ha mostrado cada ayuda de las primeras veces (por partida)
   acceptDelayUses: {},   // [0.089b] veces que se ha retardado el botón Aceptar, por tipo de mensaje (por partida)
   opensByType: {},   // [0.087] cofres abiertos con éxito por tipo (para la flecha del cerrojo)
   roomDarkUntil: 0   // [0.086] la celda está a oscuras mientras chestsOpened < roomDarkUntil
@@ -1302,6 +1424,7 @@ function updateMuteButton() {
   if (!btn) return;
   btn.addEventListener('click', () => {
     audio.muted = !audio.muted;
+    audio.applyProfile();   // [0.090] el canal vivo se apaga con el silencio
     if (!audio.muted) {
       audio.init();
       audio.playClick(0.6);
@@ -1476,7 +1599,7 @@ const SAVE_KEYS = [
   'seqStage', 'traperoStrikes', 'climaxPhase', 'sequenceBroken', 'perks', 'abilities',
   'active2XMultiplier', 'activeShield', 'riskModeActive', 'riskPot', 'perdedorActive', 'perdedorLootPending', 'fallosConsecutivos',
   'heavyChestsLeft', 'greedCurseLeft', 'harderPuzzlesLeft', 'traperoBuffs', 'cursedChestsLeft',
-  'roomDecorations', 'roomThemeFilter', 'roomDarkUntil', 'opensByType', 'acceptDelayUses'
+  'roomDecorations', 'roomThemeFilter', 'roomDarkUntil', 'opensByType', 'acceptDelayUses', 'hintUses', 'stats'
 ];
 
 let autosaveEnabled = false;
@@ -1508,6 +1631,53 @@ function loadAchievements() {
 }
 function saveAchievements() { storageSet(ACHIEVEMENTS_KEY, JSON.stringify(achievementsUnlocked)); }
 function clearAchievements() { achievementsUnlocked = {}; storageRemove(ACHIEVEMENTS_KEY); }
+
+
+/* ---------- [0.090] Estadísticas: PARTIDA ACTUAL (se guardan con la partida) y ACUMULADO (permanentes por navegador) ---------- */
+const LIFESTATS_KEY = 'justOneMoreChest_stats_v1';
+function blankStats() {
+  return { chests: 0, goldEarned: 0, goldSpent: 0, picksBroken: 0, bestStreak: 0, maxLevel: 1, maxLoop: 1,
+    puz: { lockpick: { ok: 0, fail: 0 }, tumbler: { ok: 0, fail: 0 }, hack: { ok: 0, fail: 0 }, pipe: { ok: 0, fail: 0 } } };
+}
+function normStats(o) {
+  const b = blankStats();
+  if (!o || typeof o !== 'object') return b;
+  Object.keys(b).forEach(k => { if (k === 'puz') { Object.keys(b.puz).forEach(t => { const q = (o.puz || {})[t] || {}; b.puz[t].ok = +q.ok || 0; b.puz[t].fail = +q.fail || 0; }); } else b[k] = +o[k] || b[k]; });
+  return b;
+}
+let lifeStats = blankStats();
+try { lifeStats = normStats(JSON.parse(window.localStorage.getItem(LIFESTATS_KEY) || 'null')); } catch (e) { lifeStats = blankStats(); }
+let lifeStatsDirty = false, statsGoldPrev = null;
+function saveLifeStats() { if (!lifeStatsDirty) return; lifeStatsDirty = false; try { window.localStorage.setItem(LIFESTATS_KEY, JSON.stringify(lifeStats)); } catch (e) {} }
+setInterval(saveLifeStats, 3000);
+window.addEventListener('pagehide', saveLifeStats);
+let statsPaused = false;   // el Modo test (puzles en serie) no cuenta para las estadísticas
+function statsAdd(key, n) {
+  if (statsPaused) return;
+  if (!STATE.stats) STATE.stats = blankStats();
+  STATE.stats[key] = (STATE.stats[key] || 0) + n; lifeStats[key] = (lifeStats[key] || 0) + n; lifeStatsDirty = true;
+}
+function statsPuzzle(juego, ok) {
+  if (statsPaused || !juego) return;
+  if (!STATE.stats) STATE.stats = blankStats();
+  [STATE.stats, lifeStats].forEach(S => { if (S.puz[juego]) S.puz[juego][ok ? 'ok' : 'fail']++; });
+  lifeStatsDirty = true;
+}
+function trackStats() {
+  if (statsPaused) { statsGoldPrev = STATE.gold; return; }
+  if (!STATE.stats) STATE.stats = normStats(null);
+  if (statsGoldPrev !== null) {
+    const d = STATE.gold - statsGoldPrev;
+    if (d > 0) statsAdd('goldEarned', d); else if (d < 0) statsAdd('goldSpent', -d);
+  }
+  statsGoldPrev = STATE.gold;
+  [[STATE.stats, 'cur'], [lifeStats, 'life']].forEach(([S]) => {
+    if (STATE.level > S.maxLevel) { S.maxLevel = STATE.level; lifeStatsDirty = true; }
+    if ((STATE.currentLoop || 1) > S.maxLoop) { S.maxLoop = STATE.currentLoop || 1; lifeStatsDirty = true; }
+    if (STATE.cleanStreak > S.bestStreak) { S.bestStreak = STATE.cleanStreak; lifeStatsDirty = true; }
+  });
+}
+let puzzleStat = null;   // tipo de puzle en curso (para contar acierto/fallo)
 
 function isAchievementMet(logro) {
   const c = logro.condicion || {};
@@ -1654,7 +1824,7 @@ function showResumePrompt(data) {
       <div class="w-14 h-14 rounded-full bg-amber-950/80 border border-amber-500 flex items-center justify-center text-2xl text-amber-400"><i class="fa-solid fa-floppy-disk"></i></div>
       <h3 class="text-xl font-black text-amber-300 font-retro">PARTIDA GUARDADA</h3>
       <div class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-3 text-xs font-mono text-slate-300 space-y-1.5">
-        <div class="flex justify-between"><span>Bucle:</span><span class="text-amber-400 font-bold">${s.currentLoop || 1}</span></div>
+        ${(s.currentLoop || 1) >= 2 ? `<div class="flex justify-between"><span>Bucle:</span><span class="text-amber-400 font-bold">${s.currentLoop}</span></div>` : ''}
         <div class="flex justify-between"><span>Nivel:</span><span class="text-indigo-400 font-bold">${s.level}</span></div>
         <div class="flex justify-between"><span>Cofres abiertos:</span><span class="text-amber-400 font-bold">${s.chestsOpened}</span></div>
         <div class="flex justify-between"><span>Oro:</span><span class="text-yellow-400 font-bold">${s.gold} GP</span></div>
@@ -1783,8 +1953,12 @@ function resetGame(keepLoop) {
   STATE.roomDarkUntil = 0;
   roomDarkPrev = false;
   keysBaseline = null;
+  puzzleToolPaid = null;
+  gameOverSeq = false;
   STATE.opensByType = {};
   STATE.acceptDelayUses = {};
+  STATE.hintUses = {};
+  STATE.stats = blankStats(); statsGoldPrev = null; statsPaused = false;
 
   const notesContainer = document.getElementById('notesContainer');
   if (notesContainer) notesContainer.innerHTML = '';
@@ -1942,7 +2116,23 @@ const ASSETS = {
 // [0.085] Carga de imágenes y utilidades gráficas
 const ART_ON = !!(DATOS_JUEGO.GRAFICOS && DATOS_JUEGO.GRAFICOS.ACTIVAR_ARTE);
 const ART = {};
-function loadArt(key, src) { const im = new Image(); im.src = src; ART[key] = im; }
+function loadArt(key, src) {
+  const im = new Image();
+  // [0.090] Cofre de Vapor: el humo del sprite se borra al cargar (en memoria, el original sigue en ASSETS para miniaturas) y se anima aparte en renderRoom
+  if (/^cofre_hydraulic/.test(key) && ((DATOS_JUEGO.GRAFICOS || {}).VAPOR_ANIMADO || {}).ACTIVAR) {
+    im.onload = function () {
+      if (im._steamless) return;
+      try {
+        const c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight;
+        const cx2 = c.getContext('2d'); cx2.drawImage(im, 0, 0);
+        const v = DATOS_JUEGO.GRAFICOS.VAPOR_ANIMADO.BORRAR;   // zona del humo en píxeles del sprite
+        cx2.clearRect(v.x0, v.y0, v.x1 - v.x0 + 1, v.y1 - v.y0 + 1);
+        im._steamless = true; im.src = c.toDataURL();
+      } catch (e) {}
+    };
+  }
+  im.src = src; ART[key] = im;
+}
 if (ART_ON) {
   loadArt('celda', ASSETS.celda);
   Object.keys(ASSETS.cofres).forEach(k => loadArt('cofre_' + k, ASSETS.cofres[k]));
@@ -2288,13 +2478,19 @@ function renderRoom() {
     // [0.086] Tinte suave del ambiente + tinte rojo según el tier narrativo
     if (amb && amb.tinte) { ctx.fillStyle = amb.tinte; ctx.fillRect(0, 0, canvas.width, canvas.height); }
     if (redAlpha > 0) { ctx.fillStyle = `rgba(140,12,12,${redAlpha})`; ctx.fillRect(0, 0, canvas.width, canvas.height); }
-    else {
-      // [0.087] Maldición activa: filtro granate suave (si hay tinte por tier, ese manda)
+    // [0.090] Maldición activa: rojo rotundo con viñeta. El tinte del tier 5 manda siempre (no se añade); el progresivo del tier 4 se SUMA a la maldición.
+    {
       const tm = DATOS_JUEGO.GRAFICOS.TINTE_MALDICION || {};
-      const lvl = updateCurseLevel();   // [0.089b] 0..1, sube/baja despacio y solo con la pantalla principal visible
-      if (tm.ACTIVAR && lvl > 0) {
-        const pa = (tm.ALFA + Math.sin(Date.now() * 0.0016) * (tm.PULSO || 0)) * lvl;
+      const lvl = updateCurseLevel();   // 0..1, sube/baja despacio y solo con la pantalla principal visible
+      if (tm.ACTIVAR && lvl > 0 && rtier < 5) {
+        const pa = (tm.ALFA + Math.sin(Date.now() * 0.0022) * (tm.PULSO || 0)) * lvl;
         ctx.fillStyle = `rgba(${tm.RGB},${pa.toFixed(3)})`; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        if (tm.VINETA) {
+          const vg = ctx.createRadialGradient(cx, canvas.height / 2, canvas.width * 0.25, cx, canvas.height / 2, Math.max(canvas.width, canvas.height) * 0.75);
+          vg.addColorStop(0, `rgba(${tm.VINETA_RGB || '90,0,8'},0)`);
+          vg.addColorStop(1, `rgba(${tm.VINETA_RGB || '90,0,8'},${(tm.VINETA * lvl).toFixed(3)})`);
+          ctx.fillStyle = vg; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
       }
     }
   }
@@ -2386,6 +2582,25 @@ function renderRoom() {
     ctx.beginPath(); ctx.ellipse(ccx, ccy + dh / 2 + 4, dw * 0.46, dh * 0.08, 0, 0, Math.PI * 2); ctx.fill();
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(im, ccx - dw / 2, ccy - dh / 2 + bob, dw, dh);
+    // [0.090] Vapor animado (solo Cofre de Vapor): bocanadas pixeladas que suben, crecen y se desvanecen
+    const vap = g.VAPOR_ANIMADO;
+    if (vap && vap.ACTIVAR && activeChest.type.id === 'hydraulic' && im._steamless) {
+      const t0 = Date.now(), px = dw / im.naturalWidth, ox = ccx - dw / 2, oy = ccy - dh / 2 + bob;
+      for (let i = 0; i < vap.BOCANADAS; i++) {
+        const ph = ((t0 / vap.CICLO_MS) + i / vap.BOCANADAS) % 1;
+        const sz = vap.TAM_MIN + (vap.TAM_MAX - vap.TAM_MIN) * ph;
+        const wob = Math.sin(ph * 6 + i * 1.7) * 1.2;
+        const sxp = vap.BOQUILLA.x + (vap.DERIVA * ph) + wob + ((i * 37) % 5 - 2) * 0.35;
+        const syp = vap.BOQUILLA.y - vap.ALTURA * ph;
+        const a = Math.min(1, ph * 8) * Math.min(1, (1 - ph) * 2.2) * 0.92;
+        const q = px / 2;   // rejilla de medio píxel del sprite (se ve pixel art)
+        const x = Math.round((ox + sxp * px) / q) * q, y = Math.round((oy + syp * px) / q) * q, w = Math.max(q, Math.round(sz * px / q) * q);
+        ctx.fillStyle = `rgba(${vap.COLOR},${a.toFixed(3)})`;
+        ctx.fillRect(x - w / 2, y - w / 2, w, w);
+        ctx.fillRect(x - w * 0.9, y - w * 0.1, w * 0.55, w * 0.55);
+        ctx.fillRect(x + w * 0.35, y - w * 0.7, w * 0.6, w * 0.6);
+      }
+    }
 
     // [0.086] Cerradura táctil (solo pantalla ancha)
     const tl = g.TOCAR_CERRADURA || {};
@@ -2684,7 +2899,8 @@ function updateChestSelectionUI() {
           ${ART_ON && ASSETS.cofres[c.type.id] ? `<img src="${chestSpriteSrc(c.type, c.rarity)}" alt="" style="image-rendering:pixelated;width:44px;height:auto">` : '<i class="fa-solid fa-box text-sm"></i>'}
         `;
         btn.addEventListener('click', () => {
-          audio.playClick(0.5);
+          audio.init();
+          if (STATE.activeChestIdx !== idx) audio.playSwoosh(); else audio.playClick(0.5);   // [0.090] swoosh al cambiar de cofre
           STATE.activeChestIdx = idx;
           updateChestSelectionUI();
         });
@@ -2957,6 +3173,7 @@ function spawnStickyNote() {
    ========================================================================== */
 
 function triggerLootExplosion() {
+  if (TEST_SERIES.active) { testPuzzleResult(true); return; }   // [0.090] Modo test: sin botín, pasa al siguiente puzle
   // 🟢 CERROJO ANTI-DUPLICACIÓN
   if (isLootProcessing) return;
   isLootProcessing = true;
@@ -2979,6 +3196,7 @@ function triggerLootExplosion() {
     spawnParticles(cx, cy, active.rarity.color, active.rarity.id === 'legendario' ? 100 : 50, active.rarity.id === 'legendario');
 
     STATE.chestsOpened++;
+    statsAdd('chests', 1); if (puzzleStat) { statsPuzzle(puzzleStat, true); puzzleStat = null; }   // [0.090]
     STATE.opensByType = STATE.opensByType || {};
     STATE.opensByType[active.type.id] = (STATE.opensByType[active.type.id] || 0) + 1;
     STATE.cleanStreak++;
@@ -3479,6 +3697,10 @@ function handleSpecialShopNoBuy() {
   const co = STATE.chestsOpened;
   const reac = DATOS_JUEGO.NARRATIVA.REACCIONES_DUENDE_NO_COMPRAR;
   let reactionText = reac[co] || reac.DEFAULT;
+  {   // [0.090] Enfado: sonido y sacudida de pantalla, más fuertes cuanto más avanzado el final
+    const ec = DATOS_JUEGO.ENFADO_DUENDE || {}; const e = ec[co] || ec.DEFAULT;
+    if (e) { try { audio.init(); audio.playDuendeAngry(e.NIVEL); } catch (x) {} screenShake(e.SACUDIDA_PX, e.MS); if (e.NIVEL >= 2) flashScreen('rgba(190,20,30,.35)', 450); }
+  }
 
   triggerSequentialDialogue(
     "EL DUENDE",
@@ -3744,9 +3966,10 @@ if (btnAuto) {
       
       const active = STATE.screenChests[STATE.activeChestIdx];
       const reqCount = getRequiredToolCount(active.rarity);
-      if (active.type.consumible !== 'picks') {
+      if (active.type.consumible !== 'picks' && !puzzleToolPaid) {   // [0.090] si ya se pagó al entrar, no se cobra otra vez
         STATE[active.type.consumible] = Math.max(0, STATE[active.type.consumible] - reqCount);
       }
+      puzzleToolPaid = null; puzzleStat = null;   // [0.090] la carta AUTO no cuenta como puzle superado
 
       triggerLootExplosion();
       updateUI();
@@ -3836,6 +4059,8 @@ if (btnSummon) {
 let globalPuzzleTimerInterval = null;
 let globalPuzzleTimeLeft = 10;
 let currentPuzzleConsumable = 'picks';
+let TEST_SERIES = { active: false };   // [0.090] Modo test: puzles en serie
+let puzzleToolPaid = null;   // [0.090] herramienta avanzada pagada al entrar al puzle en curso
 
 function startMinigameTimer(seconds, consumableName) {
   stopMinigameTimer();
@@ -3884,6 +4109,8 @@ function stopMinigameTimer() {
 }
 
 function handleFailure(toolName = 'picks', reasonText = "Fallo en el puzle.") {
+  if (TEST_SERIES.active) { testPuzzleResult(false); return; }   // [0.090] Modo test: no se gasta nada, pasa al siguiente puzle
+  if (puzzleStat) { statsPuzzle(puzzleStat, false); puzzleStat = null; }   // [0.090]
   minigameInProgress = false;
   stopMinigameTimer();
   STATE.cleanStreak = 0;
@@ -3921,11 +4148,15 @@ function handleFailure(toolName = 'picks', reasonText = "Fallo en el puzle.") {
   if (STATE.activeShield) {
     STATE.activeShield = false;
     showPersistentFeedback(STATE.riskModeActive ? "🛡️ ¡Tu ESCUDO te ha salvado! Herramientas y Bote de Riesgo intactos." : "🛡️ ¡Tu ESCUDO te ha salvado! Herramientas intactas.");
+    if (puzzleToolPaid) { STATE[puzzleToolPaid.prop] += puzzleToolPaid.n; puzzleToolPaid = null; }   // [0.090] el Escudo devuelve la herramienta pagada al entrar
     updateUI();
     return;
   }
 
-  STATE[toolName] = Math.max(0, STATE[toolName] - reqCount);
+  // [0.090] Si la herramienta ya se pagó al entrar, no se descuenta de nuevo
+  if (puzzleToolPaid && puzzleToolPaid.prop === toolName) puzzleToolPaid = null;
+  else STATE[toolName] = Math.max(0, STATE[toolName] - reqCount);
+  if (toolName === 'picks') statsAdd('picksBroken', reqCount);   // [0.090]
   updateUI();
   
   if (!checkCanOpenAnyChestOnScreen()) {
@@ -3942,37 +4173,121 @@ function checkCanOpenAnyChestOnScreen() {
   });
 }
 
+// [0.090] Secuencia de Game Over / Trato Injusto: (1) golpe con letras pixel art sangrientas, (2) diálogo del Trapero, (3) ventana del trato
+let gameOverSeq = false;
+const PIXEL_FONT = {
+  G: ['01110', '10001', '10000', '10111', '10001', '10001', '01110'],
+  A: ['01110', '10001', '10001', '11111', '10001', '10001', '10001'],
+  M: ['10001', '11011', '10101', '10101', '10001', '10001', '10001'],
+  E: ['11111', '10000', '10000', '11110', '10000', '10000', '11111'],
+  O: ['01110', '10001', '10001', '10001', '10001', '10001', '01110'],
+  V: ['10001', '10001', '10001', '10001', '10001', '01010', '00100'],
+  R: ['11110', '10001', '10001', '11110', '10100', '10010', '10001']
+};
+function whenBannerClosed(cb) {
+  const tick = () => {
+    const b = document.getElementById('persistentFeedbackBanner');
+    if ((b && !b.classList.contains('hidden')) || modalVisible('dialogueModal') || modalVisible('lootModal')) setTimeout(tick, 200);
+    else cb();
+  };
+  tick();
+}
+function runGameOverStrike(done) {
+  const cfg = (DATOS_JUEGO.GAME_OVER || {}).GOLPE || {};
+  const host = uiHost();
+  const ov = document.createElement('div');
+  ov.id = 'gameOverStrike';
+  ov.style.cssText = 'position:absolute;inset:0;z-index:10030;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;pointer-events:auto;opacity:0;transition:opacity .12s ease-out';
+  const cv = document.createElement('canvas');
+  ov.appendChild(cv); host.appendChild(ov);
+  const lines = ['GAME', 'OVER'], uW = 23, uH = 7 * 2 + 3 + 14;
+  const frW = host.clientWidth || 390;
+  const sc = Math.max(4, Math.floor((frW * 0.82) / uW));
+  cv.width = uW * sc; cv.height = uH * sc;
+  cv.style.cssText = 'image-rendering:pixelated;max-width:92%;height:auto';
+  const c2 = cv.getContext('2d');
+  // Gotas: columnas de la base de cada línea con longitud aleatoria (se calculan una vez)
+  const px = [], drips = [];
+  lines.forEach((word, li) => {
+    const y0 = li * 10;
+    word.split('').forEach((ch, ci) => {
+      const g = PIXEL_FONT[ch], x0 = ci * 6;
+      g.forEach((row, ry) => row.split('').forEach((v, rx) => { if (v === '1') px.push([x0 + rx, y0 + ry]); }));
+      for (let rx = 0; rx < 5; rx++) if (g[6][rx] === '1' && Math.random() < 0.55) drips.push({ x: x0 + rx, y: y0 + 7, len: 2 + Math.floor(Math.random() * 7), delay: Math.random() * 0.35 });
+    });
+  });
+  audio.init(); try { audio.playGameOverStrike(); } catch (e) {}
+  screenShake(cfg.SACUDIDA_PX || 16, cfg.SACUDIDA_MS || 650);
+  flashScreen('rgba(200,0,20,.55)', 600);
+  requestAnimationFrame(() => { ov.style.opacity = '1'; });
+  const total = cfg.DURACION_MS || 2200, t0 = performance.now();
+  (function frame() {
+    const t = performance.now() - t0;
+    c2.clearRect(0, 0, cv.width, cv.height);
+    const slam = Math.min(1, t / 160);   // golpe: el texto entra grande y encaja
+    c2.save(); c2.translate(cv.width / 2, cv.height * 0.3); const k = 1 + (1 - slam) * 0.5; c2.scale(k, k); c2.translate(-cv.width / 2, -cv.height * 0.3);
+    const gk = Math.min(1, Math.max(0, (t - 200) / 1300));   // las gotas crecen
+    const draw = (col, off) => {
+      c2.fillStyle = col;
+      px.forEach(([x, y]) => c2.fillRect((x + off) * sc, (y + off) * sc, sc, sc));
+      drips.forEach(d => { const L = Math.floor(d.len * Math.min(1, Math.max(0, (gk - d.delay) / (1 - d.delay)))); for (let j = 0; j < L; j++) c2.fillRect((d.x + off) * sc, (d.y + j + off) * sc, sc, sc); });
+    };
+    draw('#000', 0.35);          // sombra
+    draw('#b3001b', 0);          // sangre
+    c2.fillStyle = '#e0152f';    // brillo de la cara superior
+    px.forEach(([x, y]) => { if (y % 10 === 0 || y % 10 === 1) c2.fillRect(x * sc, y * sc, sc, sc * 0.4); });
+    c2.restore();
+    if (t < total) requestAnimationFrame(frame);
+    else { ov.style.transition = 'opacity .35s ease-in'; ov.style.opacity = '0'; setTimeout(() => { ov.remove(); done(); }, 380); }
+  })();
+}
+function showFinalGameOver() {
+  gameOverSeq = false;
+  const goChests = document.getElementById('goChests'); if (goChests) goChests.textContent = STATE.chestsOpened;
+  const goLvl = document.getElementById('goLevel'); if (goLvl) goLvl.textContent = STATE.level;
+  // El bucle solo se nombra si se muere en el segundo o posteriores (en el primero el jugador no sabe que hay bucles)
+  const goLoopRow = document.getElementById('goLoopRow'), goLoop = document.getElementById('goLoop');
+  if (goLoopRow) { goLoopRow.classList.toggle('hidden', (STATE.currentLoop || 1) < 2); if (goLoop) goLoop.textContent = STATE.currentLoop; }
+  const goModal = document.getElementById('gameOverModal'); if (goModal) goModal.classList.remove('hidden');
+  audio.init(); audio.playGameOver();
+  clearSave();
+}
 function checkGameOver() {
   if (checkCanOpenAnyChestOnScreen()) return;
+  if (gameOverSeq) return;
+  gameOverSeq = true;
+  whenBannerClosed(() => runGameOverStrike(() => {
+    if (STATE.salvageCurseActive && STATE.cursedChestsLeft > 0) { showFinalGameOver(); return; }
+    openUnfairDeal();
+  }));
+}
+function openUnfairDeal() {
+  const active = STATE.screenChests[STATE.activeChestIdx];
+  const reqCount = getRequiredToolCount(active.rarity);
+  let toolTitle = 'Ganzúa Básica';
+  if (active.type.consumible === 'proPicks') toolTitle = 'Pin de Acero';
+  if (active.type.consumible === 'usb') toolTitle = 'Llave USB';
+  if (active.type.consumible === 'valves') toolTitle = 'Válvula Hidráulica';
 
-  if (STATE.salvageCurseActive && STATE.cursedChestsLeft > 0) {
-    const goChests = document.getElementById('goChests'); if (goChests) goChests.textContent = STATE.chestsOpened;
-    const goLvl = document.getElementById('goLevel'); if (goLvl) goLvl.textContent = STATE.level;
-    const goModal = document.getElementById('gameOverModal'); if (goModal) goModal.classList.remove('hidden');
-    audio.init(); audio.playGameOver();
-    clearSave();
-  } else {
-    const active = STATE.screenChests[STATE.activeChestIdx];
-    const reqCount = getRequiredToolCount(active.rarity);
-    let toolTitle = 'Ganzúa Básica';
-    if (active.type.consumible === 'proPicks') toolTitle = 'Pin de Acero';
-    if (active.type.consumible === 'usb') toolTitle = 'Llave USB';
-    if (active.type.consumible === 'valves') toolTitle = 'Válvula Hidráulica';
+  const curseBase = DATOS_JUEGO.ECONOMIA.MALDICION_SALVAMENTO.DURACION_BASE;
+  const curseInc = DATOS_JUEGO.ECONOMIA.MALDICION_SALVAMENTO.INCREMENTO_POR_TRATO;
+  const curseDuration = curseBase + (STATE.salvageDealsCount * curseInc);
 
-    const curseBase = DATOS_JUEGO.ECONOMIA.MALDICION_SALVAMENTO.DURACION_BASE;
-    const curseInc = DATOS_JUEGO.ECONOMIA.MALDICION_SALVAMENTO.INCREMENTO_POR_TRATO;
-    const curseDuration = curseBase + (STATE.salvageDealsCount * curseInc);
-
-    const offerTxt = document.getElementById('unfairOfferText');
-    if (offerTxt) {
-      offerTxt.innerHTML = `
-        • Recibes <span class="text-amber-400 font-bold">+${reqCount} ${toolTitle}</span> y <span class="text-amber-400 font-bold">+2 Ganzúas</span>.<br>
-        • Sufres Maldición durante <span class="text-rose-400 font-bold">${curseDuration} cofres</span> (-50% GP y XP).
-      `;
-    }
-    const dealModal = document.getElementById('unfairDealModal');
-    if (dealModal) dealModal.classList.remove('hidden');
+  const offerTxt = document.getElementById('unfairOfferText');
+  if (offerTxt) {
+    offerTxt.innerHTML = `
+      • Recibes <span class="text-amber-400 font-bold">+${reqCount} ${toolTitle}</span> y <span class="text-amber-400 font-bold">+2 Ganzúas</span>.<br>
+      • Sufres Maldición durante <span class="text-rose-400 font-bold">${curseDuration} cofres</span> (-50% GP y XP).
+    `;
   }
+  const showDeal = () => { const dealModal = document.getElementById('unfairDealModal'); if (dealModal) dealModal.classList.remove('hidden'); };
+  // Diálogo del Trapero (la primera vez más explicativo)
+  const fr = (DATOS_JUEGO.NARRATIVA.TRAPERO_GAME_OVER || {});
+  const first = STATE.salvageDealsCount === 0;
+  const pool = first ? [fr.PRIMERA] : (fr.OTRAS || []);
+  const phrase = (pool.filter(Boolean).length ? pool.filter(Boolean)[Math.floor(Math.random() * pool.filter(Boolean).length)] : '');
+  if (phrase) triggerSequentialDialogue("EL TRAPERO", phrase, "fa-mask", "Última oportunidad", "text-rose-400", null, showDeal);
+  else showDeal();
 }
 
 const acceptDealBtn = document.getElementById('acceptDealBtn');
@@ -3980,7 +4295,7 @@ if (acceptDealBtn) {
   acceptDealBtn.addEventListener('click', () => {
     const dealModal = document.getElementById('unfairDealModal');
     if (dealModal) dealModal.classList.add('hidden');
-    
+    gameOverSeq = false;
     STATE.salvageDealsCount++;
     STATE.salvageCurseActive = true;
     
@@ -4003,15 +4318,12 @@ const declineDealBtn = document.getElementById('declineDealBtn');
 if (declineDealBtn) {
   declineDealBtn.addEventListener('click', () => {
     const dealModal = document.getElementById('unfairDealModal'); if (dealModal) dealModal.classList.add('hidden');
-    const goChests = document.getElementById('goChests'); if (goChests) goChests.textContent = STATE.chestsOpened;
-    const goLvl = document.getElementById('goLevel'); if (goLvl) goLvl.textContent = STATE.level;
-    const goModal = document.getElementById('gameOverModal'); if (goModal) goModal.classList.remove('hidden');
-    audio.init(); audio.playGameOver();
-    clearSave();
+    showFinalGameOver();
   });
 }
 
 function updateUI() {
+  trackStats();   // [0.090]
   const levelEl = document.getElementById('playerLevel'); if (levelEl) levelEl.textContent = STATE.level;
   
   const xpBar = document.getElementById('xpBar'); 
@@ -4312,6 +4624,7 @@ function startLockpickGame() {
   const lpContainer = document.getElementById('lockpickContainer'); if (lpContainer) lpContainer.classList.remove('hidden');
 
   updateLockpickProximityVisuals();
+  if (window.showLockTouchHints) window.showLockTouchHints();   // [0.090]
 }
 
 function updateLockpickProximityVisuals() {
@@ -4564,6 +4877,15 @@ function startTumblerGame() {
   const configT = DATOS_JUEGO.MINIJUEGOS.TUMBLER;
   tumblerStartedAt = Date.now();
   const tumblerContainer = document.getElementById('tumblerContainer'); if (tumblerContainer) tumblerContainer.classList.remove('hidden');
+  {   // [0.090] Aviso de "tocar la pantalla" solo las primeras veces
+    const th = document.getElementById('tumblerTapHint'), hc = (DATOS_JUEGO.AYUDAS || {}).PISTONES_TOQUE;
+    STATE.hintUses = STATE.hintUses || {};
+    const used = STATE.hintUses.pistonTap || 0;
+    if (th) {
+      if (hc && used < hc.VECES) { th.textContent = hc.TEXTO; th.classList.remove('hidden'); STATE.hintUses.pistonTap = used + 1; }
+      else th.classList.add('hidden');
+    }
+  }
   const pinsContainer = document.getElementById('tumblerPins'); if (!pinsContainer) return;
   pinsContainer.innerHTML = '';
 
@@ -4674,7 +4996,7 @@ function finishTumblerSuccess() {
     const tumblerContainer = document.getElementById('tumblerContainer'); if (tumblerContainer) tumblerContainer.classList.add('hidden');
     const active = STATE.screenChests[STATE.activeChestIdx];
     const reqCount = getRequiredToolCount(active.rarity);
-    STATE.proPicks = Math.max(0, STATE.proPicks - reqCount);
+    puzzleToolPaid = null;   // [0.090] ya pagada al entrar
     triggerLootExplosion();
   }, 300);
 }
@@ -5005,7 +5327,7 @@ function submitHackWord(word, btn) {
 
       const active = STATE.screenChests[STATE.activeChestIdx]; 
       const reqCount = getRequiredToolCount(active.rarity); 
-      STATE.usb = Math.max(0, STATE.usb - reqCount); 
+      puzzleToolPaid = null;   // [0.090] ya pagada al entrar
       triggerLootExplosion(); 
     }, 400); 
   } else { 
@@ -5231,7 +5553,7 @@ function validatePipeAdvanced() {
       minigameInProgress = false;
       const active = STATE.screenChests[STATE.activeChestIdx];
       const reqCount = getRequiredToolCount(active.rarity);
-      STATE.valves = Math.max(0, STATE.valves - reqCount);
+      puzzleToolPaid = null;   // [0.090] ya pagada al entrar
       triggerLootExplosion();
     } else if (exploded) {
       showPersistentFeedback("💥 ¡EXPLOSIÓN! El fluido ha llegado a una bomba. La válvula queda destruida.");
@@ -5571,7 +5893,7 @@ function evaluatePipeFlow() {
 
         const active = STATE.screenChests[STATE.activeChestIdx];
         const reqCount = getRequiredToolCount(active.rarity);
-        STATE.valves = Math.max(0, STATE.valves - reqCount);
+        puzzleToolPaid = null;   // [0.090] ya pagada al entrar
         triggerLootExplosion();
       }, 400);
     } else {
@@ -5676,12 +5998,10 @@ function showShopReceipt(onCloseCallback) {
         ${itemsHTML}
       </div>
 
-      <div class="bg-slate-900 border border-amber-500/30 px-3 py-3 rounded-xl flex items-center justify-between text-xs font-mono">
+      <div class="bg-slate-900 border border-amber-500/30 px-3 py-3 rounded-xl flex flex-col gap-2 text-xs font-mono">
         <span class="text-slate-400 font-bold uppercase">Balance Final:</span>
-        <div class="flex items-center gap-3">
-          ${session.totalGold > 0 ? `<span class="text-amber-400 font-black"><i class="fa-solid fa-coins"></i> -${session.totalGold} GP</span>` : ''}
-          ${session.totalPicksRecycled > 0 ? `<span class="text-amber-300 font-black"><i class="fa-solid fa-screwdriver"></i> -${session.totalPicksRecycled} Ganzúas</span>` : ''}
-        </div>
+        ${session.totalGold > 0 ? `<div class="flex items-center justify-between"><span class="text-slate-300">GP gastados</span><span class="text-amber-400 font-black"><i class="fa-solid fa-coins"></i> -${session.totalGold} GP</span></div>` : ''}
+        ${session.totalPicksRecycled > 0 ? `<div class="flex items-center justify-between"><span class="text-slate-300">Ganzúas recicladas</span><span class="text-amber-300 font-black"><i class="fa-solid fa-screwdriver"></i> -${session.totalPicksRecycled} Ganzúas</span></div>` : ''}
       </div>
 
       <button id="closeReceiptBtn" class="w-full py-3 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 active:scale-95 text-slate-950 font-black text-xs uppercase tracking-widest rounded-xl shadow-lg transition-all cursor-pointer">
@@ -6366,6 +6686,14 @@ function openActiveChest() {
     else if (active.type.juego === 'pipe') startPipeGame();
     minigameInProgress = true;
 
+    // [0.090] Herramientas avanzadas (no madera): se pagan AL ENTRAR al puzle (se ve el "-N" al empezar). Ganar no vuelve a cobrar; fallar tampoco; el Escudo las devuelve.
+    puzzleToolPaid = null; puzzleStat = active.type.juego;   // [0.090]
+    if (toolProp !== 'picks') {
+      STATE[toolProp] = Math.max(0, STATE[toolProp] - reqCount);
+      puzzleToolPaid = { prop: toolProp, n: reqCount };
+      updateUI();
+    }
+
     const minigameModal = document.getElementById('minigameModal');
     if (minigameModal) minigameModal.classList.remove('hidden');
 }
@@ -6472,78 +6800,10 @@ updateMuteButton();
 })();
 
 /* ==========================================================================
-   BLOQUE DE PRUEBAS DEV (COFRE 79, BUCLE 2 Y RECURSOS DEV)
+   [0.090] El antiguo bloque DEV (DEV_CONFIG y botón "cofre 79") desaparece: ahora todo está en el MODO TEST del menú del engranaje.
+   applyDevStart queda vacía para no romper las llamadas que existían.
    ========================================================================== */
-// [0.082] Opciones de pruebas (ponlas a true para activarlas). Se reaplican tras Continuar / Nueva partida / Reiniciar.
-var DEV_CONFIG = {
-  ACTIVAR_MODO_PRUEBAS: false,   // muestra el cuadro de pruebas y permite el resto de opciones
-  ARRANCAR_EN_BUCLE_2: false,    // fuerza el Bucle 2 (activa las mecánicas avanzadas en cofres Raro+)
-  BORRAR_LOGROS: false,          // borra los logros guardados al cargar (para volver a probarlos)
-  RECURSOS_INFINITOS_DEV: false  // 1000 GP, 99 de cada herramienta, nivel 5 y 3 cofres abiertos (para que ya salgan Raro+ y los 4 tipos)
-};
-
-function applyDevStart() {
-  if (!DEV_CONFIG.ACTIVAR_MODO_PRUEBAS) return;
-  if (DEV_CONFIG.BORRAR_LOGROS && !window.__logrosBorrados) { window.__logrosBorrados = true; clearAchievements(); }
-  if (DEV_CONFIG.ARRANCAR_EN_BUCLE_2) STATE.currentLoop = 2;
-  if (DEV_CONFIG.RECURSOS_INFINITOS_DEV) {
-    STATE.gold = 1000;
-    STATE.picks = 99;
-    STATE.proPicks = 99;
-    STATE.usb = 99;
-    STATE.valves = 99;
-    if (STATE.level < 5) { STATE.level = 5; STATE.xp = 0; STATE.xpNext = getXpForLevel(5); }
-    STATE.chestsOpened = Math.max(STATE.chestsOpened, 3); // a partir de 3 cofres abiertos ya se sortean rarezas
-    STATE.chestsAtLevelUp = 0;
-  }
-}
-
-(function createDevTestWidget() {
-  const ACTIVAR_MODO_PRUEBAS = DEV_CONFIG.ACTIVAR_MODO_PRUEBAS;
-
-  const oldWidget = document.getElementById('devTestWidget');
-  if (oldWidget) oldWidget.remove();
-
-  if (!ACTIVAR_MODO_PRUEBAS) return;
-
-  // Si no hay diálogo de "Partida guardada" pendiente, se aplica ya y se refresca la pantalla
-  applyDevStart();
-  if (!document.getElementById('resumeGameModal')) {
-    generateScreenChests();
-    updateUI();
-  }
-
-  const widget = document.createElement('div');
-  widget.id = 'devTestWidget';
-  widget.className = 'fixed top-4 right-4 z-[9999] bg-slate-950/90 border-2 border-amber-400 p-3 rounded-2xl shadow-2xl flex flex-col items-center gap-2 font-mono backdrop-blur-md';
-  widget.innerHTML = `
-    <div class="text-[10px] font-black tracking-widest text-amber-400 uppercase flex items-center gap-1"> 🛠️ MODO PRUEBAS (BUCLE ${STATE.currentLoop}) </div> 
-    <button id="devJump79Btn" class="px-4 py-2 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 active:scale-95 text-slate-950 font-black text-xs rounded-xl shadow-lg transition-all cursor-pointer border border-yellow-200"> 🚀 IR AL COFRE 79 (500 GP + 20 Tools) </button>
-  `;
-  document.body.appendChild(widget);
-
-  document.getElementById('devJump79Btn').addEventListener('click', () => {
-    if (typeof STATE === 'undefined') { alert('⚠️ Error: No se ha encontrado el objeto STATE.'); return; }
-    
-    STATE.chestsOpened = 78;
-    STATE.gold = 500;
-    STATE.picks = 20;
-    STATE.proPicks = 20;
-    STATE.usb = 20;
-    STATE.valves = 20;
-    STATE.level = Math.max(STATE.level, 5);
-
-    STATE.seqStage = 1;
-    STATE.sequenceBroken = false;
-    STATE.climaxPhase = false;
-
-    if (typeof generateScreenChests === 'function') generateScreenChests();
-    if (typeof updateUI === 'function') updateUI();
-    if (typeof showPersistentFeedback === 'function') {
-      showPersistentFeedback("🚀 [MODO TEST] Salto al Cofre 79 completado | 500 GP | 20 Herramientas");
-    }
-  });
-})();
+function applyDevStart() {}
 
 /* ==========================================================================
    [0.087] SONIDO DE INTERFAZ Y MISCELÁNEA
@@ -6577,6 +6837,22 @@ const KEY_TOAST_STYLE = {
   usb:      { icon: 'fa-microchip',   color: '#22d3ee' },
   valves:   { icon: 'fa-faucet',      color: '#fb7185' }
 };
+// [0.090] Efectos de pantalla compartidos: sacudida del marco y destello de color
+function screenShake(px = 6, ms = 400) {
+  const f = document.getElementById('gameFrame');
+  if (!f || !f.animate) return;
+  const n = Math.max(4, Math.round(ms / 40)), kf = [];
+  for (let i = 0; i < n; i++) { const k = 1 - i / n; kf.push({ transform: `translate3d(${((Math.random() * 2 - 1) * px * k).toFixed(1)}px,${((Math.random() * 2 - 1) * px * k).toFixed(1)}px,0)` }); }
+  kf.push({ transform: 'translate3d(0,0,0)' });
+  try { f.animate(kf, { duration: ms, easing: 'linear' }); } catch (e) {}
+}
+function flashScreen(color = 'rgba(255,0,0,.4)', ms = 500) {
+  const el = document.createElement('div');
+  el.style.cssText = `position:absolute;inset:0;z-index:10040;pointer-events:none;background:${color};opacity:1;transition:opacity ${ms}ms ease-out`;
+  uiHost().appendChild(el);
+  requestAnimationFrame(() => requestAnimationFrame(() => { el.style.opacity = '0'; }));
+  setTimeout(() => el.remove(), ms + 100);
+}
 function modalVisible(id) { const e = document.getElementById(id); return !!(e && !e.classList.contains('hidden')); }
 // [0.089] Compara las llaves con la última lectura y apunta ganancias (+N) y gastos (-N). Solo la tienda del Duende queda excluida.
 function trackKeyGains() {
@@ -6727,4 +7003,468 @@ function requestGameFullscreen() {
     if (isFullscreenNow()) { try { (document.exitFullscreen || document.webkitExitFullscreen).call(document); } catch (e) {} }
     else requestGameFullscreen();
   });
+})();
+
+// SHA-256 en JS puro (mismo resultado que hashlib); se usa para comprobar la clave del Modo test sin guardarla en claro
+function sha256hex(str) {
+  const K = [0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+  const bytes = []; for (let i = 0; i < str.length; i++) bytes.push(str.charCodeAt(i) & 0xff);
+  const l = bytes.length; bytes.push(0x80); while (bytes.length % 64 !== 56) bytes.push(0);
+  const hi = Math.floor(l * 8 / 4294967296), lo = (l * 8) >>> 0;
+  bytes.push((hi >>> 24) & 255, (hi >>> 16) & 255, (hi >>> 8) & 255, hi & 255, (lo >>> 24) & 255, (lo >>> 16) & 255, (lo >>> 8) & 255, lo & 255);
+  let h = [0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+  const rotr = (x, n) => (x >>> n) | (x << (32 - n));
+  for (let o = 0; o < bytes.length; o += 64) {
+    const w = new Array(64);
+    for (let i = 0; i < 16; i++) w[i] = ((bytes[o + 4 * i] << 24) | (bytes[o + 4 * i + 1] << 16) | (bytes[o + 4 * i + 2] << 8) | bytes[o + 4 * i + 3]) >>> 0;
+    for (let i = 16; i < 64; i++) { const s0 = rotr(w[i - 15], 7) ^ rotr(w[i - 15], 18) ^ (w[i - 15] >>> 3), s1 = rotr(w[i - 2], 17) ^ rotr(w[i - 2], 19) ^ (w[i - 2] >>> 10); w[i] = (w[i - 16] + s0 + w[i - 7] + s1) >>> 0; }
+    let [a, b, c, d, e, f, g, hh] = h;
+    for (let i = 0; i < 64; i++) {
+      const S1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25), ch = (e & f) ^ (~e & g), t1 = (hh + S1 + ch + K[i] + w[i]) >>> 0;
+      const S0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22), mj = (a & b) ^ (a & c) ^ (b & c), t2 = (S0 + mj) >>> 0;
+      hh = g; g = f; f = e; e = (d + t1) >>> 0; d = c; c = b; b = a; a = (t1 + t2) >>> 0;
+    }
+    h = [(h[0] + a) >>> 0, (h[1] + b) >>> 0, (h[2] + c) >>> 0, (h[3] + d) >>> 0, (h[4] + e) >>> 0, (h[5] + f) >>> 0, (h[6] + g) >>> 0, (h[7] + hh) >>> 0];
+  }
+  return h.map(x => ('00000000' + x.toString(16)).slice(-8)).join('');
+}
+// Huella de una secuencia de flechas (U/D/L/R): sal + 2000 rondas de SHA-256
+function testKeyHash(seq, salt) {
+  let h = sha256hex(salt + seq);
+  for (let i = 0; i < 2000; i++) h = sha256hex(h + salt);
+  return h;
+}
+
+
+/* ==========================================================================
+   [0.090] MENÚ DE OPCIONES (engranaje), ESTADÍSTICAS Y MODO TEST
+   ========================================================================== */
+(function () {
+  const css = document.createElement('style');
+  css.textContent = `
+    @keyframes chalkIn { from { clip-path: inset(0 100% 0 0); opacity:.2 } to { clip-path: inset(0 0 0 0); opacity:1 } }
+    @keyframes keyShake { 0%,100% { transform: translateX(0) } 20% { transform: translateX(-9px) } 40% { transform: translateX(8px) } 60% { transform: translateX(-6px) } 80% { transform: translateX(4px) } }
+    @keyframes tmBlink { 0%,49% { opacity: 1 } 50%,100% { opacity: 0 } }
+    .jm-chalk { font-family: 'VT323', monospace; color: #eef3ea; text-shadow: 0 0 3px rgba(255,255,255,.45), 1px 1px 0 rgba(0,0,0,.35); }
+    .jm-chalk-row { animation: chalkIn .45s ease-out both; }
+    .jm-shake { animation: keyShake .45s ease-in-out; }
+    .tm-root { font-family: 'VT323', monospace; color: #e8e8e8; background: #000; letter-spacing: .02em; }
+    .tm-root::after { content:''; position:absolute; inset:0; pointer-events:none; background: repeating-linear-gradient(0deg, rgba(255,255,255,.035) 0, rgba(255,255,255,.035) 1px, transparent 1px, transparent 3px); }
+    .tm-row { display:flex; align-items:center; gap:6px; padding:2px 6px 2px 20px; position:relative; min-height:42px; font-size:23px; cursor:pointer; }
+    .tm-row.sel { background: rgba(255,255,255,.07); }
+    .tm-row.sel::before { content:'▶'; color:#ff2a2a; position:absolute; left:3px; top:50%; transform:translateY(-50%); font-size:19px; }
+    .tm-lbl { flex:1; min-width:0; }
+    .tm-val { min-width:78px; text-align:center; color:#ffe14a; }
+    .tm-val.off { color:#8a8a8a; }
+    .tm-arr { width:44px; height:38px; border:1px solid #666; background:#111; color:#fff; font-size:20px; line-height:1; display:flex; align-items:center; justify-content:center; user-select:none; touch-action:manipulation; }
+    .tm-arr:active { background:#333; }
+    .tm-btn { flex:1; height:46px; border:2px solid #aaa; background:#0a0a0a; color:#fff; font-family:'VT323',monospace; font-size:23px; letter-spacing:.06em; }
+    .tm-btn:active { background:#2a2a2a; }
+    .tm-btn.go { border-color:#39e75f; color:#39e75f; }
+    .tm-btn.warn { border-color:#ff5a5a; color:#ff5a5a; }
+  `;
+  document.head.appendChild(css);
+
+  // ---- utilidades ----
+  const host = () => uiHost();
+  function overlay(id, z) {
+    const old = document.getElementById(id); if (old) old.remove();
+    const el = document.createElement('div');
+    el.id = id;
+    el.className = 'fixed inset-0 flex items-center justify-center p-5 font-sans';
+    el.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:0;display:flex;align-items:center;justify-content:center;padding:20px;z-index:' + (z || 10020);
+    host().appendChild(el);
+    return el;
+  }
+  function close(id) { const e = document.getElementById(id); if (e) e.remove(); }
+  AudioEngine.prototype.playChalk = function () {
+    if (!this.ctx || this.muted) return;
+    const prev = this._bus; this._bus = this.busSmall || null;
+    try { [0, 0.09, 0.2].forEach((d, i) => { this._noise(0.07 + i * 0.01, 0.05, d, 3000 + i * 600); this._tone(2300 + i * 300, 1800, 0.04, 'triangle', 0.015, d); }); } finally { this._bus = prev; }
+  };
+  AudioEngine.prototype.playTestDenied = function () {
+    if (!this.ctx || this.muted) return;
+    const prev = this._bus; this._bus = this.busSmall || null;
+    try { this._tone(140, 90, 0.2, 'square', 0.12); this._tone(120, 80, 0.25, 'square', 0.1, 0.12); } finally { this._bus = prev; }
+  };
+
+  // ---- confirmación genérica ----
+  function confirmBox(title, text, yesLabel, onYes) {
+    const o = overlay('confirmModal', 10040);
+    o.className += ' bg-slate-950/90 backdrop-blur-md';
+    o.innerHTML = `
+      <div class="bg-slate-900 border-2 border-rose-700/70 rounded-3xl p-6 w-full max-w-xs shadow-2xl text-center flex flex-col items-center gap-3">
+        <div class="w-14 h-14 rounded-full bg-rose-950/80 border border-rose-500 flex items-center justify-center text-2xl text-rose-400"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <h3 class="text-xl font-black text-rose-300 font-retro">${title}</h3>
+        <p class="text-xs text-slate-300">${text}</p>
+        <button id="cfmYes" class="w-full py-3 bg-gradient-to-r from-rose-600 to-amber-600 active:from-rose-500 text-white font-black text-sm rounded-xl shadow-lg cursor-pointer">${yesLabel}</button>
+        <button id="cfmNo" class="w-full py-2.5 bg-slate-800 active:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl cursor-pointer">Cancelar</button>
+      </div>`;
+    o.querySelector('#cfmYes').addEventListener('click', () => { close('confirmModal'); onYes(); });
+    o.querySelector('#cfmNo').addEventListener('click', () => close('confirmModal'));
+  }
+
+  // ---- menú de opciones ----
+  window.openOptionsMenu = function () {
+    audio.init();
+    const o = overlay('optionsModal', 10020);
+    o.className += ' bg-slate-950/90 backdrop-blur-md';
+    const b = (id, icon, label, cls) => `<button id="${id}" class="w-full py-3 ${cls || 'bg-slate-800 active:bg-slate-700 text-slate-200'} font-extrabold text-xs rounded-xl border border-slate-600/60 flex items-center justify-center gap-2 cursor-pointer"><i class="fa-solid ${icon}"></i> ${label}</button>`;
+    o.innerHTML = `
+      <div class="bg-slate-900 border-2 border-amber-500/50 rounded-3xl p-5 w-full max-w-xs shadow-2xl flex flex-col gap-2.5">
+        <h3 class="text-center text-2xl font-black text-amber-300 font-retro tracking-wide mb-1"><i class="fa-solid fa-gear"></i> OPCIONES</h3>
+        ${b('optStats', 'fa-chart-simple', 'ESTADÍSTICAS', 'bg-gradient-to-r from-emerald-800 to-emerald-700 text-white')}
+        ${b('optNew', 'fa-rotate-left', 'EMPEZAR DE NUEVO', 'bg-rose-950/80 active:bg-rose-900 text-rose-200')}
+        ${b('optAch', 'fa-trophy', 'RESETEAR LOGROS')}
+        ${b('optCnt', 'fa-eraser', 'RESETEAR CONTADORES')}
+        ${b('optTest', 'fa-flask', 'MODO TEST', 'bg-slate-950 text-slate-400')}
+        <button id="optClose" class="mt-1 w-full py-2.5 bg-slate-800 active:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl cursor-pointer">Cerrar</button>
+      </div>`;
+    const q = id => o.querySelector('#' + id);
+    q('optClose').addEventListener('click', () => close('optionsModal'));
+    q('optStats').addEventListener('click', () => { close('optionsModal'); openStatsBoard(); });
+    q('optNew').addEventListener('click', () => { close('optionsModal'); showResetConfirm(); });
+    q('optAch').addEventListener('click', () => { close('optionsModal'); confirmBox('¿RESETEAR LOGROS?', 'Se borrarán los logros desbloqueados en este navegador. La partida no se toca.', 'SÍ, BORRAR LOGROS', () => { clearAchievements(); showPersistentFeedback('🏆 Logros reseteados.'); }); });
+    q('optCnt').addEventListener('click', () => { close('optionsModal'); confirmBox('¿RESETEAR CONTADORES?', 'Se pondrá a cero el apartado ACUMULADO de las estadísticas. La partida no se toca.', 'SÍ, PONER A CERO', () => { lifeStats = blankStats(); lifeStatsDirty = true; saveLifeStats(); showPersistentFeedback('🧮 Contadores acumulados a cero.'); }); });
+    q('optTest').addEventListener('click', () => { close('optionsModal'); openTestKeyGate(); });
+  };
+  (function () {
+    const btn = document.getElementById('optionsBtn');
+    if (btn) btn.addEventListener('click', () => window.openOptionsMenu());
+  })();
+
+  // ---- estadísticas: pizarra con tiza ----
+  window.openStatsBoard = function () {
+    audio.init(); try { audio.playChalk(); } catch (e) {}
+    const o = overlay('statsModal', 10020);
+    o.className += ' bg-slate-950/90 backdrop-blur-md';
+    const C = STATE.stats || blankStats(), L = lifeStats;
+    const pz = (S, t) => { const q = S.puz[t], tot = q.ok + q.fail; return tot ? `<span>${q.ok}/${tot}</span> <span style="font-size:15px;opacity:.85">${Math.round(q.ok * 100 / tot)}%</span>` : '—'; };
+    const rows = [
+      ['COFRES ABIERTOS', C.chests, L.chests],
+      ['NIVEL MÁXIMO', C.maxLevel, L.maxLevel]
+    ];
+    if (Math.max(C.maxLoop, L.maxLoop, STATE.currentLoop || 1) >= 2) rows.push(['BUCLE MÁXIMO', C.maxLoop, L.maxLoop]);   // el bucle solo se nombra a partir del segundo
+    rows.push(['ORO GANADO', C.goldEarned, L.goldEarned], ['ORO GASTADO', C.goldSpent, L.goldSpent], ['GANZÚAS ROTAS', C.picksBroken, L.picksBroken], ['MEJOR RACHA', C.bestStreak, L.bestStreak]);
+    rows.push(['#H', 'PUZLES SUPERADOS']);
+    [['lockpick', 'MADERA'], ['tumbler', 'ACERO'], ['hack', 'DIGITAL'], ['pipe', 'VAPOR']].forEach(([t, n]) => rows.push([n, pz(C, t), pz(L, t)]));
+    const html = rows.map((r, i) => r[0] === '#H'
+      ? `<div class="jm-chalk jm-chalk-row" style="animation-delay:${i * 70}ms;font-size:19px;text-align:center;margin-top:8px;border-top:2px dashed rgba(238,243,234,.35);padding-top:6px;letter-spacing:.12em">${r[1]}</div>`
+      : `<div class="jm-chalk jm-chalk-row" style="animation-delay:${i * 70}ms;display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr);gap:5px;font-size:19px;line-height:1.25;white-space:nowrap;border-bottom:1px dotted rgba(238,243,234,.18)"><span style="opacity:.92">${r[0]}</span><span style="text-align:right;color:#ffe9a8">${r[1]}</span><span style="text-align:right;color:#bfe9ff">${r[2]}</span></div>`).join('');
+    o.innerHTML = `
+      <div style="width:100%;max-width:23rem;background:#5b3a1e;border:3px solid #3c2412;border-radius:14px;padding:10px;box-shadow:0 10px 40px rgba(0,0,0,.7), inset 0 0 0 2px #7a5230">
+        <div style="background:radial-gradient(ellipse at 30% 20%, #2a3c34 0, #1b2a24 60%, #15211c 100%);border-radius:6px;padding:14px 12px 12px;box-shadow:inset 0 0 28px rgba(0,0,0,.65)">
+          <div class="jm-chalk jm-chalk-row" style="font-size:30px;text-align:center;letter-spacing:.14em;margin-bottom:2px">ESTADÍSTICAS</div>
+          <div class="jm-chalk" style="display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr);gap:5px;font-size:15px;opacity:.9;margin:6px 0 4px;border-bottom:2px solid rgba(238,243,234,.4);padding-bottom:3px"><span></span><span style="text-align:right;color:#ffe9a8">PARTIDA<br>ACTUAL</span><span style="text-align:right;color:#bfe9ff">ACUMULADO</span></div>
+          ${html}
+        </div>
+        <button id="statsClose" class="mt-3 w-full py-2.5 bg-amber-700/90 active:bg-amber-600 text-amber-50 font-extrabold text-xs rounded-xl cursor-pointer" style="border:1px solid #c69a5a">CERRAR</button>
+      </div>`;
+    o.querySelector('#statsClose').addEventListener('click', () => close('statsModal'));
+    [0.25, 0.7, 1.2].forEach(d => setTimeout(() => { if (document.getElementById('statsModal')) try { audio.playChalk(); } catch (e) {} }, d * 1000));
+  };
+
+  // ---- clave de flechas del Modo test ----
+  let keyFails = 0, keyLockUntil = 0;
+  window.openTestKeyGate = function () {
+    audio.init();
+    const cfg = DATOS_JUEGO.MODO_TEST || {};
+    const len = cfg.LONGITUD || 6;
+    const o = overlay('testKeyModal', 10040);
+    o.className += ' bg-black/90';
+    o.innerHTML = `
+      <div id="tkBox" class="tm-root" style="position:relative;width:100%;max-width:18rem;border:2px solid #777;padding:16px 14px;text-align:center">
+        <div style="font-size:26px;color:#ffe14a;letter-spacing:.1em">CLAVE</div>
+        <div id="tkDots" style="font-size:28px;letter-spacing:.35em;margin:10px 0 12px;min-height:34px"></div>
+        <div style="display:grid;grid-template-columns:repeat(3,64px);grid-template-rows:repeat(3,56px);gap:6px;justify-content:center">
+          <span></span><button class="tm-arr tk" data-k="U" style="width:64px;height:56px">▲</button><span></span>
+          <button class="tm-arr tk" data-k="L" style="width:64px;height:56px">◀</button><span></span><button class="tm-arr tk" data-k="R" style="width:64px;height:56px">▶</button>
+          <span></span><button class="tm-arr tk" data-k="D" style="width:64px;height:56px">▼</button><span></span>
+        </div>
+        <button id="tkBack" class="tm-btn" style="margin-top:14px;width:100%;flex:none">VOLVER</button>
+      </div>`;
+    let seq = '';
+    const dots = () => { o.querySelector('#tkDots').textContent = '●'.repeat(seq.length) + '○'.repeat(len - seq.length); };
+    dots();
+    const press = k => {
+      if (performance.now() < keyLockUntil) { try { audio.playTestDenied(); } catch (e) {} return; }   // bloqueado tras fallar
+      seq += k; dots(); try { audio.playUiClick(); } catch (e) {}
+      if (seq.length < len) return;
+      const ok = testKeyHash(seq, cfg.SAL || '') === cfg.HUELLA;
+      seq = '';
+      if (ok) { keyFails = 0; document.removeEventListener('keydown', onKey, true); close('testKeyModal'); try { audio.playUnlockFanfare('normal'); } catch (e) {} openTestMenu(); return; }
+      keyFails++;
+      keyLockUntil = performance.now() + Math.min(60000, 1500 * Math.pow(2, keyFails - 1));   // 1,5 s, 3 s, 6 s... hasta 60 s
+      try { audio.playTestDenied(); } catch (e) {}
+      const box = o.querySelector('#tkBox'); box.classList.remove('jm-shake'); void box.offsetWidth; box.classList.add('jm-shake');
+      dots();
+    };
+    const onKey = e => {
+      const m = { ArrowUp: 'U', ArrowDown: 'D', ArrowLeft: 'L', ArrowRight: 'R' }[e.key];
+      if (!m) return; e.preventDefault(); e.stopPropagation(); press(m);
+    };
+    document.addEventListener('keydown', onKey, true);
+    o.querySelectorAll('.tk').forEach(b => b.addEventListener('click', () => press(b.dataset.k)));
+    o.querySelector('#tkBack').addEventListener('click', () => { document.removeEventListener('keydown', onKey, true); close('testKeyModal'); });
+  };
+
+  // ---- menú de servicio (estilo arcade) ----
+  const TM_PAGES = [
+    { title: 'AJUSTES DE PARTIDA', rows: [
+      { id: 'chest', label: 'IR AL COFRE', kind: 'num', min: 1, max: 100, def: 78 },
+      { id: 'loop', label: 'BUCLE', kind: 'list', opts: [1, 2, 3] },
+      { id: 'level', label: 'NIVEL', kind: 'num', min: 1, max: 30, def: 5 },
+      { id: 'gold', label: 'ORO (GP)', kind: 'num', min: 0, max: 9999, step: 50, def: 500 },
+      { id: 'picks', label: 'GANZÚAS', kind: 'num', min: 0, max: 99, def: 20 },
+      { id: 'proPicks', label: 'PINES DE ACERO', kind: 'num', min: 0, max: 99, def: 20 },
+      { id: 'usb', label: 'LLAVES USB', kind: 'num', min: 0, max: 99, def: 20 },
+      { id: 'valves', label: 'VÁLVULAS', kind: 'num', min: 0, max: 99, def: 20 }
+    ] },
+    { title: 'CARTAS Y EXTRAS', rows: [
+      { id: 'ab_auto', label: 'CARTA AUTO', kind: 'num', min: 0, max: 9, def: 3 },
+      { id: 'ab_double', label: 'CARTA x2', kind: 'num', min: 0, max: 9, def: 3 },
+      { id: 'ab_shield', label: 'CARTA ESCUDO', kind: 'num', min: 0, max: 9, def: 3 },
+      { id: 'ab_reveal', label: 'CARTA REVELAR', kind: 'num', min: 0, max: 9, def: 3 },
+      { id: 'ab_riskPot', label: 'CARTA APUESTA', kind: 'num', min: 0, max: 9, def: 3 },
+      { id: 'ab_perdedor', label: 'CARTA PERDEDOR', kind: 'num', min: 0, max: 9, def: 3 },
+      { id: 'ab_summonDuende', label: 'CARTA DUENDE', kind: 'num', min: 0, max: 9, def: 3 },
+      { id: 'curse', label: 'MALDICIÓN (COFRES)', kind: 'num', min: 1, max: 30, def: 10 },
+      { id: 'clearAch', label: 'BORRAR LOGROS', kind: 'bool' }
+    ] },
+    { title: 'PROBAR UN PUZLE (SOLO)', puzzle: true, rows: [
+      { id: 'pType', label: 'PUZLE', kind: 'list', opts: ['MADERA', 'ACERO', 'DIGITAL', 'VAPOR'], always: true },
+      { id: 'pVar', label: 'VARIANTE', kind: 'list', opts: ['RANDOM', '1x1', '1x2', '1x3', '1x4', '2x1', '2x2', '2x3', '2x4', '3x1', '3x2', '3x3', '3x4'], always: true }
+    ] }
+  ];
+  const tmVals = { pType: 'MADERA', pVar: 'RANDOM' };
+  function fmtVal(r) {
+    const v = tmVals[r.id];
+    if (r.kind === 'bool') return v ? 'ON' : 'OFF';
+    if (v === undefined || v === null) return 'OFF';
+    return String(v);
+  }
+  function stepVal(r, dir, fast) {
+    const v = tmVals[r.id];
+    if (r.kind === 'bool') { tmVals[r.id] = dir > 0; return; }
+    if (r.kind === 'list') {
+      const i = (v === undefined || v === null) ? -1 : r.opts.indexOf(v);
+      let n = i + dir;
+      if (r.always) n = (n + r.opts.length) % r.opts.length;
+      else if (n < 0) { tmVals[r.id] = null; return; }
+      else n = Math.min(r.opts.length - 1, n);
+      tmVals[r.id] = r.opts[n]; return;
+    }
+    const st = (r.step || 1) * (fast ? 5 : 1);
+    if (v === undefined || v === null) { if (dir > 0) tmVals[r.id] = r.def; return; }
+    const n = v + dir * st;
+    if (n < r.min) { tmVals[r.id] = (v === r.min || dir < 0) ? null : r.min; return; }
+    tmVals[r.id] = Math.min(r.max, n);
+  }
+  function applyTestCheats() {
+    const v = tmVals; let any = false;
+    const set = (cond, fn) => { if (cond) { fn(); any = true; } };
+    set(v.loop != null, () => { STATE.currentLoop = v.loop; });
+    set(v.chest != null, () => { window.goToChest(v.chest); });
+    set(v.level != null, () => { STATE.level = v.level; STATE.xp = 0; STATE.xpNext = getXpForLevel(v.level); STATE.chestsAtLevelUp = Math.max(0, STATE.chestsOpened - 3); STATE.chestsOpened = Math.max(STATE.chestsOpened, 3); });
+    set(v.gold != null, () => { STATE.gold = v.gold; });
+    ['picks', 'proPicks', 'usb', 'valves'].forEach(k => set(v[k] != null, () => { STATE[k] = v[k]; }));
+    ['auto', 'double', 'shield', 'reveal', 'riskPot', 'perdedor', 'summonDuende'].forEach(k => set(v['ab_' + k] != null, () => { STATE.abilities[k] = v['ab_' + k]; }));
+    set(v.curse != null, () => { STATE.cursedChestsLeft = v.curse; });
+    set(!!v.clearAch, () => { clearAchievements(); });
+    if (any) {
+      statsPaused = true; statsGoldPrev = null;   // una partida con trucos no cuenta para las estadísticas
+      Object.keys(tmVals).forEach(k => { if (k !== 'pType' && k !== 'pVar') tmVals[k] = (k === 'clearAch') ? false : null; });
+      generateScreenChests(); updateUI();
+      showPersistentFeedback('🛠️ [MODO TEST] Ajustes aplicados. Esta partida ya no cuenta para las estadísticas.');
+    }
+    return any;
+  }
+  let tmPage = 0, tmCursor = 0, tmKeyHandler = null;
+  window.openTestMenu = function () {
+    audio.init();
+    const o = overlay('testMenuModal', 10040);
+    o.style.padding = '0';
+    o.innerHTML = `<div class="tm-root" style="position:relative;width:100%;height:100%;display:flex;flex-direction:column;padding:10px 8px;overflow-y:auto">
+      <div style="text-align:center;color:#ffe14a;font-size:26px;letter-spacing:.1em;line-height:1">— MODO TEST —</div>
+      <div style="text-align:center;color:#999;font-size:17px;margin-bottom:6px">JOMC v${DATOS_JUEGO.VERSION} · <span id="tmPg"></span></div>
+      <div id="tmRows" style="flex:1"></div>
+      <div id="tmNote" style="color:#8fd6ff;font-size:17px;min-height:42px;padding:4px 6px"></div>
+      <div style="display:flex;gap:6px;margin-top:4px"><button class="tm-btn" id="tmNext">NEXT PAGE ▶</button><button class="tm-btn go" id="tmGo">VALIDAR</button></div>
+      <div style="display:flex;gap:6px;margin-top:6px"><button class="tm-btn warn" id="tmExit">SALIR</button></div>
+    </div>`;
+    const rowsEl = o.querySelector('#tmRows');
+    const draw = () => {
+      const pg = TM_PAGES[tmPage];
+      o.querySelector('#tmPg').textContent = `PAGE ${tmPage + 1}/${TM_PAGES.length} · ${pg.title}`;
+      tmCursor = Math.min(tmCursor, pg.rows.length - 1);
+      rowsEl.innerHTML = pg.rows.map((r, i) => `<div class="tm-row ${i === tmCursor ? 'sel' : ''}" data-i="${i}"><span class="tm-lbl">${r.label}</span><span class="tm-arr" data-d="-1">◀</span><span class="tm-val ${(fmtVal(r) === 'OFF') ? 'off' : ''}">${fmtVal(r)}</span><span class="tm-arr" data-d="1">▶</span></div>`).join('');
+      o.querySelector('#tmGo').textContent = pg.puzzle ? 'LANZAR PUZLE' : 'VALIDAR';
+      o.querySelector('#tmNote').textContent = pg.puzzle ? 'Se prueba SOLO este puzle, en serie, con herramientas infinitas. VARIANTE = bucle x rareza (1x3 = bucle 1, épico). Se sale desde la barra superior.' : 'Los ajustes activados se aplican UNA vez a la partida en curso. OFF = no tocar.';
+      // flechas: pulsación y mantener
+      rowsEl.querySelectorAll('.tm-row').forEach(rowEl => {
+        const i = +rowEl.dataset.i, r = pg.rows[i];
+        rowEl.addEventListener('click', e => { if (e.target.closest('.tm-arr')) return; tmCursor = i; draw(); try { audio.playUiClick(); } catch (x) {} });
+        rowEl.querySelectorAll('.tm-arr').forEach(a => {
+          let tm = null, iv = null, n = 0;
+          const stop = () => { clearTimeout(tm); clearInterval(iv); };
+          const act = () => { n++; stepVal(r, +a.dataset.d, n > 12); const vEl = rowEl.querySelector('.tm-val'); vEl.textContent = fmtVal(r); vEl.classList.toggle('off', fmtVal(r) === 'OFF'); };
+          a.addEventListener('pointerdown', e => { e.preventDefault(); tmCursor = i; rowsEl.querySelectorAll('.tm-row').forEach((x, j) => x.classList.toggle('sel', j === i)); try { audio.playUiClick(); } catch (x) {} act(); tm = setTimeout(() => { iv = setInterval(act, 80); }, 420); });
+          ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => a.addEventListener(ev, stop));
+        });
+      });
+    };
+    draw();
+    o.querySelector('#tmNext').addEventListener('click', () => { tmPage = (tmPage + 1) % TM_PAGES.length; tmCursor = 0; draw(); try { audio.playUiClick(); } catch (e) {} });
+    const exit = () => { if (tmKeyHandler) document.removeEventListener('keydown', tmKeyHandler, true); tmKeyHandler = null; close('testMenuModal'); };
+    o.querySelector('#tmExit').addEventListener('click', exit);
+    o.querySelector('#tmGo').addEventListener('click', () => {
+      const pg = TM_PAGES[tmPage];
+      if (pg.puzzle) { exit(); startTestSeries(tmVals.pType, tmVals.pVar); return; }
+      if (applyTestCheats()) exit();
+      else { o.querySelector('#tmNote').textContent = 'No hay ningún ajuste activado (todo en OFF).'; try { audio.playTestDenied(); } catch (e) {} }
+    });
+    // teclado (PC): ↑↓ elegir fila, ←→ cambiar valor, Enter valida
+    tmKeyHandler = e => {
+      const pg = TM_PAGES[tmPage];
+      if (e.key === 'ArrowUp') tmCursor = (tmCursor + pg.rows.length - 1) % pg.rows.length;
+      else if (e.key === 'ArrowDown') tmCursor = (tmCursor + 1) % pg.rows.length;
+      else if (e.key === 'ArrowLeft') stepVal(pg.rows[tmCursor], -1, e.shiftKey);
+      else if (e.key === 'ArrowRight') stepVal(pg.rows[tmCursor], 1, e.shiftKey);
+      else if (e.key === 'Enter') { o.querySelector('#tmGo').click(); return; }
+      else return;
+      e.preventDefault(); e.stopPropagation(); draw();
+    };
+    document.addEventListener('keydown', tmKeyHandler, true);
+  };
+
+  /* ---- Puzles en serie (Modo test): un puzle concreto, repetido; al acabar (éxito o error) sale el siguiente ---- */
+  const JUEGO_TIPO = { MADERA: 'wooden', ACERO: 'piston', DIGITAL: 'cyber', VAPOR: 'hydraulic' };
+  window.startTestSeries = function (typeName, variant) {
+    if (TEST_SERIES.active) return;
+    const snap = { state: {}, chests: STATE.screenChests, idx: STATE.activeChestIdx, autosave: autosaveEnabled, statsPaused };
+    SAVE_KEYS.forEach(k => { try { snap.state[k] = JSON.parse(JSON.stringify(STATE[k])); } catch (e) { snap.state[k] = STATE[k]; } });
+    Object.assign(TEST_SERIES, { active: true, typeId: JUEGO_TIPO[typeName] || 'wooden', typeName, variant, snap, n: 0, ok: 0, fail: 0 });
+    autosaveEnabled = false; statsPaused = true;
+    makeSeriesBar();
+    testPuzzleNext();
+  };
+  function makeSeriesBar() {
+    const old = document.getElementById('testSeriesBar'); if (old) old.remove();
+    const bar = document.createElement('div');
+    bar.id = 'testSeriesBar';
+    bar.style.cssText = "position:absolute;top:4px;left:50%;transform:translateX(-50%);z-index:10045;display:flex;gap:6px;align-items:center;background:rgba(0,0,0,.88);border:1px solid #39e75f;color:#39e75f;font:17px 'VT323',monospace;padding:2px 6px;border-radius:6px;white-space:nowrap";
+    bar.innerHTML = `<span id="tsInfo"></span><button id="tsExit" style="border:1px solid #ff5a5a;color:#ff5a5a;background:#000;padding:0 8px;font:inherit">SALIR</button>`;
+    uiHost().appendChild(bar);
+    bar.querySelector('#tsExit').addEventListener('click', stopTestSeries);
+  }
+  function updateSeriesBar(label) {
+    const i = document.getElementById('tsInfo'); if (!i) return;
+    i.textContent = `TEST ${TEST_SERIES.typeName} · ${label} · #${TEST_SERIES.n} ✔${TEST_SERIES.ok} ✘${TEST_SERIES.fail}`;
+  }
+  window.testPuzzleNext = function () {
+    if (!TEST_SERIES.active) return;
+    let loop, rar;
+    const v = TEST_SERIES.variant;
+    if (v === 'RANDOM') { loop = 1 + Math.floor(Math.random() * 3); rar = 1 + Math.floor(Math.random() * 4); }
+    else { loop = +v[0]; rar = +v[2]; }
+    TEST_SERIES.n++;
+    const type = DATOS_JUEGO.COFRES.ESTANDAR.find(t => t.id === TEST_SERIES.typeId);
+    STATE.currentLoop = loop; STATE.level = Math.max(STATE.level, 6);
+    STATE.chestsOpened = Math.max(STATE.chestsOpened, 20);
+    STATE.picks = STATE.proPicks = STATE.usb = STATE.valves = 99;
+    STATE.abilities.auto = 0; STATE.activeShield = false; STATE.riskModeActive = false; STATE.cursedChestsLeft = 0;
+    STATE.screenChests = [{ type, rarity: CHEST_RARITIES[rar - 1] }]; STATE.activeChestIdx = 0;
+    isLootProcessing = false; minigameInProgress = false; puzzleToolPaid = null;
+    updateChestSelectionUI(); updateUI();
+    updateSeriesBar(`${loop}x${rar}`);
+    setTimeout(() => { if (TEST_SERIES.active) openActiveChest(); }, 350);
+  };
+  window.testPuzzleResult = function (ok) {
+    if (!TEST_SERIES.active) return;
+    minigameInProgress = false; stopMinigameTimer(); hideAllMinigameUI(); isLootProcessing = false;
+    if (ok) TEST_SERIES.ok++; else TEST_SERIES.fail++;
+    flashScreen(ok ? 'rgba(57,231,95,.28)' : 'rgba(255,60,60,.3)', 500);
+    updateSeriesBar(ok ? 'SUPERADO' : 'FALLADO');
+    whenBannerClosed(() => setTimeout(() => { if (TEST_SERIES.active) testPuzzleNext(); }, 650));
+  };
+  window.stopTestSeries = function () {
+    if (!TEST_SERIES.active) return;
+    const s = TEST_SERIES.snap;
+    TEST_SERIES.active = false;
+    minigameInProgress = false; stopMinigameTimer(); hideAllMinigameUI(); isLootProcessing = false; puzzleToolPaid = null; puzzleStat = null;
+    SAVE_KEYS.forEach(k => { STATE[k] = s.state[k]; });
+    STATE.screenChests = s.chests; STATE.activeChestIdx = s.idx;
+    autosaveEnabled = s.autosave; statsPaused = s.statsPaused; statsGoldPrev = null;
+    const bar = document.getElementById('testSeriesBar'); if (bar) bar.remove();
+    updateChestSelectionUI(); updateUI();
+  };
+})();
+
+
+/* ==========================================================================
+   [0.090] GANZÚA TÁCTIL: arrastrar el anillo del dial gira la ganzúa; mantener el centro prueba girar (como el botón).
+   El deslizador y el botón de abajo se conservan. Con dos dedos se puede girar y mantener a la vez.
+   ========================================================================== */
+(function () {
+  const glow = document.getElementById('proximityGlow');
+  if (!glow) return;
+  const dial = glow.parentElement;
+  dial.style.touchAction = 'none'; dial.style.userSelect = 'none'; dial.style.position = 'relative';
+  const roles = {};   // pointerId -> 'ring' | 'center'
+  let hintRing = null, hintCenter = null;
+  const fake = { preventDefault() {} };
+  function geom(e) {
+    const r = dial.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2, R = r.width / 2;
+    const dx = e.clientX - cx, dy = e.clientY - cy;
+    return { dist: Math.hypot(dx, dy) / R, ang: Math.atan2(dx, -dy) * 180 / Math.PI };
+  }
+  function setAngle(a) {
+    if (lpState.isBreaking || lpState.isCompleted) return;
+    a = Math.max(-85, Math.min(85, a));
+    lpState.angle = a;
+    const sl = document.getElementById('angleSlider'); if (sl) sl.value = a;
+    const ro = document.getElementById('angleReadout'); if (ro) ro.textContent = `${Math.round(a)}°`;
+    updateLockpickProximityVisuals();
+  }
+  const clampAng = t => (t > 85 && t <= 180) ? 85 : (t < -85 && t >= -180) ? -85 : t;
+  dial.addEventListener('pointerdown', e => {
+    if (lpState.isBreaking || lpState.isCompleted) return;
+    const g = geom(e);
+    const role = g.dist < 0.58 ? 'center' : 'ring';
+    roles[e.pointerId] = role;
+    try { dial.setPointerCapture(e.pointerId); } catch (x) {}
+    e.preventDefault();
+    if (role === 'center') { startTension(fake); if (hintCenter) { hintCenter.remove(); hintCenter = null; } }
+    else { setAngle(clampAng(g.ang)); if (hintRing) { hintRing.remove(); hintRing = null; } }
+  });
+  dial.addEventListener('pointermove', e => {
+    if (roles[e.pointerId] !== 'ring') return;
+    setAngle(clampAng(geom(e).ang));
+  });
+  const up = e => {
+    const role = roles[e.pointerId]; delete roles[e.pointerId];
+    if (role === 'center') stopTension(fake);
+  };
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => dial.addEventListener(ev, up));
+
+  // Ayuda visual en las primeras veces de madera (por partida)
+  window.showLockTouchHints = function () {
+    [hintRing, hintCenter].forEach(h => { if (h) h.remove(); }); hintRing = hintCenter = null;
+    const hc = (DATOS_JUEGO.AYUDAS || {}).GANZUA_TACTIL; if (!hc) return;
+    STATE.hintUses = STATE.hintUses || {};
+    const used = STATE.hintUses.lockTouch || 0;
+    if (used >= hc.VECES) return;
+    STATE.hintUses.lockTouch = used + 1;
+    const mk = html => { const d = document.createElement('div'); d.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:5'; d.innerHTML = html; dial.appendChild(d); return d; };
+    hintRing = mk(`
+      <svg viewBox="0 0 192 192" style="position:absolute;inset:0;width:100%;height:100%;overflow:visible">
+        <defs><marker id="lhArr" markerWidth="8" markerHeight="8" refX="5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#fbbf24"/></marker></defs>
+        <path d="M92,14 A82,82 0 0 0 26,66" fill="none" stroke="#fbbf24" stroke-width="3" stroke-dasharray="5 4" marker-end="url(#lhArr)" style="animation:tmBlink 1.4s steps(2) infinite"/>
+        <path d="M100,14 A82,82 0 0 1 166,66" fill="none" stroke="#fbbf24" stroke-width="3" stroke-dasharray="5 4" marker-end="url(#lhArr)" style="animation:tmBlink 1.4s steps(2) infinite"/>
+      </svg>
+      <div style="position:absolute;left:0;right:0;bottom:-2px;text-align:center;font:700 11px Outfit,sans-serif;color:#fbbf24;text-shadow:0 1px 2px #000">${hc.ANILLO}</div>`);
+    hintCenter = mk(`
+      <div style="position:absolute;left:50%;top:50%;width:112px;height:112px;margin:-56px 0 0 -56px;border:3px dashed #34d399;border-radius:50%;animation:cardPulse 1.1s ease-in-out infinite"></div>
+      <div style="position:absolute;left:0;right:0;top:50%;margin-top:34px;text-align:center;font:700 10px Outfit,sans-serif;color:#34d399;text-shadow:0 1px 2px #000">${hc.CENTRO}</div>`);
+  };
 })();
