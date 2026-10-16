@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — script.js — VERSIÓN 0.089b
+// JUST ONE MORE CHEST — script.js — VERSIÓN 0.096
 // ==========================================================================
 /* ==========================================================================
    JUST ONE MORE CHEST - ARCHIVO DE CONFIGURACIÓN Y BALANCE (DATOS_JUEGO)
@@ -7,7 +7,7 @@
 
 const DATOS_JUEGO = {
   // [0.088] Versión visible en pantalla (esquina inferior central) para que las capturas la incluyan
-  VERSION: '0.095',
+  VERSION: '0.096',
 
   // [0.089] Avisos "+N" / "-N" de herramientas. ESPERAR_PANTALLA_LIBRE:true = recupera la idea anterior (esperar a que no haya
   // banners, tiendas ni diálogos encima). Con false salen siempre, por encima de todo.
@@ -39,7 +39,8 @@ const DATOS_JUEGO = {
   GANZUA_TACTIL: {
     GRAB_GRADOS: 32,   // [0.093] margen angular (°) para agarrar la aguja con el dedo
     SENSIBILIDAD_ANILLO: 1.8,   // [0.092] antes 0.8 (casi inusable)
-    HAPTICA: { ACTIVAR: true, INTENSIDAD_MAX: 0.55, RECORDATORIO_ACTIVAR: true, RECORDATORIO_MS: 1200, RECORDATORIO_ON_MS: 10, ZONA_GRADOS: 20, PERIODO_MS: 110, ON_MIN_MS: 4, CURVA: 2.6, TEMBLOR_PX_MIN: 0.4, TEMBLOR_PX_MAX: 1.8 }   // [0.093] INTENSIDAD_MAX (0-1) = fuerza máxima de la vibración del móvil; más sutil
+    ANILLO_CENTRO: { ACTIVAR: true },   // [0.096] el centro del dial 'respira' (anillo tenue) para indicar que se puede pulsar y mantener; se atenúa mientras se mantiene
+    HAPTICA: { ACTIVAR: true, INTENSIDAD_MAX: 0.55, RECORDATORIO_ACTIVAR: true, RECORDATORIO_MS: 1200, RECORDATORIO_ON_MS: 10, ZONA_GRADOS: 20, PERIODO_MS: 110, ON_MIN_MS: 4, CURVA: 2.6, TEMBLOR_PX_MIN: 0.4, TEMBLOR_PX_MAX: 2.6 }   // [0.096] máximo del temblor de escritorio 1,8 -> 2,6   // [0.093] INTENSIDAD_MAX (0-1) = fuerza máxima de la vibración del móvil; más sutil
   },
   // [0.095] Post-its en blanco donde escribe el jugador. COFRES = cofres tras los que aparece el post-it vacío; en el bucle siguiente
   // el texto sale en el cofre anterior (COFRE-1). MAX_CARACTERES = límite al escribir.
@@ -443,10 +444,12 @@ const DATOS_JUEGO = {
       // --- HIDRÁULICA: bombas, botón VALIDAR (un solo uso), sin pintado en tiempo real ---
       PIPE: {
         TIEMPO_SEGUNDOS: 20,                // Normal sigue en TIEMPO_BASE_SEGUNDOS (12)
+        PESO_CENTRAL: 3,                    // [0.096] Las casillas malas (bombas/obstáculos) salen más hacia el centro: 1 = uniforme; mayor = más centradas
         CONFIG_POR_RAREZA: {
           raro: { size: 4, obstacles: 0, bombs: 1 },
           epico: { size: 4, obstacles: 1, bombs: 1 },
-          legendario: { size: 4, obstacles: 0, bombs: 2 }
+          // [0.096] PRUEBA: legendario 5x5 con 2 bombas + 1 obstáculo. Para revertir: { size: 4, obstacles: 0, bombs: 2 }
+          legendario: { size: 5, obstacles: 1, bombs: 2 }
         }
       }
     }
@@ -904,10 +907,10 @@ const DATOS_JUEGO = {
     { id: "cerrojos_oxidados", nombre: "Cerrojos Oxidados", tipo: "PERJUDICIAL", desc: "Los cerrojos se han agarrotado: próximos 3 cofres Raros+ piden +1 herramienta extra.", efecto: "COFRES_PESADOS", valor: 3 },
     // [0.093] Game changers con duración (efecto MODIFICADOR: valor = {id, cofres}); 'minNivel' opcional
     { id: "fiebre_oro", nombre: "Fiebre del Oro", tipo: "BENEFICIOSO", desc: "Durante 8 cofres ganas el DOBLE de GP... pero cada cofre pide +1 herramienta.", efecto: "MODIFICADOR", valor: { id: "fiebre", cofres: 8 }, minNivel: 2 },
-    { id: "manos_seda", nombre: "Manos de Seda", tipo: "BENEFICIOSO", desc: "Durante 5 cofres, un fallo en un puzle NO te cuesta ninguna herramienta.", efecto: "MODIFICADOR", valor: { id: "seda", cofres: 5 } },
+    { id: "manos_seda", nombre: "Manos de Seda", tipo: "BENEFICIOSO", desc: "Los próximos 5 fallos en un puzle NO te cuestan ninguna herramienta.", efecto: "MODIFICADOR", valor: { id: "seda", usos: 5 } },
     { id: "cofres_solitarios", nombre: "Cofres Solitarios", tipo: "BENEFICIOSO", desc: "Durante 8 cofres solo aparece 1 cofre por pantalla, pero da +50% XP.", efecto: "MODIFICADOR", valor: { id: "solitario", cofres: 8 } },
     { id: "niebla_botin", nombre: "Niebla Espesa", tipo: "BENEFICIOSO", desc: "Durante 6 cofres no ves su rareza, pero su botín es un 40% mayor.", efecto: "MODIFICADOR", valor: { id: "niebla", cofres: 6 }, minNivel: 2 },
-    { id: "racha_congelada", nombre: "Racha Congelada", tipo: "BENEFICIOSO", desc: "Durante 6 cofres, fallar un puzle NO rompe tu racha.", efecto: "MODIFICADOR", valor: { id: "congelada", cofres: 6 } },
+    { id: "racha_congelada", nombre: "Racha Congelada", tipo: "BENEFICIOSO", desc: "Tus próximos 6 fallos en un puzle NO rompen tu racha.", efecto: "MODIFICADOR", valor: { id: "congelada", usos: 6 } },
     { id: "reloj_lento", nombre: "Reloj Lento", tipo: "BENEFICIOSO", desc: "Durante 6 cofres tienes un 50% más de tiempo en los puzles.", efecto: "MODIFICADOR", valor: { id: "relojBueno", cofres: 6 } },
     { id: "hambre_xp", nombre: "Hambre de XP", tipo: "BENEFICIOSO", desc: "Durante 5 cofres tu XP se DUPLICA... pero no ganas nada de GP.", efecto: "MODIFICADOR", valor: { id: "hambre", cofres: 5 }, minNivel: 2 },
     { id: "cofre_destino", nombre: "Cofre del Destino", tipo: "BENEFICIOSO", desc: "La próxima pantalla muestra 3 cofres de distinta rareza: tú eliges cuál abrir.", efecto: "MODIFICADOR", valor: { id: "destino", cofres: 1 }, minNivel: 2, peso: 0.7 },
@@ -1192,6 +1195,11 @@ class AudioEngine {
     if (level >= 3) { this._tone(70, 40, 1.0, 'sawtooth', 0.12, 0.1); this._tone(140, 60, 0.7, 'square', 0.06, 0.15); }
   }
   // [0.090] Golpe de Game Over: impacto grave, ruido, sting disonante corto (versión corta de la melodía de Game Over)
+  playChestMutate() {   // [0.096] "plop" corto: seno 400→180 Hz ~90 ms + ruido leve, volumen bajo
+    if (!this.ctx || this.muted) return;
+    this._tone(400, 180, 0.09, 'sine', 0.10);
+    this._noise(0.05, 0.02, 0, 800);
+  }
   playGameOverStrike() {
     if (!this.ctx || this.muted) return;
     this._tone(90, 28, 0.55, 'sine', 0.35);
@@ -1330,12 +1338,12 @@ class AudioEngine {
 }
 const audio = new AudioEngine();
 // [0.087] Registro del último sonido para que el clic de interfaz no se solape con sonidos propios
-['playClick', 'playPaperRustle', 'playDecoyBuzz', 'playBreak', 'playUnlockFanfare', 'playLockCharge', 'playLockOpen', 'playGameOver', 'playDarkOut', 'playLightOn', 'playDecorTap', 'playKeyPickup', 'playKeySpend', 'playCardBeep', 'playCashRegister', 'playCurseStart', 'playCurseEnd', 'playDialogueMelody', 'playIntro', 'playDuendeAngry', 'playSwoosh', 'playGameOverStrike', 'playLevelUpFanfare', 'playRouletteTick', 'playCardRise'].forEach(n => {
+['playClick', 'playPaperRustle', 'playDecoyBuzz', 'playBreak', 'playUnlockFanfare', 'playLockCharge', 'playLockOpen', 'playGameOver', 'playDarkOut', 'playLightOn', 'playDecorTap', 'playKeyPickup', 'playKeySpend', 'playCardBeep', 'playCashRegister', 'playCurseStart', 'playCurseEnd', 'playDialogueMelody', 'playIntro', 'playDuendeAngry', 'playSwoosh', 'playGameOverStrike', 'playLevelUpFanfare', 'playRouletteTick', 'playCardRise', 'playChestMutate'].forEach(n => {
   const f = AudioEngine.prototype[n];
   AudioEngine.prototype[n] = function (...a) { this.lastSound = performance.now(); return f.apply(this, a); };
 });
 // [0.090] Categorías de volumen: los sonidos pequeños (clics, avisos) y los de botín pasan por su bus, con volumen distinto en escritorio y móvil
-[[ 'busSmall', ['playClick', 'playUiClick', 'playDecoyBuzz', 'playPaperRustle', 'playLockCharge', 'playDecorTap', 'playCardBeep', 'playKeyPickup', 'playKeySpend', 'playSwoosh', 'playRouletteTick', 'playCardRise'] ],
+[[ 'busSmall', ['playClick', 'playChestMutate', 'playUiClick', 'playDecoyBuzz', 'playPaperRustle', 'playLockCharge', 'playDecorTap', 'playCardBeep', 'playKeyPickup', 'playKeySpend', 'playSwoosh', 'playRouletteTick', 'playCardRise'] ],
  [ 'busLoot', ['playUnlockFanfare', 'playCashRegister', 'playLevelUpFanfare'] ]].forEach(([bus, names]) => names.forEach(n => {
   const f = AudioEngine.prototype[n];
   AudioEngine.prototype[n] = function (...a) { const prev = this._bus; this._bus = this[bus] || null; try { return f.apply(this, a); } finally { this._bus = prev; } };
@@ -1348,6 +1356,7 @@ function getXpForLevel(lvl) {
   return Math.floor(baseMap[5] * Math.pow(DATOS_JUEGO.PROGRESIÓN.XP_MULTIPLICADOR_POST_5, lvl - 5));
 }
 
+let curseHold = false;   // [0.096] el tinte de maldición se mantiene hasta que se cierra el mensaje de fin de maldición
 const STATE = {
   currentLoop: 1, // Control de Bucle (1 o 2)
   level: DATOS_JUEGO.CONFIG_INICIAL.NIVEL,
@@ -1593,6 +1602,8 @@ function getUnlockedConsumables() {
 // [0.093] Oro fijo de los wildcards escalado por nivel; y descripción con {n} escalado
 function wcGold(n) { return Math.max(1, Math.round(n * (1 + ((DATOS_JUEGO.MODS_WILDCARD || {}).ESCALA_ORO_POR_NIVEL || 0) * Math.max(0, STATE.level - 1)))); }
 function wcDesc(wc) { return String(wc.desc).replace(/\{(\d+)\}/g, (m, n) => wcGold(+n)); }
+const MODS_POR_USOS = ['seda', 'congelada'];   // [0.096] caducan por USOS (un fallo salvado = 1), no por cofres abiertos
+function useMod(id) { if (!STATE.mods || !(STATE.mods[id] > 0)) return 0; STATE.mods[id]--; const left = STATE.mods[id]; if (left <= 0) delete STATE.mods[id]; saveDirty = true; return Math.max(0, left); }
 function modOn(id) { return !!(STATE.mods && STATE.mods[id] > 0); }
 
 function applyWildcard(wc) {
@@ -1600,7 +1611,7 @@ function applyWildcard(wc) {
   switch (wc.efecto) {
     case 'MODIFICADOR':
       STATE.mods = STATE.mods || {};
-      STATE.mods[wc.valor.id] = (STATE.mods[wc.valor.id] || 0) + wc.valor.cofres;
+      STATE.mods[wc.valor.id] = (STATE.mods[wc.valor.id] || 0) + (wc.valor.cofres != null ? wc.valor.cofres : wc.valor.usos);   // [0.096] 'usos' = Seda y Racha Congelada (caducan por fallos salvados, no por cofres)
       break;
     case 'PERDER_ORO': {
       const lost = Math.min(STATE.gold, wcGold(wc.valor));
@@ -2084,6 +2095,7 @@ function resetGame(keepLoop) {
   if (keepLoop !== true) STATE.blankNotes = {};   // [0.095] partida nueva = post-its nuevos; el cambio de bucle los conserva
   STATE.traperoBuffs = { bonusXp: false, harderMinigames: false, shortPipeTimer: false, doubleGold: false };
   STATE.cursedChestsLeft = 0;
+  curseHold = false; STATE.curseEndPending = false;   // [0.096]
   STATE.roomDecorations = [];
   STATE.roomThemeFilter = 'normal';
   STATE.roomDarkUntil = 0;
@@ -2604,7 +2616,7 @@ function updateCurseLevel() {
   const cfg = DATOS_JUEGO.MALDICION_TRANSICION || {};
   const now = performance.now(), dt = curseLvlT ? Math.min(100, now - curseLvlT) : 16; curseLvlT = now;
   if (cfg.ACTIVAR === false) return STATE.cursedChestsLeft > 0 ? 1 : 0;
-  const want = STATE.cursedChestsLeft > 0 ? 1 : 0;
+  const want = (STATE.cursedChestsLeft > 0 || curseHold) ? 1 : 0;   // [0.096] curseHold: la maldición 'sigue' hasta cerrar el mensaje del Trapero
   if (curseLevel === want) { if (want) curseEndTune = false; else curseStartTune = false; return curseLevel; }
   if (!mainScreenFree()) return curseLevel;
   if (want && !curseStartTune) { curseStartTune = true; curseEndTune = false; audio.init(); audio.playCurseStart(); }
@@ -2982,6 +2994,7 @@ function triggerSecretDecorationReward(decor) {
     audio.playClick(0.9);
   } else if (roll >= 20 && roll < 35) {
     generateScreenChests();
+    chestMutateFx();
     msg += " (¡Luz misteriosa! Los cofres mutan).";
     audio.playUnlockFanfare('raro');
   } else if (roll >= 35 && roll < 45) {
@@ -2989,6 +3002,7 @@ function triggerSecretDecorationReward(decor) {
     if (active && active.rarity.id !== 'legendario') {
       active.rarity = CHEST_RARITIES[3];
       updateChestSelectionUI();
+      chestMutateFx();
       msg += " (¡Un rayo de sombra eleva el cofre a LEGENDARIO!)";
       audio.playUnlockFanfare('legendario');
     } else {
@@ -3011,6 +3025,25 @@ function triggerSecretDecorationReward(decor) {
 
   updateUI();
   showPersistentFeedback(msg);
+}
+
+// [0.096] Cambio visible de los cofres tras Aceptar (mutación / ascenso): sacudida + transformación + "plop"
+function chestMutateFx() {
+  try { audio.init(); audio.playChestMutate(); } catch (e) {}
+  ['chestActionCard', 'multiChestGrid'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el || el.classList.contains('hidden')) return;
+    try {
+      el.animate([
+        { transform: 'translateX(0) scale(1)', filter: 'brightness(1)' },
+        { transform: 'translateX(-7px) scale(1.06)', filter: 'brightness(2.2) saturate(1.8)', offset: .2 },
+        { transform: 'translateX(6px) scale(.94)', filter: 'brightness(1.6)', offset: .4 },
+        { transform: 'translateX(-4px) scale(1.04)', filter: 'brightness(1.3)', offset: .6 },
+        { transform: 'translateX(2px) scale(1)', filter: 'brightness(1.1)', offset: .8 },
+        { transform: 'translateX(0) scale(1)', filter: 'brightness(1)' }
+      ], { duration: 520, easing: 'ease-out' });
+    } catch (e) {}
+  });
 }
 
 function generateScreenChests() {
@@ -3327,9 +3360,10 @@ function triggerSequentialDialogue(speaker, speechText, iconClass, subtitleText,
 // [0.087] El Trapero comenta que la maldición ha terminado (frase al azar de NARRATIVA.TRAPERO_FIN_MALDICION)
 function queueCurseEndMessage() {
   const list = DATOS_JUEGO.NARRATIVA.TRAPERO_FIN_MALDICION || [];
-  if (!list.length) return;
+  if (!list.length) { curseHold = false; return; }
   const phrase = list[Math.floor(Math.random() * list.length)];
-  STATE.eventQueue.push(() => triggerSequentialDialogue("EL TRAPERO", phrase, "fa-mask", "Maldición rota", "text-rose-400", null, () => processNextQueuedEvent()));
+  // [0.096] Va al FINAL de la cola de eventos del cofre; al cerrarse, la sala suelta el tinte con la animación completa
+  STATE.eventQueue.push(() => triggerSequentialDialogue("EL TRAPERO", phrase, "fa-mask", "Maldición rota", "text-rose-400", null, () => { curseHold = false; processNextQueuedEvent(); }));
 }
 
 // [0.087] Coloca un post-it en cualquier punto de la sala (por debajo del HUD), esquivando solo la cerradura táctil
@@ -3357,20 +3391,27 @@ function placeStickyNote(note, container) {
 /* ==========================================================================
    [0.095] POST-ITS EN BLANCO (el jugador escribe) y sus "ecos" en los bucles siguientes
    ========================================================================== */
-function queuePlayerNotes(co) {
-  const cfg = DATOS_JUEGO.NOTAS_JUGADOR; if (!cfg) return;
-  STATE.pendingNotes = [];
-  if (STATE.climaxPhase) return;
+// [0.096] Lista (sin efectos) de los post-its de jugador que toca mostrar con co cofres abiertos
+function playerNotesFor(co) {
+  const cfg = DATOS_JUEGO.NOTAS_JUGADOR, out = [];
+  if (!cfg || STATE.climaxPhase) return out;
   STATE.blankNotes = STATE.blankNotes || {};
   (cfg.COFRES || []).forEach(slot => {
     if (co === slot - 1) {   // eco: lo escrito en bucles anteriores (el del bucle 1 primero)
       for (let l = 1; l < (STATE.currentLoop || 1); l++) {
         const t = (STATE.blankNotes[l] || {})[slot];
-        STATE.pendingNotes.push({ kind: 'read', id: 'r' + l + '_' + slot, text: t || '' });
+        out.push({ kind: 'read', id: 'r' + l + '_' + slot, text: t || '' });
       }
     }
-    if (co === slot) STATE.pendingNotes.push({ kind: 'write', id: 'w' + slot, slot, written: false, text: '' });
+    if (co === slot) out.push({ kind: 'write', id: 'w' + slot, slot, written: false, text: '' });
   });
+  return out;
+}
+
+// [0.096] Los post-its de jugador se AÑADEN a los pendientes (sin vaciar los anteriores): duran hasta que el jugador los toque
+function queuePlayerNotes(co) {
+  STATE.pendingNotes = STATE.pendingNotes || [];
+  playerNotesFor(co).forEach(p => { if (!STATE.pendingNotes.some(x => x.id === p.id)) STATE.pendingNotes.push(p); });
 }
 
 function clearPlayerNotes() {
@@ -3388,7 +3429,7 @@ function buildSceneNote(p) {
   el.style.minHeight = '38px';
   el.style.visibility = 'hidden';
   const fill = () => {
-    if (p.kind === 'read' || p.written) el.textContent = p.text ? `"${p.text}"` : '';
+    if (p.kind === 'read' || p.written) { el.textContent = p.text ? `"${p.text}"` : ''; el.classList.add('player-text'); }   // [0.096] cursiva
     else el.innerHTML = '<span class="note-caret">|</span>';
   };
   fill();
@@ -3539,7 +3580,7 @@ function triggerLootExplosion() {
     spawnParticles(cx, cy, active.rarity.color, active.rarity.id === 'legendario' ? 100 : 50, active.rarity.id === 'legendario');
 
     STATE.chestsOpened++;
-    if (typeof clearPlayerNotes === 'function') clearPlayerNotes();   // [0.095] los post-its de jugador duran hasta abrir el siguiente cofre
+    // [0.096] Los post-its de jugador ya NO se borran solos: se quedan hasta que el jugador los toque
     statsAdd('chests', 1); if (puzzleStat) { statsPuzzle(puzzleStat, true); puzzleStat = null; }   // [0.090]
     STATE.opensByType = STATE.opensByType || {};
     STATE.opensByType[active.type.id] = (STATE.opensByType[active.type.id] || 0) + 1;
@@ -3557,12 +3598,13 @@ function triggerLootExplosion() {
       if (STATE.cursedChestsLeft === 0) {
         STATE.salvageCurseActive = false;
         STATE.curseEndPending = true;   // [0.088] se encola al cobrar el botín
+        curseHold = true;   // [0.096] el tinte aguanta hasta cerrar el mensaje
       }
     }
     // [CAMBIO] La Maldición de la Codicia se evalúa ANTES de descontar el contador, para que afecte a los 5 cofres
     const greedActive = STATE.greedCurseLeft > 0 && (active.rarity.id === 'epico' || active.rarity.id === 'legendario');
     const modsAtOpen = Object.assign({}, STATE.mods || {});   // [0.093] se evalúan antes de descontar
-    if (STATE.mods) Object.keys(STATE.mods).forEach(k => { if (STATE.mods[k] > 0) STATE.mods[k]--; if (STATE.mods[k] <= 0) delete STATE.mods[k]; });
+    if (STATE.mods) Object.keys(STATE.mods).forEach(k => { if (MODS_POR_USOS.includes(k)) return; if (STATE.mods[k] > 0) STATE.mods[k]--; if (STATE.mods[k] <= 0) delete STATE.mods[k]; });   // [0.096] Seda y Congelada no bajan por cofre
     const mo = id => modsAtOpen[id] > 0;
     if (STATE.heavyChestsLeft > 0) STATE.heavyChestsLeft--;
     if (STATE.greedCurseLeft > 0) STATE.greedCurseLeft--;
@@ -3870,7 +3912,7 @@ function triggerLootExplosion() {
       }, 450);
     }
 
-    spawnStickyNote();
+    if (!playerNotesFor(STATE.chestsOpened).length) spawnStickyNote();   // [0.096] el post-it del jugador SUSTITUYE al normal de ese turno
     updateUI();
   } finally {
     setTimeout(() => {
@@ -3927,8 +3969,7 @@ if (claimLootBtn) {
     if (lootModal) lootModal.classList.add('hidden');
 
     STATE.eventQueue = [];
-    // [0.088] El mensaje de fin de maldición se encola al abrir el cofre; antes se borraba aquí
-    if (STATE.curseEndPending) { STATE.curseEndPending = false; queueCurseEndMessage(); }
+    // [0.096] El mensaje de fin de maldición se encola al FINAL de los eventos de este cofre (ver más abajo)
 
     // [0.082] Explicación del Trapero sobre el tanteo (una vez por bucle), antes que cualquier otro evento
     if (STATE.pendingTanteoPhrase) {
@@ -4017,6 +4058,7 @@ if (claimLootBtn) {
       }
     }
 
+    if (STATE.curseEndPending) { STATE.curseEndPending = false; queueCurseEndMessage(); }   // [0.096] el último de todos los eventos del cofre
     if (!STATE.eventQueue.length) hideSceneVeil();   // [0.088] sin eventos, el telón se retira enseguida
     processNextQueuedEvent();
     generateScreenChests();
@@ -4476,7 +4518,7 @@ function handleFailure(toolName = 'picks', reasonText = "Fallo en el puzle.") {
   if (puzzleStat) { statsPuzzle(puzzleStat, false); puzzleStat = null; }   // [0.090]
   minigameInProgress = false;
   stopMinigameTimer();
-  if (modOn('congelada')) showPersistentFeedback("🧊 Racha Congelada: tu racha sobrevive al fallo."); else STATE.cleanStreak = 0;   // [0.093]
+  if (modOn('congelada')) { const left = useMod('congelada'); showPersistentFeedback(`🧊 Racha Congelada: tu racha sobrevive al fallo.${left > 0 ? ' Te quedan ' + left + (left === 1 ? ' uso.' : ' usos.') : ' Era el último uso.'}`); } else STATE.cleanStreak = 0;   // [0.093][0.096] gasta un uso
   const active = STATE.screenChests[STATE.activeChestIdx];
   const reqCount = getRequiredToolCount(active.rarity);
 
@@ -4508,17 +4550,18 @@ function handleFailure(toolName = 'picks', reasonText = "Fallo en el puzle.") {
     }
   }
 
-  if (STATE.activeShield) {
-    STATE.activeShield = false;
-    showPersistentFeedback(STATE.riskModeActive ? "🛡️ ¡Tu ESCUDO te ha salvado! Herramientas y Bote de Riesgo intactos." : "🛡️ ¡Tu ESCUDO te ha salvado! Herramientas intactas.");
-    if (puzzleToolPaid) { STATE[puzzleToolPaid.prop] += puzzleToolPaid.n; puzzleToolPaid = null; }   // [0.090] el Escudo devuelve la herramienta pagada al entrar
+  if (modOn('seda')) {   // [0.093][0.096] Manos de Seda (antes que el Escudo, para no gastar la carta): el fallo no cuesta herramientas y gasta UN uso
+    const left = useMod('seda');
+    showPersistentFeedback(`🧤 Manos de Seda: el fallo no te ha costado ninguna herramienta.${left > 0 ? ' Te quedan ' + left + (left === 1 ? ' uso.' : ' usos.') : ' Era el último uso.'}`);
+    if (puzzleToolPaid) { STATE[puzzleToolPaid.prop] += puzzleToolPaid.n; puzzleToolPaid = null; }
     updateUI();
     return;
   }
 
-  if (modOn('seda')) {   // [0.093] Manos de Seda: el fallo no cuesta herramientas
-    showPersistentFeedback("🧤 Manos de Seda: el fallo no te ha costado ninguna herramienta.");
-    if (puzzleToolPaid) { STATE[puzzleToolPaid.prop] += puzzleToolPaid.n; puzzleToolPaid = null; }
+  if (STATE.activeShield) {
+    STATE.activeShield = false;
+    showPersistentFeedback(STATE.riskModeActive ? "🛡️ ¡Tu ESCUDO te ha salvado! Herramientas y Bote de Riesgo intactos." : "🛡️ ¡Tu ESCUDO te ha salvado! Herramientas intactas.");
+    if (puzzleToolPaid) { STATE[puzzleToolPaid.prop] += puzzleToolPaid.n; puzzleToolPaid = null; }   // [0.090] el Escudo devuelve la herramienta pagada al entrar
     updateUI();
     return;
   }
@@ -4576,6 +4619,7 @@ function runGameOverStrike(done) {
   // después gotea sangre de forma natural: anchos de 1-2 px, velocidades y aceleraciones distintas, bifurcaciones, gotas sueltas y grietas que supuran.
   const cfg = (DATOS_JUEGO.GAME_OVER || {}).GOLPE || {};
   const host = uiHost();
+  document.querySelectorAll('#gameOverStrike').forEach(e => e.remove());   // [0.096] nunca dos capas a la vez
   const ov = document.createElement('div');
   ov.id = 'gameOverStrike';
   ov.style.cssText = 'position:absolute;inset:0;z-index:10030;background:rgba(0,0,0,.88);pointer-events:auto;opacity:0;transition:opacity .12s ease-out';
@@ -4630,13 +4674,10 @@ function runGameOverStrike(done) {
   ov.style.opacity = '0';
   requestAnimationFrame(() => { ov.style.opacity = '1'; });
   audio.init();
-  setTimeout(() => { screenShake(Math.round((cfg.SACUDIDA_PX || 16) * 0.4), 220); }, midLand);
-  setTimeout(() => {   // golpe final: sacudida, destello rojo y sonido grave
-    try { audio.playGameOverStrike(); } catch (e) {}
-    screenShake(cfg.SACUDIDA_PX || 16, cfg.SACUDIDA_MS || 650);
-    flashScreen('rgba(200,0,20,.55)', 600);
-  }, lastLand);
-  const t0 = performance.now();
+  // [0.096] Reloj virtual: avanza con tope por fotograma (un tirón o una tasa de refresco variable no se salta letras ni duplica efectos)
+  let fxMid = false, fxLast = false, finished = false, vt = 0, lastNow = performance.now();
+  const finish = () => { if (finished) return; finished = true; ov.remove(); done(); };
+  setTimeout(finish, total * 4 + 2000);   // red de seguridad (pestaña en segundo plano)
   const fr = v => Math.round(v);
   function drawDrip(L, d, tau, X0, Y0) {
     // longitud actual: aceleración suave hasta el máximo
@@ -4677,7 +4718,16 @@ function runGameOverStrike(done) {
     }
   }
   (function frame() {
-    const t = performance.now() - t0;
+    const nowP = performance.now();
+    vt += Math.min(50, Math.max(0, nowP - lastNow)); lastNow = nowP;
+    const t = vt;
+    if (!fxMid && t >= midLand) { fxMid = true; screenShake(Math.round((cfg.SACUDIDA_PX || 16) * 0.4), 220); }
+    if (!fxLast && t >= lastLand) {   // golpe final: sacudida, destello rojo y sonido grave
+      fxLast = true;
+      try { audio.playGameOverStrike(); } catch (e) {}
+      screenShake(cfg.SACUDIDA_PX || 16, cfg.SACUDIDA_MS || 650);
+      flashScreen('rgba(200,0,20,.55)', 600);
+    }
     c2.clearRect(0, 0, W, H);
     letters.forEach(L => {
       const p = (t - L.start) / fallMs;
@@ -4706,7 +4756,7 @@ function runGameOverStrike(done) {
       if (landed) L.drips.filter(d => d.over).forEach(d => drawDrip(L, d, (t - L.land) / 1000 - d.delay, X0, Y0));
     });
     if (t < total) requestAnimationFrame(frame);
-    else { ov.style.transition = 'opacity .35s ease-in'; ov.style.opacity = '0'; setTimeout(() => { ov.remove(); done(); }, 380); }
+    else { ov.style.transition = 'opacity .35s ease-in'; ov.style.opacity = '0'; setTimeout(finish, 380); }
   })();
 }
 function showFinalGameOver() {
@@ -4937,10 +4987,10 @@ function updateUI() {
       { active: !!(STATE.traperoBuffs && STATE.traperoBuffs.harderMinigames), text: `💀 Puzles duros ∞`, shortText: `💀 ∞`, desc: `Los puzles son más difíciles de forma permanente.`, isTorpeza: true },
       { active: !!STATE.picksBrokenOnUse, text: `🩹 Dedos Rotos`, shortText: `🩹`, desc: `Dedos Rotos: las ganzúas se rompen al usarse hasta que empiece el siguiente bucle.`, isTorpeza: true },
       { active: modOn('fiebre'), text: `🔥 Fiebre x${(STATE.mods||{}).fiebre}`, shortText: `🔥 x${(STATE.mods||{}).fiebre}`, desc: `Fiebre del Oro: GP x2 durante ${(STATE.mods||{}).fiebre} cofres más, pero cada cofre pide +1 herramienta.`, isBoost: true },
-      { active: modOn('seda'), text: `🧤 Seda x${(STATE.mods||{}).seda}`, shortText: `🧤 x${(STATE.mods||{}).seda}`, desc: `Manos de Seda: durante ${(STATE.mods||{}).seda} cofres más, fallar no gasta herramientas.`, isBoost: true },
+      { active: modOn('seda'), text: `🧤 Seda x${(STATE.mods||{}).seda}`, shortText: `🧤 x${(STATE.mods||{}).seda}`, desc: `Manos de Seda: los próximos ${(STATE.mods||{}).seda} fallos no gastan herramientas.`, isBoost: true },
       { active: modOn('solitario'), text: `🕯️ Solitarios x${(STATE.mods||{}).solitario}`, shortText: `🕯️ x${(STATE.mods||{}).solitario}`, desc: `Cofres Solitarios: 1 cofre por pantalla y +50% XP durante ${(STATE.mods||{}).solitario} cofres más.`, isBoost: true },
       { active: modOn('niebla'), text: `🌫️ Niebla x${(STATE.mods||{}).niebla}`, shortText: `🌫️ x${(STATE.mods||{}).niebla}`, desc: `Niebla Espesa: rareza oculta pero botín +40% durante ${(STATE.mods||{}).niebla} cofres más.`, isBoost: true },
-      { active: modOn('congelada'), text: `🧊 Racha x${(STATE.mods||{}).congelada}`, shortText: `🧊 x${(STATE.mods||{}).congelada}`, desc: `Racha Congelada: fallar no rompe tu racha durante ${(STATE.mods||{}).congelada} cofres más.`, isBoost: true },
+      { active: modOn('congelada'), text: `🧊 Racha x${(STATE.mods||{}).congelada}`, shortText: `🧊 x${(STATE.mods||{}).congelada}`, desc: `Racha Congelada: tus próximos ${(STATE.mods||{}).congelada} fallos no rompen tu racha.`, isBoost: true },
       { active: modOn('relojBueno'), text: `⏳ Tiempo +50% x${(STATE.mods||{}).relojBueno}`, shortText: `⏳ x${(STATE.mods||{}).relojBueno}`, desc: `Reloj Lento: +50% de tiempo en los puzles durante ${(STATE.mods||{}).relojBueno} cofres más.`, isBoost: true },
       { active: modOn('hambre'), text: `🍽️ Hambre x${(STATE.mods||{}).hambre}`, shortText: `🍽️ x${(STATE.mods||{}).hambre}`, desc: `Hambre de XP: XP x2 pero sin GP durante ${(STATE.mods||{}).hambre} cofres más.`, isBoost: true },
       { active: modOn('destino'), text: `🎲 Destino`, shortText: `🎲`, desc: `Cofre del Destino: la próxima pantalla te deja elegir entre 3 cofres.`, isBoost: true },
@@ -5271,7 +5321,7 @@ if (angleSlider) {
 }
 
 const forceLockBtn = document.getElementById('forceLockBtn');
-const startTension = (e) => { e.preventDefault(); if (!lpState.isBreaking && !lpState.isCompleted) { lpState.isTension = true; tickLockpick(); } };
+const startTension = (e) => { e.preventDefault(); if (!lpState.isBreaking && !lpState.isCompleted) { lpState.isTension = true; const cy = document.getElementById('cylinderGraphic'); if (cy) cy.classList.add('cyl-held'); tickLockpick(); } };   // [0.096] cyl-held apaga el 'respirar' del centro
 const stopTension = (e) => {
   e.preventDefault();
   // [0.082] Bucle 2/3 (Raro+): cualquier tensión mantenida y luego soltada cuenta como tanteo
@@ -5279,7 +5329,9 @@ const stopTension = (e) => {
     lpState.tanteoUsed = true;
   }
   lpState.isTension = false;
+  { const cy = document.getElementById('cylinderGraphic'); if (cy) cy.classList.remove('cyl-held'); }   // [0.096]
 };
+{ const cfgAn = (DATOS_JUEGO.GANZUA_TACTIL || {}).ANILLO_CENTRO || {}; document.documentElement.classList.toggle('cyl-hint-off', cfgAn.ACTIVAR === false); }   // [0.096]
 
 if (forceLockBtn) {
   forceLockBtn.addEventListener('mousedown', startTension);
@@ -5975,7 +6027,16 @@ function generatePipeBoardAdvanced(size, nObstacles, nBombs) {
   for (let attempt = 0; attempt < 400; attempt++) {
     const slots = [];
     for (let i = 1; i < lastIdx; i++) slots.push(i);
-    slots.sort(() => Math.random() - 0.5);
+    // [0.096] Orden aleatorio ponderado: las casillas centrales tienen más probabilidad de ser malas
+    const pc = Math.max(1, (DATOS_JUEGO.MINIJUEGOS.AVANZADO.PIPE.PESO_CENTRAL || 1));
+    const mid = (size - 1) / 2, maxD = Math.max(1, Math.hypot(mid, mid));
+    const wkey = i => {
+      const d = Math.hypot((i % size) - mid, Math.floor(i / size) - mid);
+      const w = 1 + (pc - 1) * (1 - d / maxD);
+      return Math.pow(Math.random(), 1 / w);
+    };
+    const keyed = new Map(slots.map(i => [i, wkey(i)]));
+    slots.sort((a, b) => keyed.get(b) - keyed.get(a));
     const bombSet = new Set(slots.slice(0, nBombs));
     const blocked = new Set(slots.slice(0, nBombs + nObstacles));
     const data = buildPathData(blocked, bombSet, attempt < 200 ? 0.25 : 0);
@@ -6871,7 +6932,7 @@ function openTraperoShop() {
             else if (STATE.valves >= 1) STATE.valves--;
 
             STATE.cursedChestsLeft = Math.max(0, STATE.cursedChestsLeft - 4);
-            if (STATE.cursedChestsLeft === 0) { STATE.salvageCurseActive = false; queueCurseEndMessage(); }
+            if (STATE.cursedChestsLeft === 0) { STATE.salvageCurseActive = false; curseHold = true; queueCurseEndMessage(); }
             if (traperoModal) traperoModal.classList.add('hidden');
             audio.playClick(0.8);
             updateUI();
@@ -7074,7 +7135,10 @@ function makeChestArt() {
 
 // [0.093b] Fondo de mazmorra en pixel art (pared de piedra, cadenas con grilletes, calavera en una repisa). Se dibuja a la medida de la pantalla.
 function makeDungeonBg() {
-  const K = 4, W = Math.ceil(window.innerWidth / K) + 2, H = Math.ceil(window.innerHeight / K) + 2;
+  // [0.096] Se dibuja con el tamaño del MARCO de juego (no de la ventana) y con el píxel de arte proporcional al ancho: en PC se ve igual que en móvil
+  const host = (typeof uiHost === 'function') ? uiHost() : null;
+  const frameW = (host && host.clientWidth) || window.innerWidth, frameH = (host && host.clientHeight) || window.innerHeight;
+  const K = Math.max(4, Math.round(frameW / 105)), W = Math.ceil(frameW / K) + 2, H = Math.ceil(frameH / K) + 2;
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
   const g = cv.getContext('2d');
   let seed = 90210; const rnd = () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
@@ -7155,6 +7219,7 @@ function triggerLevelUpChoice() {
 
   // [0.093] Banner viejo fuera al abrir (si no, se veía el resultado del nivel anterior hasta empezar la ruleta)
   const bn = document.getElementById('wildcardBanner'); if (bn) { bn.innerHTML = ''; bn.className = 'w-full max-w-xs mb-3'; bn.style.minHeight = '150px'; }   // [0.095] hueco reservado y vacío (sin saltos de layout)
+  { const lm = document.getElementById('levelUpModal'); if (lm) lm.style.overflowY = 'hidden'; }   // [0.096] sin barra de scroll mientras dura la animación (se reevalúa al acabar de aparecer las 3 mejoras)
   lvlSpectacle();
   // [0.092] Fanfarria + cartel; ruleta de wildcard (se aplica ya, se muestra al frenar); SIGUIENTE; y entonces las 3 mejoras como cofres abiertos
   try { audio.init(); audio.playLevelUpFanfare(); } catch (e) {}
@@ -7169,6 +7234,8 @@ function triggerLevelUpChoice() {
       el.style.opacity = '0';
       lvlTimers.push(setTimeout(() => { el.style.opacity = ''; el.classList.add('lvl-chest-in'); try { audio.playCardRise(); } catch (e) {} }, 120 + i * step));
     });
+    // [0.096] Cuando termina la animación de aparición: scroll solo si de verdad no cabe
+    lvlTimers.push(setTimeout(() => { const lm = document.getElementById('levelUpModal'); if (lm) lm.style.overflowY = (lm.scrollHeight > lm.clientHeight + 4) ? 'auto' : 'hidden'; }, 120 + 3 * step + 900));
   };
   lvlTimers.push(setTimeout(() => runWildcardRoulette(wcRes, () => {
     if (!nextBtn) { revealChoices(); return; }
@@ -7890,6 +7957,7 @@ function testKeyHash(seq, salt) {
       { id: 'curse', label: 'MALDICIÓN (COFRES)', kind: 'num', min: 1, max: 30, def: 10 },
       { id: 'clearAch', label: 'BORRAR LOGROS', kind: 'bool' }
     ] },
+    { title: 'WILDCARDS (LISTA COMPLETA)', rows: (DATOS_JUEGO.WILDCARDS || []).map(w => ({ id: 'wc_' + w.id, label: (w.tipo === 'PERJUDICIAL' ? '(-) ' : '(+) ') + String(w.nombre || w.id).toUpperCase(), kind: 'bool' })) },   // [0.096] se pueden activar varias; se aplican al VALIDAR como si salieran de la ruleta
     { title: 'PROBAR UN PUZLE (SOLO)', puzzle: true, rows: [
       { id: 'pType', label: 'PUZLE', kind: 'list', opts: ['MADERA', 'ACERO', 'DIGITAL', 'VAPOR'], always: true },
       { id: 'pVar', label: 'VARIANTE', kind: 'list', opts: ['RANDOM', '1x1', '1x2', '1x3', '1x4', '2x1', '2x2', '2x3', '2x4', '3x1', '3x2', '3x3', '3x4'], always: true }
@@ -7930,11 +7998,13 @@ function testKeyHash(seq, salt) {
     ['auto', 'double', 'shield', 'reveal', 'riskPot', 'perdedor', 'summonDuende'].forEach(k => set(v['ab_' + k] != null, () => { STATE.abilities[k] = v['ab_' + k]; }));
     set(v.curse != null, () => { STATE.cursedChestsLeft = v.curse; });
     set(!!v.clearAch, () => { clearAchievements(); });
+    const wcDone = [];
+    (DATOS_JUEGO.WILDCARDS || []).forEach(w => set(!!v['wc_' + w.id], () => { try { applyWildcard(w); wcDone.push(w.nombre); } catch (e) { console.warn('Wildcard de test fallida', w.id, e); } }));   // [0.096]
     if (any) {
       statsPaused = true; statsGoldPrev = null;   // una partida con trucos no cuenta para las estadísticas
-      Object.keys(tmVals).forEach(k => { if (k !== 'pType' && k !== 'pVar') tmVals[k] = (k === 'clearAch') ? false : null; });
+      Object.keys(tmVals).forEach(k => { if (k !== 'pType' && k !== 'pVar') tmVals[k] = (k === 'clearAch' || k.indexOf('wc_') === 0) ? false : null; });
       generateScreenChests(); keysBaseline = null; keyToastQueue.length = 0; updateUI();   // [0.091] sin avisos por los ajustes de test
-      showPersistentFeedback('🛠️ [MODO TEST] Ajustes aplicados. Esta partida ya no cuenta para las estadísticas.');
+      showPersistentFeedback('🛠️ [MODO TEST] Ajustes aplicados' + (wcDone.length ? ' (wildcards: ' + wcDone.join(', ') + ')' : '') + '. Esta partida ya no cuenta para las estadísticas.');
     }
     return any;
   }
@@ -8149,11 +8219,11 @@ function testKeyHash(seq, salt) {
       // [0.093b] Aguja quieta dentro de la zona: solo un toquecito muy leve cada RECORDATORIO_MS (recordatorio). Al moverla vuelve el comportamiento normal.
       const nowT = Date.now();
       if (Math.abs(lpState.angle - hapLastAngle) > 0.01) { hapLastAngle = lpState.angle; hapLastMove = nowT; }
-      if (hapCfg.RECORDATORIO_ACTIVAR !== false && nowT - hapLastMove > 280) {
+      // [0.096] El recordatorio de aguja quieta es SOLO del móvil; en escritorio el temblor continúa mientras la aguja esté en la zona
+      if (touchVib && hapCfg.RECORDATORIO_ACTIVAR !== false && nowT - hapLastMove > 280) {
         if (nowT - hapLastRem >= (hapCfg.RECORDATORIO_MS || 1200)) {
           hapLastRem = nowT;
-          if (touchVib) { try { navigator.vibrate(hapCfg.RECORDATORIO_ON_MS || 10); wasVib = true; } catch (e) {} }
-          else screenShake(0.5, 80);
+          try { navigator.vibrate(hapCfg.RECORDATORIO_ON_MS || 10); wasVib = true; } catch (e) {}
         }
         return;
       }

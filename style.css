@@ -272,3 +272,12 @@ html.title-compact .title-short { display: inline; }
 .note-paper textarea { display: block; width: 100%; min-height: 110px; resize: none; border: 0; outline: 0; background: transparent; color: inherit; font: 700 16px/1.35 ui-monospace, Menlo, Consolas, monospace; caret-color: #1e293b; }
 .note-x { position: absolute; top: 6px; right: 8px; width: 30px; height: 30px; border-radius: 50%; border: 0; background: rgba(30,41,59,.12); color: #1e293b; font-size: 15px; line-height: 30px; text-align: center; }
 .note-count { position: absolute; right: 12px; bottom: 5px; font: 700 10px monospace; color: rgba(30,41,59,.45); }
+
+/* [0.096] Texto escrito por el jugador (y sus ecos): cursiva, sin negrita extra */
+.scene-note.player-text { font-style: italic; }
+.note-paper textarea { font-style: italic; }
+
+/* [0.096] Centro del dial de la ganzúa: anillo tenue que respira (se puede pulsar y mantener) */
+@keyframes cylBreathe { 0%, 100% { box-shadow: 0 0 0 0 rgba(251,191,36,0); border-color: #475569; } 50% { box-shadow: 0 0 9px 2px rgba(251,191,36,.30); border-color: #8a8f78; } }
+#cylinderGraphic { animation: cylBreathe 2.6s ease-in-out infinite; }
+#cylinderGraphic.cyl-held, html.cyl-hint-off #cylinderGraphic { animation: none; }
