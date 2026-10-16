@@ -281,6 +281,14 @@
 
       <!-- 1. GANZÚA BÁSICA -->
       <div id="lockpickContainer" class="w-full flex flex-col items-center gap-3">
+        <div class="w-full bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex flex-col gap-1">
+          <div class="flex justify-between text-[11px] font-bold text-amber-400">
+            <span>POSICIÓN DE LA GANZÚA</span>
+            <span id="angleReadout">0°</span>
+          </div>
+          <input id="angleSlider" type="range" min="-85" max="85" value="0" step="1">
+        </div>
+
         <div class="relative w-48 h-48 flex items-center justify-center">
           <div id="proximityGlow" class="absolute inset-0 rounded-full transition-all duration-150 border-4 border-slate-800 bg-slate-950 flex items-center justify-center">
             <div id="cylinderGraphic" class="w-28 h-28 rounded-full bg-slate-800 border-4 border-slate-600 flex items-center justify-center transition-transform duration-75 relative shadow-inner">
@@ -300,14 +308,6 @@
           </div>
         </div>
 
-        <div class="w-full bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex flex-col gap-1">
-          <div class="flex justify-between text-[11px] font-bold text-amber-400">
-            <span>POSICIÓN DE LA GANZÚA</span>
-            <span id="angleReadout">0°</span>
-          </div>
-          <input id="angleSlider" type="range" min="-85" max="85" value="0" step="1">
-        </div>
-
         <button id="forceLockBtn" class="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 active:from-emerald-500 text-white font-extrabold text-sm rounded-xl shadow-lg border border-emerald-400/30 flex items-center justify-center gap-2">
           <i class="fa-solid fa-hand-pointer"></i> MANTÉN PARA PROBAR GIRAR
         </button>
@@ -316,7 +316,7 @@
       <!-- 2. PISTONES DE ACERO -->
       <div id="tumblerContainer" class="w-full bg-slate-950 border border-emerald-500/30 rounded-2xl p-3 flex flex-col items-center gap-3 hidden">
         <p class="text-[10px] text-slate-400 text-center">
-          Pulsa para fijar el <span class="text-amber-400 font-bold">pistón activo</span> en la <span class="text-emerald-400 font-bold">línea verde</span>.
+          Pulsa el botón o toca la pantalla para fijar el <span class="text-amber-400 font-bold">pistón activo</span> en la <span class="text-emerald-400 font-bold">línea verde</span>.
         </p>
         <p id="tumblerTapHint" class="hidden text-[10px] text-emerald-300 font-bold text-center -mt-1"></p>
 
@@ -418,7 +418,7 @@
       </div>
 
       <div id="wildcardBanner" class="w-full max-w-xs p-3 rounded-2xl border font-mono text-xs mb-3 text-center shadow-lg transition-all"></div>
-      <button id="wildcardNextBtn" class="hidden card-pulse mb-3 px-8 py-2.5 rounded-xl bg-amber-500 text-slate-950 font-black text-sm tracking-widest border-2 border-amber-300 shadow-xl active:scale-95">SIGUIENTE ▶</button>
+      <button id="wildcardNextBtn" class="invisible card-pulse mb-3 px-8 py-2.5 rounded-xl bg-amber-500 text-slate-950 font-black text-sm tracking-widest border-2 border-amber-300 shadow-xl active:scale-95">SIGUIENTE ▶</button>
 
       <div id="levelUpChoices" class="hidden w-full max-w-xs flex flex-col items-center">
         <div class="text-[11px] text-slate-400 mb-2 font-bold uppercase tracking-wider">Elige tu mejora activa:</div>

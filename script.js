@@ -7,7 +7,7 @@
 
 const DATOS_JUEGO = {
   // [0.088] Versión visible en pantalla (esquina inferior central) para que las capturas la incluyan
-  VERSION: '0.093b',
+  VERSION: '0.095',
 
   // [0.089] Avisos "+N" / "-N" de herramientas. ESPERAR_PANTALLA_LIBRE:true = recupera la idea anterior (esperar a que no haya
   // banners, tiendas ni diálogos encima). Con false salen siempre, por encima de todo.
@@ -41,6 +41,9 @@ const DATOS_JUEGO = {
     SENSIBILIDAD_ANILLO: 1.8,   // [0.092] antes 0.8 (casi inusable)
     HAPTICA: { ACTIVAR: true, INTENSIDAD_MAX: 0.55, RECORDATORIO_ACTIVAR: true, RECORDATORIO_MS: 1200, RECORDATORIO_ON_MS: 10, ZONA_GRADOS: 20, PERIODO_MS: 110, ON_MIN_MS: 4, CURVA: 2.6, TEMBLOR_PX_MIN: 0.4, TEMBLOR_PX_MAX: 1.8 }   // [0.093] INTENSIDAD_MAX (0-1) = fuerza máxima de la vibración del móvil; más sutil
   },
+  // [0.095] Post-its en blanco donde escribe el jugador. COFRES = cofres tras los que aparece el post-it vacío; en el bucle siguiente
+  // el texto sale en el cofre anterior (COFRE-1). MAX_CARACTERES = límite al escribir.
+  NOTAS_JUGADOR: { COFRES: [13, 37], MAX_CARACTERES: 60, ANCHO_PX: 210 },
   AYUDAS: { GANZUA_TACTIL: { VECES: 3, ANILLO: 'AGARRA LA GANZÚA Y ARRÁSTRALA', CENTRO: 'MANTÉN EL CENTRO' }, PISTONES_TOQUE: { VECES: 3, TEXTO: 'También puedes tocar cualquier punto de la pantalla para fijar el pistón.' } },
 
   // [0.090] Enfado del Duende al NO comprar en la tienda especial (cofres 85/88/90): sacudida (px, ms) y nivel de sonido 1-3
@@ -1420,6 +1423,8 @@ const STATE = {
   heavyChestsLeft: 0,
   greedCurseLeft: 0,
   harderPuzzlesLeft: 0,
+  blankNotes: {},      // [0.095] textos del jugador por bucle: {bucle: {cofre: texto}}
+  pendingNotes: [],    // [0.095] post-its de jugador visibles ahora (se guardan para poder continuar)
   mods: {},   // [0.093] modificadores de wildcard con duración: {id: cofres_restantes}
   traperoBuffs: { bonusXp: false, harderMinigames: false, shortPipeTimer: false, doubleGold: false },
   cursedChestsLeft: 0,
@@ -1688,10 +1693,11 @@ function runWildcardRoulette(res, onDone) {
   const wcList = DATOS_JUEGO.WILDCARDS || [];
   if (!banner || !res) { if (banner) banner.classList.add('hidden'); onDone(); return; }
   banner.classList.remove('hidden');
+  banner.style.minHeight = '150px';   // [0.095] misma altura al girar y al parar: la carta no cambia de tamaño
   const paint = (wc, state, extra) => {   // state: 'spin' | 'win'
     const bad = wc.tipo === 'PERJUDICIAL';
     const tone = bad ? 'bg-rose-950/80 border-rose-500/60 text-rose-200' : 'bg-emerald-950/80 border-emerald-500/60 text-emerald-200';
-    banner.className = 'w-full max-w-xs p-3 rounded-2xl border-2 font-mono text-xs mb-3 text-center shadow-lg ' + (state === 'win' ? tone + ' lvl-card-win' : tone.replace('/80', '/40').replace('/60', '/50') + ' lvl-card-spin');
+    banner.className = 'w-full max-w-xs p-3 rounded-2xl border-2 font-mono text-xs mb-3 text-center shadow-lg flex flex-col justify-center ' + (state === 'win' ? tone + ' lvl-card-win' : tone.replace('/80', '/40').replace('/60', '/50') + ' lvl-card-spin');
     banner.innerHTML = state === 'win' ? `
       <div class="text-[9px] tracking-widest opacity-70 mb-1">${bad ? 'EVENTO ADVERSO' : 'EVENTO FAVORABLE'}</div>
       <div class="font-black uppercase tracking-wider mb-1 text-sm">${bad ? '⚠️' : '✨'} ${wc.nombre}</div>
@@ -1725,7 +1731,7 @@ const SAVE_KEYS = [
   'picks', 'proPicks', 'usb', 'valves', 'noXpChestsLeft', 'picksBrokenOnUse', 'tanteoExplainedLoop', 'xpBoostChestsLeft', 'torpezas',
   'seqStage', 'traperoStrikes', 'climaxPhase', 'sequenceBroken', 'perks', 'abilities',
   'active2XMultiplier', 'activeShield', 'riskModeActive', 'riskPot', 'perdedorActive', 'perdedorLootPending', 'fallosConsecutivos',
-  'heavyChestsLeft', 'greedCurseLeft', 'harderPuzzlesLeft', 'mods', 'traperoBuffs', 'cursedChestsLeft',
+  'heavyChestsLeft', 'greedCurseLeft', 'harderPuzzlesLeft', 'mods', 'blankNotes', 'pendingNotes', 'traperoBuffs', 'cursedChestsLeft',
   'roomDecorations', 'roomThemeFilter', 'roomDarkUntil', 'opensByType', 'acceptDelayUses', 'hintUses', 'stats'
 ];
 
@@ -2074,6 +2080,8 @@ function resetGame(keepLoop) {
   STATE.greedCurseLeft = 0;
   STATE.harderPuzzlesLeft = 0;
   STATE.mods = {};
+  STATE.pendingNotes = [];
+  if (keepLoop !== true) STATE.blankNotes = {};   // [0.095] partida nueva = post-its nuevos; el cambio de bucle los conserva
   STATE.traperoBuffs = { bonusXp: false, harderMinigames: false, shortPipeTimer: false, doubleGold: false };
   STATE.cursedChestsLeft = 0;
   STATE.roomDecorations = [];
@@ -3068,6 +3076,7 @@ function generateScreenChests() {
 
   STATE.activeChestIdx = 0;
   updateChestSelectionUI();
+  if (typeof renderPlayerNotes === 'function') requestAnimationFrame(() => requestAnimationFrame(() => renderPlayerNotes()));   // [0.095]
 }
 
 function isClimaxActive() {
@@ -3344,6 +3353,135 @@ function placeStickyNote(note, container) {
   note.style.top = `${Math.round(y)}px`;
 }
 
+
+/* ==========================================================================
+   [0.095] POST-ITS EN BLANCO (el jugador escribe) y sus "ecos" en los bucles siguientes
+   ========================================================================== */
+function queuePlayerNotes(co) {
+  const cfg = DATOS_JUEGO.NOTAS_JUGADOR; if (!cfg) return;
+  STATE.pendingNotes = [];
+  if (STATE.climaxPhase) return;
+  STATE.blankNotes = STATE.blankNotes || {};
+  (cfg.COFRES || []).forEach(slot => {
+    if (co === slot - 1) {   // eco: lo escrito en bucles anteriores (el del bucle 1 primero)
+      for (let l = 1; l < (STATE.currentLoop || 1); l++) {
+        const t = (STATE.blankNotes[l] || {})[slot];
+        STATE.pendingNotes.push({ kind: 'read', id: 'r' + l + '_' + slot, text: t || '' });
+      }
+    }
+    if (co === slot) STATE.pendingNotes.push({ kind: 'write', id: 'w' + slot, slot, written: false, text: '' });
+  });
+}
+
+function clearPlayerNotes() {
+  document.querySelectorAll('.scene-note').forEach(n => { n.classList.add('crumple-anim'); setTimeout(() => n.remove(), 350); });
+  const ed = document.getElementById('noteEditor'); if (ed) ed.remove();
+  STATE.pendingNotes = [];
+}
+
+function buildSceneNote(p) {
+  const cfg = DATOS_JUEGO.NOTAS_JUGADOR || {};
+  const el = document.createElement('div');
+  el.className = 'sticky-note scene-note absolute p-2.5 rounded-lg text-[11px] font-bold font-mono pointer-events-auto cursor-pointer border border-amber-300 shadow-2xl z-20';
+  el.dataset.nid = p.id;
+  el.style.width = (cfg.ANCHO_PX || 210) + 'px';
+  el.style.minHeight = '38px';
+  el.style.visibility = 'hidden';
+  const fill = () => {
+    if (p.kind === 'read' || p.written) el.textContent = p.text ? `"${p.text}"` : '';
+    else el.innerHTML = '<span class="note-caret">|</span>';
+  };
+  fill();
+  el.addEventListener('click', () => {
+    if (p.kind === 'write' && !p.written) { openNoteEditor(el, p, fill); return; }
+    audio.playPaperRustle();
+    el.classList.add('crumple-anim');
+    setTimeout(() => el.remove(), 350);
+    STATE.pendingNotes = (STATE.pendingNotes || []).filter(x => x.id !== p.id);
+    saveDirty = true;
+  });
+  return el;
+}
+
+function positionSceneNotes() {
+  const container = document.getElementById('notesContainer'); if (!container) return;
+  const notes = [...container.querySelectorAll('.scene-note')]; if (!notes.length) return;
+  const cr = container.getBoundingClientRect();
+  const grid = document.getElementById('multiChestGrid'), card = document.getElementById('chestActionCard');
+  const gridOn = grid && !grid.classList.contains('hidden') && grid.getBoundingClientRect().height > 0;
+  const anchor = gridOn ? grid : card; if (!anchor) return;
+  const ar = anchor.getBoundingClientRect();
+  const cx = ar.left + ar.width / 2 - cr.left, topA = ar.top - cr.top, n = notes.length;
+  notes.forEach((el, i) => {
+    const w = el.offsetWidth, h = el.offsetHeight;
+    const off = n === 1 ? 0 : (i - (n - 1) / 2) * Math.min(110, w * 0.55);
+    el.style.left = Math.round(Math.max(6, Math.min(cr.width - w - 6, cx - w / 2 + off))) + 'px';
+    el.style.top = Math.round(Math.max(70, topA - h - 10 - (n > 1 && i % 2 ? 12 : 0))) + 'px';
+    el.style.setProperty('--rot', (n === 1 ? -2 : (i === 0 ? -4 : 3)) + 'deg');
+    el.style.visibility = '';
+  });
+}
+
+function renderPlayerNotes() {
+  const container = document.getElementById('notesContainer'); if (!container) return;
+  if (document.getElementById('noteEditor')) return;   // editando: no tocar
+  container.querySelectorAll('.scene-note').forEach(n => n.remove());
+  const list = STATE.pendingNotes || [];
+  if (!list.length || STATE.climaxPhase) return;
+  list.forEach(p => container.appendChild(buildSceneNote(p)));
+  positionSceneNotes();
+}
+window.addEventListener('resize', () => { try { positionSceneNotes(); } catch (e) {} });
+
+function openNoteEditor(noteEl, p, refill) {
+  if (document.getElementById('noteEditor')) return;
+  const cfg = DATOS_JUEGO.NOTAS_JUGADOR || {}, max = cfg.MAX_CARACTERES || 60;
+  const host = uiHost();
+  audio.init(); audio.playPaperRustle();
+  const ov = document.createElement('div');
+  ov.id = 'noteEditor';
+  ov.style.cssText = 'position:absolute;inset:0;z-index:10040;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0);transition:background .28s ease';
+  const paper = document.createElement('div');
+  paper.className = 'note-paper';
+  paper.innerHTML = '<button type="button" class="note-x" aria-label="Cerrar">✕</button><textarea rows="4" spellcheck="false" autocomplete="off"></textarea><div class="note-count"></div>';
+  ov.appendChild(paper); host.appendChild(ov);
+  const ta = paper.querySelector('textarea'), cnt = paper.querySelector('.note-count');
+  ta.maxLength = max; ta.value = p.text || '';
+  const upd = () => { cnt.textContent = ta.value.length + '/' + max; };
+  upd();
+  ta.addEventListener('input', upd);
+  ta.addEventListener('keydown', e => { if (e.key === 'Enter') e.preventDefault(); if (e.key === 'Escape') close(); });
+  try { ta.focus(); } catch (e) {}   // dentro del gesto del toque: en móvil abre el teclado
+  // animación: del post-it pequeño al papel grande
+  const fromR = noteEl.getBoundingClientRect(), toR = paper.getBoundingClientRect();
+  const tf = (a, b) => `translate(${Math.round(a.left + a.width / 2 - (b.left + b.width / 2))}px, ${Math.round(a.top + a.height / 2 - (b.top + b.height / 2))}px) scale(${(a.width / b.width).toFixed(3)}, ${(a.height / b.height).toFixed(3)})`;
+  paper.style.transition = 'none'; paper.style.transform = tf(fromR, toR); paper.style.opacity = '0.9';
+  noteEl.style.visibility = 'hidden';
+  void paper.offsetWidth;
+  paper.style.transition = 'transform .32s cubic-bezier(.2,1.2,.4,1), opacity .2s'; paper.style.transform = ''; paper.style.opacity = '1';
+  ov.style.background = 'rgba(0,0,0,.6)';
+  let closing = false;
+  function close() {
+    if (closing) return; closing = true;
+    p.text = ta.value.replace(/\s+/g, ' ').trim().slice(0, max);
+    p.written = true;
+    STATE.blankNotes = STATE.blankNotes || {};
+    const loop = STATE.currentLoop || 1;
+    (STATE.blankNotes[loop] = STATE.blankNotes[loop] || {})[p.slot] = p.text;   // se graba SIEMPRE, esté como esté
+    saveDirty = true;
+    try { ta.blur(); } catch (e) {}
+    refill(); noteEl.style.height = ''; noteEl.style.visibility = 'hidden';
+    positionSceneNotes(); noteEl.style.visibility = 'hidden';
+    const back = noteEl.getBoundingClientRect(), cur = paper.getBoundingClientRect();
+    paper.style.transition = 'transform .28s ease-in, opacity .25s ease-in';
+    paper.style.transform = tf(back, cur); paper.style.opacity = '0.9';
+    ov.style.background = 'rgba(0,0,0,0)';
+    audio.playPaperRustle();
+    setTimeout(() => { ov.remove(); noteEl.style.visibility = ''; }, 300);
+  }
+  paper.querySelector('.note-x').addEventListener('click', close);
+}
+
 function spawnStickyNote() {
   if (STATE.climaxPhase || document.querySelectorAll('.sticky-note').length >= 5) return;
 
@@ -3401,6 +3539,7 @@ function triggerLootExplosion() {
     spawnParticles(cx, cy, active.rarity.color, active.rarity.id === 'legendario' ? 100 : 50, active.rarity.id === 'legendario');
 
     STATE.chestsOpened++;
+    if (typeof clearPlayerNotes === 'function') clearPlayerNotes();   // [0.095] los post-its de jugador duran hasta abrir el siguiente cofre
     statsAdd('chests', 1); if (puzzleStat) { statsPuzzle(puzzleStat, true); puzzleStat = null; }   // [0.090]
     STATE.opensByType = STATE.opensByType || {};
     STATE.opensByType[active.type.id] = (STATE.opensByType[active.type.id] || 0) + 1;
@@ -3804,6 +3943,7 @@ if (claimLootBtn) {
     }
 
     const co = STATE.chestsOpened;
+    queuePlayerNotes(co);   // [0.095] post-its de jugador (se muestran al generar los cofres)
     const seqHist = DATOS_JUEGO.NARRATIVA.HISTORIA_SECUENCIA;
     const seqConfig = DATOS_JUEGO.PROGRESIÓN.SECUENCIA_HISTORIA;
 
@@ -4832,6 +4972,10 @@ function updateUI() {
 
     if (activePerksCount > 0) perksBar.classList.remove('hidden');
     else perksBar.classList.add('hidden');
+    // [0.095] Versión corta también cuando el texto completo no cabe en el ancho (antes solo con 4+ insignias)
+    if (!isCompact && activePerksCount > 0 && perksBar.scrollWidth > perksBar.clientWidth + 1) {
+      [...perksBar.children].forEach((b, i) => { if (activePerks[i]) b.textContent = activePerks[i].shortText; });
+    }
   }
 
   const cntAuto = document.getElementById('cntAuto'); if (cntAuto) cntAuto.textContent = `x${STATE.abilities.auto}`;
@@ -4875,14 +5019,10 @@ function fitHudTitle() {
   if (!t) return;
   root.classList.remove('title-compact');
   // [0.093] Por geometría: si el título completo invade el borde izquierdo del primer elemento a su derecha, se compacta (JOMC)
+  // [0.095] Se compara SOLO con el grupo de insignias (2.º hijo de la fila de la cabecera); antes también contaba la barra de XP, que está justo debajo del título
   const tr = t.getBoundingClientRect();
-  let limit = Infinity;
-  let el = t.parentElement;
-  while (el && limit === Infinity && el !== document.body) {
-    let sib = el.nextElementSibling;
-    while (sib) { const r = sib.getBoundingClientRect(); if (r.width > 0 && r.height > 0 && Math.abs((r.top + r.height / 2) - (tr.top + tr.height / 2)) < Math.max(tr.height, r.height)) { limit = r.left; break; } sib = sib.nextElementSibling; }
-    el = el.parentElement;
-  }
+  const row = t.closest('.justify-between');
+  const limit = (row && row.children[1]) ? row.children[1].getBoundingClientRect().left : Infinity;
   if (tr.width > 0 && tr.right > limit - 6) root.classList.add('title-compact');   // [0.093b] (quitada la comprobación scrollWidth: en un <span> inline clientWidth es 0 y compactaba siempre)
 }
 window.addEventListener('resize', () => { try { fitHudTitle(); } catch (e) {} });
@@ -5231,15 +5371,7 @@ function startTumblerGame() {
   const configT = DATOS_JUEGO.MINIJUEGOS.TUMBLER;
   tumblerStartedAt = Date.now();
   const tumblerContainer = document.getElementById('tumblerContainer'); if (tumblerContainer) tumblerContainer.classList.remove('hidden');
-  {   // [0.090] Aviso de "tocar la pantalla" solo las primeras veces
-    const th = document.getElementById('tumblerTapHint'), hc = (DATOS_JUEGO.AYUDAS || {}).PISTONES_TOQUE;
-    STATE.hintUses = STATE.hintUses || {};
-    const used = STATE.hintUses.pistonTap || 0;
-    if (th) {
-      if (hc && used < hc.VECES) { th.textContent = hc.TEXTO; th.classList.remove('hidden'); STATE.hintUses.pistonTap = used + 1; }
-      else th.classList.add('hidden');
-    }
-  }
+  { const th = document.getElementById('tumblerTapHint'); if (th) th.classList.add('hidden'); }   // [0.095] el aviso de tocar la pantalla ahora va en la frase fija (una sola vez)
   const pinsContainer = document.getElementById('tumblerPins'); if (!pinsContainer) return;
   pinsContainer.innerHTML = '';
 
@@ -7019,17 +7151,17 @@ function triggerLevelUpChoice() {
   grid.innerHTML = '';
   const choices = document.getElementById('levelUpChoices'), nextBtn = document.getElementById('wildcardNextBtn');
   if (choices) choices.classList.add('hidden');
-  if (nextBtn) nextBtn.classList.add('hidden');
+  if (nextBtn) { nextBtn.classList.remove('hidden'); nextBtn.classList.add('invisible'); }   // [0.095] su sitio queda reservado desde el principio: al aparecer no mueve la carta
 
   // [0.093] Banner viejo fuera al abrir (si no, se veía el resultado del nivel anterior hasta empezar la ruleta)
-  const bn = document.getElementById('wildcardBanner'); if (bn) { bn.innerHTML = ''; bn.className = 'hidden'; }
+  const bn = document.getElementById('wildcardBanner'); if (bn) { bn.innerHTML = ''; bn.className = 'w-full max-w-xs mb-3'; bn.style.minHeight = '150px'; }   // [0.095] hueco reservado y vacío (sin saltos de layout)
   lvlSpectacle();
   // [0.092] Fanfarria + cartel; ruleta de wildcard (se aplica ya, se muestra al frenar); SIGUIENTE; y entonces las 3 mejoras como cofres abiertos
   try { audio.init(); audio.playLevelUpFanfare(); } catch (e) {}
   const wcRes = pickWildcard();
   updateUI();
   const revealChoices = () => {
-    if (nextBtn) nextBtn.classList.add('hidden');
+    if (nextBtn) nextBtn.classList.add('hidden');   // en la pantalla de las 3 cartas ya no hace falta
     const bnr = document.getElementById('wildcardBanner'); if (bnr) bnr.classList.add('hidden');   // [0.093b] el evento ya se vio en su pantalla: se quita para que quepan las 3 cartas
     if (choices) choices.classList.remove('hidden');
     const step = (DATOS_JUEGO.SUBIDA_NIVEL || {}).ESCALONADO_COFRES_MS || 260;
@@ -7040,7 +7172,7 @@ function triggerLevelUpChoice() {
   };
   lvlTimers.push(setTimeout(() => runWildcardRoulette(wcRes, () => {
     if (!nextBtn) { revealChoices(); return; }
-    nextBtn.classList.remove('hidden');
+    nextBtn.classList.remove('invisible');
     nextBtn.onclick = () => { try { audio.playUiClick(); } catch (e) {} revealChoices(); };
   }), 1300));
 
@@ -7961,7 +8093,8 @@ function testKeyHash(seq, salt) {
     const g = geom(e);
     // [0.093] El anillo solo se agarra pulsando SOBRE la aguja (margen GRAB_GRADOS); la aguja sigue entonces el ángulo del dedo
     const grabDeg = ((DATOS_JUEGO.GANZUA_TACTIL || {}).GRAB_GRADOS) || 32;
-    let role = g.dist < 0.58 ? 'center' : (Math.abs(g.ang - lpState.angle) <= grabDeg ? 'ring' : 'none');
+    // [0.095] Se quita el control táctil del anillo: la ganzúa se gira con la barra de arriba; el centro sigue siendo "mantener para probar girar"
+    let role = g.dist < 0.58 ? 'center' : 'none';
     if (role === 'none') return;
     roles[e.pointerId] = role;
     if (role === 'ring') ringDrag[e.pointerId] = { off: g.ang - lpState.angle };
@@ -7992,13 +8125,6 @@ function testKeyHash(seq, salt) {
     if (used >= hc.VECES) return;
     STATE.hintUses.lockTouch = used + 1;
     const mk = html => { const d = document.createElement('div'); d.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:5'; d.innerHTML = html; dial.appendChild(d); return d; };
-    hintRing = mk(`
-      <svg viewBox="0 0 192 192" style="position:absolute;inset:0;width:100%;height:100%;overflow:visible">
-        <defs><marker id="lhArr" markerWidth="8" markerHeight="8" refX="5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#fbbf24"/></marker></defs>
-        <path d="M92,14 A82,82 0 0 0 26,66" fill="none" stroke="#fbbf24" stroke-width="3" stroke-dasharray="5 4" marker-end="url(#lhArr)" style="animation:tmBlink 1.4s steps(2) infinite"/>
-        <path d="M100,14 A82,82 0 0 1 166,66" fill="none" stroke="#fbbf24" stroke-width="3" stroke-dasharray="5 4" marker-end="url(#lhArr)" style="animation:tmBlink 1.4s steps(2) infinite"/>
-      </svg>
-      <div style="position:absolute;left:0;right:0;bottom:-2px;text-align:center;font:700 11px Outfit,sans-serif;color:#fbbf24;text-shadow:0 1px 2px #000">${hc.ANILLO}</div>`);
     hintCenter = mk(`
       <div style="position:absolute;left:50%;top:50%;width:112px;height:112px;margin:-56px 0 0 -56px;border:3px dashed #34d399;border-radius:50%;animation:cardPulse 1.1s ease-in-out infinite"></div>
       <div style="position:absolute;left:0;right:0;top:50%;margin-top:34px;text-align:center;font:700 10px Outfit,sans-serif;color:#34d399;text-shadow:0 1px 2px #000">${hc.CENTRO}</div>`);
