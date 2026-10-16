@@ -7,7 +7,7 @@
 
 const DATOS_JUEGO = {
   // [0.088] Versión visible en pantalla (esquina inferior central) para que las capturas la incluyan
-  VERSION: '0.093',
+  VERSION: '0.093b',
 
   // [0.089] Avisos "+N" / "-N" de herramientas. ESPERAR_PANTALLA_LIBRE:true = recupera la idea anterior (esperar a que no haya
   // banners, tiendas ni diálogos encima). Con false salen siempre, por encima de todo.
@@ -39,7 +39,7 @@ const DATOS_JUEGO = {
   GANZUA_TACTIL: {
     GRAB_GRADOS: 32,   // [0.093] margen angular (°) para agarrar la aguja con el dedo
     SENSIBILIDAD_ANILLO: 1.8,   // [0.092] antes 0.8 (casi inusable)
-    HAPTICA: { ACTIVAR: true, INTENSIDAD_MAX: 0.55, ZONA_GRADOS: 20, PERIODO_MS: 110, ON_MIN_MS: 4, CURVA: 2.6, TEMBLOR_PX_MIN: 0.4, TEMBLOR_PX_MAX: 1.8 }   // [0.093] INTENSIDAD_MAX (0-1) = fuerza máxima de la vibración del móvil; más sutil
+    HAPTICA: { ACTIVAR: true, INTENSIDAD_MAX: 0.55, RECORDATORIO_ACTIVAR: true, RECORDATORIO_MS: 1200, RECORDATORIO_ON_MS: 10, ZONA_GRADOS: 20, PERIODO_MS: 110, ON_MIN_MS: 4, CURVA: 2.6, TEMBLOR_PX_MIN: 0.4, TEMBLOR_PX_MAX: 1.8 }   // [0.093] INTENSIDAD_MAX (0-1) = fuerza máxima de la vibración del móvil; más sutil
   },
   AYUDAS: { GANZUA_TACTIL: { VECES: 3, ANILLO: 'AGARRA LA GANZÚA Y ARRÁSTRALA', CENTRO: 'MANTÉN EL CENTRO' }, PISTONES_TOQUE: { VECES: 3, TEXTO: 'También puedes tocar cualquier punto de la pantalla para fijar el pistón.' } },
 
@@ -4883,7 +4883,7 @@ function fitHudTitle() {
     while (sib) { const r = sib.getBoundingClientRect(); if (r.width > 0 && r.height > 0 && Math.abs((r.top + r.height / 2) - (tr.top + tr.height / 2)) < Math.max(tr.height, r.height)) { limit = r.left; break; } sib = sib.nextElementSibling; }
     el = el.parentElement;
   }
-  if (tr.width > 0 && (tr.right > limit - 6 || t.scrollWidth > t.clientWidth + 1)) root.classList.add('title-compact');
+  if (tr.width > 0 && tr.right > limit - 6) root.classList.add('title-compact');   // [0.093b] (quitada la comprobación scrollWidth: en un <span> inline clientWidth es 0 y compactaba siempre)
 }
 window.addEventListener('resize', () => { try { fitHudTitle(); } catch (e) {} });
 // [0.092] Recalcular también cuando cambia el ancho de las insignias (p. ej. x9 -> x17) o su contenido
@@ -6940,9 +6940,49 @@ function makeChestArt() {
   return chestArt;
 }
 
+// [0.093b] Fondo de mazmorra en pixel art (pared de piedra, cadenas con grilletes, calavera en una repisa). Se dibuja a la medida de la pantalla.
+function makeDungeonBg() {
+  const K = 4, W = Math.ceil(window.innerWidth / K) + 2, H = Math.ceil(window.innerHeight / K) + 2;
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const g = cv.getContext('2d');
+  let seed = 90210; const rnd = () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  const R = (x, y, w, h, c) => { g.fillStyle = c; g.fillRect(x | 0, y | 0, w | 0, h | 0); };
+  const stones = ['#2b3040', '#303647', '#262b39', '#343b4d', '#2a2f3d'];
+  R(0, 0, W, H, '#14171f');
+  const bh = 9, bw = 20;
+  for (let row = 0, y = 0; y < H; row++, y += bh) {
+    let off = (row % 2) * (bw / 2) - (rnd() * 3 | 0);
+    for (let x = -off; x < W; x += bw) {
+      const w = bw - 1, c = stones[(rnd() * stones.length) | 0];
+      R(x, y, w, bh - 1, c); R(x, y, w, 1, '#3d4559'); R(x, y + bh - 2, w, 1, '#1c2029');
+      for (let i = 0; i < 3; i++) R(x + rnd() * w, y + 1 + rnd() * (bh - 3), 1, 1, rnd() < .5 ? '#232836' : '#3a4256');
+      if (rnd() < 0.07) { R(x + 2, y + 2, 3 + rnd() * 4, 2, '#2f4a35'); R(x + 3, y + 4, 2, 1, '#3c5e44'); }   // musgo
+    }
+  }
+  // cadena con grillete
+  const chain = (x, len, cuff) => {
+    for (let i = 0, y = 0; y < len; i++, y += 4) { const sh = i % 2; R(x + (sh ? 0 : 1), y, sh ? 3 : 1, 4, '#6b7385'); R(x + (sh ? 1 : 0), y + 1, 1, 2, '#14171f'); R(x + (sh ? 0 : 1), y, 1, 4, '#9aa3b8'); }
+    if (cuff) { const y = len; R(x - 4, y, 11, 2, '#6b7385'); R(x - 5, y + 2, 2, 7, '#6b7385'); R(x + 6, y + 2, 2, 7, '#6b7385'); R(x - 4, y + 9, 11, 2, '#4b5263'); R(x - 3, y + 2, 1, 6, '#14171f'); R(x - 5, y + 2, 1, 6, '#9aa3b8'); R(x + 7, y + 3, 1, 5, '#14171f'); R(x - 1, y - 2, 3, 3, '#9aa3b8'); }
+  };
+  chain(Math.floor(W * 0.12), Math.floor(H * 0.20), true);
+  chain(Math.floor(W * 0.86), Math.floor(H * 0.12), true);
+  chain(Math.floor(W * 0.80), Math.floor(H * 0.26), false);
+  // repisa con calavera (abajo a la derecha)
+  const sx = Math.floor(W * 0.62), sy = Math.floor(H * 0.90);
+  R(sx - 6, sy + 9, 32, 4, '#4b5263'); R(sx - 6, sy + 9, 32, 1, '#6b7385'); R(sx - 4, sy + 13, 28, 3, '#1c2029');
+  const sk = [' wwwww ', 'wwwwwww', 'wkwwwkw', 'wkkwkkw', 'wwwkwww', ' wwwww ', ' wkwkw '];
+  sk.forEach((rw, j) => [...rw].forEach((ch, i) => { if (ch === 'w') R(sx + 4 + i, sy + 2 + j, 1, 1, j === 0 ? '#e8e2cf' : '#cfc7ae'); else if (ch === 'k') R(sx + 4 + i, sy + 2 + j, 1, 1, '#14171f'); }));
+  // viñeta y antorcha tenue (fuera de ser pared pura): oscurece los bordes
+  const gr = g.createRadialGradient(W / 2, H * 0.3, W * 0.1, W / 2, H / 2, Math.max(W, H) * 0.75);
+  gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,.72)');
+  g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  return cv.toDataURL('image/png');
+}
+
 function lvlSpectacle() {
   const modal = document.getElementById('levelUpModal'); if (!modal) return;
   const cfg = DATOS_JUEGO.SUBIDA_NIVEL || {};
+  try { modal.style.backgroundImage = `linear-gradient(rgba(6,8,16,.50), rgba(6,8,16,.62)), url('${makeDungeonBg()}')`; modal.style.backgroundSize = '100% 100%, 100% 100%'; modal.style.imageRendering = 'pixelated'; modal.style.backdropFilter = 'none'; } catch (e) {}
   let fx = document.getElementById('lvlFx');
   if (fx) fx.remove();
   fx = document.createElement('div'); fx.id = 'lvlFx';
@@ -6990,6 +7030,7 @@ function triggerLevelUpChoice() {
   updateUI();
   const revealChoices = () => {
     if (nextBtn) nextBtn.classList.add('hidden');
+    const bnr = document.getElementById('wildcardBanner'); if (bnr) bnr.classList.add('hidden');   // [0.093b] el evento ya se vio en su pantalla: se quita para que quepan las 3 cartas
     if (choices) choices.classList.remove('hidden');
     const step = (DATOS_JUEGO.SUBIDA_NIVEL || {}).ESCALONADO_COFRES_MS || 260;
     [...grid.children].forEach((el, i) => {
@@ -7967,7 +8008,7 @@ function testKeyHash(seq, salt) {
   const hapCfg = (DATOS_JUEGO.GANZUA_TACTIL || {}).HAPTICA || {};
   if (hapCfg.ACTIVAR) {
     const touchVib = !!(navigator.vibrate && window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
-    let wasVib = false;
+    let wasVib = false, hapLastAngle = 0, hapLastMove = 0, hapLastRem = 0;
     setInterval(() => {
       const box = document.getElementById('lockpickContainer');
       const active = !!(box && !box.classList.contains('hidden')) && minigameInProgress && !lpState.isBreaking && !lpState.isCompleted;
@@ -7979,6 +8020,17 @@ function testKeyHash(seq, salt) {
       let r = Math.max(0, 1 - d / zone);
       r = Math.pow(r, hapCfg.CURVA || 2.6);
       if (r < 0.03) { if (wasVib) { try { navigator.vibrate(0); } catch (e) {} wasVib = false; } return; }
+      // [0.093b] Aguja quieta dentro de la zona: solo un toquecito muy leve cada RECORDATORIO_MS (recordatorio). Al moverla vuelve el comportamiento normal.
+      const nowT = Date.now();
+      if (Math.abs(lpState.angle - hapLastAngle) > 0.01) { hapLastAngle = lpState.angle; hapLastMove = nowT; }
+      if (hapCfg.RECORDATORIO_ACTIVAR !== false && nowT - hapLastMove > 280) {
+        if (nowT - hapLastRem >= (hapCfg.RECORDATORIO_MS || 1200)) {
+          hapLastRem = nowT;
+          if (touchVib) { try { navigator.vibrate(hapCfg.RECORDATORIO_ON_MS || 10); wasVib = true; } catch (e) {} }
+          else screenShake(0.5, 80);
+        }
+        return;
+      }
       const per = hapCfg.PERIODO_MS || 110;
       if (touchVib) {
         const onMin = hapCfg.ON_MIN_MS || 4, imax = hapCfg.INTENSIDAD_MAX != null ? hapCfg.INTENSIDAD_MAX : 1;

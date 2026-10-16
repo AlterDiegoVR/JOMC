@@ -254,3 +254,10 @@ html.title-compact .title-short { display: inline; }
 .lvl-sparks i:nth-child(3) { left: 52%; animation-delay: 1.4s; } .lvl-sparks i:nth-child(4) { left: 70%; animation-delay: .4s; } .lvl-sparks i:nth-child(5) { left: 86%; animation-delay: 1.1s; }
 @keyframes lvlSparkUp { 0% { transform: translateY(40px); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateY(-28px); opacity: 0; } }
 .lvl-card { margin-left: 16px; margin-right: 16px; }
+
+/* [0.093b] Tres cartas más compactas para que quepan sin scroll */
+#chestChoicesGrid { gap: 6px !important; }
+.lvl-chest-back { height: 38px; margin-bottom: -4px; }
+.lvl-chest-front { height: 38px; }
+.lvl-card { padding: 8px 10px 26px; }
+#levelUpModal { background-color: rgba(6,8,16,1); }
