@@ -7,7 +7,7 @@
 
 const DATOS_JUEGO = {
   // [0.088] Versión visible en pantalla (esquina inferior central) para que las capturas la incluyan
-  VERSION: '0.092',
+  VERSION: '0.093',
 
   // [0.089] Avisos "+N" / "-N" de herramientas. ESPERAR_PANTALLA_LIBRE:true = recupera la idea anterior (esperar a que no haya
   // banners, tiendas ni diálogos encima). Con false salen siempre, por encima de todo.
@@ -28,17 +28,20 @@ const DATOS_JUEGO = {
 
   // [0.090] Golpe de Game Over (antes de que hable el Trapero)
   // [0.092] Pantalla de subida de nivel: fanfarria + cartel, ruleta de wildcards (pasos, ms entre cambios al inicio/final, curva de frenado) y 3 mejoras como cofres abiertos
-  SUBIDA_NIVEL: { RULETA_PASOS: 20, RULETA_MS_INICIAL: 50, RULETA_MS_FINAL: 340, RULETA_CURVA: 2.5, RULETA_MS_FINAL_PAUSA: 520, PAUSA_TRAS_RULETA_MS: 450, ESCALONADO_COFRES_MS: 260 },
-  GAME_OVER: { GOLPE: { DURACION_MS: 3000, SACUDIDA_PX: 16, SACUDIDA_MS: 650, CAIDA_MS: 320, ESCALONADO_MS: 90, PAUSA_PALABRAS_MS: 170 } },   // [0.091] 3 s; las letras caen escalonadas (el golpe final suena al caer la última)
+  SUBIDA_NIVEL: {
+    LLUVIA_PIEZAS: 46, LLUVIA_MS: 1400, SACUDIDA_PX: 9, SACUDIDA_MS: 520,   // [0.093] espectáculo del cartel de nivel
+    RULETA_PASOS: 20, RULETA_MS_INICIAL: 50, RULETA_MS_FINAL: 340, RULETA_CURVA: 2.5, RULETA_MS_FINAL_PAUSA: 520, PAUSA_TRAS_RULETA_MS: 450, ESCALONADO_COFRES_MS: 260 },
+  GAME_OVER: { GOLPE: { DURACION_MS: 3600, SACUDIDA_PX: 16, SACUDIDA_MS: 650, CAIDA_MS: 320, ESCALONADO_MS: 90, PAUSA_PALABRAS_MS: 170 } },   // [0.091] 3 s; las letras caen escalonadas (el golpe final suena al caer la última)
 
   // [0.090] Ayudas de las primeras veces (por partida)
   // [0.091] Ganzúa táctil: el anillo gira la aguja de forma RELATIVA (mueves el dedo en horizontal y gira lo mismo que la barra x SENSIBILIDAD_ANILLO; <1 = más fino)
   // y avisa del punto dulce (real o falso por igual) con vibración (móvil) o un leve temblor de pantalla (PC) que crece al acercarse.
   GANZUA_TACTIL: {
+    GRAB_GRADOS: 32,   // [0.093] margen angular (°) para agarrar la aguja con el dedo
     SENSIBILIDAD_ANILLO: 1.8,   // [0.092] antes 0.8 (casi inusable)
-    HAPTICA: { ACTIVAR: true, ZONA_GRADOS: 20, PERIODO_MS: 110, ON_MIN_MS: 6, CURVA: 2.6, TEMBLOR_PX_MIN: 0.6, TEMBLOR_PX_MAX: 3.2 }
+    HAPTICA: { ACTIVAR: true, INTENSIDAD_MAX: 0.55, ZONA_GRADOS: 20, PERIODO_MS: 110, ON_MIN_MS: 4, CURVA: 2.6, TEMBLOR_PX_MIN: 0.4, TEMBLOR_PX_MAX: 1.8 }   // [0.093] INTENSIDAD_MAX (0-1) = fuerza máxima de la vibración del móvil; más sutil
   },
-  AYUDAS: { GANZUA_TACTIL: { VECES: 3, ANILLO: 'ARRASTRA EL ANILLO', CENTRO: 'MANTÉN EL CENTRO' }, PISTONES_TOQUE: { VECES: 3, TEXTO: 'También puedes tocar cualquier punto de la pantalla para fijar el pistón.' } },
+  AYUDAS: { GANZUA_TACTIL: { VECES: 3, ANILLO: 'AGARRA LA GANZÚA Y ARRÁSTRALA', CENTRO: 'MANTÉN EL CENTRO' }, PISTONES_TOQUE: { VECES: 3, TEXTO: 'También puedes tocar cualquier punto de la pantalla para fijar el pistón.' } },
 
   // [0.090] Enfado del Duende al NO comprar en la tienda especial (cofres 85/88/90): sacudida (px, ms) y nivel de sonido 1-3
   ENFADO_DUENDE: { 85: { SACUDIDA_PX: 5, MS: 380, NIVEL: 1 }, 88: { SACUDIDA_PX: 9, MS: 560, NIVEL: 2 }, 90: { SACUDIDA_PX: 15, MS: 900, NIVEL: 3 }, DEFAULT: { SACUDIDA_PX: 5, MS: 380, NIVEL: 1 } },
@@ -864,9 +867,21 @@ const DATOS_JUEGO = {
   //   PUZLES_EXIGENTES (n cofres) · OTORGAR_CARTA_TACTICA_AZAR · OTORGAR_CONSUMIBLE_DOBLE_AZAR (n consumibles)
   //   PERDER_HERRAMIENTAS ({propiedad: cantidad}; nunca deja menos de 1)
   // Para añadir un wildcard nuevo que reutilice uno de estos efectos basta con añadir una línea aquí.
+  // [0.093] Modificadores "game changer" de los wildcards (todo ajustable aquí). 'cofres' = duración en cofres abiertos.
+  //   ESCALA_ORO_POR_NIVEL: los premios/pérdidas fijos de GP de los wildcards se multiplican por (1 + esto x (nivel-1)).
+  MODS_WILDCARD: {
+    ESCALA_ORO_POR_NIVEL: 0.35,
+    FIEBRE_ORO:   { GP_MULT: 2, HERRAMIENTAS_EXTRA: 1 },
+    HAMBRE_XP:    { XP_MULT: 2, GP_MULT: 0 },
+    SOLITARIOS:   { XP_PCT: 0.5 },
+    NIEBLA:       { BOTIN_PCT: 0.4 },
+    RELOJ_BUENO:  { TIEMPO_MULT: 1.5 },
+    RELOJ_MALO:   { TIEMPO_MULT: 0.7 },
+    DESTINO_RAREZAS: ['normal', 'raro', 'epico']
+  },
   WILDCARDS: [
     { id: "cofres_pesados", nombre: "Cofres Pesados", tipo: "PERJUDICIAL", desc: "Próximos 5 cofres Raros+ piden +1 herramienta extra.", efecto: "COFRES_PESADOS", valor: 5 },
-    { id: "impuesto_trapero", nombre: "Impuesto del Trapero", tipo: "PERJUDICIAL", desc: "Pérdida inmediata de 10 Monedas GP.", efecto: "PERDER_ORO", valor: 10 },
+    { id: "impuesto_trapero", nombre: "Impuesto del Trapero", tipo: "PERJUDICIAL", desc: "Pérdida inmediata de {10} Monedas GP.", efecto: "PERDER_ORO", valor: 10 },
     { id: "maldicion_codicia", nombre: "Maldición de la Codicia", tipo: "PERJUDICIAL", desc: "-50% GP en cofres Épicos/Legendarios durante 5 cofres.", efecto: "MALDICION_CODICIA", valor: 5 },
     { id: "dedos_torpes", nombre: "Dedos Torpes", tipo: "PERJUDICIAL", desc: "Minijuegos un 25% más exigentes durante 5 cofres.", efecto: "PUZLES_EXIGENTES", valor: 5 },
     { id: "hallazgo_sombra", nombre: "Hallazgo de Sombra", tipo: "BENEFICIOSO", desc: "Recibes +1 Ganzúa y +1 Pin de Acero gratis.", efecto: "DAR_HERRAMIENTAS", valor: { picks: 1, proPicks: 1 } },
@@ -875,15 +890,25 @@ const DATOS_JUEGO = {
     { id: "regalo_tactico", nombre: "Hallazgo Táctico", tipo: "BENEFICIOSO", desc: "Encuentras un pergamino ajado: obtienes 1 Carta Táctica aleatoria.", efecto: "OTORGAR_CARTA_TACTICA_AZAR", valor: 1 },
     { id: "suministros_inesperados", nombre: "Suministros Inesperados", tipo: "BENEFICIOSO", desc: "Encuentras una pequeña bolsa en un rincón: obtienes x2 consumibles al azar.", efecto: "OTORGAR_CONSUMIBLE_DOBLE_AZAR", valor: 2 },
     // [0.092] Más wildcards (cada una es UNA línea; 'peso' opcional = probabilidad relativa dentro de su grupo, por defecto 1)
-    { id: "bolsa_olvidada", nombre: "Bolsa Olvidada", tipo: "BENEFICIOSO", desc: "Alguien dejó una bolsa de monedas tras una piedra suelta: +30 GP.", efecto: "DAR_ORO", valor: 30 },
+    { id: "bolsa_olvidada", nombre: "Bolsa Olvidada", tipo: "BENEFICIOSO", desc: "Alguien dejó una bolsa de monedas tras una piedra suelta: +{30} GP.", efecto: "DAR_ORO", valor: 30 },
     { id: "ganzuas_cortesia", nombre: "Ganzúas de Cortesía", tipo: "BENEFICIOSO", desc: "Un gancho oxidado asoma de la pared... y no está solo: +3 Ganzúas.", efecto: "DAR_HERRAMIENTAS", valor: { picks: 3 } },
     { id: "chispa_genio", nombre: "Chispa de Genio", tipo: "BENEFICIOSO", desc: "Una idea te ilumina de golpe: recibes el 35% de la XP que exige tu nivel.", efecto: "DAR_XP_PCT_NIVEL", valor: 0.35, peso: 0.5 },
     { id: "fortuna_doble", nombre: "Fortuna Doble", tipo: "BENEFICIOSO", desc: "Sientes que hoy todo vale el doble: obtienes +1 Carta Doble o Nada.", efecto: "DAR_CARTA", valor: { double: 1 } },
     { id: "escudo_prestado", nombre: "Escudo Prestado", tipo: "BENEFICIOSO", desc: "Algo invisible te cubre las espaldas: obtienes +1 Carta Escudo.", efecto: "DAR_CARTA", valor: { shield: 1 } },
     { id: "recado_duende", nombre: "Recado del Duende", tipo: "BENEFICIOSO", desc: "Un papelito arrugado con un sello conocido: obtienes +1 Carta Invoca al Duende.", efecto: "DAR_CARTA", valor: { summonDuende: 1 }, peso: 0.6 },
-    { id: "peaje_sombras", nombre: "Peaje de las Sombras", tipo: "PERJUDICIAL", desc: "Algo te vacía los bolsillos al pasar: pierdes 20 GP.", efecto: "PERDER_ORO", valor: 20 },
+    { id: "peaje_sombras", nombre: "Peaje de las Sombras", tipo: "PERJUDICIAL", desc: "Algo te vacía los bolsillos al pasar: pierdes {20} GP.", efecto: "PERDER_ORO", valor: 20 },
     { id: "pulso_tembloroso", nombre: "Pulso Tembloroso", tipo: "PERJUDICIAL", desc: "Te tiemblan las manos: minijuegos un 25% más exigentes durante 3 cofres.", efecto: "PUZLES_EXIGENTES", valor: 3 },
     { id: "cerrojos_oxidados", nombre: "Cerrojos Oxidados", tipo: "PERJUDICIAL", desc: "Los cerrojos se han agarrotado: próximos 3 cofres Raros+ piden +1 herramienta extra.", efecto: "COFRES_PESADOS", valor: 3 },
+    // [0.093] Game changers con duración (efecto MODIFICADOR: valor = {id, cofres}); 'minNivel' opcional
+    { id: "fiebre_oro", nombre: "Fiebre del Oro", tipo: "BENEFICIOSO", desc: "Durante 8 cofres ganas el DOBLE de GP... pero cada cofre pide +1 herramienta.", efecto: "MODIFICADOR", valor: { id: "fiebre", cofres: 8 }, minNivel: 2 },
+    { id: "manos_seda", nombre: "Manos de Seda", tipo: "BENEFICIOSO", desc: "Durante 5 cofres, un fallo en un puzle NO te cuesta ninguna herramienta.", efecto: "MODIFICADOR", valor: { id: "seda", cofres: 5 } },
+    { id: "cofres_solitarios", nombre: "Cofres Solitarios", tipo: "BENEFICIOSO", desc: "Durante 8 cofres solo aparece 1 cofre por pantalla, pero da +50% XP.", efecto: "MODIFICADOR", valor: { id: "solitario", cofres: 8 } },
+    { id: "niebla_botin", nombre: "Niebla Espesa", tipo: "BENEFICIOSO", desc: "Durante 6 cofres no ves su rareza, pero su botín es un 40% mayor.", efecto: "MODIFICADOR", valor: { id: "niebla", cofres: 6 }, minNivel: 2 },
+    { id: "racha_congelada", nombre: "Racha Congelada", tipo: "BENEFICIOSO", desc: "Durante 6 cofres, fallar un puzle NO rompe tu racha.", efecto: "MODIFICADOR", valor: { id: "congelada", cofres: 6 } },
+    { id: "reloj_lento", nombre: "Reloj Lento", tipo: "BENEFICIOSO", desc: "Durante 6 cofres tienes un 50% más de tiempo en los puzles.", efecto: "MODIFICADOR", valor: { id: "relojBueno", cofres: 6 } },
+    { id: "hambre_xp", nombre: "Hambre de XP", tipo: "BENEFICIOSO", desc: "Durante 5 cofres tu XP se DUPLICA... pero no ganas nada de GP.", efecto: "MODIFICADOR", valor: { id: "hambre", cofres: 5 }, minNivel: 2 },
+    { id: "cofre_destino", nombre: "Cofre del Destino", tipo: "BENEFICIOSO", desc: "La próxima pantalla muestra 3 cofres de distinta rareza: tú eliges cuál abrir.", efecto: "MODIFICADOR", valor: { id: "destino", cofres: 1 }, minNivel: 2, peso: 0.7 },
+    { id: "reloj_roto", nombre: "Reloj Roto", tipo: "PERJUDICIAL", desc: "Durante 5 cofres tienes un 30% menos de tiempo en los puzles.", efecto: "MODIFICADOR", valor: { id: "relojMalo", cofres: 5 } },
     { id: "ganzua_perdida", nombre: "Ganzúa Perdida", tipo: "PERJUDICIAL", desc: "Se te cae una ganzúa por una rendija: pierdes 1 Ganzúa (si tienes más de 1).", efecto: "PERDER_HERRAMIENTAS", valor: { picks: 1 } }
   ],
 
@@ -1180,6 +1205,13 @@ class AudioEngine {
     this._tone(1046.5, 1046.5, 0.7, 'square', 0.08, 0.82); this._tone(1318.5, 1318.5, 0.7, 'square', 0.05, 0.82); this._tone(1568, 1568, 0.7, 'triangle', 0.07, 0.82);
     [131, 165, 196, 262].forEach((f, i) => this._tone(f, f, 0.2, 'triangle', 0.16, i * 0.2));
     this._tone(262, 262, 0.8, 'triangle', 0.16, 0.82);
+    // [0.093] Más espectáculo: platillazo, arpegio brillante, acorde largo y golpe de bombo
+    this._noise(0.5, 0.10, 0.82, 6500);
+    [1046.5, 1318.5, 1568, 2093, 2637, 3136].forEach((f, i) => this._tone(f, f, 0.12, 'square', 0.045, 1.0 + i * 0.075));
+    [523.25, 659.25, 783.99, 1046.5].forEach(f => this._tone(f, f, 1.2, 'triangle', 0.07, 1.5));
+    [3136, 3951].forEach((f, i) => this._tone(f, f, 0.9, 'sine', 0.035, 1.55 + i * 0.08));
+    this._tone(110, 45, 0.35, 'sine', 0.22, 0); this._tone(110, 45, 0.45, 'sine', 0.22, 0.82);
+    this._tone(131, 131, 1.2, 'triangle', 0.14, 1.5);
   }
   // [0.092] "Ruidito" de la ruleta: clic agudo corto; el tono sube un poco y se alarga al frenar (p = 0..1)
   playRouletteTick(p = 0) {
@@ -1388,6 +1420,7 @@ const STATE = {
   heavyChestsLeft: 0,
   greedCurseLeft: 0,
   harderPuzzlesLeft: 0,
+  mods: {},   // [0.093] modificadores de wildcard con duración: {id: cofres_restantes}
   traperoBuffs: { bonusXp: false, harderMinigames: false, shortPipeTimer: false, doubleGold: false },
   cursedChestsLeft: 0,
 
@@ -1552,18 +1585,26 @@ function getUnlockedConsumables() {
 }
 
 // Aplica el efecto de un wildcard según su 'efecto' y 'valor'. Devuelve un texto extra para el banner.
+// [0.093] Oro fijo de los wildcards escalado por nivel; y descripción con {n} escalado
+function wcGold(n) { return Math.max(1, Math.round(n * (1 + ((DATOS_JUEGO.MODS_WILDCARD || {}).ESCALA_ORO_POR_NIVEL || 0) * Math.max(0, STATE.level - 1)))); }
+function wcDesc(wc) { return String(wc.desc).replace(/\{(\d+)\}/g, (m, n) => wcGold(+n)); }
+function modOn(id) { return !!(STATE.mods && STATE.mods[id] > 0); }
+
 function applyWildcard(wc) {
   let extra = '';
   switch (wc.efecto) {
+    case 'MODIFICADOR':
+      STATE.mods = STATE.mods || {};
+      STATE.mods[wc.valor.id] = (STATE.mods[wc.valor.id] || 0) + wc.valor.cofres;
+      break;
     case 'PERDER_ORO': {
-      const lost = Math.min(STATE.gold, wc.valor);
+      const lost = Math.min(STATE.gold, wcGold(wc.valor));
       STATE.gold -= lost;
       extra = `-${lost} GP`;
       break;
     }
     case 'DAR_ORO':
-      STATE.gold += wc.valor;
-      extra = `+${wc.valor} GP`;
+      { const g = wcGold(wc.valor); STATE.gold += g; extra = `+${g} GP`; }
       break;
     case 'DAR_XP':
       STATE.xp += wc.valor;
@@ -1627,8 +1668,9 @@ function pickWildcard() {
   const wcList = DATOS_JUEGO.WILDCARDS || [];
   if (wcList.length === 0) return null;
   const wantBad = Math.random() < getWildcardBadChance();
-  let pool = wcList.filter(w => (w.tipo === 'PERJUDICIAL') === wantBad);
-  if (pool.length === 0) pool = wcList;
+  const okList = wcList.filter(w => !w.minNivel || STATE.level >= w.minNivel);
+  let pool = okList.filter(w => (w.tipo === 'PERJUDICIAL') === wantBad);
+  if (pool.length === 0) pool = okList.length ? okList : wcList;
   const tot = pool.reduce((a, w) => a + (w.peso != null ? w.peso : 1), 0);
   let r = Math.random() * tot, wc = pool[pool.length - 1];
   for (const w of pool) { r -= (w.peso != null ? w.peso : 1); if (r <= 0) { wc = w; break; } }
@@ -1653,7 +1695,7 @@ function runWildcardRoulette(res, onDone) {
     banner.innerHTML = state === 'win' ? `
       <div class="text-[9px] tracking-widest opacity-70 mb-1">${bad ? 'EVENTO ADVERSO' : 'EVENTO FAVORABLE'}</div>
       <div class="font-black uppercase tracking-wider mb-1 text-sm">${bad ? '⚠️' : '✨'} ${wc.nombre}</div>
-      <div class="opacity-90">${wc.desc}</div>
+      <div class="opacity-90">${wcDesc(wc)}</div>
       ${extra ? `<div class="mt-1 font-bold">${extra}</div>` : ''}` : `
       <div class="text-[9px] tracking-widest opacity-60 mb-1">EL DESTINO GIRA...</div>
       <div class="font-black uppercase tracking-wider text-sm py-2">${wc.nombre}</div>`;
@@ -1683,7 +1725,7 @@ const SAVE_KEYS = [
   'picks', 'proPicks', 'usb', 'valves', 'noXpChestsLeft', 'picksBrokenOnUse', 'tanteoExplainedLoop', 'xpBoostChestsLeft', 'torpezas',
   'seqStage', 'traperoStrikes', 'climaxPhase', 'sequenceBroken', 'perks', 'abilities',
   'active2XMultiplier', 'activeShield', 'riskModeActive', 'riskPot', 'perdedorActive', 'perdedorLootPending', 'fallosConsecutivos',
-  'heavyChestsLeft', 'greedCurseLeft', 'harderPuzzlesLeft', 'traperoBuffs', 'cursedChestsLeft',
+  'heavyChestsLeft', 'greedCurseLeft', 'harderPuzzlesLeft', 'mods', 'traperoBuffs', 'cursedChestsLeft',
   'roomDecorations', 'roomThemeFilter', 'roomDarkUntil', 'opensByType', 'acceptDelayUses', 'hintUses', 'stats'
 ];
 
@@ -2031,6 +2073,7 @@ function resetGame(keepLoop) {
   STATE.heavyChestsLeft = 0;
   STATE.greedCurseLeft = 0;
   STATE.harderPuzzlesLeft = 0;
+  STATE.mods = {};
   STATE.traperoBuffs = { bonusXp: false, harderMinigames: false, shortPipeTimer: false, doubleGold: false };
   STATE.cursedChestsLeft = 0;
   STATE.roomDecorations = [];
@@ -2964,7 +3007,10 @@ function triggerSecretDecorationReward(decor) {
 
 function generateScreenChests() {
   STATE.screenChests = [];
-  const chestCount = STATE.chestsOpened < 4 ? 1 : (Math.random() < 0.6 ? 2 : 3);
+  let chestCount = STATE.chestsOpened < 4 ? 1 : (Math.random() < 0.6 ? 2 : 3);
+  const destino = modOn('destino') && !isClimaxActive();
+  if (modOn('solitario')) chestCount = 1;   // [0.093] Cofres Solitarios
+  if (destino) chestCount = 3;              // [0.093] Cofre del Destino: eliges entre 3 rarezas
 
   for (let i = 0; i < chestCount; i++) {
     const availableTypes = DATOS_JUEGO.COFRES.ESTANDAR.filter(t => {
@@ -3013,7 +3059,11 @@ function generateScreenChests() {
       else rarity = CHEST_RARITIES[0];
     }
 
-    STATE.screenChests.push({ type: randomType, rarity });
+    if (destino) {   // [0.093]
+      const ids = DATOS_JUEGO.MODS_WILDCARD.DESTINO_RAREZAS;
+      rarity = CHEST_RARITIES.find(r => r.id === ids[i % ids.length]) || rarity;
+    }
+    STATE.screenChests.push({ type: randomType, rarity, fog: modOn('niebla') });   // [0.093] fog = rareza oculta
   }
 
   STATE.activeChestIdx = 0;
@@ -3033,6 +3083,7 @@ function getRequiredToolCount(rarity) {
   if (STATE.heavyChestsLeft > 0 && rarity.id !== 'normal') {
     base += 1;
   }
+  if (modOn('fiebre')) base += (DATOS_JUEGO.MODS_WILDCARD.FIEBRE_ORO.HERRAMIENTAS_EXTRA || 1);   // [0.093]
   return base;
 }
 
@@ -3048,8 +3099,8 @@ function updateChestSelectionUI() {
         const isSelected = idx === STATE.activeChestIdx;
         btn.className = `p-2 rounded-xl text-xs font-bold border flex flex-col items-center gap-1 transition-all ${c.rarity.border} ${isSelected ? 'bg-slate-800 scale-105 ring-2 ring-amber-400' : 'bg-slate-900/80 opacity-70'}`;
         btn.innerHTML = `
-          <span class="text-[9px] font-extrabold font-mono" style="color: ${c.rarity.color}">${c.rarity.name}</span>
-          ${ART_ON && ASSETS.cofres[c.type.id] ? `<img src="${chestSpriteSrc(c.type, c.rarity)}" alt="" style="image-rendering:pixelated;width:44px;height:auto">` : '<i class="fa-solid fa-box text-sm"></i>'}
+          <span class="text-[9px] font-extrabold font-mono" style="color: ${c.fog ? '#94a3b8' : c.rarity.color}">${c.fog ? '???' : c.rarity.name}</span>
+          ${ART_ON && ASSETS.cofres[c.type.id] ? `<img src="${chestSpriteSrc(c.type, c.fog ? CHEST_RARITIES[0] : c.rarity)}" alt="" style="image-rendering:pixelated;width:44px;height:auto">` : '<i class="fa-solid fa-box text-sm"></i>'}
         `;
         btn.addEventListener('click', () => {
           audio.init();
@@ -3068,9 +3119,9 @@ function updateChestSelectionUI() {
   if (active) {
     const badge = document.getElementById('chestRarityBadge');
     if (badge) {
-      badge.textContent = active.rarity.name;
-      badge.style.borderColor = active.rarity.color;
-      badge.style.color = active.rarity.color;
+      badge.textContent = active.fog ? '???' : active.rarity.name;
+      badge.style.borderColor = active.fog ? '#94a3b8' : active.rarity.color;
+      badge.style.color = active.fog ? '#94a3b8' : active.rarity.color;
     }
 
     const title = document.getElementById('chestTitle');
@@ -3371,6 +3422,9 @@ function triggerLootExplosion() {
     }
     // [CAMBIO] La Maldición de la Codicia se evalúa ANTES de descontar el contador, para que afecte a los 5 cofres
     const greedActive = STATE.greedCurseLeft > 0 && (active.rarity.id === 'epico' || active.rarity.id === 'legendario');
+    const modsAtOpen = Object.assign({}, STATE.mods || {});   // [0.093] se evalúan antes de descontar
+    if (STATE.mods) Object.keys(STATE.mods).forEach(k => { if (STATE.mods[k] > 0) STATE.mods[k]--; if (STATE.mods[k] <= 0) delete STATE.mods[k]; });
+    const mo = id => modsAtOpen[id] > 0;
     if (STATE.heavyChestsLeft > 0) STATE.heavyChestsLeft--;
     if (STATE.greedCurseLeft > 0) STATE.greedCurseLeft--;
     if (STATE.harderPuzzlesLeft > 0) STATE.harderPuzzlesLeft--;
@@ -3549,6 +3603,18 @@ function triggerLootExplosion() {
       finalXp = 0;
       xpLines = [{ label: "🎨 Por Amor al Arte", val: "0 XP" }];
     }
+
+    // [0.093] Modificadores de wildcard sobre el botín
+    const MW = DATOS_JUEGO.MODS_WILDCARD;
+    if (mo('fiebre')) { const add = finalGp * (MW.FIEBRE_ORO.GP_MULT - 1); finalGp += add; gpLines.push({ label: "🔥 Fiebre del Oro", val: `x${MW.FIEBRE_ORO.GP_MULT} GP` }); }
+    if (mo('solitario') && finalXp > 0) { const a = Math.floor(finalXp * MW.SOLITARIOS.XP_PCT); finalXp += a; xpLines.push({ label: "🕯️ Cofre Solitario", val: `+${a} XP` }); }
+    if (mo('niebla')) {
+      const ag = Math.floor(finalGp * MW.NIEBLA.BOTIN_PCT), ax = Math.floor(finalXp * MW.NIEBLA.BOTIN_PCT);
+      finalGp += ag; finalXp += ax;
+      gpLines.push({ label: "🌫️ Niebla Espesa", val: `+${ag} GP` }); xpLines.push({ label: "🌫️ Niebla Espesa", val: `+${ax} XP` });
+    }
+    if (mo('hambre') && finalXp > 0) { finalXp *= MW.HAMBRE_XP.XP_MULT; xpLines.push({ label: "🍽️ Hambre de XP", val: `x${MW.HAMBRE_XP.XP_MULT} XP` }); }
+    if (mo('hambre')) { finalGp = Math.floor(finalGp * MW.HAMBRE_XP.GP_MULT); gpLines.push({ label: "🍽️ Hambre de XP", val: "sin GP" }); }
 
     STATE.active2XMultiplier = false;
     STATE.gold += finalGp;
@@ -4232,6 +4298,8 @@ function startMinigameTimer(seconds, consumableName) {
   }
 
   let adjustedSeconds = seconds + STATE.perks.extraTime;
+  if (modOn('relojBueno')) adjustedSeconds = Math.round(adjustedSeconds * DATOS_JUEGO.MODS_WILDCARD.RELOJ_BUENO.TIEMPO_MULT);   // [0.093]
+  if (modOn('relojMalo')) adjustedSeconds = Math.max(5, Math.round(adjustedSeconds * DATOS_JUEGO.MODS_WILDCARD.RELOJ_MALO.TIEMPO_MULT));
   globalPuzzleTimeLeft = adjustedSeconds;
   currentPuzzleConsumable = consumableName;
 
@@ -4268,7 +4336,7 @@ function handleFailure(toolName = 'picks', reasonText = "Fallo en el puzle.") {
   if (puzzleStat) { statsPuzzle(puzzleStat, false); puzzleStat = null; }   // [0.090]
   minigameInProgress = false;
   stopMinigameTimer();
-  STATE.cleanStreak = 0;
+  if (modOn('congelada')) showPersistentFeedback("🧊 Racha Congelada: tu racha sobrevive al fallo."); else STATE.cleanStreak = 0;   // [0.093]
   const active = STATE.screenChests[STATE.activeChestIdx];
   const reqCount = getRequiredToolCount(active.rarity);
 
@@ -4304,6 +4372,13 @@ function handleFailure(toolName = 'picks', reasonText = "Fallo en el puzle.") {
     STATE.activeShield = false;
     showPersistentFeedback(STATE.riskModeActive ? "🛡️ ¡Tu ESCUDO te ha salvado! Herramientas y Bote de Riesgo intactos." : "🛡️ ¡Tu ESCUDO te ha salvado! Herramientas intactas.");
     if (puzzleToolPaid) { STATE[puzzleToolPaid.prop] += puzzleToolPaid.n; puzzleToolPaid = null; }   // [0.090] el Escudo devuelve la herramienta pagada al entrar
+    updateUI();
+    return;
+  }
+
+  if (modOn('seda')) {   // [0.093] Manos de Seda: el fallo no cuesta herramientas
+    showPersistentFeedback("🧤 Manos de Seda: el fallo no te ha costado ninguna herramienta.");
+    if (puzzleToolPaid) { STATE[puzzleToolPaid.prop] += puzzleToolPaid.n; puzzleToolPaid = null; }
     updateUI();
     return;
   }
@@ -4721,6 +4796,15 @@ function updateUI() {
       { active: STATE.harderPuzzlesLeft > 0, text: `💀 Puzles duros x${STATE.harderPuzzlesLeft}`, shortText: `💀 x${STATE.harderPuzzlesLeft}`, desc: `Pacto de la Sombra: los puzles son más difíciles durante los próximos ${STATE.harderPuzzlesLeft} cofres.`, isTorpeza: true },
       { active: !!(STATE.traperoBuffs && STATE.traperoBuffs.harderMinigames), text: `💀 Puzles duros ∞`, shortText: `💀 ∞`, desc: `Los puzles son más difíciles de forma permanente.`, isTorpeza: true },
       { active: !!STATE.picksBrokenOnUse, text: `🩹 Dedos Rotos`, shortText: `🩹`, desc: `Dedos Rotos: las ganzúas se rompen al usarse hasta que empiece el siguiente bucle.`, isTorpeza: true },
+      { active: modOn('fiebre'), text: `🔥 Fiebre x${(STATE.mods||{}).fiebre}`, shortText: `🔥 x${(STATE.mods||{}).fiebre}`, desc: `Fiebre del Oro: GP x2 durante ${(STATE.mods||{}).fiebre} cofres más, pero cada cofre pide +1 herramienta.`, isBoost: true },
+      { active: modOn('seda'), text: `🧤 Seda x${(STATE.mods||{}).seda}`, shortText: `🧤 x${(STATE.mods||{}).seda}`, desc: `Manos de Seda: durante ${(STATE.mods||{}).seda} cofres más, fallar no gasta herramientas.`, isBoost: true },
+      { active: modOn('solitario'), text: `🕯️ Solitarios x${(STATE.mods||{}).solitario}`, shortText: `🕯️ x${(STATE.mods||{}).solitario}`, desc: `Cofres Solitarios: 1 cofre por pantalla y +50% XP durante ${(STATE.mods||{}).solitario} cofres más.`, isBoost: true },
+      { active: modOn('niebla'), text: `🌫️ Niebla x${(STATE.mods||{}).niebla}`, shortText: `🌫️ x${(STATE.mods||{}).niebla}`, desc: `Niebla Espesa: rareza oculta pero botín +40% durante ${(STATE.mods||{}).niebla} cofres más.`, isBoost: true },
+      { active: modOn('congelada'), text: `🧊 Racha x${(STATE.mods||{}).congelada}`, shortText: `🧊 x${(STATE.mods||{}).congelada}`, desc: `Racha Congelada: fallar no rompe tu racha durante ${(STATE.mods||{}).congelada} cofres más.`, isBoost: true },
+      { active: modOn('relojBueno'), text: `⏳ Tiempo +50% x${(STATE.mods||{}).relojBueno}`, shortText: `⏳ x${(STATE.mods||{}).relojBueno}`, desc: `Reloj Lento: +50% de tiempo en los puzles durante ${(STATE.mods||{}).relojBueno} cofres más.`, isBoost: true },
+      { active: modOn('hambre'), text: `🍽️ Hambre x${(STATE.mods||{}).hambre}`, shortText: `🍽️ x${(STATE.mods||{}).hambre}`, desc: `Hambre de XP: XP x2 pero sin GP durante ${(STATE.mods||{}).hambre} cofres más.`, isBoost: true },
+      { active: modOn('destino'), text: `🎲 Destino`, shortText: `🎲`, desc: `Cofre del Destino: la próxima pantalla te deja elegir entre 3 cofres.`, isBoost: true },
+      { active: modOn('relojMalo'), text: `⌛ Tiempo -30% x${(STATE.mods||{}).relojMalo}`, shortText: `⌛ x${(STATE.mods||{}).relojMalo}`, desc: `Reloj Roto: -30% de tiempo en los puzles durante ${(STATE.mods||{}).relojMalo} cofres más.`, isTorpeza: true },
       { active: STATE.heavyChestsLeft > 0, text: `📜 Contrato x${STATE.heavyChestsLeft}`, shortText: `📜 x${STATE.heavyChestsLeft}`, desc: `Contrato Leonino: los próximos ${STATE.heavyChestsLeft} cofres Raros o superiores piden +1 herramienta.`, isTorpeza: true }
     );
     const activePerks = perkList.filter(p => p.active);
@@ -4790,8 +4874,16 @@ function fitHudTitle() {
   const t = document.querySelector('.title-full');
   if (!t) return;
   root.classList.remove('title-compact');
-  const box = t.parentElement;
-  if (box && box.scrollWidth > box.clientWidth + 1) root.classList.add('title-compact');
+  // [0.093] Por geometría: si el título completo invade el borde izquierdo del primer elemento a su derecha, se compacta (JOMC)
+  const tr = t.getBoundingClientRect();
+  let limit = Infinity;
+  let el = t.parentElement;
+  while (el && limit === Infinity && el !== document.body) {
+    let sib = el.nextElementSibling;
+    while (sib) { const r = sib.getBoundingClientRect(); if (r.width > 0 && r.height > 0 && Math.abs((r.top + r.height / 2) - (tr.top + tr.height / 2)) < Math.max(tr.height, r.height)) { limit = r.left; break; } sib = sib.nextElementSibling; }
+    el = el.parentElement;
+  }
+  if (tr.width > 0 && (tr.right > limit - 6 || t.scrollWidth > t.clientWidth + 1)) root.classList.add('title-compact');
 }
 window.addEventListener('resize', () => { try { fitHudTitle(); } catch (e) {} });
 // [0.092] Recalcular también cuando cambia el ancho de las insignias (p. ej. x9 -> x17) o su contenido
@@ -5241,13 +5333,15 @@ function animateSequentialTumblerPins(ts) {
   if (tumblerPhase !== 'pins') return;
 
   if (typeof ts !== 'number') ts = performance.now();
-  const dtPins = tumblerPinsLastTs === null ? 0 : Math.min(0.05, (ts - tumblerPinsLastTs) / 1000);   // [0.091] tiempo real
+  const dtPins = tumblerPinsLastTs === null ? 0 : Math.max(0, Math.min(0.05, (ts - tumblerPinsLastTs) / 1000));   // [0.091] tiempo real ([0.092b] nunca negativo)
   tumblerPinsLastTs = ts;
   const fpsRef = DATOS_JUEGO.MINIJUEGOS.TUMBLER.VELOCIDAD_FPS_REFERENCIA || 90;
   tumblerPinsData.forEach((pin, i) => {
     if (!pin.locked) {
       pin.posY += pin.speed * dtPins * fpsRef;
-      if (pin.posY >= 82 || pin.posY <= 8) pin.speed *= -1;
+      // [0.092b] El rebote fija la dirección (no la invierte): con pasos pequeños por tiempo real, invertir en cada fotograma dejaba el pistón pegado al borde
+      if (pin.posY >= 82) { pin.posY = 82; pin.speed = -Math.abs(pin.speed); }
+      else if (pin.posY <= 8) { pin.posY = 8; pin.speed = Math.abs(pin.speed); }
       const notch = document.getElementById(`pinNotch-${i}`);
       if (notch) notch.style.top = `${pin.posY}%`;
     }
@@ -6805,28 +6899,66 @@ function openTraperoShop() {
    CARTAS DE SUBIDA DE NIVEL
    ========================================================================== */
 
-// [0.092] Frontal del cofre de madera (provisional): remata los costados del sprite y repite una tabla de la parte baja (sin la cerradura),
-// para que la carta parezca estar dentro de un cofre abierto de cualquier ancho. Se dibuja una vez y se guarda.
-let chestFrontURL = null;
-function withChestFront(cb) {
-  if (chestFrontURL) { cb(chestFrontURL); return; }
-  const src = (ASSETS.cofres && ASSETS.cofres.wooden) || '';
-  if (!src) return;
-  const im = new Image();
-  im.onload = () => {
-    try {
-      const k = 3, W = 320, r0 = 33, rh = 12, cv = document.createElement('canvas');
-      cv.width = W; cv.height = rh * k;
-      const g = cv.getContext('2d'); g.imageSmoothingEnabled = false;
-      const capW = 11, midX = 15, midW = 8;
-      g.drawImage(im, 4, r0, capW, rh, 0, 0, capW * k, rh * k);
-      g.drawImage(im, 52 - capW + 1, r0, capW, rh, W - capW * k, 0, capW * k, rh * k);
-      for (let x = capW * k; x < W - capW * k; x += midW * k) g.drawImage(im, midX, r0, midW, rh, x, 0, Math.min(midW * k, W - capW * k - x) , rh * k);
-      chestFrontURL = cv.toDataURL('image/png');
-      cb(chestFrontURL);
-    } catch (e) {}
+// [0.093] Cofre abierto en pixel art (dibujado por código, escalado x3): TAPA abierta por detrás de la carta y FRENTE por delante.
+// Se generan una vez y se guardan como imágenes (data URI). Colores ajustables aquí.
+let chestArt = null;
+function makeChestArt() {
+  if (chestArt) return chestArt;
+  const k = 3, LW = 106;
+  const C = { out: '#2a1608', d: '#5c3a1a', m: '#8a5a2b', l: '#b57d3f', hl: '#d9a15a', iron: '#3f4a5c', ironL: '#8795ab', gold: '#fbbf24', goldD: '#b45309', goldL: '#fff1a8', inner: '#241208', inner2: '#3a1f0c' };
+  const mk = (h, draw) => {
+    const cv = document.createElement('canvas'); cv.width = LW * k; cv.height = h * k;
+    const g = cv.getContext('2d'); g.imageSmoothingEnabled = false;
+    const R = (x, y, w, hh, col) => { g.fillStyle = col; g.fillRect(x * k, y * k, w * k, hh * k); };
+    draw(R, h);
+    return cv.toDataURL('image/png');
   };
-  im.src = src;
+  const bands = (R, h, y0, col, colL) => { [10, LW - 16].forEach(x => { R(x, y0, 6, h - y0, col); R(x, y0, 1, h - y0, colL); R(x + 5, y0, 1, h - y0, C.out); }); };
+  const back = mk(16, (R, h) => {
+    // tapa abierta (vista desde dentro): borde de madera con interior oscuro y aros de hierro
+    R(6, 0, LW - 12, h, C.out);
+    R(7, 1, LW - 14, h - 1, C.m); R(7, 1, LW - 14, 1, C.hl);
+    R(9, 3, LW - 18, h - 3, C.inner); R(9, 3, LW - 18, 1, C.inner2);
+    for (let x = 18; x < LW - 18; x += 14) R(x, 4, 1, h - 4, C.inner2);
+    bands(R, h, 0, C.iron, C.ironL);
+    R(6, 0, 3, 3, C.out); R(LW - 9, 0, 3, 3, C.out);
+  });
+  const front = mk(16, (R, h) => {
+    R(0, 0, LW, h, C.out);
+    R(1, 1, LW - 2, h - 2, C.m);
+    R(1, 1, LW - 2, 2, C.gold); R(1, 1, LW - 2, 1, C.goldL); R(1, 3, LW - 2, 1, C.goldD);   // borde dorado: de ahí sale la luz
+    for (let x = 18; x < LW - 8; x += 17) { R(x, 4, 1, h - 5, C.d); R(x + 1, 4, 1, h - 5, C.l); }
+    R(1, h - 3, LW - 2, 2, C.d); R(1, h - 1, LW - 2, 1, C.out);
+    for (let y = 6; y < h - 3; y += 4) { R(2, y, LW - 4, 1, C.l); }
+    bands(R, h, 4, C.iron, C.ironL);
+    [[12, 6], [12, 11], [LW - 14, 6], [LW - 14, 11]].forEach(([x, y]) => { R(x, y, 2, 2, C.ironL); });
+    // cerradura dorada central
+    const cx = LW / 2 - 6; R(cx, 3, 12, h - 5, C.out); R(cx + 1, 4, 10, h - 7, C.gold); R(cx + 1, 4, 10, 1, C.goldL); R(cx + 1, h - 4, 10, 1, C.goldD);
+    R(cx + 5, 7, 2, 3, C.out); R(cx + 5, 10, 2, 2, C.out);
+  });
+  chestArt = { back, front };
+  return chestArt;
+}
+
+function lvlSpectacle() {
+  const modal = document.getElementById('levelUpModal'); if (!modal) return;
+  const cfg = DATOS_JUEGO.SUBIDA_NIVEL || {};
+  let fx = document.getElementById('lvlFx');
+  if (fx) fx.remove();
+  fx = document.createElement('div'); fx.id = 'lvlFx';
+  fx.innerHTML = '<div class="lvl-rays"></div><div class="lvl-flash"></div>';
+  modal.insertBefore(fx, modal.firstChild);
+  const cols = ['#fbbf24', '#fde68a', '#f59e0b', '#fff7cc', '#a5b4fc', '#34d399'];
+  const n = cfg.LLUVIA_PIEZAS != null ? cfg.LLUVIA_PIEZAS : 46;
+  for (let i = 0; i < n; i++) {
+    const c = document.createElement('i');
+    const coin = i % 3 !== 0, sz = coin ? 9 + Math.random() * 7 : 4 + Math.random() * 4;
+    c.className = coin ? 'lvl-coin' : 'lvl-spark';
+    c.style.cssText = `left:${Math.random() * 100}%;width:${sz}px;height:${coin ? sz : sz}px;background:${coin ? '#fbbf24' : cols[i % cols.length]};animation-duration:${1.5 + Math.random() * 2}s;animation-delay:${Math.random() * (cfg.LLUVIA_MS || 1400) / 1000}s;--rot:${(Math.random() * 720 - 360) | 0}deg`;
+    fx.appendChild(c);
+  }
+  try { screenShake(cfg.SACUDIDA_PX != null ? cfg.SACUDIDA_PX : 9, cfg.SACUDIDA_MS || 520); } catch (e) {}
+  lvlTimers.push(setTimeout(() => { if (fx.parentNode) fx.remove(); }, 5200));
 }
 
 function triggerLevelUpChoice() {
@@ -6849,6 +6981,9 @@ function triggerLevelUpChoice() {
   if (choices) choices.classList.add('hidden');
   if (nextBtn) nextBtn.classList.add('hidden');
 
+  // [0.093] Banner viejo fuera al abrir (si no, se veía el resultado del nivel anterior hasta empezar la ruleta)
+  const bn = document.getElementById('wildcardBanner'); if (bn) { bn.innerHTML = ''; bn.className = 'hidden'; }
+  lvlSpectacle();
   // [0.092] Fanfarria + cartel; ruleta de wildcard (se aplica ya, se muestra al frenar); SIGUIENTE; y entonces las 3 mejoras como cofres abiertos
   try { audio.init(); audio.playLevelUpFanfare(); } catch (e) {}
   const wcRes = pickWildcard();
@@ -6893,8 +7028,11 @@ function triggerLevelUpChoice() {
     // [0.092] Cofre abierto (dibujo provisional: el frontal del cofre de madera recorta la parte baja de la carta) con la carta dentro
     const cardEl = document.createElement('button');
     cardEl.className = "lvl-chest group cursor-pointer active:scale-95 transition-transform";
+    const art = makeChestArt();
     cardEl.innerHTML = `
       <div class="lvl-chest-glow"></div>
+      <div class="lvl-sparks"><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="lvl-chest-back" style="background-image:url('${art.back}')"></div>
       <div class="lvl-card bg-slate-900 border border-indigo-500/60 rounded-xl flex items-center gap-2.5 text-left shadow-xl group-hover:border-indigo-300">
         <div class="w-10 h-10 flex-none rounded-xl bg-indigo-950 border border-indigo-500 flex items-center justify-center text-indigo-400 text-lg">
           <i class="fa-solid ${cardData.icono}"></i>
@@ -6905,9 +7043,8 @@ function triggerLevelUpChoice() {
           <div class="text-[10px] text-slate-400 font-mono mt-0.5">${descText}</div>
         </div>
       </div>
-      <div class="lvl-chest-front"></div>
+      <div class="lvl-chest-front" style="background-image:url('${art.front}')"></div>
     `;
-    withChestFront(url => { const f = cardEl.querySelector('.lvl-chest-front'); if (f) f.style.backgroundImage = `url('${url}')`; });
 
     cardEl.addEventListener('click', () => {
       lvlClearTimers();
@@ -7781,9 +7918,12 @@ function testKeyHash(seq, salt) {
   dial.addEventListener('pointerdown', e => {
     if (lpState.isBreaking || lpState.isCompleted) return;
     const g = geom(e);
-    const role = g.dist < 0.58 ? 'center' : 'ring';
+    // [0.093] El anillo solo se agarra pulsando SOBRE la aguja (margen GRAB_GRADOS); la aguja sigue entonces el ángulo del dedo
+    const grabDeg = ((DATOS_JUEGO.GANZUA_TACTIL || {}).GRAB_GRADOS) || 32;
+    let role = g.dist < 0.58 ? 'center' : (Math.abs(g.ang - lpState.angle) <= grabDeg ? 'ring' : 'none');
+    if (role === 'none') return;
     roles[e.pointerId] = role;
-    if (role === 'ring') ringDrag[e.pointerId] = { x0: e.clientX, a0: lpState.angle };   // [0.091] control relativo
+    if (role === 'ring') ringDrag[e.pointerId] = { off: g.ang - lpState.angle };
     try { dial.setPointerCapture(e.pointerId); } catch (x) {}
     e.preventDefault();
     if (role === 'center') { startTension(fake); if (hintCenter) { hintCenter.remove(); hintCenter = null; } }
@@ -7792,11 +7932,9 @@ function testKeyHash(seq, salt) {
   dial.addEventListener('pointermove', e => {
     if (roles[e.pointerId] !== 'ring') return;
     const dr = ringDrag[e.pointerId]; if (!dr) return;
-    // [0.091] grados por píxel = los de la barra (170° a lo ancho de la barra) x SENSIBILIDAD_ANILLO
-    const sl = document.getElementById('angleSlider');
-    const slW = (sl && sl.getBoundingClientRect().width) || (dial.getBoundingClientRect().width * 1.6) || 250;
-    const sens = ((DATOS_JUEGO.GANZUA_TACTIL || {}).SENSIBILIDAD_ANILLO) || 0.8;
-    setAngle(dr.a0 + (e.clientX - dr.x0) * (170 / slW) * sens);
+    const g = geom(e);
+    if (g.dist < 0.12) return;   // dedo casi en el eje: el ángulo es inestable
+    setAngle(clampAng(g.ang) - dr.off);
   });
   const up = e => {
     const role = roles[e.pointerId]; delete roles[e.pointerId]; delete ringDrag[e.pointerId];
@@ -7843,7 +7981,8 @@ function testKeyHash(seq, salt) {
       if (r < 0.03) { if (wasVib) { try { navigator.vibrate(0); } catch (e) {} wasVib = false; } return; }
       const per = hapCfg.PERIODO_MS || 110;
       if (touchVib) {
-        const on = Math.round((hapCfg.ON_MIN_MS || 6) + (per - (hapCfg.ON_MIN_MS || 6)) * r);
+        const onMin = hapCfg.ON_MIN_MS || 4, imax = hapCfg.INTENSIDAD_MAX != null ? hapCfg.INTENSIDAD_MAX : 1;
+        const on = Math.max(1, Math.round(onMin + (per * imax - onMin) * r));
         try { navigator.vibrate(on); wasVib = true; } catch (e) {}
       } else {
         const px = (hapCfg.TEMBLOR_PX_MIN || 0.6) + ((hapCfg.TEMBLOR_PX_MAX || 3.2) - (hapCfg.TEMBLOR_PX_MIN || 0.6)) * r;
