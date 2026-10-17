@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — script.js — VERSIÓN 0.097
+// JUST ONE MORE CHEST — script.js — VERSIÓN 0.097b
 // ==========================================================================
 /* ==========================================================================
    JUST ONE MORE CHEST - ARCHIVO DE CONFIGURACIÓN Y BALANCE (DATOS_JUEGO)
@@ -7,7 +7,7 @@
 
 const DATOS_JUEGO = {
   // [0.088] Versión visible en pantalla (esquina inferior central) para que las capturas la incluyan
-  VERSION: '0.097',
+  VERSION: '0.097b',
 
   // [0.089] Avisos "+N" / "-N" de herramientas. ESPERAR_PANTALLA_LIBRE:true = recupera la idea anterior (esperar a que no haya
   // banners, tiendas ni diálogos encima). Con false salen siempre, por encima de todo.
@@ -1249,7 +1249,14 @@ class AudioEngine {
     this._noise(0.05, 0.09, 0.07, 3500);
     [1568, 2093].forEach(f => this._tone(f, f, 0.65, 'sine', 0.09, 0.12));
     this._tone(3136, 3136, 0.45, 'sine', 0.035, 0.12);
-    [0.34, 0.41, 0.47, 0.56, 0.62].forEach((d, i) => this._tone(3200 + (i % 3) * 500, 2600 + (i % 2) * 400, 0.06, 'triangle', 0.045, d));
+    // [0.097b] Monedas: tintineos metálicos SIN tono descendente (antes sonaban a pajaritos): golpe de ruido agudo + parciales inarmónicos fijos, caída rápida
+    [0.34, 0.41, 0.47, 0.56, 0.62].forEach((d, i) => {
+      this._noise(0.035, 0.07, d, 4200);
+      const f = 1850 + (i % 3) * 230;
+      this._tone(f, f, 0.08, 'sine', 0.05, d);
+      this._tone(f * 1.52, f * 1.52, 0.06, 'sine', 0.03, d);
+      this._tone(f * 0.34, f * 0.34, 0.07, 'sine', 0.035, d);
+    });
   }
   playIntro() {     // dungeon synth ascendente al empezar (reverso del game over)
     if (!this.ctx || this.muted) return;
@@ -3021,16 +3028,13 @@ function triggerSecretDecorationReward(decor) {
     }
     audio.playClick(0.9);
   } else if (roll >= 20 && roll < 35) {
-    generateScreenChests();
-    chestMutateFx();
+    chestMutateFx(() => generateScreenChests());
     msg += " (¡Luz misteriosa! Los cofres mutan).";
     audio.playUnlockFanfare('raro');
   } else if (roll >= 35 && roll < 45) {
     const active = STATE.screenChests[STATE.activeChestIdx];
     if (active && active.rarity.id !== 'legendario') {
-      active.rarity = CHEST_RARITIES[3];
-      updateChestSelectionUI();
-      chestMutateFx();
+      chestMutateFx(() => { active.rarity = CHEST_RARITIES[3]; updateChestSelectionUI(); });   // [0.097b] el cambio real también tras el banner
       msg += " (¡Un rayo de sombra eleva el cofre a LEGENDARIO!)";
       audio.playUnlockFanfare('legendario');
     } else {
@@ -3057,17 +3061,19 @@ function triggerSecretDecorationReward(decor) {
 
 // [0.096] Cambio visible de los cofres tras Aceptar (mutación / ascenso): sacudida + transformación + "plop"
 let pendingChestFx = false;
-function chestMutateFx() { pendingChestFx = true; }   // [0.097] se ejecuta cuando se cierra el banner y los cofres están a la vista
+function chestMutateFx(applyFn) { pendingChestFx = applyFn || true; }   // [0.097b] el cambio REAL de cofres también se aplica al cerrar el banner (sacudida, destello y luego aparecen los nuevos)
 setInterval(() => {
   if (!pendingChestFx) return;
   const b = document.getElementById('persistentFeedbackBanner');
   if (b && !b.classList.contains('hidden')) return;
   if (typeof mainScreenFree === 'function' && !mainScreenFree()) return;
-  pendingChestFx = false;
-  chestMutateFxNow();
+  const fn = pendingChestFx; pendingChestFx = false;
+  chestMutateFxNow(typeof fn === 'function' ? fn : null);
 }, 150);
-function chestMutateFxNow() {
+function chestMutateFxNow(applyFn) {
   try { audio.init(); audio.playChestMutate(); } catch (e) {}
+  try { flashScreen('rgba(255,255,255,.35)', 350); } catch (e) {}
+  if (applyFn) setTimeout(() => { try { applyFn(); } catch (e) {} }, 260);
   ['chestActionCard', 'multiChestGrid'].forEach(id => {
     const el = document.getElementById(id);
     if (!el || el.classList.contains('hidden')) return;
@@ -3529,7 +3535,7 @@ function openNoteEditor(noteEl, p, refill) {
   const upd = () => { cnt.textContent = ta.value.length + '/' + max; };
   upd();
   ta.addEventListener('input', upd);
-  ta.addEventListener('keydown', e => { if (e.key === 'Enter') e.preventDefault(); if (e.key === 'Escape') close(); });
+  ta.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); if (!e.isComposing) close(); } if (e.key === 'Escape') close(); });   // [0.097b] Enter cierra y guarda como la X
   try { ta.focus(); } catch (e) {}   // dentro del gesto del toque: en móvil abre el teclado
   // animación: del post-it pequeño al papel grande
   const fromR = noteEl.getBoundingClientRect(), toR = paper.getBoundingClientRect();
@@ -5023,7 +5029,7 @@ function updateUI() {
       { active: permXp, text: `⭐ XP ∞`, shortText: `⭐ ∞`, desc: helpText('xpPermanente'), isTorpeza: false, isBoost: true },
       { active: STATE.harderPuzzlesLeft > 0, text: `💀 Puzles duros x${STATE.harderPuzzlesLeft}`, shortText: `💀 x${STATE.harderPuzzlesLeft}`, desc: `Pacto de la Sombra: los puzles son más difíciles durante los próximos ${STATE.harderPuzzlesLeft} cofres.`, isTorpeza: true },
       { active: !!(STATE.traperoBuffs && STATE.traperoBuffs.harderMinigames), text: `💀 Puzles duros ∞`, shortText: `💀 ∞`, desc: `Los puzles son más difíciles de forma permanente.`, isTorpeza: true },
-      { active: !!STATE.picksBrokenOnUse, text: `🩹 Dedos Rotos`, shortText: `🩹`, desc: `Dedos Rotos: las ganzúas se rompen al usarse hasta que empiece el siguiente bucle.`, isTorpeza: true },
+      { active: !!STATE.picksBrokenOnUse, text: `🩹 Dedos Rotos`, shortText: `🩹`, desc: `Dedos Rotos: tus ganzúas se rompen al usarse (permanente).`, isTorpeza: true },
       { active: modOn('fiebre'), text: `🔥 Fiebre x${(STATE.mods||{}).fiebre}`, shortText: `🔥 x${(STATE.mods||{}).fiebre}`, desc: `Fiebre del Oro: GP x2 durante ${(STATE.mods||{}).fiebre} cofres más, pero cada cofre pide +1 herramienta.`, isBoost: true },
       { active: modOn('seda'), text: `🧤 Seda x${(STATE.mods||{}).seda}`, shortText: `🧤 x${(STATE.mods||{}).seda}`, desc: `Manos de Seda: los próximos ${(STATE.mods||{}).seda} fallos no gastan herramientas.`, isBoost: true },
       { active: modOn('solitario'), text: `🕯️ Solitarios x${(STATE.mods||{}).solitario}`, shortText: `🕯️ x${(STATE.mods||{}).solitario}`, desc: `Cofres Solitarios: 1 cofre por pantalla y +50% XP durante ${(STATE.mods||{}).solitario} cofres más.`, isBoost: true },
@@ -5043,7 +5049,7 @@ function updateUI() {
       const badge = document.createElement('span');
       // [0.097] Código: forma = tipo (cuadrado = maestría/torpeza; píldora = perk o efecto), color = signo (azul/azul claro permanente, rojo torpeza, verde temporal bueno, naranja temporal malo o mixto)
       const kind = p.kind || (p.isBoost ? 'good' : p.isTorpeza ? 'bad' : 'perk');
-      badge.className = "perk-badge pb-" + kind + " px-2 py-0.5 cursor-pointer select-none font-mono whitespace-nowrap shrink-0 transition-transform hover:scale-105";
+      badge.className = "perk-badge pb-" + kind + " px-2 py-0.5 cursor-pointer select-none font-mono whitespace-nowrap shrink-0";   // [0.097b] sin zoom al pasar el ratón (el marco lo cortaba): sube el brillo
       badge.title = p.desc;
       badge.textContent = isCompact ? p.shortText : p.text;
       
@@ -5220,20 +5226,18 @@ function updateLockpickProximityVisuals() {
 
   const proximityRatio = Math.max(0, 1 - (minDiff / 90));
 
-  // [0.097] Sin barra de tensión: el color del deslizador (rojo→verde) indica la cercanía. En móvil (el dedo tapa el botón) se tiñe también el fondo de la barra, entero y según la posición actual.
+  // [0.097] Sin barra de tensión: el color del botón del deslizador y el aro de la cerradura indican la cercanía (el fondo de la barra ya no se tiñe).
   const proxText = document.getElementById('proximityText');
   const proxGlow = document.getElementById('proximityGlow');
   const slEl = document.getElementById('angleSlider');
   const falseWarn = !!(isNearDecoy && STATE.perks.oidoClinico > 0 && lpState.isTension && proximityRatio > 0.85);
-  // rojo (≤0.25) → naranja (0.5) → verde (≥0.85), alineado con los textos ROJO/NARANJA/VERDE
-  const hue = Math.round(proximityRatio <= 0.25 ? 0 : proximityRatio <= 0.5 ? 35 * (proximityRatio - 0.25) / 0.25 : proximityRatio <= 0.85 ? 35 + 90 * (proximityRatio - 0.5) / 0.35 : 125);
+  // [0.097b] rojo (≤0.25) → naranja (0.5) y naranja hasta el umbral verde (0.85); solo en la zona verde pasa a verde con un cambio corto. Coherente con el texto y el aro.
+  const hue = Math.round(proximityRatio <= 0.25 ? 0 : proximityRatio <= 0.5 ? 30 * (proximityRatio - 0.25) / 0.25 : proximityRatio < 0.85 ? 30 + 8 * (proximityRatio - 0.5) / 0.35 : proximityRatio < 0.88 ? 38 + 87 * (proximityRatio - 0.85) / 0.03 : 125);
   const colMain = falseWarn ? '#a855f7' : `hsl(${hue} 90% 52%)`;
   const colGlow = falseWarn ? 'rgba(168,85,247,.85)' : `hsla(${hue} 95% 55% / .8)`;
   if (slEl) {
     slEl.style.setProperty('--lp-col', colMain);
     slEl.style.setProperty('--lp-glow', colGlow);
-    const coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
-    slEl.style.setProperty('--lp-track', coarse ? (falseWarn ? 'hsl(275 60% 22%)' : `hsl(${hue} 65% 20%)`) : '#0f172a');
   }
   if (proxText && proxGlow) {
     if (falseWarn) {
@@ -7984,7 +7988,6 @@ function testKeyHash(seq, salt) {
       { id: 'ab_auto', label: 'CARTA AUTO', kind: 'num', min: 0, max: 9, def: 3 },
       { id: 'ab_double', label: 'CARTA x2', kind: 'num', min: 0, max: 9, def: 3 },
       { id: 'ab_shield', label: 'CARTA ESCUDO', kind: 'num', min: 0, max: 9, def: 3 },
-      { id: 'ab_reveal', label: 'CARTA REVELAR', kind: 'num', min: 0, max: 9, def: 3 },
       { id: 'ab_riskPot', label: 'CARTA APUESTA', kind: 'num', min: 0, max: 9, def: 3 },
       { id: 'ab_perdedor', label: 'CARTA PERDEDOR', kind: 'num', min: 0, max: 9, def: 3 },
       { id: 'ab_summonDuende', label: 'CARTA DUENDE', kind: 'num', min: 0, max: 9, def: 3 },
@@ -7992,6 +7995,31 @@ function testKeyHash(seq, salt) {
       { id: 'clearAch', label: 'BORRAR LOGROS', kind: 'bool' }
     ] },
     { title: 'WILDCARDS (LISTA COMPLETA)', rows: (DATOS_JUEGO.WILDCARDS || []).map(w => ({ id: 'wc_' + w.id, label: (w.tipo === 'PERJUDICIAL' ? '(-) ' : '(+) ') + String(w.nombre || w.id).toUpperCase(), kind: 'bool' })) },   // [0.096] se pueden activar varias; se aplican al VALIDAR como si salieran de la ruleta
+    { title: 'PERKS Y ESTADOS', rows: [   // [0.097b]
+      { id: 'ps_sweetSpot', label: 'MANO FIRME (NIVEL)', kind: 'num', min: 1, max: 5, def: 1 },
+      { id: 'ps_rarityBonus', label: 'OJO DE CAZADOR (NIVEL)', kind: 'num', min: 1, max: 5, def: 1 },
+      { id: 'ps_discount', label: 'REGATEADOR (NIVEL)', kind: 'num', min: 1, max: 5, def: 1 },
+      { id: 'ps_slowerPistons', label: 'PISTONES LENTOS (NIVEL)', kind: 'num', min: 1, max: 5, def: 1 },
+      { id: 'ps_goldStreak', label: 'FONDO DE BOLSILLO (NIVEL)', kind: 'num', min: 1, max: 5, def: 1 },
+      { id: 'ps_extraTime', label: 'HOMBRE TRANQUILO (+S)', kind: 'num', min: 1, max: 30, def: 5 },
+      { id: 'ps_oidoClinico', label: 'OÍDO CLÍNICO', kind: 'bool' },
+      { id: 'ps_luckyLootChance', label: 'TIPO CON SUERTE', kind: 'bool' },
+      { id: 'ps_shopStealFree', label: 'FORZAR ROBO (LADRÓN)', kind: 'bool' },
+      { id: 'ps_bonusMadera', label: 'MAESTRÍA CLÁSICO (LV)', kind: 'num', min: 1, max: 5, def: 1 },
+      { id: 'ps_bonusAcero', label: 'MAESTRÍA MECÁNICO (LV)', kind: 'num', min: 1, max: 5, def: 1 },
+      { id: 'ps_bonusDigital', label: 'MAESTRÍA INFORMÁTICO (LV)', kind: 'num', min: 1, max: 5, def: 1 },
+      { id: 'ps_bonusVapor', label: 'MAESTRÍA FONTANERO (LV)', kind: 'num', min: 1, max: 5, def: 1 },
+      { id: 'ps_tor_madera', label: 'TORPEZA MADERA (LV)', kind: 'num', min: 1, max: 5, def: 1 },
+      { id: 'ps_tor_acero', label: 'TORPEZA ACERO (LV)', kind: 'num', min: 1, max: 5, def: 1 },
+      { id: 'ps_tor_digital', label: 'TORPEZA DIGITAL (LV)', kind: 'num', min: 1, max: 5, def: 1 },
+      { id: 'ps_tor_vapor', label: 'TORPEZA VAPOR (LV)', kind: 'num', min: 1, max: 5, def: 1 },
+      { id: 'ps_picksBrokenOnUse', label: 'DEDOS ROTOS', kind: 'bool' },
+      { id: 'ps_tb_harderMinigames', label: 'PUZLES DUROS (PERMANENTE)', kind: 'bool' },
+      { id: 'ps_tb_shortPipeTimer', label: 'TIEMPO CORTO EN VAPOR', kind: 'bool' },
+      { id: 'ps_tb_bonusXp', label: 'XP EXTRA (PERMANENTE)', kind: 'bool' },
+      { id: 'ps_tb_doubleGold', label: 'ORO x2 (PERMANENTE)', kind: 'bool' },
+      { id: 'ps_heavy', label: 'CONTRATO LEONINO (COFRES)', kind: 'num', min: 1, max: 30, def: 5 }
+    ] },
     { title: 'PROBAR UN PUZLE (SOLO)', puzzle: true, rows: [
       { id: 'pType', label: 'PUZLE', kind: 'list', opts: ['MADERA', 'ACERO', 'DIGITAL', 'VAPOR'], always: true },
       { id: 'pVar', label: 'VARIANTE', kind: 'list', opts: ['RANDOM', '1x1', '1x2', '1x3', '1x4', '2x1', '2x2', '2x3', '2x4', '3x1', '3x2', '3x3', '3x4'], always: true }
@@ -8029,14 +8057,22 @@ function testKeyHash(seq, salt) {
     set(v.level != null, () => { STATE.level = v.level; STATE.xp = 0; STATE.xpNext = getXpForLevel(v.level); STATE.chestsAtLevelUp = Math.max(0, STATE.chestsOpened - 3); STATE.chestsOpened = Math.max(STATE.chestsOpened, 3); });
     set(v.gold != null, () => { STATE.gold = v.gold; });
     ['picks', 'proPicks', 'usb', 'valves'].forEach(k => set(v[k] != null, () => { STATE[k] = v[k]; }));
-    ['auto', 'double', 'shield', 'reveal', 'riskPot', 'perdedor', 'summonDuende'].forEach(k => set(v['ab_' + k] != null, () => { STATE.abilities[k] = v['ab_' + k]; }));
+    ['auto', 'double', 'shield', 'riskPot', 'perdedor', 'summonDuende'].forEach(k => set(v['ab_' + k] != null, () => { STATE.abilities[k] = v['ab_' + k]; }));
     set(v.curse != null, () => { STATE.cursedChestsLeft = v.curse; });
     set(!!v.clearAch, () => { clearAchievements(); });
+    ['sweetSpot', 'rarityBonus', 'discount', 'slowerPistons', 'goldStreak', 'extraTime', 'bonusMadera', 'bonusAcero', 'bonusDigital', 'bonusVapor'].forEach(k => set(v['ps_' + k] != null, () => { STATE.perks[k] = v['ps_' + k]; }));   // [0.097b]
+    ['madera', 'acero', 'digital', 'vapor'].forEach(k => set(v['ps_tor_' + k] != null, () => { STATE.torpezas[k] = v['ps_tor_' + k]; }));
+    set(!!v.ps_oidoClinico, () => { STATE.perks.oidoClinico = 1; });
+    set(!!v.ps_luckyLootChance, () => { STATE.perks.luckyLootChance = 0.15; });
+    set(!!v.ps_shopStealFree, () => { STATE.perks.shopStealFree = true; });
+    set(!!v.ps_picksBrokenOnUse, () => { STATE.picksBrokenOnUse = true; });
+    ['harderMinigames', 'shortPipeTimer', 'bonusXp', 'doubleGold'].forEach(k => set(!!v['ps_tb_' + k], () => { STATE.traperoBuffs = STATE.traperoBuffs || {}; STATE.traperoBuffs[k] = true; }));
+    set(v.ps_heavy != null, () => { STATE.heavyChestsLeft = v.ps_heavy; });
     const wcDone = [];
     (DATOS_JUEGO.WILDCARDS || []).forEach(w => set(!!v['wc_' + w.id], () => { try { applyWildcard(w); wcDone.push(w.nombre); } catch (e) { console.warn('Wildcard de test fallida', w.id, e); } }));   // [0.096]
     if (any) {
       statsPaused = true; statsGoldPrev = null;   // una partida con trucos no cuenta para las estadísticas
-      Object.keys(tmVals).forEach(k => { if (k !== 'pType' && k !== 'pVar') tmVals[k] = (k === 'clearAch' || k.indexOf('wc_') === 0) ? false : null; });
+      Object.keys(tmVals).forEach(k => { if (k !== 'pType' && k !== 'pVar') tmVals[k] = (k === 'clearAch' || k.indexOf('wc_') === 0 || (k.indexOf('ps_') === 0 && /oidoClinico|luckyLootChance|shopStealFree|picksBrokenOnUse|ps_tb_/.test(k))) ? false : null; });
       generateScreenChests(); keysBaseline = null; keyToastQueue.length = 0; updateUI();   // [0.091] sin avisos por los ajustes de test
       showPersistentFeedback('🛠️ [MODO TEST] Ajustes aplicados' + (wcDone.length ? ' (wildcards: ' + wcDone.join(', ') + ')' : '') + '. Esta partida ya no cuenta para las estadísticas.');
     }

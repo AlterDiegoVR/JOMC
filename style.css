@@ -297,3 +297,7 @@ html.title-compact .title-short { display: inline; }
 html:not(.narrow-layout) #levelUpModal > div { max-height: none !important; overflow: visible !important; }
 #levelUpModal { scrollbar-width: none; }
 #levelUpModal::-webkit-scrollbar { display: none; }
+
+/* [0.097b] hover de los distintivos: más brillo en vez de zoom (el marco de la barra lo cortaba) */
+.perk-badge { transition: filter .15s; }
+.perk-badge:hover { filter: brightness(1.25); }
