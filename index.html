@@ -142,7 +142,7 @@
     <div id="perksBar" class="hidden flex gap-1.5 overflow-x-auto pb-0.5 text-[9px] font-bold"></div>
 
     <!-- Barra de Recursos de Inventario -->
-    <div class="bg-slate-900/95 backdrop-blur-md border border-slate-800 px-3 py-2 rounded-xl shadow-xl flex items-center justify-around text-xs font-semibold">
+    <div id="resourceBar" class="bg-slate-900/95 backdrop-blur-md border border-slate-800 px-3 py-2 rounded-xl shadow-xl flex items-center justify-around text-xs font-semibold">
       <div class="flex items-center gap-1.5 text-yellow-400">
         <i class="fa-solid fa-coins text-sm"></i>
         <span id="goldText" class="font-bold">0</span> <span class="text-[10px] text-slate-400">GP</span>
@@ -366,6 +366,7 @@
     </div>
 
     <div class="my-auto py-4 flex flex-col items-center gap-3">
+      <div id="npcBigWrap" class="npc-big hidden"><img id="npcBigImg" alt=""></div>
       <p id="npcSpeechText" class="w-full text-lg sm:text-xl font-mono leading-relaxed italic bg-slate-900/60 border border-slate-800 p-5 rounded-2xl shadow-inner text-center">
         "..."
       </p>
@@ -419,35 +420,41 @@
     </div>
   </div>
 
-  <!-- [0.101] TIENDA DEL DUENDE (pixel art 144x256; las medidas van en la unidad --u = ancho/144; ver style.css) -->
+  <!-- [0.102] TIENDA DEL DUENDE (lista con descripción; barra de recursos idéntica a la del juego; ver style.css) -->
   <div id="merchantModal" class="dshop hidden">
-    <div class="dshop-stage" id="dshopStage">
-      <div class="dshop-bg"></div>
-      <img class="dshop-duende" id="dshopDuende" alt="">
-      <div class="dshop-box dshop-box-oro"><span class="dshop-lbl">ORO</span><span class="dshop-val" id="dshopGold">0</span></div>
-      <div class="dshop-box dshop-box-ganz"><span class="dshop-lbl">GANZ.</span><span class="dshop-val" id="dshopPicks">0</span></div>
-      <div class="dshop-phrase"><span id="dshopPhrase"></span></div>
-      <div class="dshop-hdr dshop-hdr-shop"><span id="dshopHdrShop">TIENDA</span></div>
-      <div id="shopItemsList" class="dshop-row dshop-row-shop"></div>
-      <div class="dshop-hdr dshop-hdr-work"><span>TALLER</span></div>
-      <div id="recycleList" class="dshop-row dshop-row-work"></div>
-      <button id="leaveShopBtn" class="dshop-leave" type="button"><span id="dshopLeaveTxt">SALIR</span><small id="dshopLeaveSub">(NO COMPRAR)</small></button>
+    <div class="dshop-col" id="dshopStage"><div class="dshop-in">
+      <div id="dshopHud" class="dshop-hud"></div>
+      <div class="dshop-scene">
+        <img class="dshop-scene-img" id="dshopScene" alt="">
+        <img class="dshop-duende" id="dshopDuende" alt="">
+      </div>
+      <div class="dshop-bub" id="dshopBubble"><span id="dshopPhrase"></span></div>
+      <div class="dshop-hd"><span id="dshopHdrShop">TIENDA</span></div>
+      <div id="shopItemsList" class="dshop-list"></div>
+      <div class="dshop-hd dshop-hd-work"><span>TALLER</span></div>
+      <div id="recycleList" class="dshop-list"></div>
+      <button id="leaveShopBtn" class="dshop-leave" type="button"><span id="dshopLeaveTxt">SALIR</span><small id="dshopLeaveSub"></small></button>
       <div id="merchantResourceBar" class="hidden"></div>
-      <div id="dshopLid" class="dshop-lid hidden"></div>
-    </div>
+    </div></div>
+    <div id="dshopLid" class="dshop-lid hidden"></div>
     <button id="closeMerchantBtn" class="hidden" type="button" aria-hidden="true"></button>
     <div id="merchantPortrait" class="hidden"></div>
   </div>
 
-  <!-- [0.101] TRATOS DEL TRAPERO (rincón granate pixel art; tarjetas HTML legibles) -->
+  <!-- [0.102] TRATOS DEL TRAPERO (rincón granate pixel art; tarjetas HTML legibles) -->
   <div id="traperoShopModal" class="tshop hidden">
     <div class="tshop-stage" id="tshopStage">
       <div class="tshop-bg"></div>
       <div class="tshop-title">TRAPERO</div>
       <p id="traperoShopSubtitle" class="tshop-sub">Tratos sin preguntas</p>
       <div id="traperoResourceBar" class="tshop-res"></div>
+      <img id="tshopPj" class="tshop-pj" alt="">
+      <div id="tshopSpeech" class="tshop-speech hidden">
+        <p id="tshopSpeechText"></p>
+        <button id="tshopContinueBtn" class="tshop-go" type="button">CONTINUAR...</button>
+      </div>
       <div id="traperoItemsList" class="tshop-list"></div>
-      <button id="leaveTraperoShopBtn" class="tshop-leave" type="button">NO TRATAR · SALIR</button>
+      <button id="leaveTraperoShopBtn" class="tshop-leave hidden" type="button">NO TRATAR · SALIR</button>
     </div>
     <button id="closeTraperoShopBtn" class="hidden" type="button" aria-hidden="true"></button>
     <div id="traperoPortrait" class="hidden"></div>

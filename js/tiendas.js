@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — tiendas.js — VERSIÓN 0.101
+// JUST ONE MORE CHEST — tiendas.js — VERSIÓN 0.102
 // tienda del Duende y del Trapero
 // ==========================================================================
 
@@ -12,59 +12,89 @@
    ========================================================================== */
 
 const SHOP_VIS = {
-  pack_ganzuas:    { n: 'GANZÚAS',   s: '+3',    ic: 'ic_ganzua' },
-  pack_pines:      { n: 'PINES',     s: '+2',    ic: 'ic_pin' },
-  pack_usb:        { n: 'USB',       s: '+2',    ic: 'ic_usb' },
-  pack_valvulas:   { n: 'VÁLVULA',   s: '+1',    ic: 'ic_valvula' },
-  carta_auto_open: { n: 'AUTO-OPEN', s: 'CARTA', ic: 'ic_auto' },
-  carta_escudo:    { n: 'ESCUDO',    s: 'CARTA', ic: 'ic_escudo' },
-  carta_apuesta:   { n: 'APUESTA',   s: 'CARTA', ic: 'ic_apuesta' },
-  contador_cofres: { n: 'CONTADOR',  s: 'COFRES', ic: 'ic_contador' }
+  pack_ganzuas:    { n: 'GANZÚAS +3',      ic: 'ic_ganzua' },
+  pack_pines:      { n: 'PINES +2',        ic: 'ic_pin' },
+  pack_usb:        { n: 'LLAVES USB +2',   ic: 'ic_usb' },
+  pack_valvulas:   { n: 'VÁLVULA +1',      ic: 'ic_valvula' },
+  carta_auto_open: { n: 'CARTA AUTO-OPEN', ic: 'ic_auto' },
+  carta_escudo:    { n: 'CARTA ESCUDO',    ic: 'ic_escudo' },
+  carta_apuesta:   { n: 'CARTA APUESTA',   ic: 'ic_apuesta' },
+  contador_cofres: { n: 'CONTADOR DE COFRES', ic: 'ic_contador' }
 };
 const SHOP_VIS_RECICLAJE = {
-  proPicks: { n: 'PIN',     s: '+1', ic: 'ic_pin' },
-  usb:      { n: 'USB',     s: '+1', ic: 'ic_usb' },
-  valves:   { n: 'VÁLVULA', s: '+1', ic: 'ic_valvula' }
+  proPicks: { n: 'PIN DE ACERO +1',    ic: 'ic_pin' },
+  usb:      { n: 'LLAVE USB +1',       ic: 'ic_usb' },
+  valves:   { n: 'VÁLVULA +1',         ic: 'ic_valvula' }
 };
 
 function shopCfg() { return (DATOS_JUEGO.GRAFICOS && DATOS_JUEGO.GRAFICOS.TIENDAS) || {}; }
 function shopRandom(list, fallback) { return (list && list.length) ? list[Math.floor(Math.random() * list.length)] : (fallback || ''); }
 function shopImg(key) { return (typeof ASSETS !== 'undefined' && ASSETS.tienda && ASSETS.tienda[key]) || ''; }
+// Separa el mood final "texto {alegre}" de una frase
+function shopSplitMood(text) {
+  text = text || '';
+  const mm = text.match(/\s*\{([a-z_]+)\}\s*$/);
+  return mm ? { text: text.slice(0, mm.index), mood: mm[1] } : { text: text, mood: null };
+}
 
 let shopArtReady = false;
 function shopArtInit() {
   if (shopArtReady || typeof ASSETS === 'undefined' || !ASSETS.tienda) return;
   const r = document.documentElement.style;
-  const map = { '--ds-fondo': 'fondo', '--ds-cerrado': 'cerrado', '--ds-trapero': 'trapero', '--ds-tarjeta': 'tarjeta_normal',
-                '--ds-tarjeta-sel': 'tarjeta_seleccionada', '--ds-tarjeta-poor': 'tarjeta_sin_fondos', '--ds-caja-oro': 'caja_oro',
-                '--ds-caja-ganz': 'caja_ganz', '--ds-salir': 'boton_salir' };
+  const map = { '--ds-cerrado': 'cerrado', '--ds-trapero': 'trapero', '--ds-madera': 'madera', '--ds-marco-l': 'marco_l', '--ds-marco-r': 'marco_r' };
   Object.keys(map).forEach(v => { const u = shopImg(map[v]); if (u) r.setProperty(v, `url("${u}")`); });
+  const sc = document.getElementById('dshopScene'); if (sc && shopImg('escena')) sc.setAttribute('src', shopImg('escena'));
   shopArtReady = true;
 }
 
-function dshopSay(text) { const e = document.getElementById('dshopPhrase'); if (e) e.textContent = text || ''; }
+// Copia exacta de la barra de recursos del juego dentro de la tienda del Duende
+function shopHudSync() {
+  const src = document.getElementById('resourceBar'), dst = document.getElementById('dshopHud');
+  if (!src || !dst) return;
+  const c = src.cloneNode(true);
+  c.removeAttribute('id'); c.classList.remove('hidden');
+  c.querySelectorAll('[id]').forEach(e => e.removeAttribute('id'));
+  dst.innerHTML = ''; dst.appendChild(c);
+}
+
 function dshopMood(name) {
   const im = document.getElementById('dshopDuende');
   if (!im || typeof ASSETS === 'undefined' || !ASSETS.duende) return;
   const u = ASSETS.duende[name] || ASSETS.duende.base;
   if (im.getAttribute('src') !== u) im.setAttribute('src', u);
 }
-function dshopUpdateBoxes() {
-  const g = document.getElementById('dshopGold'), k = document.getElementById('dshopPicks');
-  if (g) g.textContent = STATE.gold;
-  if (k) k.textContent = STATE.picks;
+// El bocadillo conserva SIEMPRE la altura de la frase de apertura; si otra frase es más larga, se reduce la letra
+function dshopFit() {
+  const bub = document.getElementById('dshopBubble'), sp = document.getElementById('dshopPhrase');
+  if (!bub || !sp) return;
+  let fs = 15;
+  bub.style.setProperty('--bub-fs', fs + 'px');
+  const room = () => bub.clientHeight - 16;
+  while (sp.offsetHeight > room() && fs > 8) { fs -= 1; bub.style.setProperty('--bub-fs', fs + 'px'); }
+}
+function dshopSay(text, mood) {
+  const sp = document.getElementById('dshopPhrase'); if (!sp) return;
+  const t = shopSplitMood(text);
+  sp.textContent = t.text;
+  const m = mood || t.mood; if (m) dshopMood(m);
+  dshopFit();
+}
+function dshopLockBubble(text) {
+  const bub = document.getElementById('dshopBubble'), sp = document.getElementById('dshopPhrase');
+  if (!bub || !sp) return;
+  bub.style.height = ''; bub.style.setProperty('--bub-fs', '15px');
+  sp.textContent = shopSplitMood(text).text;
+  bub.style.height = bub.offsetHeight + 'px';
 }
 
-// Doble toque: el 1.º toque elige la tarjeta, el 2.º la confirma. opts.blocked() devuelve un texto si no se puede (se avisa al instante, sin elegir).
+// Doble toque (solo Trapero): el 1.º toque elige la tarjeta, el 2.º la confirma.
 let shopArmedTimer = null;
 function shopConfirmClick(btn, card, onConfirm, opts) {
   opts = opts || {};
   btn.addEventListener('click', () => {
     if (opts.blocked) { const why = opts.blocked(); if (why) { if (opts.onBlocked) opts.onBlocked(why); return; } }
     if (!shopCfg().CONFIRMAR_CON_SEGUNDO_TOQUE || card.classList.contains('armed')) { onConfirm(); return; }
-    const parent = card.parentElement;
-    if (parent) parent.querySelectorAll('.armed').forEach(c => c.classList.remove('armed'));
-    const other = document.querySelectorAll('.dshop .armed, .tshop .armed'); other.forEach(c => c.classList.remove('armed'));
+    document.querySelectorAll('.tshop .armed').forEach(c => c.classList.remove('armed'));
     card.classList.add('armed');
     try { audio.init(); audio.playClick(1.1); } catch (e) {}
     if (opts.onSelect) opts.onSelect();
@@ -73,6 +103,7 @@ function shopConfirmClick(btn, card, onConfirm, opts) {
   });
 }
 
+// Persiana: se sacude y sube. Es lo PRIMERO que pasa; después habla el Duende
 let dshopAnimTimers = [];
 function dshopPlayOpening(done) {
   const cfg = shopCfg().APERTURA || {};
@@ -97,7 +128,8 @@ function dshopPlayOpening(done) {
   }, shakeMs + riseMs + 60));
 }
 
-// Muestra la tienda; la persiana solo se anima al abrirla (no en cada refresco)
+// Frase de apertura pendiente (la fijan los disparadores; la dice el Duende ya dentro de la tienda)
+let dshopOpening = '';
 function dshopShow(special) {
   const modal = document.getElementById('merchantModal');
   if (!modal) return;
@@ -109,46 +141,45 @@ function dshopShow(special) {
   const hs = document.getElementById('dshopHdrShop'); if (hs) hs.textContent = special ? 'OFERTA' : 'TIENDA';
   const wasHidden = modal.classList.contains('hidden');
   modal.classList.remove('hidden');
-  dshopUpdateBoxes();
+  shopHudSync();
   if (wasHidden) {
-    dshopMood('base');
-    dshopSay('');
     const cfg = shopCfg();
-    dshopPlayOpening(() => dshopSay(special ? shopRandom(cfg.FRASE_ESPECIAL) : shopRandom(cfg.FRASES_DUENDE, '¡SOLO UNO MÁS!')));
+    const speech = dshopOpening || (special ? shopRandom(cfg.FRASE_ESPECIAL) : shopRandom(cfg.FRASES_DUENDE, '¡SOLO UNO MÁS!'));
+    dshopOpening = '';
+    const bub = document.getElementById('dshopBubble');
+    const col = document.getElementById('dshopStage'); if (col) col.scrollTop = 0;
+    dshopMood('base');
+    dshopLockBubble(speech);
+    if (bub) bub.classList.add('silent');
+    dshopPlayOpening(() => {
+      if (bub) bub.classList.remove('silent');
+      try { audio.init(); audio.playDialogueMelody('EL DUENDE'); } catch (e) {}
+      dshopSay(speech);
+    });
   }
 }
 
-function dshopCardEl(vis, priceHTML, cls, own) {
-  const card = document.createElement('div');
-  card.className = 'dcard' + (cls ? ' ' + cls : '');
-  card.innerHTML = `
-    <img class="dcard-ic" src="${shopImg(vis.ic)}" alt="">
-    <div class="dcard-name">${vis.n}</div>
-    <div class="dcard-sub">${vis.s}</div>
-    <div class="dcard-price">${priceHTML}</div>
-    ${own ? `<div class="dcard-own">${own}</div>` : ''}
-    <button class="dcard-btn" type="button" aria-label="${vis.n}"></button>`;
-  return card;
+// Fila de la lista: icono, nombre, descripción y botón. opts: {vis, desc, own, label, price (HTML), cls ('', 'w', 'steal'), poor, onClick, onPoor}
+function dshopRowEl(o) {
+  const row = document.createElement('div');
+  row.className = 'dshop-row' + (o.poor ? ' poor' : '');
+  row.innerHTML = `
+    <img class="ic" src="${shopImg(o.vis.ic)}" alt="">
+    <div class="dshop-tx"><div class="dshop-nm">${o.vis.n}${o.own > 0 ? `<span class="dshop-own">x${o.own}</span>` : ''}</div><div class="dshop-ds">${o.desc || ''}</div></div>
+    <button class="dshop-bt ${o.poor ? 'off' : (o.cls || '')}" type="button"><span>${o.label}</span><span class="pr">${o.price}</span></button>`;
+  row.querySelector('.dshop-bt').addEventListener('click', () => { if (o.poor) { if (o.onPoor) o.onPoor(); } else o.onClick(); });
+  return row;
 }
 function dshopGoldPrice(n) { return `${n}<img src="${shopImg('moneda')}" alt="GP">`; }
-function dshopPicksPrice(n) { return `x${n}<img class="ganz" src="${shopImg('ic_ganzua')}" alt="">`; }
+function dshopPicksPrice(n) { return `x${n}<img src="${shopImg('ic_ganzua')}" alt="">`; }
+function dshopPoorReact(phrases) { try { audio.init(); audio.playBreak(); } catch (e) {} dshopSay(shopRandom(phrases), 'enfadado'); }
 
 function triggerMerchantShopModalSequence() {
   const tier = getNarrativeTier();
   const phrases = DATOS_JUEGO.NARRATIVA.DUENDE_TIENDA_FRASES[tier];
-  const speech = phrases[Math.floor(Math.random() * phrases.length)];
-
-  triggerSequentialDialogue(
-    "EL DUENDE",
-    speech,
-    "fa-hat-wizard",
-    "Tienda Ambulante & Taller",
-    "text-purple-300",
-    null,
-    () => {
-      openMerchantShop();
-    }
-  );
+  // [0.102] Primero se "abre" la tienda (persiana) y luego el Duende dice la frase dentro de su bocadillo
+  dshopOpening = phrases[Math.floor(Math.random() * phrases.length)];
+  openMerchantShop();
 }
 
 function resetShopSession() {
@@ -310,37 +341,42 @@ function renderMerchantShopGrid() {
 
   const aumentoPrecio = DATOS_JUEGO.ECONOMIA.TIENDA_DUENDE.aumento_precio_por_compra;
   const cfg = shopCfg();
+  const desc = cfg.DESCRIPCIONES || {};
+  const B = cfg.BOTONES || {};
   shopArtInit();
 
   STATE.currentShopOffer.forEach(item => {
     const currentPrice = item.baseCost + (item.purchaseCount * aumentoPrecio);
     const isStealAvailable = STATE.perks.shopStealFree;
-    const vis = SHOP_VIS[item.id] || { n: item.name.toUpperCase(), s: '', ic: 'ic_ganzua' };
+    const vis = SHOP_VIS[item.id] || { n: item.name.toUpperCase(), ic: 'ic_ganzua' };
     const poor = !isStealAvailable && STATE.gold < currentPrice;
     const own = item.prop ? STATE[item.prop] : (item.abilityProp ? STATE.abilities[item.abilityProp] : 0);
 
-    const card = dshopCardEl(vis, isStealAvailable ? 'GRATIS' : dshopGoldPrice(currentPrice), isStealAvailable ? 'steal' : (poor ? 'poor' : ''), own > 0 ? 'x' + own : '');
-    const btn = card.querySelector('.dcard-btn');
+    const row = dshopRowEl({
+      vis, desc: desc[item.id], own,
+      label: isStealAvailable ? (B.ROBAR || 'ROBAR') : (B.COMPRAR || 'COMPRAR'),
+      price: isStealAvailable ? 'GRATIS' : dshopGoldPrice(currentPrice),
+      cls: isStealAvailable ? 'steal' : 'w',
+      poor,
+      onPoor: () => dshopPoorReact(cfg.FRASES_SIN_ORO),
+      onClick: () => {
+        if (!STATE.shopSession) resetShopSession();
 
-    shopConfirmClick(btn, card, () => {
-      if (!STATE.shopSession) resetShopSession();
+        if (STATE.perks.shopStealFree) {
+          STATE.perks.shopStealFree = false;
+          grantItem(item);
 
-      if (STATE.perks.shopStealFree) {
-        STATE.perks.shopStealFree = false;
-        grantItem(item);
+          STATE.shopSession.items.push({ name: item.name, costText: 'GRATIS (ROBO)', icon: item.icon, isStolen: true });
 
-        STATE.shopSession.items.push({ name: item.name, costText: 'GRATIS (ROBO)', icon: item.icon, isStolen: true });
+          // [0.084] Al robar solo suena el efecto; la frase de culpa se muestra al salir de la tienda, tras el recibo
+          const culpaList = DATOS_JUEGO.NARRATIVA.FRASES_CULPA_ROBO;
+          STATE.shopSession.guiltPhrase = culpaList[Math.floor(Math.random() * culpaList.length)];
 
-        // [0.084] Al robar solo suena el efecto; la frase de culpa se muestra al salir de la tienda, tras el recibo
-        const culpaList = DATOS_JUEGO.NARRATIVA.FRASES_CULPA_ROBO;
-        STATE.shopSession.guiltPhrase = culpaList[Math.floor(Math.random() * culpaList.length)];
-
-        audio.playUnlockFanfare('raro');
-        updateUI();
-        renderMerchantShopGrid();
-        dshopMood('sorpresa'); dshopSay(shopRandom(cfg.FRASES_ROBO));
-      } else {
-        if (STATE.gold >= currentPrice) {
+          audio.playUnlockFanfare('raro');
+          updateUI();
+          renderMerchantShopGrid();
+          dshopSay(shopRandom(cfg.FRASES_ROBO), 'sorpresa');
+        } else {
           STATE.gold -= currentPrice;
           grantItem(item);
 
@@ -353,20 +389,11 @@ function renderMerchantShopGrid() {
           audio.playUnlockFanfare('raro');
           updateUI();
           renderMerchantShopGrid();
-          dshopMood('alegre'); dshopSay(shopRandom(cfg.FRASES_COMPRA));
-        } else {
-          audio.playBreak();
-          dshopMood('triste'); dshopSay(shopRandom(cfg.FRASES_SIN_ORO));
+          dshopSay(shopRandom(cfg.FRASES_COMPRA), 'alegre');
         }
       }
-    }, {
-      blocked: () => (!STATE.perks.shopStealFree && STATE.gold < currentPrice) ? 'oro' : '',
-      onBlocked: () => { audio.playBreak(); dshopMood('enfadado'); dshopSay(shopRandom(cfg.FRASES_SIN_ORO)); },
-      onSelect: () => { dshopMood('codicia'); dshopSay(isStealAvailable ? '...' : (cfg.ARMADO_TEXTO || DATOS_JUEGO.GRAFICOS.BOTON_ARMADO_TEXTO || 'PULSA DE NUEVO')); },
-      onDisarm: () => { dshopMood('base'); }
     });
-
-    shopGrid.appendChild(card);
+    shopGrid.appendChild(row);
   });
 
   const recycleListContainer = document.getElementById('recycleList');
@@ -388,13 +415,12 @@ function renderMerchantShopGrid() {
     recycleTargets.forEach(target => {
       const vis = SHOP_VIS_RECICLAJE[target.prop];
       const poor = STATE.picks < reqGanzuasReciclaje;
-      const own = STATE[target.prop];
-      const card = dshopCardEl(vis, dshopPicksPrice(reqGanzuasReciclaje), poor ? 'poor' : '', own > 0 ? 'x' + own : '');
-      const btn = card.querySelector('.dcard-btn');
-
-      shopConfirmClick(btn, card, () => {
-        if (!STATE.shopSession) resetShopSession();
-        if (STATE.picks >= reqGanzuasReciclaje) {
+      const row = dshopRowEl({
+        vis, desc: desc['reciclaje_' + target.prop], own: STATE[target.prop],
+        label: B.CANJEAR || 'CANJEAR', price: dshopPicksPrice(reqGanzuasReciclaje), cls: '', poor,
+        onPoor: () => dshopPoorReact(cfg.FRASES_SIN_GANZUAS),
+        onClick: () => {
+          if (!STATE.shopSession) resetShopSession();
           STATE.picks -= reqGanzuasReciclaje;
           STATE[target.prop] += 1;
 
@@ -404,19 +430,10 @@ function renderMerchantShopGrid() {
           audio.playClick(0.9);
           updateUI();
           renderMerchantShopGrid();
-          dshopMood('alegre'); dshopSay(shopRandom(cfg.FRASES_RECICLAJE));
-        } else {
-          audio.playBreak();
-          dshopMood('triste'); dshopSay(shopRandom(cfg.FRASES_SIN_GANZUAS));
+          dshopSay(shopRandom(cfg.FRASES_RECICLAJE), 'alegre');
         }
-      }, {
-        blocked: () => STATE.picks < reqGanzuasReciclaje ? 'ganz' : '',
-        onBlocked: () => { audio.playBreak(); dshopMood('enfadado'); dshopSay(shopRandom(cfg.FRASES_SIN_GANZUAS)); },
-        onSelect: () => { dshopMood('codicia'); dshopSay(DATOS_JUEGO.GRAFICOS.BOTON_ARMADO_TEXTO || 'PULSA DE NUEVO'); },
-        onDisarm: () => { dshopMood('base'); }
       });
-
-      recycleListContainer.appendChild(card);
+      recycleListContainer.appendChild(row);
     });
   }
 
@@ -443,22 +460,75 @@ closeMerchantBtns.forEach(btn => {
    TRATOS DEL TRAPERO
    ========================================================================== */
 
+// [0.102] Entrada del Trapero: juego -> negro -> pantalla de tratos. Habla arriba; al continuar, los tratos aparecen en cascada.
+let traperoTimers = [];
 function triggerTraperoShopSequence() {
   const tier = getNarrativeTier();
   const phrases = DATOS_JUEGO.NARRATIVA.TRAPERO_FRASES[tier];
-  const speech = phrases[Math.floor(Math.random() * phrases.length)];
+  const t = shopSplitMood(phrases[Math.floor(Math.random() * phrases.length)]);
+  const cfg = shopCfg().TRAPERO || {};
+  const fadeMs = cfg.FUNDIDO_MS || 600;
+  const modal = document.getElementById('traperoShopModal');
+  if (!modal) { openTraperoShop(); return; }
+  shopArtInit();
+  traperoTimers.forEach(clearTimeout); traperoTimers = [];
 
-  triggerSequentialDialogue(
-    "EL TRAPERO",
-    speech,
-    "fa-mask",
-    "Tratos Oscuros",
-    "text-rose-400",
-    null,
-    () => {
-      openTraperoShop();
+  const veil = document.createElement('div');
+  veil.style.cssText = `position:absolute;inset:0;z-index:10050;background:#000;opacity:0;transition:opacity ${fadeMs}ms ease;pointer-events:all`;
+  uiHost().appendChild(veil);
+  requestAnimationFrame(() => requestAnimationFrame(() => { veil.style.opacity = '1'; }));
+
+  traperoTimers.push(setTimeout(() => {
+    // Pantalla de tratos preparada (tratos vacíos, personaje y texto)
+    const list = document.getElementById('traperoItemsList'); if (list) list.innerHTML = '';
+    const leave = document.getElementById('leaveTraperoShopBtn'); if (leave) leave.classList.add('hidden');
+    const pj = document.getElementById('tshopPj');
+    if (pj) {
+      const bank = (typeof ASSETS !== 'undefined' && ASSETS.trapero) || {};
+      const src = bank[t.mood] || bank.base || '';
+      if (src) { pj.setAttribute('src', src); pj.style.display = ''; } else pj.style.display = 'none';
+      pj.classList.remove('small');
     }
-  );
+    const sp = document.getElementById('tshopSpeech'), st = document.getElementById('tshopSpeechText'), go = document.getElementById('tshopContinueBtn');
+    if (st) st.textContent = t.text;
+    if (sp) { sp.classList.remove('hidden', 'fade'); }
+    if (go) {
+      const nb = go.cloneNode(true); go.parentNode.replaceChild(nb, go);
+      nb.addEventListener('click', () => {
+        try { audio.init(); audio.playClick(1); } catch (e) {}
+        sp.classList.add('fade');
+        traperoTimers.push(setTimeout(() => { sp.classList.add('hidden'); openTraperoShop(); }, 380));
+      });
+    }
+    modal.classList.remove('hidden');
+    try { audio.init(); audio.playDialogueMelody('EL TRAPERO'); } catch (e) {}
+    veil.style.opacity = '0';
+    traperoTimers.push(setTimeout(() => veil.remove(), fadeMs + 60));
+  }, fadeMs + 80));
+}
+
+// Los tratos (ya creados con la clase .pre) aparecen uno a uno con sonido; al acabar sale "NO TRATAR · SALIR"
+function traperoCascade() {
+  const cfg = shopCfg().TRAPERO || {};
+  const step = cfg.CASCADA_MS || 380;
+  const list = document.getElementById('traperoItemsList'), stage = document.getElementById('tshopStage');
+  const leave = document.getElementById('leaveTraperoShopBtn'), pj = document.getElementById('tshopPj');
+  if (!list) return;
+  const cards = Array.from(list.querySelectorAll('.tcard'));
+  // Si los tratos taparían demasiado al Trapero, se muestra a la mitad de tamaño (de 3x a 2x)
+  if (pj && stage && cards.length && pj.style.display !== 'none') {
+    const sr = stage.getBoundingClientRect(), pr = pj.getBoundingClientRect();
+    const cardsBottom = cards[cards.length - 1].getBoundingClientRect().bottom;
+    const visible = pr.bottom - Math.max(pr.top, cardsBottom);
+    if (pr.height > 0 && visible < (cfg.ESCALA_PJ_MIN_ESPACIO || 0.8) * pr.height) pj.classList.add('small');
+  }
+  cards.forEach((c, i) => {
+    traperoTimers.push(setTimeout(() => {
+      c.classList.remove('pre');
+      if (cfg.SONIDO_CASCADA !== false) { try { audio.init(); audio.playCardRise(); } catch (e) {} }
+    }, 120 + i * step));
+  });
+  traperoTimers.push(setTimeout(() => { if (leave) leave.classList.remove('hidden'); }, 120 + cards.length * step + 80));
 }
 
 function showTraperoDealFeedback(dealTitle, summaryText, onClose) {
@@ -511,7 +581,7 @@ function openTraperoShop() {
 
   selectedDeals.forEach(deal => {
     const card = document.createElement('div');
-    card.className = 'tcard';
+    card.className = 'tcard pre';
     const tag = (shopCfg().ETIQUETAS_TRAPERO || {})[deal.id] || 'TRATO';
     card.innerHTML = `
       <div class="tcard-top"><span class="tcard-title">${deal.titulo}</span><span class="tcard-tag">${tag}</span></div>
@@ -739,4 +809,5 @@ function openTraperoShop() {
 
   const traperoModal = document.getElementById('traperoModal') || document.getElementById('traperoShopModal'); 
   if (traperoModal) traperoModal.classList.remove('hidden');
+  traperoCascade();
 }

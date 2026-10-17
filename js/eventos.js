@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — eventos.js — VERSIÓN 0.101
+// JUST ONE MORE CHEST — eventos.js — VERSIÓN 0.102
 // tiendas especiales, visitas, habilidades, temporizador, fallo y Game Over
 // ==========================================================================
 
@@ -16,9 +16,9 @@ function triggerSpecialMerchantShop() {
   else if (co === DATOS_JUEGO.PROGRESIÓN.SECUENCIA_HISTORIA.COFRE_OFERTA_2) speech = seqHist.COFRE_88_DUENDE;
   else if (co === DATOS_JUEGO.PROGRESIÓN.SECUENCIA_HISTORIA.COFRE_OFERTA_3) speech = seqHist.COFRE_90_DUENDE;
 
-  triggerSequentialDialogue("EL DUENDE", speech, "fa-hat-wizard", "Tienda", "text-purple-300", null, () => {
-    openSpecialShopModal();
-  });
+  // [0.102] Primero se abre la tienda y luego habla el Duende en su bocadillo
+  dshopOpening = speech;
+  openSpecialShopModal();
 }
 
 // [CAMBIO] Lógica de "NO COMPRAR NADA" compartida: también la usan los botones Salir y X de la tienda especial
@@ -71,14 +71,15 @@ function openSpecialShopModal() {
   const offeredItems = [...availableCatalog].sort(() => 0.5 - Math.random()).slice(0, 2);
 
   const cfgS = shopCfg();
+  const descS = cfgS.DESCRIPCIONES || {};
   offeredItems.forEach(item => {
-    const vis = SHOP_VIS[item.id] || { n: item.name.toUpperCase(), s: '', ic: 'ic_ganzua' };
-    const poor = STATE.gold < item.cost;
-    const card = dshopCardEl(vis, dshopGoldPrice(item.cost), poor ? 'poor' : '', '');
-    const btn = card.querySelector('.dcard-btn');
-
-    shopConfirmClick(btn, card, () => {
-      if (STATE.gold >= item.cost) {
+    const vis = SHOP_VIS[item.id] || { n: item.name.toUpperCase(), ic: 'ic_ganzua' };
+    const row = dshopRowEl({
+      vis, desc: descS[item.id], own: 0,
+      label: (cfgS.BOTONES || {}).COMPRAR || 'COMPRAR', price: dshopGoldPrice(item.cost), cls: 'w',
+      poor: STATE.gold < item.cost,
+      onPoor: () => dshopPoorReact(cfgS.FRASES_SIN_ORO),
+      onClick: () => {
         STATE.gold -= item.cost;
         if (item.prop) STATE[item.prop] += item.qty;
         if (item.abilityProp) STATE.abilities[item.abilityProp]++;
@@ -101,14 +102,8 @@ function openSpecialShopModal() {
           () => processNextQueuedEvent()
         );
       }
-    }, {
-      blocked: () => STATE.gold < item.cost ? 'oro' : '',
-      onBlocked: () => { audio.playBreak(); dshopMood('enfadado'); dshopSay(shopRandom(cfgS.FRASES_SIN_ORO)); },
-      onSelect: () => { dshopMood('codicia'); dshopSay(DATOS_JUEGO.GRAFICOS.BOTON_ARMADO_TEXTO || 'PULSA DE NUEVO'); },
-      onDisarm: () => { dshopMood('base'); }
     });
-
-    shopGrid.appendChild(card);
+    shopGrid.appendChild(row);
   });
 
   dshopShow(true);

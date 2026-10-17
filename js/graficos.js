@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — graficos.js — VERSIÓN 0.101
+// JUST ONE MORE CHEST — graficos.js — VERSIÓN 0.102
 // canvas, sala, cerradura, decoración, efectos de cofre
 // ==========================================================================
 

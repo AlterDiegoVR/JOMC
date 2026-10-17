@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — datos.js — VERSIÓN 0.101
+// JUST ONE MORE CHEST — datos.js — VERSIÓN 0.102
 // DATOS_JUEGO: configuración y balance
 // ==========================================================================
 
@@ -9,7 +9,7 @@
 
 const DATOS_JUEGO = {
   // [0.088] Versión visible en pantalla (esquina inferior central) para que las capturas la incluyan
-  VERSION: '0.101',
+  VERSION: '0.102',
 
   // [0.089] Avisos "+N" / "-N" de herramientas. ESPERAR_PANTALLA_LIBRE:true = recupera la idea anterior (esperar a que no haya
   // banners, tiendas ni diálogos encima). Con false salen siempre, por encima de todo.
@@ -116,6 +116,23 @@ const DATOS_JUEGO = {
       FRASES_ROBO: ['...ME HA PARECIDO VER ALGO', '¿DÓNDE HA IDO MI MERCANCÍA?', 'QUÉ MANOS TAN LISTAS'],
       FRASES_RECICLAJE: ['EL TALLER LO AGRADECE', 'DE LATÓN A ACERO', 'BUEN CANJE'],
       FRASE_ESPECIAL: ['SOLO UNA COSITA...', 'NO SE VAYA SIN NADA', 'SE LO PONGO FÁCIL'],
+      // [0.102] Descripciones visibles en cada fila de la tienda del Duende
+      DESCRIPCIONES: {
+        pack_ganzuas: 'Tres ganzúas básicas para los cofres de madera.',
+        pack_pines: 'Dos pines de acero para las cajas de acero.',
+        pack_usb: 'Dos llaves USB para las arcas digitales.',
+        pack_valvulas: 'Una válvula para los cofres de vapor.',
+        carta_auto_open: 'Abre al instante el cofre activo, sin puzle.',
+        carta_escudo: 'Si fallas el siguiente puzle, no pierdes la herramienta.',
+        carta_apuesta: 'Activa el Bote de Riesgo: doble o nada. Cóbralo cuando quieras.',
+        contador_cofres: 'Un contador que muestra cuántos cofres llevas abiertos.',
+        reciclaje_proPicks: 'Funde tus ganzúas y fórjalas en un pin de acero.',
+        reciclaje_usb: 'Convierte tus ganzúas en una llave USB.',
+        reciclaje_valves: 'Convierte tus ganzúas en una válvula hidráulica.'
+      },
+      BOTONES: { COMPRAR: 'COMPRAR', ROBAR: 'ROBAR', CANJEAR: 'CANJEAR' },
+      // [0.102] Tratos del Trapero: fundido a negro, texto del Trapero y tratos en cascada
+      TRAPERO: { FUNDIDO_MS: 600, CASCADA_MS: 380, SONIDO_CASCADA: true, ESCALA_PJ_MIN_ESPACIO: 0.8 },
       ETIQUETAS_TRAPERO: {
         vender_ganzuas: 'VENTA', vender_avanzada: 'VENTA', canje_directo: 'CANJE',
         pacto_sangre: 'PACTO', pacto_sombra: 'PACTO', amor_arte: 'PACTO', dedos_rotos: 'PACTO',

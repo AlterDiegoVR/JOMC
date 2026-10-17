@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — cofres.js — VERSIÓN 0.101
+// JUST ONE MORE CHEST — cofres.js — VERSIÓN 0.102
 // selección de cofres, banner, diálogos, post-its, botín y subida de nivel
 // ==========================================================================
 
@@ -264,8 +264,15 @@ function triggerSequentialDialogue(speaker, speechText, iconClass, subtitleText,
       : ({ 'Encuentro Casual': 'alegre' }[subtitleText] || 'base');
     const bank = isTrap ? ASSETS.trapero : ASSETS.duende;
     const src = ART_ON ? ((taggedMood && bank[taggedMood]) || bank[mood] || bank.base) : null;
+    // [0.102] Personaje grande detrás del banner de texto (completo en PC, busto en móvil por CSS); con él, el retrato pequeño se sustituye por el icono
+    const bigWrap = document.getElementById('npcBigWrap'), bigImg = document.getElementById('npcBigImg');
+    const bigOn = !!(src && bigWrap && bigImg);
+    if (bigWrap) {
+      if (bigOn) { bigImg.src = src; bigWrap.classList.remove('hidden'); bigWrap.classList.toggle('trap', isTrap); }
+      else bigWrap.classList.add('hidden');
+    }
     let img = document.getElementById('npcPortraitImg');
-    if (src) {
+    if (src && !bigOn) {
       if (!img) {
         img = document.createElement('img');
         img.id = 'npcPortraitImg';
