@@ -41,6 +41,10 @@
     html:not(.narrow-layout) :is(#lootModal, #levelUpModal, #merchantModal, #traperoShopModal, #unfairDealModal, #gameOverModal, #duendeReceiptModal, #resumeGameModal, #resetConfirmModal, #optionsModal, #statsModal, #confirmModal, #achievementsModal) > div,
     html:not(.narrow-layout) #dialogueModal > * { zoom: var(--mz, 1); }
     html:not(.narrow-layout) :is(#lootModal, #levelUpModal, #merchantModal, #traperoShopModal, #unfairDealModal, #gameOverModal, #duendeReceiptModal, #optionsModal, #statsModal, #confirmModal, #achievementsModal) > div { max-height: calc(94dvh / var(--mz, 1)); overflow-y: auto; }
+    /* [0.097] Subida de nivel en PC: sin barra de scroll interna */
+    html:not(.narrow-layout) #levelUpModal > div { max-height: none !important; overflow: visible !important; }
+    #levelUpModal { scrollbar-width: none; }
+    #levelUpModal::-webkit-scrollbar { display: none; }
     /* [0.089b] Título compacto cuando no cabe junto a las insignias */
     html.title-compact .title-full { display: none; }
     html.title-compact .title-short { display: inline; }
@@ -298,14 +302,8 @@
           </div>
         </div>
 
-        <div class="w-full bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex flex-col gap-1.5">
-          <div class="flex justify-between text-[11px] font-bold">
-            <span class="text-slate-400">INDICADOR DE TENSIÓN</span>
-            <span id="proximityText" class="text-rose-500">ROJO (LEJOS)</span>
-          </div>
-          <div class="w-full h-3.5 bg-slate-900 rounded-full overflow-hidden border border-slate-800 p-0.5">
-            <div id="proximityBar" class="h-full bg-rose-500 rounded-full transition-all duration-100 w-1/4"></div>
-          </div>
+        <div class="w-full text-center text-[12px] font-bold py-1">
+          <span id="proximityText" class="text-rose-500">ROJO (LEJOS)</span>
         </div>
 
         <button id="forceLockBtn" class="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 active:from-emerald-500 text-white font-extrabold text-sm rounded-xl shadow-lg border border-emerald-400/30 flex items-center justify-center gap-2">

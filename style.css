@@ -88,22 +88,25 @@ input[type=range]::-webkit-slider-runnable-track {
   width: 100%; 
   height: 22px; 
   cursor: pointer;
-  background: #0f172a; 
+  background: var(--lp-track, #0f172a); 
   border-radius: 11px; 
   border: 2px solid #334155;
+  transition: background .12s linear;
 }
 
 input[type=range]::-webkit-slider-thumb {
   height: 38px; 
   width: 38px; 
   border-radius: 50%;
-  background: #f59e0b; 
+  background: var(--lp-col, #f59e0b); 
   cursor: pointer; 
   -webkit-appearance: none;
   margin-top: -9px; 
-  box-shadow: 0 0 14px rgba(245, 158, 11, 0.8);
+  box-shadow: 0 0 14px var(--lp-glow, rgba(245, 158, 11, 0.8));
   border: 3px solid #ffffff;
 }
+input[type=range]::-moz-range-thumb { height: 32px; width: 32px; border-radius: 50%; background: var(--lp-col, #f59e0b); box-shadow: 0 0 14px var(--lp-glow, rgba(245,158,11,.8)); border: 3px solid #fff; cursor: pointer; }
+input[type=range]::-moz-range-track { height: 22px; background: var(--lp-track, #0f172a); border-radius: 11px; border: 2px solid #334155; }
 
 .sticky-note {
   background: #fef08a; 
@@ -281,3 +284,16 @@ html.title-compact .title-short { display: inline; }
 @keyframes cylBreathe { 0%, 100% { box-shadow: 0 0 0 0 rgba(251,191,36,0); border-color: #475569; } 50% { box-shadow: 0 0 9px 2px rgba(251,191,36,.30); border-color: #8a8f78; } }
 #cylinderGraphic { animation: cylBreathe 2.6s ease-in-out infinite; }
 #cylinderGraphic.cyl-held, html.cyl-hint-off #cylinderGraphic { animation: none; }
+
+/* [0.097] Insignias de la barra de maestrías: cuadrado con trazo = maestría/torpeza; píldora = perk o efecto */
+.perk-badge { border-style: solid; border-width: 1px; }
+.pb-mastery { background:#141a40; color:#9fb1ff; border:2px solid #4f6bff; border-radius:4px; box-shadow: inset 0 0 0 1px #0a0e26; }
+.pb-torpeza { background:#3a0d14; color:#fda4af; border:2px solid #e11d48; border-radius:4px; box-shadow: inset 0 0 0 1px #1f060a; }
+.pb-perk { background:#0c2a3f; color:#7dd3fc; border-color:#38bdf8; border-radius:9999px; }
+.pb-good { background:#052e1b; color:#6ee7b7; border-color:#10b981; border-radius:9999px; }
+.pb-bad { background:#2f1505; color:#fdba74; border-color:#f97316; border-radius:9999px; }
+
+/* [0.097] Subida de nivel en PC: la barra de scroll venía del contenedor interno (max-height + overflow-y:auto de la regla de ventanas informativas), no del modal. Se anula y se oculta la barra del modal (sigue pudiendo desplazarse con la rueda). */
+html:not(.narrow-layout) #levelUpModal > div { max-height: none !important; overflow: visible !important; }
+#levelUpModal { scrollbar-width: none; }
+#levelUpModal::-webkit-scrollbar { display: none; }

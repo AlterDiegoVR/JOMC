@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — script.js — VERSIÓN 0.096
+// JUST ONE MORE CHEST — script.js — VERSIÓN 0.097
 // ==========================================================================
 /* ==========================================================================
    JUST ONE MORE CHEST - ARCHIVO DE CONFIGURACIÓN Y BALANCE (DATOS_JUEGO)
@@ -7,7 +7,7 @@
 
 const DATOS_JUEGO = {
   // [0.088] Versión visible en pantalla (esquina inferior central) para que las capturas la incluyan
-  VERSION: '0.096',
+  VERSION: '0.097',
 
   // [0.089] Avisos "+N" / "-N" de herramientas. ESPERAR_PANTALLA_LIBRE:true = recupera la idea anterior (esperar a que no haya
   // banners, tiendas ni diálogos encima). Con false salen siempre, por encima de todo.
@@ -143,6 +143,7 @@ const DATOS_JUEGO = {
     VIBRACION: { CARGAR: 35, ABRIR: 12 },
 
     // [0.090] Vapor animado del Cofre de Vapor: se borra el humo dibujado en el sprite (zona BORRAR, en píxeles del sprite) y salen bocanadas de la boquilla
+    CHISPAS_LEGENDARIO: { ACTIVAR: true, CANTIDAD: 9, CICLO_MS: 2600, ALTURA: 1.1 },   // [0.097] prueba
     VAPOR_ANIMADO: { ACTIVAR: true, BORRAR: { x0: 20, y0: 0, x1: 38, y1: 7 }, BOQUILLA: { x: 23.5, y: 8 }, BOCANADAS: 9, CICLO_MS: 3000, ALTURA: 14, DERIVA: 6, TAM_MIN: 2, TAM_MAX: 6, COLOR: '236,228,205' },
     // [0.091] Animaciones de los cofres (coordenadas en píxeles del sprite de 56x48). Se pintan sobre el sprite, igual en todas las rarezas.
     ANIMACION_COFRES: {
@@ -177,7 +178,7 @@ const DATOS_JUEGO = {
       double: "Carta 2X: duplica la recompensa del siguiente cofre que abras.",
       shield: "Carta ESCUDO: si fallas el siguiente puzle, no pierdes la herramienta.",
       riskPot: "Carta APUESTA: activa el Bote de Riesgo (Doble o Nada). Cobra el bote cuando quieras con «Cobrar Bote».",
-      perdedor: "Carta PERDEDOR: al acumular 5 fallos (aunque no sean seguidos), el botín de tu siguiente cofre abierto será Legendario x2.",
+      perdedor: "Carta PERDEDOR: tras 5 fallos (seguidos o no), el botín del siguiente cofre será Legendario x2.",
       summonDuende: "Carta DUENDE: invoca al Duende y su tienda al momento."
     }
   },
@@ -861,7 +862,7 @@ const DATOS_JUEGO = {
       { id: "doble_2x", titulo: "DOBLE 2X", tipo: "TÁCTICO", icono: "fa-bolt", desc: "Multiplica x2 el botín del próximo cofre." },
       { id: "escudo", titulo: "ESCUDO PROTECTOR", tipo: "TÁCTICO", icono: "fa-shield-halved", desc: "Protege tus herramientas contra 1 fallo." },
       { id: "apuesta_riesgo", titulo: "DOBLE O NADA", tipo: "TÁCTICO", icono: "fa-dice", desc: "Acumula ganancias exponenciales por racha.", efecto: "MODO_BOTE_RIESGO", valor: 0.50 },
-      { id: "carta_perdedor", titulo: "PERDEDOR", tipo: "TÁCTICO", icono: "fa-skull-crossbones", desc: "Al activarla te da un empujón si la partida va mal: tras acumular 5 fallos (aunque no sean seguidos), el botín (GP y XP) del siguiente cofre que abras será Legendario x2. Después se agota.", efecto: "RACHA_FALLOS_LEGENDARIA", valor: 5 },
+      { id: "carta_perdedor", titulo: "PERDEDOR", tipo: "TÁCTICO", icono: "fa-skull-crossbones", desc: "Tras 5 fallos (seguidos o no), el botín del siguiente cofre será Legendario x2.", efecto: "RACHA_FALLOS_LEGENDARIA", valor: 5 },
       { id: "invocar_duende", titulo: "INVOCA AL DUENDE", tipo: "TÁCTICO", icono: "fa-hat-wizard", desc: "Invoca al Duende de inmediato para abrir su tienda.", efecto: "INVOCAR_TIENDA", valor: 1 }
     ]
   },
@@ -2791,6 +2792,27 @@ function renderRoom() {
     ctx.beginPath(); ctx.ellipse(ccx, ccy + dh / 2 + 4, dw * 0.46, dh * 0.08, 0, 0, Math.PI * 2); ctx.fill();
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(im, ccx - dw / 2, ccy - dh / 2 + bob, dw, dh);
+    // [0.097] PRUEBA: chispas doradas subiendo sobre el cofre legendario (como las de la pantalla de subida de nivel). Se apaga con GRAFICOS.CHISPAS_LEGENDARIO.ACTIVAR:false
+    const chs = g.CHISPAS_LEGENDARIO;
+    if (chs && chs.ACTIVAR && activeChest.rarity.id === 'legendario') {
+      const tn = Date.now();
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      for (let i = 0; i < chs.CANTIDAD; i++) {
+        const ph = ((tn / chs.CICLO_MS) + i / chs.CANTIDAD + ((i * 37) % 7) * 0.013) % 1;
+        const fx = ccx + (((i * 53) % 100) / 100 - 0.5) * dw * 0.9 + Math.sin(ph * 7 + i) * 3;
+        const fy = ccy + dh * 0.15 - ph * dh * chs.ALTURA;
+        const a = Math.min(1, ph * 6) * Math.min(1, (1 - ph) * 2.4);
+        const q = Math.max(2, Math.round(dw / 40));
+        ctx.globalAlpha = a * 0.95;
+        ctx.fillStyle = '#fde68a';
+        ctx.fillRect(Math.round(fx / q) * q, Math.round(fy / q) * q, q, q);
+        ctx.globalAlpha = a * 0.35;
+        ctx.fillStyle = '#fbbf24';
+        ctx.fillRect(Math.round(fx / q) * q - q, Math.round(fy / q) * q - q, q * 3, q * 3);
+      }
+      ctx.restore();
+    }
     // [0.090] Vapor animado (solo Cofre de Vapor): bocanadas pixeladas que suben, crecen y se desvanecen
     const vap = g.VAPOR_ANIMADO;
     if (vap && vap.ACTIVAR && activeChest.type.id === 'hydraulic' && im._steamless) {
@@ -2933,8 +2955,14 @@ function spawnSpookyPerimeterDecoration() {
     { x: w - 60, row: 'bot' }
   ];
 
-  const spot = anchorZones[Math.floor(Math.random() * anchorZones.length)];
-  spot.y = decorRowY(spot.row);
+  anchorZones.forEach(z => { z.y = decorRowY(z.row); });
+  // [0.097] Solo se pisa un adorno anterior cuando los 6 sitios están ocupados
+  const occupied = z => STATE.roomDecorations.some(d => !d.fading && Math.abs(d.x - z.x) < 4 && Math.abs(decorY(d) - z.y) < 4);
+  const freeZones = anchorZones.filter(z => !occupied(z));
+  // Con los 6 ocupados se pisa primero un adorno ya pulsado (atenuado); si no hay ninguno, uno cualquiera
+  const usedZones = anchorZones.filter(z => STATE.roomDecorations.some(d => !d.fading && d.used && Math.abs(d.x - z.x) < 4 && Math.abs(decorY(d) - z.y) < 4));
+  const pool = freeZones.length ? freeZones : (usedZones.length ? usedZones : anchorZones);
+  const spot = pool[Math.floor(Math.random() * pool.length)];
 
   // [0.087] Si la posición ya está ocupada, el adorno anterior se desvanece en vez de acumularse
   STATE.roomDecorations.forEach(d => {
@@ -3028,7 +3056,17 @@ function triggerSecretDecorationReward(decor) {
 }
 
 // [0.096] Cambio visible de los cofres tras Aceptar (mutación / ascenso): sacudida + transformación + "plop"
-function chestMutateFx() {
+let pendingChestFx = false;
+function chestMutateFx() { pendingChestFx = true; }   // [0.097] se ejecuta cuando se cierra el banner y los cofres están a la vista
+setInterval(() => {
+  if (!pendingChestFx) return;
+  const b = document.getElementById('persistentFeedbackBanner');
+  if (b && !b.classList.contains('hidden')) return;
+  if (typeof mainScreenFree === 'function' && !mainScreenFree()) return;
+  pendingChestFx = false;
+  chestMutateFxNow();
+}, 150);
+function chestMutateFxNow() {
   try { audio.init(); audio.playChestMutate(); } catch (e) {}
   ['chestActionCard', 'multiChestGrid'].forEach(id => {
     const el = document.getElementById(id);
@@ -4441,7 +4479,7 @@ if (btnPerdedor) {
       STATE.fallosConsecutivos = 0;
       audio.playClick(0.8);
       updateUI();
-      showPersistentFeedback("💀 Carta PERDEDOR equipada: al acumular 5 fallos (aunque no sean seguidos) el botín de tu siguiente cofre abierto será Legendario x2.");
+      showPersistentFeedback("💀 Carta PERDEDOR equipada: tras 5 fallos (seguidos o no), el botín del siguiente cofre será Legendario x2.");
     }
   });
 }
@@ -4964,18 +5002,18 @@ function updateUI() {
       { active: STATE.perks.goldStreak > 0, text: `💰 Bolsillo x${STATE.perks.goldStreak}`, shortText: `💰 x${STATE.perks.goldStreak}`, desc: "Fondo de Bolsillo: +1 GP fijo y +15% extra en racha de aperturas.", isTorpeza: false },
       { active: STATE.perks.extraTime > 0, text: `⏱️ Tranquilo (+${STATE.perks.extraTime}s)`, shortText: `⏱️ +${STATE.perks.extraTime}s`, desc: "Hombre Tranquilo: Segundos extra en temporizadores de puzle.", isTorpeza: false },
       { active: STATE.perks.oidoClinico > 0, text: `👂 Oído Clínico`, shortText: `👂`, desc: "Oído Clínico: Advertencia visual de Falso Punto Dulce.", isTorpeza: false },
-      { active: STATE.perks.bonusMadera > 0, text: `📦 Clásico Lv.${STATE.perks.bonusMadera} (+${Math.round(getMasteryTorpezaPct(STATE.perks.bonusMadera) * 100)}%)`, shortText: `📦 Lv.${STATE.perks.bonusMadera}`, desc: `Clásico: +${Math.round(getMasteryTorpezaPct(STATE.perks.bonusMadera) * 100)}% botín y EXP en cofres de Madera.`, isTorpeza: false },
-      { active: STATE.perks.bonusAcero > 0, text: `⚙️ Mecánico Lv.${STATE.perks.bonusAcero} (+${Math.round(getMasteryTorpezaPct(STATE.perks.bonusAcero) * 100)}%)`, shortText: `⚙️ Lv.${STATE.perks.bonusAcero}`, desc: `Mecánico: +${Math.round(getMasteryTorpezaPct(STATE.perks.bonusAcero) * 100)}% botín y EXP en cofres de Acero.`, isTorpeza: false },
-      { active: STATE.perks.bonusDigital > 0, text: `💻 Informático Lv.${STATE.perks.bonusDigital} (+${Math.round(getMasteryTorpezaPct(STATE.perks.bonusDigital) * 100)}%)`, shortText: `💻 Lv.${STATE.perks.bonusDigital}`, desc: `Informático: +${Math.round(getMasteryTorpezaPct(STATE.perks.bonusDigital) * 100)}% botín y EXP en cofres Digitales (USB).`, isTorpeza: false },
-      { active: STATE.perks.bonusVapor > 0, text: `🚰 Fontanero Lv.${STATE.perks.bonusVapor} (+${Math.round(getMasteryTorpezaPct(STATE.perks.bonusVapor) * 100)}%)`, shortText: `🚰 Lv.${STATE.perks.bonusVapor}`, desc: `Fontanero: +${Math.round(getMasteryTorpezaPct(STATE.perks.bonusVapor) * 100)}% botín y EXP en cofres de Vapor.`, isTorpeza: false },
+      { active: STATE.perks.bonusMadera > 0, text: `📦 Clásico Lv.${STATE.perks.bonusMadera} (+${Math.round(getMasteryTorpezaPct(STATE.perks.bonusMadera) * 100)}%)`, shortText: `📦 Lv.${STATE.perks.bonusMadera}`, desc: `Clásico: +${Math.round(getMasteryTorpezaPct(STATE.perks.bonusMadera) * 100)}% botín y EXP en cofres de Madera.`, kind: 'mastery', isTorpeza: false },
+      { active: STATE.perks.bonusAcero > 0, text: `⚙️ Mecánico Lv.${STATE.perks.bonusAcero} (+${Math.round(getMasteryTorpezaPct(STATE.perks.bonusAcero) * 100)}%)`, shortText: `⚙️ Lv.${STATE.perks.bonusAcero}`, desc: `Mecánico: +${Math.round(getMasteryTorpezaPct(STATE.perks.bonusAcero) * 100)}% botín y EXP en cofres de Acero.`, kind: 'mastery', isTorpeza: false },
+      { active: STATE.perks.bonusDigital > 0, text: `💻 Informático Lv.${STATE.perks.bonusDigital} (+${Math.round(getMasteryTorpezaPct(STATE.perks.bonusDigital) * 100)}%)`, shortText: `💻 Lv.${STATE.perks.bonusDigital}`, desc: `Informático: +${Math.round(getMasteryTorpezaPct(STATE.perks.bonusDigital) * 100)}% botín y EXP en cofres Digitales (USB).`, kind: 'mastery', isTorpeza: false },
+      { active: STATE.perks.bonusVapor > 0, text: `🚰 Fontanero Lv.${STATE.perks.bonusVapor} (+${Math.round(getMasteryTorpezaPct(STATE.perks.bonusVapor) * 100)}%)`, shortText: `🚰 Lv.${STATE.perks.bonusVapor}`, desc: `Fontanero: +${Math.round(getMasteryTorpezaPct(STATE.perks.bonusVapor) * 100)}% botín y EXP en cofres de Vapor.`, kind: 'mastery', isTorpeza: false },
       { active: STATE.perks.shopStealFree, text: `🎭 Ladrón`, shortText: `🎭`, desc: "Ladrón: El primer ítem de la tienda del Duende es gratis.", isTorpeza: false },
       { active: STATE.perks.luckyLootChance > 0, text: `🍀 Suerte 15%`, shortText: `🍀 15%`, desc: "Tipo con Suerte: 15% de probabilidad de duplicar botín.", isTorpeza: false },
       
       // TORPEZAS
-      { active: STATE.torpezas.madera > 0, text: `⚠️ Torpeza Madera Lv.${STATE.torpezas.madera} (-${Math.round(getMasteryTorpezaPct(STATE.torpezas.madera) * 100)}%)`, shortText: `⚠️📦 ${STATE.torpezas.madera}`, desc: `Torpeza en Madera: -${Math.round(getMasteryTorpezaPct(STATE.torpezas.madera) * 100)}% botín y EXP en cofres de Madera.`, isTorpeza: true },
-      { active: STATE.torpezas.acero > 0, text: `⚠️ Torpeza Acero Lv.${STATE.torpezas.acero} (-${Math.round(getMasteryTorpezaPct(STATE.torpezas.acero) * 100)}%)`, shortText: `⚠️⚙️ ${STATE.torpezas.acero}`, desc: `Torpeza en Acero: -${Math.round(getMasteryTorpezaPct(STATE.torpezas.acero) * 100)}% botín y EXP en cofres de Acero.`, isTorpeza: true },
-      { active: STATE.torpezas.digital > 0, text: `⚠️ Torpeza Digital Lv.${STATE.torpezas.digital} (-${Math.round(getMasteryTorpezaPct(STATE.torpezas.digital) * 100)}%)`, shortText: `⚠️💻 ${STATE.torpezas.digital}`, desc: `Torpeza en Digital: -${Math.round(getMasteryTorpezaPct(STATE.torpezas.digital) * 100)}% botín y EXP en cofres Digitales (USB).`, isTorpeza: true },
-      { active: STATE.torpezas.vapor > 0, text: `⚠️ Torpeza Vapor Lv.${STATE.torpezas.vapor} (-${Math.round(getMasteryTorpezaPct(STATE.torpezas.vapor) * 100)}%)`, shortText: `⚠️🚰 ${STATE.torpezas.vapor}`, desc: `Torpeza en Vapor: -${Math.round(getMasteryTorpezaPct(STATE.torpezas.vapor) * 100)}% botín y EXP en cofres de Vapor.`, isTorpeza: true }
+      { active: STATE.torpezas.madera > 0, text: `📦 Torpeza Madera Lv.${STATE.torpezas.madera} (-${Math.round(getMasteryTorpezaPct(STATE.torpezas.madera) * 100)}%)`, shortText: `📦 Lv.${STATE.torpezas.madera}`, desc: `Torpeza en Madera: -${Math.round(getMasteryTorpezaPct(STATE.torpezas.madera) * 100)}% botín y EXP en cofres de Madera.`, kind: 'torpeza', isTorpeza: true },
+      { active: STATE.torpezas.acero > 0, text: `⚙️ Torpeza Acero Lv.${STATE.torpezas.acero} (-${Math.round(getMasteryTorpezaPct(STATE.torpezas.acero) * 100)}%)`, shortText: `⚙️ Lv.${STATE.torpezas.acero}`, desc: `Torpeza en Acero: -${Math.round(getMasteryTorpezaPct(STATE.torpezas.acero) * 100)}% botín y EXP en cofres de Acero.`, kind: 'torpeza', isTorpeza: true },
+      { active: STATE.torpezas.digital > 0, text: `💻 Torpeza Digital Lv.${STATE.torpezas.digital} (-${Math.round(getMasteryTorpezaPct(STATE.torpezas.digital) * 100)}%)`, shortText: `💻 Lv.${STATE.torpezas.digital}`, desc: `Torpeza en Digital: -${Math.round(getMasteryTorpezaPct(STATE.torpezas.digital) * 100)}% botín y EXP en cofres Digitales (USB).`, kind: 'torpeza', isTorpeza: true },
+      { active: STATE.torpezas.vapor > 0, text: `🚰 Torpeza Vapor Lv.${STATE.torpezas.vapor} (-${Math.round(getMasteryTorpezaPct(STATE.torpezas.vapor) * 100)}%)`, shortText: `🚰 Lv.${STATE.torpezas.vapor}`, desc: `Torpeza en Vapor: -${Math.round(getMasteryTorpezaPct(STATE.torpezas.vapor) * 100)}% botín y EXP en cofres de Vapor.`, kind: 'torpeza', isTorpeza: true }
     ];
 
     // [0.089b] Efectos temporales / penalizaciones de los tratos del Trapero, en la misma barra
@@ -4992,7 +5030,7 @@ function updateUI() {
       { active: modOn('niebla'), text: `🌫️ Niebla x${(STATE.mods||{}).niebla}`, shortText: `🌫️ x${(STATE.mods||{}).niebla}`, desc: `Niebla Espesa: rareza oculta pero botín +40% durante ${(STATE.mods||{}).niebla} cofres más.`, isBoost: true },
       { active: modOn('congelada'), text: `🧊 Racha x${(STATE.mods||{}).congelada}`, shortText: `🧊 x${(STATE.mods||{}).congelada}`, desc: `Racha Congelada: tus próximos ${(STATE.mods||{}).congelada} fallos no rompen tu racha.`, isBoost: true },
       { active: modOn('relojBueno'), text: `⏳ Tiempo +50% x${(STATE.mods||{}).relojBueno}`, shortText: `⏳ x${(STATE.mods||{}).relojBueno}`, desc: `Reloj Lento: +50% de tiempo en los puzles durante ${(STATE.mods||{}).relojBueno} cofres más.`, isBoost: true },
-      { active: modOn('hambre'), text: `🍽️ Hambre x${(STATE.mods||{}).hambre}`, shortText: `🍽️ x${(STATE.mods||{}).hambre}`, desc: `Hambre de XP: XP x2 pero sin GP durante ${(STATE.mods||{}).hambre} cofres más.`, isBoost: true },
+      { active: modOn('hambre'), text: `🍽️ Hambre x${(STATE.mods||{}).hambre}`, shortText: `🍽️ x${(STATE.mods||{}).hambre}`, desc: `Hambre de XP: XP x2 pero sin GP durante ${(STATE.mods||{}).hambre} cofres más.`, kind: 'bad' },
       { active: modOn('destino'), text: `🎲 Destino`, shortText: `🎲`, desc: `Cofre del Destino: la próxima pantalla te deja elegir entre 3 cofres.`, isBoost: true },
       { active: modOn('relojMalo'), text: `⌛ Tiempo -30% x${(STATE.mods||{}).relojMalo}`, shortText: `⌛ x${(STATE.mods||{}).relojMalo}`, desc: `Reloj Roto: -30% de tiempo en los puzles durante ${(STATE.mods||{}).relojMalo} cofres más.`, isTorpeza: true },
       { active: STATE.heavyChestsLeft > 0, text: `📜 Contrato x${STATE.heavyChestsLeft}`, shortText: `📜 x${STATE.heavyChestsLeft}`, desc: `Contrato Leonino: los próximos ${STATE.heavyChestsLeft} cofres Raros o superiores piden +1 herramienta.`, isTorpeza: true }
@@ -5003,13 +5041,9 @@ function updateUI() {
 
     activePerks.forEach(p => {
       const badge = document.createElement('span');
-      if (p.isTorpeza) {
-        badge.className = "perk-badge bg-rose-950 text-rose-300 px-2 py-0.5 rounded-full border border-rose-700 cursor-pointer select-none font-mono whitespace-nowrap shrink-0 transition-transform hover:scale-105";
-      } else if (p.isBoost) {
-        badge.className = "perk-badge bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-600 cursor-pointer select-none font-mono whitespace-nowrap shrink-0 transition-transform hover:scale-105";
-      } else {
-        badge.className = "perk-badge bg-indigo-950 text-indigo-300 px-2 py-0.5 rounded-full border border-indigo-700 cursor-pointer select-none font-mono whitespace-nowrap shrink-0 transition-transform hover:scale-105";
-      }
+      // [0.097] Código: forma = tipo (cuadrado = maestría/torpeza; píldora = perk o efecto), color = signo (azul/azul claro permanente, rojo torpeza, verde temporal bueno, naranja temporal malo o mixto)
+      const kind = p.kind || (p.isBoost ? 'good' : p.isTorpeza ? 'bad' : 'perk');
+      badge.className = "perk-badge pb-" + kind + " px-2 py-0.5 cursor-pointer select-none font-mono whitespace-nowrap shrink-0 transition-transform hover:scale-105";
       badge.title = p.desc;
       badge.textContent = isCompact ? p.shortText : p.text;
       
@@ -5186,41 +5220,37 @@ function updateLockpickProximityVisuals() {
 
   const proximityRatio = Math.max(0, 1 - (minDiff / 90));
 
-  const proxBar = document.getElementById('proximityBar');
+  // [0.097] Sin barra de tensión: el color del deslizador (rojo→verde) indica la cercanía. En móvil (el dedo tapa el botón) se tiñe también el fondo de la barra, entero y según la posición actual.
   const proxText = document.getElementById('proximityText');
   const proxGlow = document.getElementById('proximityGlow');
-
-  if (proxBar) proxBar.style.width = `${Math.round(proximityRatio * 100)}%`;
-
-  if (proxText && proxBar && proxGlow) {
-    if (proximityRatio > 0.85) {
-      if (isNearDecoy && STATE.perks.oidoClinico > 0) {
-        if (lpState.isTension) {
-          proxText.textContent = "¡FALSO PUNTO DULCE!";
-          proxText.className = "text-rose-600 font-bold animate-bounce";
-          proxGlow.style.borderColor = "#ef4444";
-          proxBar.className = "h-full bg-rose-600 rounded-full transition-all duration-100";
-        } else {
-          proxText.textContent = "VERDE (PUNTO DULCE)";
-          proxText.className = "text-emerald-400 font-bold animate-pulse";
-          proxBar.className = "h-full bg-emerald-400 rounded-full transition-all duration-100";
-          proxGlow.style.borderColor = "#34d399";
-        }
-      } else {
-        proxText.textContent = "VERDE (PUNTO DULCE)";
-        proxText.className = "text-emerald-400 font-bold animate-pulse";
-        proxBar.className = "h-full bg-emerald-400 rounded-full transition-all duration-100";
-        proxGlow.style.borderColor = "#34d399";
-      }
+  const slEl = document.getElementById('angleSlider');
+  const falseWarn = !!(isNearDecoy && STATE.perks.oidoClinico > 0 && lpState.isTension && proximityRatio > 0.85);
+  // rojo (≤0.25) → naranja (0.5) → verde (≥0.85), alineado con los textos ROJO/NARANJA/VERDE
+  const hue = Math.round(proximityRatio <= 0.25 ? 0 : proximityRatio <= 0.5 ? 35 * (proximityRatio - 0.25) / 0.25 : proximityRatio <= 0.85 ? 35 + 90 * (proximityRatio - 0.5) / 0.35 : 125);
+  const colMain = falseWarn ? '#a855f7' : `hsl(${hue} 90% 52%)`;
+  const colGlow = falseWarn ? 'rgba(168,85,247,.85)' : `hsla(${hue} 95% 55% / .8)`;
+  if (slEl) {
+    slEl.style.setProperty('--lp-col', colMain);
+    slEl.style.setProperty('--lp-glow', colGlow);
+    const coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+    slEl.style.setProperty('--lp-track', coarse ? (falseWarn ? 'hsl(275 60% 22%)' : `hsl(${hue} 65% 20%)`) : '#0f172a');
+  }
+  if (proxText && proxGlow) {
+    if (falseWarn) {
+      proxText.textContent = "¡FALSO PUNTO DULCE!";
+      proxText.className = "text-violet-400 font-bold animate-bounce";
+      proxGlow.style.borderColor = "#a855f7";
+    } else if (proximityRatio > 0.85) {
+      proxText.textContent = "VERDE (PUNTO DULCE)";
+      proxText.className = "text-emerald-400 font-bold animate-pulse";
+      proxGlow.style.borderColor = "#34d399";
     } else if (proximityRatio > 0.5) {
       proxText.textContent = "NARANJA (CERCA)";
       proxText.className = "text-amber-400 font-bold";
-      proxBar.className = "h-full bg-amber-400 rounded-full transition-all duration-100";
       proxGlow.style.borderColor = "#fbbf24";
     } else {
       proxText.textContent = "ROJO (LEJOS)";
       proxText.className = "text-rose-500 font-bold";
-      proxBar.className = "h-full bg-rose-500 rounded-full transition-all duration-100";
       proxGlow.style.borderColor = "#ef4444";
     }
   }
@@ -5852,6 +5882,7 @@ function buildHackNumberOptions(length, count, groupSizes) {
 }
 
 function submitHackWord(word, btn) { 
+  if (!minigameInProgress) return;   // [0.097] tras acertar (o fallar) ya no se aceptan más palabras
   audio.playClick(0.5); 
   btn.disabled = true; 
   btn.classList.add('opacity-40');
@@ -6313,6 +6344,7 @@ function startPipeGame() {
     if (item.type !== 'stone' && item.type !== 'bomb') {
       tile.addEventListener('click', () => {
         if (pipeAdvanced && pipeValidated) return; // tras VALIDAR el tablero queda bloqueado
+        if (!minigameInProgress) return;   // [0.097] tras acertar no se pueden girar más tuberías
         audio.playClick(0.5);
         item.rot = (item.rot + 1) % 4;
         const svg = document.getElementById(`pipeSvg-${i}`);
@@ -6511,6 +6543,7 @@ function showShopReceipt(onCloseCallback) {
 
   const oldReceipt = document.getElementById('duendeReceiptModal');
   if (oldReceipt) oldReceipt.remove();
+  try { audio.init(); audio.playCashRegister(); } catch (e) {}   // [0.097] caja registradora al pasar a la factura (solo si hubo compra o reciclaje; con solo robos no se llega aquí)
 
   const frasesRecibo = DATOS_JUEGO.NARRATIVA.FRASES_RECIBO_DUENDE;
   let duendeQuote = frasesRecibo.DEFAULT;
@@ -7598,6 +7631,7 @@ setInterval(() => {
   if (keyToastBusy || !keyToastQueue.length) return;
   const cfgK = DATOS_JUEGO.AVISOS_LLAVES || {};
   if (document.getElementById('resumeGameModal') || document.getElementById('coverScreen')) return;
+  if (modalVisible('levelUpModal')) return;   // [0.097] los efectos de las wildcards esperan al final de la secuencia de subida de nivel (ruleta + elección)
   if (cfgK.ESPERAR_PANTALLA_LIBRE) {
     const blockers = ['lootModal', 'dialogueModal', 'levelUpModal', 'merchantModal', 'traperoShopModal', 'traperoModal', 'unfairDealModal', 'gameOverModal', 'minigameModal'];
     if (blockers.some(modalVisible) || document.getElementById('duendeReceiptModal')) return;
