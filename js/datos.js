@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — datos.js — VERSIÓN 0.1
+// JUST ONE MORE CHEST — datos.js — VERSIÓN 0.101
 // DATOS_JUEGO: configuración y balance
 // ==========================================================================
 
@@ -9,7 +9,7 @@
 
 const DATOS_JUEGO = {
   // [0.088] Versión visible en pantalla (esquina inferior central) para que las capturas la incluyan
-  VERSION: '0.1',
+  VERSION: '0.101',
 
   // [0.089] Avisos "+N" / "-N" de herramientas. ESPERAR_PANTALLA_LIBRE:true = recupera la idea anterior (esperar a que no haya
   // banners, tiendas ni diálogos encima). Con false salen siempre, por encima de todo.
@@ -104,6 +104,28 @@ const DATOS_JUEGO = {
     COFRE_SUBE_MOVIL_MULTI: 0.07,   // [0.088] en móvil, con varios cofres, el cofre sube este % del alto para dejar hueco al selector
     COFRE_Y_PCT: 0.50,           // altura del centro del cofre respecto al alto del marco
     ESCALA_UI_MAX: 1.6,          // tope del zoom de la interfaz en pantallas grandes (HUD y tarjeta del cofre)
+
+    // [0.101] Tiendas con arte propio (Duende y Trapero)
+    TIENDAS: {
+      CONFIRMAR_CON_SEGUNDO_TOQUE: true,   // 1er toque: elige la tarjeta · 2º toque: confirma (como la cerradura del cofre)
+      APERTURA: { ACTIVAR: true, SACUDIDA_MS: 450, SUBIDA_MS: 1300 },   // la persiana del Duende se sacude y sube al entrar
+      FRASES_DUENDE: ['¡SOLO UNO MÁS!', '¿QUÉ SE LLEVA?', 'MIRE, MIRE...', 'NADA ES GRATIS', 'ESTO LE HARÁ FALTA', 'UNO MÁS NO HACE DAÑO'],
+      FRASES_SIN_ORO: ['EL ORO NO SE ESTIRA...', 'VUELVA CON MÁS ORO', 'ESO NO LE ALCANZA', 'SIN ORO NO HAY TRATO'],
+      FRASES_SIN_GANZUAS: ['FALTAN GANZÚAS', 'NO TIENE SUFICIENTES', 'TRAIGA MÁS GANZÚAS'],
+      FRASES_COMPRA: ['¡EXCELENTE ELECCIÓN!', '¡ASÍ SE HACE!', 'UNO MÁS... SIEMPRE UNO MÁS', 'HE AHÍ, HE AHÍ'],
+      FRASES_ROBO: ['...ME HA PARECIDO VER ALGO', '¿DÓNDE HA IDO MI MERCANCÍA?', 'QUÉ MANOS TAN LISTAS'],
+      FRASES_RECICLAJE: ['EL TALLER LO AGRADECE', 'DE LATÓN A ACERO', 'BUEN CANJE'],
+      FRASE_ESPECIAL: ['SOLO UNA COSITA...', 'NO SE VAYA SIN NADA', 'SE LO PONGO FÁCIL'],
+      ETIQUETAS_TRAPERO: {
+        vender_ganzuas: 'VENTA', vender_avanzada: 'VENTA', canje_directo: 'CANJE',
+        pacto_sangre: 'PACTO', pacto_sombra: 'PACTO', amor_arte: 'PACTO', dedos_rotos: 'PACTO',
+        contrato_leonino: 'CONTRATO', purga_maldicion: 'PURGA', empujon_siniestro: 'EMPUJÓN',
+        cambio_trabajo: 'CAMBIO', maestria_doble_filo: 'DOBLE FILO', contador_cofres_trapero: 'CONTADOR'
+      }
+    },
+
+    // [0.101] Imagen de fondo de cada puzle (VELO: 0 = imagen limpia, 1 = negro)
+    FONDOS_PUZLES: { ACTIVAR: true, VELO: 0.5 },
 
     // [0.086] Texto un poco más grande (post-its, descripciones, etiquetas). false = tamaños de la 0.085.
     TEXTO_GRANDE: true,

@@ -1,11 +1,137 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — tiendas.js — VERSIÓN 0.1
+// JUST ONE MORE CHEST — tiendas.js — VERSIÓN 0.101
 // tienda del Duende y del Trapero
 // ==========================================================================
 
 /* ==========================================================================
    TIENDA DEL DUENDE Y MESA DE RECICLAJE
    ========================================================================== */
+
+/* ==========================================================================
+   [0.101] ARTE DE LAS TIENDAS: ayudantes compartidos (Duende y Trapero)
+   ========================================================================== */
+
+const SHOP_VIS = {
+  pack_ganzuas:    { n: 'GANZÚAS',   s: '+3',    ic: 'ic_ganzua' },
+  pack_pines:      { n: 'PINES',     s: '+2',    ic: 'ic_pin' },
+  pack_usb:        { n: 'USB',       s: '+2',    ic: 'ic_usb' },
+  pack_valvulas:   { n: 'VÁLVULA',   s: '+1',    ic: 'ic_valvula' },
+  carta_auto_open: { n: 'AUTO-OPEN', s: 'CARTA', ic: 'ic_auto' },
+  carta_escudo:    { n: 'ESCUDO',    s: 'CARTA', ic: 'ic_escudo' },
+  carta_apuesta:   { n: 'APUESTA',   s: 'CARTA', ic: 'ic_apuesta' },
+  contador_cofres: { n: 'CONTADOR',  s: 'COFRES', ic: 'ic_contador' }
+};
+const SHOP_VIS_RECICLAJE = {
+  proPicks: { n: 'PIN',     s: '+1', ic: 'ic_pin' },
+  usb:      { n: 'USB',     s: '+1', ic: 'ic_usb' },
+  valves:   { n: 'VÁLVULA', s: '+1', ic: 'ic_valvula' }
+};
+
+function shopCfg() { return (DATOS_JUEGO.GRAFICOS && DATOS_JUEGO.GRAFICOS.TIENDAS) || {}; }
+function shopRandom(list, fallback) { return (list && list.length) ? list[Math.floor(Math.random() * list.length)] : (fallback || ''); }
+function shopImg(key) { return (typeof ASSETS !== 'undefined' && ASSETS.tienda && ASSETS.tienda[key]) || ''; }
+
+let shopArtReady = false;
+function shopArtInit() {
+  if (shopArtReady || typeof ASSETS === 'undefined' || !ASSETS.tienda) return;
+  const r = document.documentElement.style;
+  const map = { '--ds-fondo': 'fondo', '--ds-cerrado': 'cerrado', '--ds-trapero': 'trapero', '--ds-tarjeta': 'tarjeta_normal',
+                '--ds-tarjeta-sel': 'tarjeta_seleccionada', '--ds-tarjeta-poor': 'tarjeta_sin_fondos', '--ds-caja-oro': 'caja_oro',
+                '--ds-caja-ganz': 'caja_ganz', '--ds-salir': 'boton_salir' };
+  Object.keys(map).forEach(v => { const u = shopImg(map[v]); if (u) r.setProperty(v, `url("${u}")`); });
+  shopArtReady = true;
+}
+
+function dshopSay(text) { const e = document.getElementById('dshopPhrase'); if (e) e.textContent = text || ''; }
+function dshopMood(name) {
+  const im = document.getElementById('dshopDuende');
+  if (!im || typeof ASSETS === 'undefined' || !ASSETS.duende) return;
+  const u = ASSETS.duende[name] || ASSETS.duende.base;
+  if (im.getAttribute('src') !== u) im.setAttribute('src', u);
+}
+function dshopUpdateBoxes() {
+  const g = document.getElementById('dshopGold'), k = document.getElementById('dshopPicks');
+  if (g) g.textContent = STATE.gold;
+  if (k) k.textContent = STATE.picks;
+}
+
+// Doble toque: el 1.º toque elige la tarjeta, el 2.º la confirma. opts.blocked() devuelve un texto si no se puede (se avisa al instante, sin elegir).
+let shopArmedTimer = null;
+function shopConfirmClick(btn, card, onConfirm, opts) {
+  opts = opts || {};
+  btn.addEventListener('click', () => {
+    if (opts.blocked) { const why = opts.blocked(); if (why) { if (opts.onBlocked) opts.onBlocked(why); return; } }
+    if (!shopCfg().CONFIRMAR_CON_SEGUNDO_TOQUE || card.classList.contains('armed')) { onConfirm(); return; }
+    const parent = card.parentElement;
+    if (parent) parent.querySelectorAll('.armed').forEach(c => c.classList.remove('armed'));
+    const other = document.querySelectorAll('.dshop .armed, .tshop .armed'); other.forEach(c => c.classList.remove('armed'));
+    card.classList.add('armed');
+    try { audio.init(); audio.playClick(1.1); } catch (e) {}
+    if (opts.onSelect) opts.onSelect();
+    clearTimeout(shopArmedTimer);
+    shopArmedTimer = setTimeout(() => { card.classList.remove('armed'); if (opts.onDisarm) opts.onDisarm(); }, 4000);
+  });
+}
+
+let dshopAnimTimers = [];
+function dshopPlayOpening(done) {
+  const cfg = shopCfg().APERTURA || {};
+  const lid = document.getElementById('dshopLid');
+  const modal = document.getElementById('merchantModal');
+  if (!cfg.ACTIVAR || !lid || !modal) { if (done) done(); return; }
+  dshopAnimTimers.forEach(clearTimeout); dshopAnimTimers = [];
+  const shakeMs = cfg.SACUDIDA_MS || 450, riseMs = cfg.SUBIDA_MS || 1300;
+  modal.classList.add('locked');
+  lid.style.setProperty('--lid-ms', riseMs + 'ms');
+  lid.classList.remove('hidden', 'open'); lid.classList.add('shake');
+  dshopAnimTimers.push(setTimeout(() => {
+    lid.classList.remove('shake');
+    void lid.offsetWidth;
+    lid.classList.add('open');
+    try { audio.init(); audio.playLockOpen('hydraulic'); } catch (e) {}
+  }, shakeMs));
+  dshopAnimTimers.push(setTimeout(() => {
+    lid.classList.add('hidden'); lid.classList.remove('open', 'shake');
+    modal.classList.remove('locked');
+    if (done) done();
+  }, shakeMs + riseMs + 60));
+}
+
+// Muestra la tienda; la persiana solo se anima al abrirla (no en cada refresco)
+function dshopShow(special) {
+  const modal = document.getElementById('merchantModal');
+  if (!modal) return;
+  shopArtInit();
+  modal.classList.toggle('dshop-special', !!special);
+  const txt = document.getElementById('dshopLeaveTxt'), sub = document.getElementById('dshopLeaveSub');
+  if (txt) txt.textContent = special ? 'NO COMPRAR' : 'SALIR';
+  if (sub) sub.textContent = special ? '(RECHAZAR)' : '';
+  const hs = document.getElementById('dshopHdrShop'); if (hs) hs.textContent = special ? 'OFERTA' : 'TIENDA';
+  const wasHidden = modal.classList.contains('hidden');
+  modal.classList.remove('hidden');
+  dshopUpdateBoxes();
+  if (wasHidden) {
+    dshopMood('base');
+    dshopSay('');
+    const cfg = shopCfg();
+    dshopPlayOpening(() => dshopSay(special ? shopRandom(cfg.FRASE_ESPECIAL) : shopRandom(cfg.FRASES_DUENDE, '¡SOLO UNO MÁS!')));
+  }
+}
+
+function dshopCardEl(vis, priceHTML, cls, own) {
+  const card = document.createElement('div');
+  card.className = 'dcard' + (cls ? ' ' + cls : '');
+  card.innerHTML = `
+    <img class="dcard-ic" src="${shopImg(vis.ic)}" alt="">
+    <div class="dcard-name">${vis.n}</div>
+    <div class="dcard-sub">${vis.s}</div>
+    <div class="dcard-price">${priceHTML}</div>
+    ${own ? `<div class="dcard-own">${own}</div>` : ''}
+    <button class="dcard-btn" type="button" aria-label="${vis.n}"></button>`;
+  return card;
+}
+function dshopGoldPrice(n) { return `${n}<img src="${shopImg('moneda')}" alt="GP">`; }
+function dshopPicksPrice(n) { return `x${n}<img class="ganz" src="${shopImg('ic_ganzua')}" alt="">`; }
 
 function triggerMerchantShopModalSequence() {
   const tier = getNarrativeTier();
@@ -183,70 +309,62 @@ function renderMerchantShopGrid() {
   }
 
   const aumentoPrecio = DATOS_JUEGO.ECONOMIA.TIENDA_DUENDE.aumento_precio_por_compra;
+  const cfg = shopCfg();
+  shopArtInit();
 
   STATE.currentShopOffer.forEach(item => {
     const currentPrice = item.baseCost + (item.purchaseCount * aumentoPrecio);
     const isStealAvailable = STATE.perks.shopStealFree;
+    const vis = SHOP_VIS[item.id] || { n: item.name.toUpperCase(), s: '', ic: 'ic_ganzua' };
+    const poor = !isStealAvailable && STATE.gold < currentPrice;
+    const own = item.prop ? STATE[item.prop] : (item.abilityProp ? STATE.abilities[item.abilityProp] : 0);
 
-    const card = document.createElement('div');
-    card.className = "bg-slate-900 border border-slate-800 p-2.5 rounded-xl flex flex-col justify-between gap-1.5 text-left shadow-md";
+    const card = dshopCardEl(vis, isStealAvailable ? 'GRATIS' : dshopGoldPrice(currentPrice), isStealAvailable ? 'steal' : (poor ? 'poor' : ''), own > 0 ? 'x' + own : '');
+    const btn = card.querySelector('.dcard-btn');
 
-    card.innerHTML = `
-      <div>
-        <div class="text-amber-400 font-black text-xs flex items-center gap-1.5 mb-0.5">
-          <i class="fa-solid ${item.icon}"></i> ${item.name}
-        </div>
-        <div class="text-[10px] font-mono">
-          ${isStealAvailable 
-            ? '<span class="text-rose-400 font-bold uppercase">¡GRATIS (ROBO)!</span>' 
-            : `Precio: <span class="text-yellow-400 font-bold">${currentPrice} GP</span> ${item.purchaseCount > 0 ? `<span class="text-slate-500 text-[9px]">(+${item.purchaseCount * aumentoPrecio}GP)</span>` : ''}`}
-        </div>
-      </div>
-      <button class="w-full py-1 ${isStealAvailable ? 'bg-gradient-to-r from-rose-600 to-red-700' : 'bg-gradient-to-r from-purple-600 to-indigo-600'} active:scale-95 text-white font-black text-[11px] rounded-lg shadow transition-all cursor-pointer">
-        ${isStealAvailable ? 'ROBAR' : `COMPRAR (${currentPrice} GP)`}
-      </button>
-    `;
+    shopConfirmClick(btn, card, () => {
+      if (!STATE.shopSession) resetShopSession();
 
-    const btn = card.querySelector('button');
-    if (btn) {
-      btn.addEventListener('click', () => {
-        if (!STATE.shopSession) resetShopSession();
+      if (STATE.perks.shopStealFree) {
+        STATE.perks.shopStealFree = false;
+        grantItem(item);
 
-        if (STATE.perks.shopStealFree) {
-          STATE.perks.shopStealFree = false;
+        STATE.shopSession.items.push({ name: item.name, costText: 'GRATIS (ROBO)', icon: item.icon, isStolen: true });
+
+        // [0.084] Al robar solo suena el efecto; la frase de culpa se muestra al salir de la tienda, tras el recibo
+        const culpaList = DATOS_JUEGO.NARRATIVA.FRASES_CULPA_ROBO;
+        STATE.shopSession.guiltPhrase = culpaList[Math.floor(Math.random() * culpaList.length)];
+
+        audio.playUnlockFanfare('raro');
+        updateUI();
+        renderMerchantShopGrid();
+        dshopMood('sorpresa'); dshopSay(shopRandom(cfg.FRASES_ROBO));
+      } else {
+        if (STATE.gold >= currentPrice) {
+          STATE.gold -= currentPrice;
           grantItem(item);
 
-          STATE.shopSession.items.push({ name: item.name, costText: 'GRATIS (ROBO)', icon: item.icon, isStolen: true });
+          STATE.shopSession.items.push({ name: item.name, costText: `${currentPrice} GP`, icon: item.icon, isStolen: false });
+          STATE.shopSession.totalGold += currentPrice;
 
-          // [0.084] Al robar solo suena el efecto; la frase de culpa se muestra al salir de la tienda, tras el recibo
-          const culpaList = DATOS_JUEGO.NARRATIVA.FRASES_CULPA_ROBO;
-          STATE.shopSession.guiltPhrase = culpaList[Math.floor(Math.random() * culpaList.length)];
+          item.purchaseCount++;
 
+          // [0.082] Sin mensaje frontal al comprar (el recibo del Duende se muestra al salir)
           audio.playUnlockFanfare('raro');
           updateUI();
           renderMerchantShopGrid();
-
+          dshopMood('alegre'); dshopSay(shopRandom(cfg.FRASES_COMPRA));
         } else {
-          if (STATE.gold >= currentPrice) {
-            STATE.gold -= currentPrice;
-            grantItem(item);
-
-            STATE.shopSession.items.push({ name: item.name, costText: `${currentPrice} GP`, icon: item.icon, isStolen: false });
-            STATE.shopSession.totalGold += currentPrice;
-
-            item.purchaseCount++;
-
-            // [0.082] Sin mensaje frontal al comprar (el recibo del Duende se muestra al salir)
-            audio.playUnlockFanfare('raro');
-            updateUI();
-            renderMerchantShopGrid();
-          } else {
-            audio.playBreak();
-            showPersistentFeedback("⚠️ No tienes suficiente oro.");
-          }
+          audio.playBreak();
+          dshopMood('triste'); dshopSay(shopRandom(cfg.FRASES_SIN_ORO));
         }
-      });
-    }
+      }
+    }, {
+      blocked: () => (!STATE.perks.shopStealFree && STATE.gold < currentPrice) ? 'oro' : '',
+      onBlocked: () => { audio.playBreak(); dshopMood('enfadado'); dshopSay(shopRandom(cfg.FRASES_SIN_ORO)); },
+      onSelect: () => { dshopMood('codicia'); dshopSay(isStealAvailable ? '...' : (cfg.ARMADO_TEXTO || DATOS_JUEGO.GRAFICOS.BOTON_ARMADO_TEXTO || 'PULSA DE NUEVO')); },
+      onDisarm: () => { dshopMood('base'); }
+    });
 
     shopGrid.appendChild(card);
   });
@@ -254,39 +372,27 @@ function renderMerchantShopGrid() {
   const recycleListContainer = document.getElementById('recycleList');
   if (recycleListContainer) {
     recycleListContainer.innerHTML = '';
-    
-    let recycleTargets = [ 
-      { name: "Pin de Acero", prop: "proPicks", icon: "fa-screwdriver", color: "emerald", minLvl: 2 }, 
-      { name: "Llave USB", prop: "usb", icon: "fa-microchip", color: "cyan", minLvl: 3 }, 
-      { name: "Válvula Hidráulica", prop: "valves", icon: "fa-faucet", color: "rose", minLvl: 5 } 
+
+    let recycleTargets = [
+      { name: "Pin de Acero", prop: "proPicks", icon: "fa-screwdriver", minLvl: 2 },
+      { name: "Llave USB", prop: "usb", icon: "fa-microchip", minLvl: 3 },
+      { name: "Válvula Hidráulica", prop: "valves", icon: "fa-faucet", minLvl: 5 }
     ].filter(t => STATE.level >= t.minLvl);
-    
-    if (recycleTargets.length === 0) { 
-      recycleTargets = [{ name: "Pin de Acero", prop: "proPicks", icon: "fa-screwdriver", color: "emerald", minLvl: 1 }]; 
+
+    if (recycleTargets.length === 0) {
+      recycleTargets = [{ name: "Pin de Acero", prop: "proPicks", icon: "fa-screwdriver", minLvl: 1 }];
     }
-    
+
     const reqGanzuasReciclaje = DATOS_JUEGO.ECONOMIA.RECICLAJE.ganzuas_requeridas;
-    
+
     recycleTargets.forEach(target => {
-      const card = document.createElement('div');
-      card.className = "bg-slate-900 border border-slate-800 p-2.5 rounded-xl flex flex-col justify-between gap-1.5 text-left shadow-md";
-      
-      card.innerHTML = `
-        <div>
-          <div class="text-${target.color}-400 font-black text-xs flex items-center gap-1.5 mb-0.5">
-            <i class="fa-solid ${target.icon}"></i> ${target.name}
-          </div>
-          <div class="text-[10px] font-mono text-slate-400">
-            Canje: <span class="text-amber-300 font-bold">${reqGanzuasReciclaje} Ganzúas</span> ➔ <span class="text-white font-bold">1 ${target.name}</span>
-          </div>
-        </div>
-        <button class="w-full py-1 bg-gradient-to-r from-emerald-600 to-teal-700 active:scale-95 text-white font-black text-[11px] rounded-lg shadow transition-all cursor-pointer">
-          RECICLAR (${reqGanzuasReciclaje} Ganzúas)
-        </button>
-      `;
-      
-      const btn = card.querySelector('button');
-      btn.addEventListener('click', () => {
+      const vis = SHOP_VIS_RECICLAJE[target.prop];
+      const poor = STATE.picks < reqGanzuasReciclaje;
+      const own = STATE[target.prop];
+      const card = dshopCardEl(vis, dshopPicksPrice(reqGanzuasReciclaje), poor ? 'poor' : '', own > 0 ? 'x' + own : '');
+      const btn = card.querySelector('.dcard-btn');
+
+      shopConfirmClick(btn, card, () => {
         if (!STATE.shopSession) resetShopSession();
         if (STATE.picks >= reqGanzuasReciclaje) {
           STATE.picks -= reqGanzuasReciclaje;
@@ -296,21 +402,25 @@ function renderMerchantShopGrid() {
           STATE.shopSession.totalPicksRecycled += reqGanzuasReciclaje;
 
           audio.playClick(0.9);
-          showPersistentFeedback(`♻️ Recicladas ${reqGanzuasReciclaje} Ganzúas Básicas por 1 ${target.name}.`);
           updateUI();
           renderMerchantShopGrid();
+          dshopMood('alegre'); dshopSay(shopRandom(cfg.FRASES_RECICLAJE));
         } else {
           audio.playBreak();
-          showPersistentFeedback(`⚠️ Necesitas al menos ${reqGanzuasReciclaje} Ganzúas Básicas para reciclar.`);
+          dshopMood('triste'); dshopSay(shopRandom(cfg.FRASES_SIN_GANZUAS));
         }
+      }, {
+        blocked: () => STATE.picks < reqGanzuasReciclaje ? 'ganz' : '',
+        onBlocked: () => { audio.playBreak(); dshopMood('enfadado'); dshopSay(shopRandom(cfg.FRASES_SIN_GANZUAS)); },
+        onSelect: () => { dshopMood('codicia'); dshopSay(DATOS_JUEGO.GRAFICOS.BOTON_ARMADO_TEXTO || 'PULSA DE NUEVO'); },
+        onDisarm: () => { dshopMood('base'); }
       });
-      
+
       recycleListContainer.appendChild(card);
     });
   }
 
-  const merchantModal = document.getElementById('merchantModal'); 
-  if (merchantModal) merchantModal.classList.remove('hidden');
+  dshopShow(false);
 }
 
 const closeMerchantBtns = [
@@ -375,6 +485,7 @@ function openTraperoShop() {
   const grid = document.getElementById('traperoDealsGrid') || document.getElementById('traperoItemsList'); 
   if (!grid) return;
   grid.innerHTML = '';
+  shopArtInit();
 
   let deals = [...DATOS_JUEGO.TRATOS_TRAPERO.INICIALES, ...DATOS_JUEGO.TRATOS_TRAPERO.OSCUROS];
 
@@ -400,22 +511,18 @@ function openTraperoShop() {
 
   selectedDeals.forEach(deal => {
     const card = document.createElement('div');
-    card.className = "bg-slate-900 border border-rose-900/60 p-2.5 rounded-xl flex flex-col justify-between gap-1.5 text-left shadow-md";
+    card.className = 'tcard';
+    const tag = (shopCfg().ETIQUETAS_TRAPERO || {})[deal.id] || 'TRATO';
     card.innerHTML = `
-      <div>
-        <div class="text-rose-400 font-black text-xs flex items-center gap-1.5 mb-0.5">
-          <i class="fa-solid fa-skull"></i> ${deal.titulo}
-        </div>
-        <div class="text-[10px] text-slate-400 font-mono">${deal.desc}</div>
-      </div>
-      <button class="w-full py-1 bg-gradient-to-r from-rose-900 to-amber-900 active:scale-95 text-white font-black text-[11px] rounded-lg shadow transition-all cursor-pointer">
-        ACEPTAR TRATO
-      </button>
+      <div class="tcard-top"><span class="tcard-title">${deal.titulo}</span><span class="tcard-tag">${tag}</span></div>
+      <div class="tcard-desc">${deal.desc}</div>
+      <div class="tcard-hint">${shopCfg().TRAPERO_ARMADO_TEXTO || 'TOCA OTRA VEZ PARA ACEPTAR'}</div>
+      <button class="tcard-btn" type="button" aria-label="${deal.titulo}"></button>
     `;
 
-    const btn = card.querySelector('button');
+    const btn = card.querySelector('.tcard-btn');
     if (btn) {
-      btn.addEventListener('click', () => {
+      shopConfirmClick(btn, card, () => {
         const traperoModal = document.getElementById('traperoModal') || document.getElementById('traperoShopModal');
 
         if (deal.isChestCounterTrapero) {

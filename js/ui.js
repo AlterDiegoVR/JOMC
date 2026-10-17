@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — ui.js — VERSIÓN 0.1
+// JUST ONE MORE CHEST — ui.js — VERSIÓN 0.101
 // actualización de la interfaz (HUD)
 // ==========================================================================
 
@@ -257,5 +257,6 @@ function updateShopResourcesUI() {
   const tBar = document.getElementById('traperoResourceBar');
   const curseHTML = STATE.cursedChestsLeft > 0 ? `<span class="text-rose-300 font-black" title="Cofres de maldición restantes"><i class="fa-solid fa-skull"></i> ${STATE.cursedChestsLeft}</span>` : '';
   if (mBar) mBar.innerHTML = resHTML;
+  if (typeof dshopUpdateBoxes === 'function') dshopUpdateBoxes();   // [0.101] cajas ORO / GANZ. de la tienda del Duende
   if (tBar) tBar.innerHTML = resHTML + curseHTML;   // [0.087b] el Trapero muestra los turnos de maldición
 }

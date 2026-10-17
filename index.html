@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Just One More Chest</title>
+  <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAFd0lEQVR42u2Xy44kVxGGv4hzyarqnpmeu8fYAx4hJCSPPHsvWuYlYMkbgFghPwVL2HjHigdg3RKIrSUL5IWRhmGMe9pdVd11y8yTeU6wyJq+zEUWGAwLh1TKiyri/HH7IxK+lW/lfyzyL77/umJfdZADVEW6/8bpxSwABchf5ekICFvE8h/wWoAOaF4XAQXMj3bfL8kevf/uGz+vvLuTi50BsBeUDJDtjb0qhwI2qJtXkZTz0R/+/OWvoi8fN83qj1szRQA1w0S488F77zx9483v+9M0wfqGKjp2yxdUQRlVHivnLjmF6aJhdxIJTl9COF1suLV3laW+zfFsRts7fJ7x7Ogf/cd//ftbZhyJIH5/f19VDvrb125/+MO3r/synjSfPaEKKvTrnqpdsbcTmYwCpZQzAMEph/MN11Km8p7yHB0gIhzONiAVMy2crA0R5d7Itz/4zt7o8KT5UOTLn+3v7zt/liQnj8bR23HqfFAv169ETk4bRCB4xTuhiF5KQ3CKd4ooBHFDTM0QEaJXghc8xpWxB3U0Te9vXPWmqo+4kPvnss5mIiIgwt8+XwLCThW2uTwXVWj7jAg4FfZ2In3O1Kkb6mLrlBk4p0xPGmbzBu+UPpsA6+e2/EW7zyvSDO7dmVDXPfnC4WZDca3rQlDHapPxmsE62mTEoC/1Tc7G3tUKwxO84pxQ7Nxx/0Kfbr0drttbzKAUI3ihTYWf/uS73L5ZUbc93g1GZ/PEb3/3hGyDdbOhCwzDilFkuL4YTX+xbXYqT2OREDzzRcPOKFCJUgXHKHrG0aGa2bMp14ujygbZmIyUbJkqepwORRiDDjpuxHR+OkRlokTvcCovA2hT5k+fHtPQMmsipU+sl8JxWhCDErzS5yG+s8Utvnc38MvfPCZ1hV//4gHT04ZPHs8IbijRZd0yW2WSV1abDSKOdrHmmUvUbX8BwMHB2UOdMsu0ZLFRxAoicGfXwTY146hMFy3FDHXQ9cb9u9XwLJBzRrdVOI6OTZNY9TParscQJHZIyOe0dnCAZ38fDg6oguODh3eZ2l0+feap1ytiUB7sHqEY6oVRcDw+XOGcsG4KP/7RTU5WmSYVRtHz3oNbOAVVYbVJJHP4Gw958vkz1EVuxhkxz5mvO2anwP7+eQpsG4HWOrrOCN7IuaftCk6M3BspZfpSsJyp655374+o20JdZ8TK8F8FdULqCz1CSQmRgkih63rEChfr0L/I37rtoZs3xkxnNcj2vQmqgnfC7w827E0SKRteha7P9KYEHyhlaIFSCndu7DAXYWcScD6QF3aZeV4EcMaKIjz9YkUV9NIo7LPRpp7DesSiBHIuBK+0feb4pOb+7YiJMa486zoxW7ZwFU5OW3yA0GeiH2j5lQDsNZOtmG29V4oZQYefAkpBLHN17MjFtv0/6HW94bfkVcy4Mg64LNiFuXEJQAyKz4KZ8da9XaazGqeCojivjKNjUgVEBNnOYlWlCp5xFRCEUozUF5xTigm5GHvXRqgL9CsjqlyK6hmAAjw+XGI713A6YTqvKcWYLRtUCqUIIrBJHV0uLDeJ1BeujCOLTQvA7jhSig2zIvWYBka7sF53OC+4PmO5I/X2Mg9YsfyXJ1O7++YtUzexTdPhnHB4ugbLZwT/3PNhLgjzVYPb9v7pur1UTTEaoRRSl/EUUtPZOrWWuj6f88C5wt5OFWRUBS9SSYwVquCiB5PXbmbCq+vGrBCDo4oVMUZ8iJTOe8yJiOydReBgq29WPno6bx7O2iellyPtunZYq9Lq31sNzVCXOFx/Qt3UqHqsWxZKq5bLRwAHW9cuypVv6HNg+aqtWAXK2UZxsTe/1peHvGRrS0flVWu5fEMRMP5f5J+8D+XcifRafQAAAABJRU5ErkJggg==">   <!-- [0.101] icono de pestaña (cofre); evita el 404 de favicon.ico -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="./style.css">
@@ -38,9 +39,9 @@
     /* [0.089b] */
 
     /* [0.089b] Ventanas informativas más grandes en PC (--mz lo calcula script.js). Los puzles (#minigameModal) no se tocan. */
-    html:not(.narrow-layout) :is(#lootModal, #levelUpModal, #merchantModal, #traperoShopModal, #unfairDealModal, #gameOverModal, #duendeReceiptModal, #resumeGameModal, #resetConfirmModal, #optionsModal, #statsModal, #confirmModal, #achievementsModal) > div,
+    html:not(.narrow-layout) :is(#lootModal, #levelUpModal, #unfairDealModal, #gameOverModal, #duendeReceiptModal, #resumeGameModal, #resetConfirmModal, #optionsModal, #statsModal, #confirmModal, #achievementsModal) > div,
     html:not(.narrow-layout) #dialogueModal > * { zoom: var(--mz, 1); }
-    html:not(.narrow-layout) :is(#lootModal, #levelUpModal, #merchantModal, #traperoShopModal, #unfairDealModal, #gameOverModal, #duendeReceiptModal, #optionsModal, #statsModal, #confirmModal, #achievementsModal) > div { max-height: calc(94dvh / var(--mz, 1)); overflow-y: auto; }
+    html:not(.narrow-layout) :is(#lootModal, #levelUpModal, #unfairDealModal, #gameOverModal, #duendeReceiptModal, #optionsModal, #statsModal, #confirmModal, #achievementsModal) > div { max-height: calc(94dvh / var(--mz, 1)); overflow-y: auto; }
     /* [0.097] Subida de nivel en PC: sin barra de scroll interna */
     html:not(.narrow-layout) #levelUpModal > div { max-height: none !important; overflow: visible !important; }
     #levelUpModal { scrollbar-width: none; }
@@ -72,13 +73,6 @@
     html.narrow-layout #multiChestGrid > button { flex: 1 1 0; max-width: 104px; min-height: 86px; padding: 8px 6px; }
     html.narrow-layout #multiChestGrid img { width: 58px !important; }
     html.narrow-layout #dialogueModal { padding-bottom: max(24px, 11dvh); }
-    #merchantModal > div, #traperoShopModal > div { max-height: 92vh; max-height: 92dvh; padding: 14px; gap: 8px; }
-    #shopItemsList, #recycleList, #traperoItemsList { flex: 1 1 auto; min-height: 0; max-height: none !important; }
-    #shopItemsList > div, #recycleList > div { flex-direction: row !important; align-items: center !important; justify-content: space-between !important; padding: 8px 10px !important; gap: 10px !important; }
-    #shopItemsList > div button, #recycleList > div button { width: auto !important; flex: none; padding: 8px 12px !important; }
-    #traperoItemsList > div { padding: 8px 10px !important; }
-    #shopItemsList > div > div:first-child, #recycleList > div > div:first-child { flex: 1 1 auto; min-width: 0; }
-    html.narrow-layout #merchantModal h3 + p { display: none; }
     /* [0.089] Factura de botín más ancha en pantalla ancha (en móvil ya ocupa casi todo el ancho) */
     html:not(.narrow-layout) #lootModal > div { max-width: 460px; }
     /* [0.089] Frase del Duende en el recibo: más grande y sin cursiva en móvil */
@@ -425,70 +419,38 @@
     </div>
   </div>
 
-  <!-- MODAL DE TIENDA Y RECICLAJE DEL DUENDE -->
-  <div id="merchantModal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-lg flex items-center justify-center p-4 hidden">
-    <div class="bg-slate-900 border border-purple-500/40 rounded-3xl p-5 w-full max-w-sm shadow-2xl relative flex flex-col gap-3 max-h-[90vh]">
-      <button id="closeMerchantBtn" class="absolute top-3 right-3 text-slate-500 hover:text-slate-300 text-lg w-8 h-8 flex items-center justify-center rounded-full bg-slate-800">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-
-      <div class="flex items-center gap-3 border-b border-slate-800 pb-2">
-        <div id="merchantPortrait" class="w-10 h-10 rounded-2xl bg-purple-950 border border-purple-500 flex items-center justify-center text-xl text-purple-400 shadow-inner">
-          <i class="fa-solid fa-hat-wizard"></i>
-        </div>
-        <div>
-          <h3 class="text-lg font-black text-purple-300 font-retro">TIENDA & TALLER DEL DUENDE</h3>
-          <p class="text-[10px] text-slate-400">Suministros y Reciclaje de Materiales</p>
-        </div>
-      </div>
-
-      <div id="merchantResourceBar" class="flex justify-around items-center bg-slate-950 p-2 rounded-xl text-[10px] font-bold border border-slate-800"></div>
-
-      <div class="text-[11px] font-extrabold text-purple-300 uppercase tracking-wider flex items-center gap-1.5">
-        <i class="fa-solid fa-store"></i> Compras
-      </div>
-      <div id="shopItemsList" class="flex flex-col gap-2 max-h-36 overflow-y-auto pr-1"></div>
-
-      <div class="text-[11px] font-extrabold text-cyan-300 uppercase tracking-wider flex items-center gap-1.5 pt-1 border-t border-slate-800">
-        <i class="fa-solid fa-recycle"></i> Mesa de Reciclaje
-      </div>
-      <div id="recycleList" class="flex flex-col gap-2 max-h-28 overflow-y-auto pr-1"></div>
-
-      <div class="flex justify-end pt-2 border-t border-slate-800">
-        <button id="leaveShopBtn" class="px-4 py-2 bg-slate-800 active:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl">
-          Salir
-        </button>
-      </div>
+  <!-- [0.101] TIENDA DEL DUENDE (pixel art 144x256; las medidas van en la unidad --u = ancho/144; ver style.css) -->
+  <div id="merchantModal" class="dshop hidden">
+    <div class="dshop-stage" id="dshopStage">
+      <div class="dshop-bg"></div>
+      <img class="dshop-duende" id="dshopDuende" alt="">
+      <div class="dshop-box dshop-box-oro"><span class="dshop-lbl">ORO</span><span class="dshop-val" id="dshopGold">0</span></div>
+      <div class="dshop-box dshop-box-ganz"><span class="dshop-lbl">GANZ.</span><span class="dshop-val" id="dshopPicks">0</span></div>
+      <div class="dshop-phrase"><span id="dshopPhrase"></span></div>
+      <div class="dshop-hdr dshop-hdr-shop"><span id="dshopHdrShop">TIENDA</span></div>
+      <div id="shopItemsList" class="dshop-row dshop-row-shop"></div>
+      <div class="dshop-hdr dshop-hdr-work"><span>TALLER</span></div>
+      <div id="recycleList" class="dshop-row dshop-row-work"></div>
+      <button id="leaveShopBtn" class="dshop-leave" type="button"><span id="dshopLeaveTxt">SALIR</span><small id="dshopLeaveSub">(NO COMPRAR)</small></button>
+      <div id="merchantResourceBar" class="hidden"></div>
+      <div id="dshopLid" class="dshop-lid hidden"></div>
     </div>
+    <button id="closeMerchantBtn" class="hidden" type="button" aria-hidden="true"></button>
+    <div id="merchantPortrait" class="hidden"></div>
   </div>
 
-  <!-- MODAL DE MERCADO Y PACTOS DEL TRAPERO -->
-  <div id="traperoShopModal" class="fixed inset-0 z-50 bg-rose-950/90 backdrop-blur-lg flex items-center justify-center p-4 hidden">
-    <div class="bg-slate-900 border border-rose-500/60 rounded-3xl p-5 w-full max-w-sm shadow-2xl relative flex flex-col gap-3 max-h-[90vh]">
-      <button id="closeTraperoShopBtn" class="absolute top-3 right-3 text-slate-500 hover:text-slate-300 text-lg w-8 h-8 flex items-center justify-center rounded-full bg-slate-800">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-
-      <div class="flex items-center gap-3 border-b border-rose-900 pb-2">
-        <div id="traperoPortrait" class="w-10 h-10 rounded-2xl border border-rose-500 flex items-center justify-center text-xl text-rose-400 shadow-inner" style="background:#0b1d3f">
-          <i class="fa-solid fa-mask"></i>
-        </div>
-        <div>
-          <h3 class="text-lg font-black text-rose-300 font-retro">EL TRATO DEL TRAPERO</h3>
-          <p id="traperoShopSubtitle" class="text-[10px] text-rose-400 font-semibold">Ofertas de las Sombras</p>
-        </div>
-      </div>
-
-      <div id="traperoResourceBar" class="flex justify-around items-center bg-slate-950 p-2 rounded-xl text-[10px] font-bold border border-rose-950 border-slate-800"></div>
-
-      <div id="traperoItemsList" class="flex flex-col gap-2 max-h-60 overflow-y-auto pr-1"></div>
-
-      <div class="flex justify-end pt-2 border-t border-slate-800">
-        <button id="leaveTraperoShopBtn" class="px-4 py-2 bg-slate-800 active:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl">
-          Rechazar Trato
-        </button>
-      </div>
+  <!-- [0.101] TRATOS DEL TRAPERO (rincón granate pixel art; tarjetas HTML legibles) -->
+  <div id="traperoShopModal" class="tshop hidden">
+    <div class="tshop-stage" id="tshopStage">
+      <div class="tshop-bg"></div>
+      <div class="tshop-title">TRAPERO</div>
+      <p id="traperoShopSubtitle" class="tshop-sub">Tratos sin preguntas</p>
+      <div id="traperoResourceBar" class="tshop-res"></div>
+      <div id="traperoItemsList" class="tshop-list"></div>
+      <button id="leaveTraperoShopBtn" class="tshop-leave" type="button">NO TRATAR · SALIR</button>
     </div>
+    <button id="closeTraperoShopBtn" class="hidden" type="button" aria-hidden="true"></button>
+    <div id="traperoPortrait" class="hidden"></div>
   </div>
 
   <!-- MODAL DE TRATO INJUSTO DE SALVACIÓN -->

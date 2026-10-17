@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — eventos.js — VERSIÓN 0.1
+// JUST ONE MORE CHEST — eventos.js — VERSIÓN 0.101
 // tiendas especiales, visitas, habilidades, temporizador, fallo y Game Over
 // ==========================================================================
 
@@ -70,23 +70,14 @@ function openSpecialShopModal() {
   const availableCatalog = catalog.filter(item => !item.minLvl || STATE.level >= item.minLvl);
   const offeredItems = [...availableCatalog].sort(() => 0.5 - Math.random()).slice(0, 2);
 
+  const cfgS = shopCfg();
   offeredItems.forEach(item => {
-    const card = document.createElement('div');
-    card.className = "bg-slate-900 border border-slate-800 p-2.5 rounded-xl flex flex-col justify-between gap-1.5 text-left shadow-md";
-    card.innerHTML = `
-      <div>
-        <div class="text-amber-400 font-black text-xs flex items-center gap-1.5 mb-0.5">
-          <i class="fa-solid ${item.icon}"></i> ${item.name}
-        </div>
-        <div class="text-[10px] font-mono">Precio: <span class="text-yellow-400 font-bold">${item.cost} GP</span></div>
-      </div>
-      <button class="w-full py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 active:scale-95 text-white font-black text-[11px] rounded-lg shadow transition-all cursor-pointer">
-        COMPRAR (${item.cost} GP)
-      </button>
-    `;
+    const vis = SHOP_VIS[item.id] || { n: item.name.toUpperCase(), s: '', ic: 'ic_ganzua' };
+    const poor = STATE.gold < item.cost;
+    const card = dshopCardEl(vis, dshopGoldPrice(item.cost), poor ? 'poor' : '', '');
+    const btn = card.querySelector('.dcard-btn');
 
-    const btn = card.querySelector('button');
-    btn.addEventListener('click', () => {
+    shopConfirmClick(btn, card, () => {
       if (STATE.gold >= item.cost) {
         STATE.gold -= item.cost;
         if (item.prop) STATE[item.prop] += item.qty;
@@ -110,31 +101,17 @@ function openSpecialShopModal() {
           () => processNextQueuedEvent()
         );
       }
+    }, {
+      blocked: () => STATE.gold < item.cost ? 'oro' : '',
+      onBlocked: () => { audio.playBreak(); dshopMood('enfadado'); dshopSay(shopRandom(cfgS.FRASES_SIN_ORO)); },
+      onSelect: () => { dshopMood('codicia'); dshopSay(DATOS_JUEGO.GRAFICOS.BOTON_ARMADO_TEXTO || 'PULSA DE NUEVO'); },
+      onDisarm: () => { dshopMood('base'); }
     });
 
     shopGrid.appendChild(card);
   });
 
-  const noBuyCard = document.createElement('div');
-  noBuyCard.className = "bg-amber-950/80 border-2 border-amber-400 p-2.5 rounded-xl flex flex-col justify-between gap-1.5 text-left shadow-xl animate-pulse";
-  noBuyCard.innerHTML = `
-    <div>
-      <div class="text-amber-300 font-black text-xs flex items-center gap-1.5 mb-0.5">
-        <i class="fa-solid fa-hand"></i> NO COMPRAR
-      </div>
-      <div class="text-[10px] text-amber-200/80 font-mono">Rechazar tentación</div>
-    </div>
-    <button id="noBuySpecialBtn" class="w-full py-1.5 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 text-slate-950 font-black text-[11px] rounded-lg shadow-lg active:scale-95 transition-all border border-yellow-200 cursor-pointer">
-      NO COMPRAR NADA
-    </button>
-  `;
-
-  noBuyCard.querySelector('#noBuySpecialBtn').addEventListener('click', handleSpecialShopNoBuy);
-
-  shopGrid.appendChild(noBuyCard);
-
-  const merchantModal = document.getElementById('merchantModal');
-  if (merchantModal) merchantModal.classList.remove('hidden');
+  dshopShow(true);
 }
 
 /* ==========================================================================

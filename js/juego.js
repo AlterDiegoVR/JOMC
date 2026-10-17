@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — juego.js — VERSIÓN 0.1
+// JUST ONE MORE CHEST — juego.js — VERSIÓN 0.101
 // arte del cofre abierto, subida de nivel, abrir cofre
 // ==========================================================================
 
@@ -292,6 +292,7 @@ function openActiveChest() {
 
     const minigameTitle = document.getElementById('minigameTitle');
     if (minigameTitle) minigameTitle.textContent = active.type.nombre;
+    setPuzzleBackground(active.type.juego);   // [0.101] imagen de ambiente detrás del puzle
 
     if (active.type.juego === 'lockpick') startLockpickGame();
     else if (active.type.juego === 'tumbler') startTumblerGame();
@@ -361,3 +362,15 @@ document.addEventListener('click', (e) => {
     closeTraperoShop();
   }
 });
+
+// [0.101] Fondo de cada puzle: la imagen va detrás del panel con un velo oscuro (DATOS_JUEGO.GRAFICOS.FONDOS_PUZLES)
+function setPuzzleBackground(juego) {
+  const m = document.getElementById('minigameModal');
+  if (!m) return;
+  const cfg = (DATOS_JUEGO.GRAFICOS && DATOS_JUEGO.GRAFICOS.FONDOS_PUZLES) || {};
+  const url = cfg.ACTIVAR && typeof ASSETS !== 'undefined' && ASSETS.puzles && ASSETS.puzles[juego];
+  if (!url) { m.classList.remove('puz-bg'); return; }
+  m.style.setProperty('--puz-img', `url("${url}")`);
+  m.style.setProperty('--puz-velo', String(cfg.VELO != null ? cfg.VELO : 0.5));
+  m.classList.add('puz-bg');
+}
