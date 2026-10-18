@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — tiendas.js — VERSIÓN 0.104
+// JUST ONE MORE CHEST — tiendas.js — VERSIÓN 0.105
 // tienda del Duende y del Trapero
 // ==========================================================================
 
@@ -15,15 +15,15 @@ const SHOP_VIS = {
   pack_ganzuas:    { n: 'GANZÚAS +3',      ic: 'ic_ganzua' },
   pack_pines:      { n: 'PINES +2',        ic: 'ic_pin' },
   pack_usb:        { n: 'LLAVES USB +2',   ic: 'ic_usb' },
-  pack_valvulas:   { n: 'VÁLVULA +1',      ic: 'ic_valvula' },
+  pack_valvulas:   { n: 'VÁLVULAS +2',      ic: 'ic_valvula' },
   carta_auto_open: { n: 'CARTA AUTO-OPEN', ic: 'ic_auto' },
   carta_escudo:    { n: 'CARTA ESCUDO',    ic: 'ic_escudo' },
   carta_apuesta:   { n: 'CARTA APUESTA',   ic: 'ic_apuesta' },
   contador_cofres: { n: 'CONTADOR DE COFRES', ic: 'ic_contador' },
-  carta_cofradia:  { n: 'CARTA COFRADÍA',  ic: 'ic_cofradia' }   // [0.104]
+  carta_cofradia:  { n: 'CARTA COFRADÍA DEL COFRE',  ic: 'ic_cofradia' }   // [0.104]
 };
 const SHOP_VIS_RECICLAJE = {
-  proPicks: { n: 'PIN DE ACERO +1',    ic: 'ic_pin' },
+  proPicks: { n: 'PIN DE ACERO +2',    ic: 'ic_pin' },
   usb:      { n: 'LLAVE USB +1',       ic: 'ic_usb' },
   valves:   { n: 'VÁLVULA +1',         ic: 'ic_valvula' }
 };
@@ -42,7 +42,7 @@ let shopArtReady = false;
 function shopArtInit() {
   if (shopArtReady || typeof ASSETS === 'undefined' || !ASSETS.tienda) return;
   const r = document.documentElement.style;
-  const map = { '--ds-cerrado': 'cerrado', '--ds-trapero': 'trapero', '--ds-madera': 'madera', '--ds-marco-l': 'marco_l', '--ds-marco-r': 'marco_r' };
+  const map = { '--ds-cerrado': 'cerrado', '--ds-relleno': 'cerradoRelleno', '--ds-tira': 'escenaTira', '--ds-narr': 'narrativaDuende', '--ds-trapero': 'trapero', '--ds-madera': 'madera', '--ds-marco-l': 'marco_l', '--ds-marco-r': 'marco_r' };
   Object.keys(map).forEach(v => { const u = shopImg(map[v]); if (u) r.setProperty(v, `url("${u}")`); });
   const sc = document.getElementById('dshopScene'); if (sc && shopImg('escena')) sc.setAttribute('src', shopImg('escena'));
   shopArtReady = true;
@@ -120,7 +120,7 @@ function dshopPlayOpening(done) {
     lid.classList.remove('shake');
     void lid.offsetWidth;
     lid.classList.add('open');
-    try { audio.init(); audio.playLockOpen('hydraulic'); } catch (e) {}
+    try { audio.init(); audio.playShutter(); } catch (e) {}
   }, shakeMs));
   dshopAnimTimers.push(setTimeout(() => {
     lid.classList.add('hidden'); lid.classList.remove('open', 'shake');
@@ -166,7 +166,7 @@ function dshopRowEl(o) {
   row.className = 'dshop-row' + (o.poor ? ' poor' : '');
   row.innerHTML = `
     <img class="ic" src="${shopImg(o.vis.ic)}" alt="">
-    <div class="dshop-tx"><div class="dshop-nm">${o.vis.n}${o.own > 0 ? `<span class="dshop-own">x${o.own}</span>` : ''}</div><div class="dshop-ds">${o.desc || ''}</div></div>
+    <div class="dshop-tx"><div class="dshop-nm">${o.vis.n}${o.own > 0 ? `<span class="dshop-own">(tienes ${o.own})</span>` : ''}</div><div class="dshop-ds">${o.desc || ''}</div></div>
     <button class="dshop-bt ${o.poor ? 'off' : (o.cls || '')}" type="button"><span>${o.label}</span><span class="pr">${o.price}</span></button>`;
   row.querySelector('.dshop-bt').addEventListener('click', () => { if (o.poor) { if (o.onPoor) o.onPoor(); } else o.onClick(); });
   return row;
@@ -295,7 +295,7 @@ function openMerchantShop() {
       { id: 'pack_ganzuas', name: '+3 Ganzúas Básicas', baseCost: Math.round(DATOS_JUEGO.ECONOMIA.TIENDA_DUENDE.pack_ganzuas * discountMult), icon: 'fa-key', prop: 'picks', qty: 3 },
       { id: 'pack_pines', name: '+2 Pines de Acero', baseCost: Math.round(DATOS_JUEGO.ECONOMIA.TIENDA_DUENDE.pack_pines * discountMult), icon: 'fa-screwdriver', prop: 'proPicks', qty: 2, minLvl: 2 },
       { id: 'pack_usb', name: '+2 Llaves USB', baseCost: Math.round(DATOS_JUEGO.ECONOMIA.TIENDA_DUENDE.pack_usb * discountMult), icon: 'fa-microchip', prop: 'usb', qty: 2, minLvl: 3 },
-      { id: 'pack_valvulas', name: '+1 Válvula Hidráulica', baseCost: Math.round(DATOS_JUEGO.ECONOMIA.TIENDA_DUENDE.pack_valvulas * discountMult), icon: 'fa-faucet', prop: 'valves', qty: 1, minLvl: 5 },
+      { id: 'pack_valvulas', name: '+2 Válvulas Hidráulicas', baseCost: Math.round(DATOS_JUEGO.ECONOMIA.TIENDA_DUENDE.pack_valvulas * discountMult), icon: 'fa-faucet', prop: 'valves', qty: 2, minLvl: 5 },
       { id: 'carta_auto_open', name: 'Carta Auto-Open', baseCost: Math.round(DATOS_JUEGO.ECONOMIA.TIENDA_DUENDE.carta_auto_open * discountMult), icon: 'fa-wand-magic-sparkles', abilityProp: 'auto' },
       { id: 'carta_escudo', name: 'Carta Escudo Protector', baseCost: Math.round(DATOS_JUEGO.ECONOMIA.TIENDA_DUENDE.carta_escudo * discountMult), icon: 'fa-shield-halved', abilityProp: 'shield' },
       { id: 'carta_apuesta', name: 'Carta Doble o Nada', baseCost: Math.round(DATOS_JUEGO.ECONOMIA.TIENDA_DUENDE.carta_apuesta * discountMult), icon: 'fa-dice', abilityProp: 'riskPot' }
@@ -427,7 +427,7 @@ function renderMerchantShopGrid() {
         onClick: () => {
           if (!STATE.shopSession) resetShopSession();
           STATE.picks -= reqGanzuasReciclaje;
-          STATE[target.prop] += 1;
+          STATE[target.prop] += ((DATOS_JUEGO.ECONOMIA.RECICLAJE.otorgadas || {})[target.prop] || DATOS_JUEGO.ECONOMIA.RECICLAJE.herramientas_otorgadas);   // [0.105] por herramienta
 
           STATE.shopSession.items.push({ name: `Reciclaje: ${target.name}`, costText: `${reqGanzuasReciclaje} Ganzúas`, icon: target.icon, isStolen: false });
           STATE.shopSession.totalPicksRecycled += reqGanzuasReciclaje;
@@ -530,7 +530,7 @@ function traperoCascade() {
   cards.forEach((c, i) => {
     traperoTimers.push(setTimeout(() => {
       c.classList.remove('pre');
-      if (cfg.SONIDO_CASCADA !== false) { try { audio.init(); audio.playCardRise(); } catch (e) {} }
+      if (cfg.SONIDO_CASCADA !== false) { try { audio.init(); audio.playDealBell(i); } catch (e) {} }   // [0.105]
     }, 120 + i * step));
   });
   traperoTimers.push(setTimeout(() => { if (leave) leave.classList.remove('hidden'); }, 120 + cards.length * step + 80));
@@ -555,6 +555,9 @@ function showTraperoDealFeedback(dealTitle, summaryText, onClose) {
 function unlockedAdvancedTools() {
   return DATOS_JUEGO.COFRES.ESTANDAR.filter(t => t.consumible !== 'picks' && STATE.level >= t.minNivel).map(t => t.consumible);
 }
+
+// [0.105] Contrato Leonino: 50 GP en el nivel 1, +10 por nivel, tope 100 (nivel 6)
+function leoninoGp() { const T = DATOS_JUEGO.ECONOMIA.TRAPERO; return Math.min(T.LEONINO_MAX, T.gp_contrato_leonino + T.LEONINO_POR_NIVEL * Math.max(0, STATE.level - 1)); }
 
 function openTraperoShop() {
   const grid = document.getElementById('traperoDealsGrid') || document.getElementById('traperoItemsList'); 
@@ -590,7 +593,7 @@ function openTraperoShop() {
     const tag = (shopCfg().ETIQUETAS_TRAPERO || {})[deal.id] || 'TRATO';
     card.innerHTML = `
       <div class="tcard-top"><span class="tcard-title">${deal.titulo}</span><span class="tcard-tag">${tag}</span></div>
-      <div class="tcard-desc">${deal.desc}</div>
+      <div class="tcard-desc">${String(deal.desc).replace('{LEONINO}', leoninoGp())}</div>
       <div class="tcard-hint">${shopCfg().TRAPERO_ARMADO_TEXTO || 'TOCA OTRA VEZ PARA ACEPTAR'}</div>
       <button class="tcard-btn" type="button" aria-label="${deal.titulo}"></button>
     `;
@@ -669,12 +672,12 @@ function openTraperoShop() {
             showPersistentFeedback("⚠️ Necesitas 1 herramienta avanzada y estar maldecido.");
           }
         } else if (deal.id === 'contrato_leonino') {
-          STATE.gold += DATOS_JUEGO.ECONOMIA.TRAPERO.gp_contrato_leonino;
+          const gpLeo = leoninoGp(); STATE.gold += gpLeo;
           STATE.heavyChestsLeft += 10;
           if (traperoModal) traperoModal.classList.add('hidden');
           audio.playUnlockFanfare('epico');
           updateUI();
-          showTraperoDealFeedback("Contrato Leonino", `Recibes +${DATOS_JUEGO.ECONOMIA.TRAPERO.gp_contrato_leonino} GP inmediatos. Cuidado: los próximos 10 cofres Raros+ requerirán +1 herramienta extra.`);
+          showTraperoDealFeedback("Contrato Leonino", `Recibes +${gpLeo} GP inmediatos. Cuidado: los próximos 10 cofres Raros+ requerirán +1 herramienta extra.`);
         } else if (deal.id === 'pacto_sangre') {
           unlockedAdvancedTools().forEach(p => { STATE[p] += 3; });   // [0.089] solo las ya desbloqueadas
           STATE.cursedChestsLeft += 12;
@@ -683,19 +686,19 @@ function openTraperoShop() {
           updateUI();
           showTraperoDealFeedback("Pacto de Sangre", "Obtienes +3 de cada herramienta avanzada que ya has desbloqueado, pero sufres 12 turnos de Maldición (-50% GP y XP).");
         } else if (deal.id === 'pacto_sombra') {
-          STATE.harderPuzzlesLeft += 10;
+          STATE.harderPuzzlesLeft += 10; STATE.harderSrc = 'Pacto de la Sombra';   // [0.105]
           STATE.traperoBuffs.bonusXp = true;
           if (traperoModal) traperoModal.classList.add('hidden');
           audio.playUnlockFanfare('epico');
           updateUI();
           showTraperoDealFeedback("Pacto de la Sombra", "+25% Experiencia permanente activado. Los minijuegos de los próximos 10 cofres serán más exigentes.");
         } else if (deal.id === 'amor_arte') {
-          unlockedAdvancedTools().forEach(p => { STATE[p] += 2; });   // [0.089] solo las ya desbloqueadas
+          unlockedAdvancedTools().forEach(p => { STATE[p] += DATOS_JUEGO.ECONOMIA.TRAPERO.amor_arte_herramientas; });   // [0.089] solo las ya desbloqueadas; [0.105] 3
           STATE.noXpChestsLeft += 5;
           if (traperoModal) traperoModal.classList.add('hidden');
           audio.playUnlockFanfare('epico');
           updateUI();
-          showTraperoDealFeedback("Por Amor al Arte", "Obtienes +2 de cada herramienta avanzada que ya has desbloqueado. No ganarás experiencia durante los próximos 5 cofres.");
+          showTraperoDealFeedback("Por Amor al Arte", "Obtienes +3 de cada herramienta avanzada que ya has desbloqueado. No ganarás experiencia durante los próximos 5 cofres.");
         } else if (deal.id === 'empujon_siniestro') {
           STATE.gold = 30;
           if (traperoModal) traperoModal.classList.add('hidden');

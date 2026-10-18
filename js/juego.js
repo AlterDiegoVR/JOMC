@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — juego.js — VERSIÓN 0.104
+// JUST ONE MORE CHEST — juego.js — VERSIÓN 0.105
 // arte del cofre abierto, subida de nivel, abrir cofre
 // ==========================================================================
 
@@ -310,6 +310,7 @@ function openActiveChest() {
 
     const minigameTitle = document.getElementById('minigameTitle');
     if (minigameTitle) minigameTitle.textContent = active.type.nombre;
+    pzHardBadgeUpdate();   // [0.105] aviso de puzle endurecido/extremo
     setPuzzleBackground(active.type.juego);   // [0.101] imagen de ambiente detrás del puzle
 
     if (active.type.juego === 'lockpick') startLockpickGame();
@@ -411,8 +412,8 @@ function pzScale(m) {
   const cfg = DATOS_JUEGO.GRAFICOS.ESCALA_PUZLES || {};
   const frame = document.getElementById('pzFrame'), card = document.getElementById('pzCard'), timer = document.getElementById('bigTimer'), foot = document.getElementById('pzFoot');
   if (!frame || m.classList.contains('hidden')) return;
-  const sel = { lockpick: '#lockpickContainer .pz-body', pipe: '#pipeContainer .pz-body', hack: '#hackContainer' };
-  const idOf = { lockpick: 'lockpickContainer', pipe: 'pipeContainer', hack: 'hackContainer' };
+  const sel = { lockpick: '#lockpickContainer .pz-body', tumbler: '#tumblerContainer .pz-body', pipe: '#pipeContainer .pz-body', hack: '#hackContainer' };
+  const idOf = { lockpick: 'lockpickContainer', tumbler: 'tumblerContainer', pipe: 'pipeContainer', hack: 'hackContainer' };
   Object.keys(sel).forEach(k => { const e = document.querySelector(sel[k]); if (e) e.style.zoom = ''; });
   frame.style.removeProperty('--pzw');
   let which = null;

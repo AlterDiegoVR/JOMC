@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — eventos.js — VERSIÓN 0.104
+// JUST ONE MORE CHEST — eventos.js — VERSIÓN 0.105
 // tiendas especiales, visitas, habilidades, temporizador, fallo y Game Over
 // ==========================================================================
 
@@ -62,7 +62,7 @@ function openSpecialShopModal() {
     { id: 'pack_ganzuas', name: '+3 Ganzúas Básicas', cost: Math.round(DATOS_JUEGO.ECONOMIA.TIENDA_DUENDE.pack_ganzuas * discountMult), icon: 'fa-key', prop: 'picks', qty: 3 },
     { id: 'pack_pines', name: '+2 Pines de Acero', cost: Math.round(DATOS_JUEGO.ECONOMIA.TIENDA_DUENDE.pack_pines * discountMult), icon: 'fa-screwdriver', prop: 'proPicks', qty: 2, minLvl: 2 },
     { id: 'pack_usb', name: '+2 Llaves USB', cost: Math.round(DATOS_JUEGO.ECONOMIA.TIENDA_DUENDE.pack_usb * discountMult), icon: 'fa-microchip', prop: 'usb', qty: 2, minLvl: 3 },
-    { id: 'pack_valvulas', name: '+1 Válvula Hidráulica', cost: Math.round(DATOS_JUEGO.ECONOMIA.TIENDA_DUENDE.pack_valvulas * discountMult), icon: 'fa-faucet', prop: 'valves', qty: 1, minLvl: 5 },
+    { id: 'pack_valvulas', name: '+2 Válvulas Hidráulicas', cost: Math.round(DATOS_JUEGO.ECONOMIA.TIENDA_DUENDE.pack_valvulas * discountMult), icon: 'fa-faucet', prop: 'valves', qty: 2, minLvl: 5 },
     { id: 'carta_auto_open', name: 'Carta Auto-Open', cost: Math.round(DATOS_JUEGO.ECONOMIA.TIENDA_DUENDE.carta_auto_open * discountMult), icon: 'fa-wand-magic-sparkles', abilityProp: 'auto' },
     { id: 'carta_escudo', name: 'Carta Escudo Protector', cost: Math.round(DATOS_JUEGO.ECONOMIA.TIENDA_DUENDE.carta_escudo * discountMult), icon: 'fa-shield-halved', abilityProp: 'shield' }
   ];
@@ -113,7 +113,8 @@ function openSpecialShopModal() {
    COLAPSO SENSORIAL Y SECUENCIA FINAL
    ========================================================================== */
 
-/* [0.104] FONDO DE ESTRELLAS Y GALAXIAS: es lo que queda detrás del cristal cuando se rompe (ya no hay negro plano). Lienzo propio con estrellas que titilan y dos galaxias en espiral que giran despacio. */
+/* [0.105] FONDO DE LA GALAXIA: lo que queda detrás del cristal cuando se rompe. UNA sola galaxia en espiral que gira despacio, con aberración cromática (cada punto con
+   flecos azules y verdes desplazados) y una ondulación suave que deforma toda la imagen. */
 let starfieldRaf = null;
 function starfieldStart(r) {
   starfieldStop();
@@ -124,24 +125,39 @@ function starfieldStart(r) {
   document.body.appendChild(cv);
   requestAnimationFrame(() => { cv.style.opacity = '1'; });
   const g = cv.getContext('2d');
-  const stars = Array.from({ length: Math.round(W * H / 2600) }, () => ({ x: Math.random() * W, y: Math.random() * H, s: Math.random() < .12 ? 2 : 1, p: Math.random() * 6.28, v: .8 + Math.random() * 2.2, c: ['#ffffff', '#cfe3ff', '#ffe9c4', '#ffd0f0'][Math.floor(Math.random() * 4)] }));
-  const mkGal = (cx, cy, R, hue, tilt) => { const pts = []; for (let i = 0; i < 520; i++) { const arm = i % 2, t = Math.pow(Math.random(), .7) * 3.6, a = t * 2.1 + arm * Math.PI + (Math.random() - .5) * .5, rr = R * (t / 3.6) + (Math.random() - .5) * R * .12; pts.push({ a, r: rr, h: hue + (Math.random() - .5) * 40, l: 55 + Math.random() * 35, z: Math.random() < .15 ? 2 : 1 }); } return { cx, cy, R, tilt, pts, rot: 0 }; };
-  const gals = [mkGal(W * .27, H * .3, Math.min(W, H) * .34, 270, .45), mkGal(W * .74, H * .68, Math.min(W, H) * .27, 195, -.5)];
+  const stars = Array.from({ length: Math.round(W * H / 2400) }, () => ({ x: Math.random() * W, y: Math.random() * H, s: Math.random() < .12 ? 2 : 1, p: Math.random() * 6.28, v: .8 + Math.random() * 2.2 }));
+  const GX = W * .5, GY = H * .45, R = Math.min(W, H) * .5, TILT = .5;
+  const pts = [];
+  for (let i = 0; i < 1500; i++) {
+    const arm = i % 2, t = Math.pow(Math.random(), .75) * 3.6, a = t * 2.1 + arm * Math.PI + (Math.random() - .5) * .55, rr = R * (t / 3.6) * (.9 + Math.random() * .2);
+    pts.push({ a, r: rr, s: Math.random() < .08 ? 2 : 1, h: 200 + Math.random() * 90 });
+  }
   const t0 = performance.now();
+  const AMP = Math.max(3, Math.min(W, H) * .012);
+  const warp = (x, y, t) => [x + Math.sin(y * .018 + t * 1.6) * AMP + Math.sin(y * .045 - t * 2.3) * AMP * .35, y + Math.cos(x * .016 + t * 1.3) * AMP * .8];
+  const dot = (x, y, sz, t, ab, hue, alpha) => {
+    const w = warp(x, y, t), px = w[0], py = w[1];
+    g.globalAlpha = alpha * .8; g.fillStyle = 'rgb(40,110,255)'; g.fillRect(px - ab, py - ab * .5, sz, sz);          // fleco azul
+    g.fillStyle = 'rgb(40,255,120)'; g.fillRect(px + ab, py + ab * .5, sz, sz);                                    // fleco verde
+    g.globalAlpha = alpha; g.fillStyle = hue ? `hsl(${hue},45%,86%)` : '#ffffff'; g.fillRect(px, py, sz, sz);     // punto
+  };
   const frame = now => {
     if (!document.getElementById('starfieldBg')) return;
     const t = (now - t0) / 1000;
+    g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
     g.fillStyle = '#02030a'; g.fillRect(0, 0, W, H);
-    const neb = g.createRadialGradient(W * .5, H * .5, 0, W * .5, H * .5, Math.max(W, H) * .7); neb.addColorStop(0, 'rgba(60,30,110,.28)'); neb.addColorStop(1, 'rgba(2,3,10,0)');
+    const neb = g.createRadialGradient(GX, GY, 0, GX, GY, Math.max(W, H) * .65); neb.addColorStop(0, 'rgba(70,40,120,.34)'); neb.addColorStop(1, 'rgba(2,3,10,0)');
     g.fillStyle = neb; g.fillRect(0, 0, W, H);
-    stars.forEach(s => { g.globalAlpha = .35 + .65 * Math.abs(Math.sin(s.p + t * s.v)); g.fillStyle = s.c; g.fillRect(s.x, s.y, s.s, s.s); });
-    gals.forEach((G, gi) => {
-      const core = g.createRadialGradient(G.cx, G.cy, 0, G.cx, G.cy, G.R * .22); core.addColorStop(0, 'rgba(255,240,210,.9)'); core.addColorStop(1, 'rgba(255,200,160,0)');
-      g.globalAlpha = 1; g.fillStyle = core; g.fillRect(G.cx - G.R * .25, G.cy - G.R * .25, G.R * .5, G.R * .5);
-      const rot = t * (gi ? -.12 : .1);
-      G.pts.forEach(p => { const a = p.a + rot, x = G.cx + Math.cos(a) * p.r, y = G.cy + Math.sin(a) * p.r * G.tilt * 1.4 + Math.cos(a) * p.r * .15 * G.tilt; g.globalAlpha = .55 + .4 * (1 - p.r / G.R); g.fillStyle = `hsl(${p.h},85%,${p.l}%)`; g.fillRect(x, y, p.z, p.z); });
+    g.globalCompositeOperation = 'lighter';
+    stars.forEach(s => dot(s.x, s.y, s.s, t, 1.3, 0, .3 + .6 * Math.abs(Math.sin(s.p + t * s.v))));
+    const core = g.createRadialGradient(GX, GY, 0, GX, GY, R * .24); core.addColorStop(0, 'rgba(255,240,215,.95)'); core.addColorStop(1, 'rgba(255,200,160,0)');
+    g.globalAlpha = 1; g.fillStyle = core; g.fillRect(GX - R * .26, GY - R * .26, R * .52, R * .52);
+    const rot = t * .09;
+    pts.forEach(p => {
+      const a = p.a + rot, x = GX + Math.cos(a) * p.r, y = GY + Math.sin(a) * p.r * TILT * 1.5 + Math.cos(a) * p.r * .12;
+      dot(x, y, p.s, t, 1 + p.r / R * 2.2, p.h, .45 + .45 * (1 - p.r / R));
     });
-    g.globalAlpha = 1;
+    g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
     starfieldRaf = requestAnimationFrame(frame);
   };
   starfieldRaf = requestAnimationFrame(frame);
@@ -193,7 +209,7 @@ function glassShatterFx() {
     return { w, mx, my };
   });
   document.body.appendChild(root);
-  try { audio.playBreak(); } catch (e) {}
+  try { audio.playGlassIrreal(); } catch (e) {}   // [0.105]
   // 4) tiempo de grietas y caída
   setTimeout(() => {
     svg.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 500, fill: 'forwards' });
@@ -334,7 +350,7 @@ function triggerDuendeNarrativeVisit() {
    (en PC se mantiene el clic directo + tooltip). Se intercepta en fase de captura, antes de los manejadores de cada carta. */
 (function () {
   const ids = { abilityAutoBtn: 'auto', ability2xBtn: 'double', abilityShieldBtn: 'shield', abilityRiskBtn: 'riskPot', abilityPerdedorBtn: 'perdedor', abilitySummonDuendeBtn: 'summonDuende', abilityCofradiaBtn: 'cofradia' };
-  const NOMBRES = { auto: 'AUTO', double: '2X', shield: 'ESCUDO', riskPot: 'APUESTA', perdedor: 'PERDEDOR', summonDuende: 'DUENDE', cofradia: 'COFRADÍA' };
+  const NOMBRES = { auto: 'AUTO', double: '2X', shield: 'ESCUDO', riskPot: 'APUESTA', perdedor: 'PERDEDOR', summonDuende: 'DUENDE', cofradia: 'COFRADÍA DEL COFRE' };
   let bypass = false;
   document.addEventListener('click', (e) => {
     const cfg = DATOS_JUEGO.CARTAS_PANTALLA_PREVIA || {};
@@ -435,6 +451,7 @@ if (claimRiskBtn) {
       showPersistentFeedback(`💰 ¡Has cobrado el Bote de Riesgo de ${STATE.riskPot} GP!`);
       STATE.riskPot = 0;
       STATE.riskModeActive = false;
+      rechargeUsed('riskPot');   // [0.105]
       updateUI();
     }
   });
@@ -482,7 +499,7 @@ function cofradiaRoll() {
     if (roll < tier.legendario) rarity = CHEST_RARITIES[3];
     else if (roll < tier.legendario + tier.epico) rarity = CHEST_RARITIES[2];
     else if (roll < tier.legendario + tier.epico + tier.raro) rarity = CHEST_RARITIES[1];
-    out.push({ type, rarity, fog: false });
+    out.push({ type, rarity: chestToolMods(rarity), fog: false });
   }
   return out;
 }
@@ -507,7 +524,8 @@ function cofradiaStart() {
   host.appendChild(m);
   const fan = m.querySelector('#cfFan'), prev = m.querySelector('#cfPrev'), prevCard = m.querySelector('#cfPrevCard'), sub = m.querySelector('#cfSub');
   const W = fan.clientWidth || 360;
-  const cw = Math.min(74, Math.round(W * 0.19)), step = Math.min(34, (W - cw - 12) / 9);
+  const bigScr = !document.documentElement.classList.contains('narrow-layout');
+  const cw = Math.min(bigScr ? 104 : 74, Math.round(W * (bigScr ? 0.23 : 0.19))), step = Math.min(bigScr ? 48 : 34, (W - cw - 12) / 9);   // [0.105] cartas más grandes en PC
   const cardHtml = c => {
     const src = (ART_ON && ASSETS.cofres[c.type.id]) ? chestSpriteSrc(c.type, c.rarity) : '';
     return `<div class="cf-face cf-front" style="border-color:${c.rarity.color}"><span class="cf-rar" style="color:${c.rarity.color}">${c.rarity.name}</span>${src ? `<img src="${src}" alt="">` : '<i class="fa-solid fa-box"></i>'}<span class="cf-typ">${c.type.nombre}</span></div><div class="cf-face cf-back"><i class="fa-solid fa-boxes-stacked"></i></div>`;
@@ -556,13 +574,12 @@ function cofradiaStart() {
     const chosen = picks[sel];
     try { audio.playUnlockFanfare(chosen.rarity.id); } catch (e) {}
     m.style.transition = 'opacity .35s ease'; m.style.opacity = '0';
-    STATE.screenChests = [chosen]; STATE.activeChestIdx = 0;   // el cofre está oculto hasta que se retire el telón de la sala vacía
     setTimeout(() => {
       m.remove();
       cofradiaOpen = false;
       const f2 = document.getElementById('gameFrame'); if (f2) f2.classList.remove('cofradia-on');
-      updateChestSelectionUI();
-      chestMutateFxNow(null);   // mismo destello que el reroll; el cofre NO se abre solo
+      updateChestSelectionUI();   // [0.105] al volver se ve el cofre ANTERIOR; el elegido aparece dentro del destello
+      chestMutateFxNow(() => { STATE.screenChests = [chosen]; STATE.activeChestIdx = 0; updateChestSelectionUI(); updateUI(); });   // mismo destello que el reroll; el cofre NO se abre solo
       cofradiaBusy = false;
       updateUI();
     }, 380);
@@ -651,6 +668,7 @@ function handleFailure(toolName = 'picks', reasonText = "Fallo en el puzle.") {
   if (STATE.riskModeActive && !STATE.activeShield) {   // [0.087b] el escudo también protege el bote de la Apuesta
     STATE.riskPot = 0;
     STATE.riskModeActive = false;
+    rechargeUsed('riskPot');   // [0.105]
     // [0.082] El oro solo cae a 30 si el jugador tenía más de 30; si tenía menos, no se toca
     if (STATE.gold > 30) {
       STATE.gold = 30;
@@ -686,6 +704,7 @@ function handleFailure(toolName = 'picks', reasonText = "Fallo en el puzle.") {
 
   if (STATE.activeShield) {
     STATE.activeShield = false;
+    rechargeUsed('shield');   // [0.105]
     showPersistentFeedback(STATE.riskModeActive ? "🛡️ ¡Tu ESCUDO te ha salvado! Herramientas y Bote de Riesgo intactos." : "🛡️ ¡Tu ESCUDO te ha salvado! Herramientas intactas.");
     if (puzzleToolPaid) { STATE[puzzleToolPaid.prop] += puzzleToolPaid.n; puzzleToolPaid = null; }   // [0.090] el Escudo devuelve la herramienta pagada al entrar
     updateUI();

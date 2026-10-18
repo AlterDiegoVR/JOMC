@@ -307,7 +307,9 @@ html:not(.narrow-layout) #levelUpModal > div { max-height: none !important; over
 .dshop::after { content: ''; position: absolute; top: 0; bottom: 0; right: 0; width: 39px; background: var(--ds-marco-r) repeat-y left top / 39px 30px; image-rendering: pixelated; pointer-events: none; }
 .dshop-col { position: absolute; left: 39px; right: 39px; top: 0; bottom: 0; overflow-y: auto; scrollbar-width: none; background: #3c2a1c var(--ds-madera) repeat top left / 354px 192px; image-rendering: pixelated; }
 .dshop-col::-webkit-scrollbar { display: none; }
-.dshop-in { padding: 8px 0 12px; }
+.dshop-in { padding: 8px 0 12px; position: relative; z-index: 0; }
+/* [0.105] la madera de la escena se alarga hacia arriba, por detrás de la barra de recursos */
+.dshop-scene::before { content: ''; position: absolute; left: 0; right: 0; bottom: 100%; height: 260px; z-index: -1; background: var(--ds-tira) left bottom / 100% auto repeat-y; image-rendering: pixelated; }
 html:not(.narrow-layout) .dshop-in { zoom: var(--mz, 1); }
 .dshop-hud { margin: 0 6px; }
 .dshop-hud > div { margin: 0; }
@@ -338,7 +340,7 @@ html:not(.narrow-layout) .dshop-in { zoom: var(--mz, 1); }
 .dshop-leave { display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 8px 40px 0; width: calc(100% - 80px); height: 36px; border-radius: 6px; background: #6a2f42; border: 2px solid #b03a3a; color: #e8dcc0; font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 14px; letter-spacing: .1em; cursor: pointer; line-height: 1.05; }
 .dshop-leave small { font-size: 9px; letter-spacing: .12em; color: #e6a49a; }
 .dshop-leave:active { filter: brightness(1.2); }
-.dshop-lid { position: absolute; inset: 0; z-index: 20; background: var(--ds-cerrado) center / 100% auto no-repeat, var(--ds-marco-l) left top / 39px 30px repeat-y, var(--ds-marco-r) right top / 39px 30px repeat-y, #3c2a1c var(--ds-madera) top left / 354px 192px repeat;   /* [0.104] la persiana ya no se estira en móviles alargados: la imagen mantiene su proporción y el resto es madera con marcos */ image-rendering: pixelated; transform: translateY(0); will-change: transform; }
+.dshop-lid { position: absolute; inset: 0; z-index: 20; background: var(--ds-cerrado) center / 100% auto no-repeat, var(--ds-relleno) center top / 100% auto repeat-y, #67472d;   /* [0.104] la persiana ya no se estira en móviles alargados: la imagen mantiene su proporción y el resto es madera con marcos */ image-rendering: pixelated; transform: translateY(0); will-change: transform; }
 .dshop-lid.shake { animation: dshopShake .09s steps(2) infinite; }
 .dshop-lid.open { transform: translateY(-104%); transition: transform var(--lid-ms, 1.3s) cubic-bezier(.55, .05, .85, .35); }
 @keyframes dshopShake { 0% { transform: translateX(-3px); } 100% { transform: translateX(3px); } }
@@ -353,7 +355,9 @@ html:not(.narrow-layout) .dshop-in { zoom: var(--mz, 1); }
 .tshop-stage { --u: calc(100cqw / 144); --ex: max(0px, calc(100cqh - var(--u) * 256)); position: relative; flex: none; width: 100cqw; height: 100cqh; container-type: size; overflow: hidden; background: #0a0910; }   /* [0.104] ocupa TODO el alto del móvil: el sobrante (--ex) se reparte (fondo anclado abajo, lista y personaje se ajustan) */
 .tshop-stage > * { position: absolute; }
 .tshop-bg { inset: 0; image-rendering: pixelated; background: #0a0910 var(--ds-trapero) bottom center / 100% auto no-repeat; }
-.tshop-bg::after { content: ''; position: absolute; left: 0; right: 0; top: var(--ex); height: min(calc(var(--ex) * 1000), calc(var(--u) * 14)); background: linear-gradient(#0a0910, rgba(10, 9, 16, 0)); }
+/* [0.105] En móviles alargados la imagen se ancla abajo; las telarañas (filas 0-66 de la imagen) se redibujan arriba del todo y se tapan las del sitio desplazado */
+.tshop-bg::after { content: ''; position: absolute; left: 0; right: 0; top: var(--ex); height: min(calc(var(--ex) * 1000), calc(var(--u) * 84)); background: linear-gradient(#0a0910 0, #0a0910 80%, rgba(10, 9, 16, 0)); }
+.tshop-bg::before { content: ''; position: absolute; left: 0; right: 0; top: 0; z-index: 1; height: min(calc(var(--ex) * 1000), calc(var(--u) * 74)); background: var(--ds-trapero) top center / 100% auto no-repeat; image-rendering: pixelated; -webkit-mask-image: linear-gradient(#000 82%, transparent); mask-image: linear-gradient(#000 82%, transparent); }
 .tshop-pj { left: calc(var(--u) * 36); top: calc(var(--u) * 132 + var(--ex)); width: calc(var(--u) * 72); height: auto; z-index: 1; image-rendering: pixelated; filter: drop-shadow(0 0 calc(var(--u) * 3) rgba(180, 30, 40, .45)); }
 .tshop-pj.small { left: calc(var(--u) * 48); top: calc(var(--u) * 143 + var(--ex)); width: calc(var(--u) * 48); }
 .tshop-speech { left: calc(var(--u) * 8); right: calc(var(--u) * 8); top: calc(var(--u) * 50); z-index: 4; background: rgba(8, 5, 9, .9); border: calc(var(--u) * .8) solid #9a3d3d; border-radius: calc(var(--u) * 3); padding: calc(var(--u) * 5); text-align: center; transition: opacity .35s; }
@@ -421,7 +425,7 @@ html.narrow-layout .npc-big { margin-bottom: -22px; }
 .pz-group { display: contents; }
 #lockpickContainer.hidden, #tumblerContainer.hidden, #pipeContainer.hidden, #hackContainer.hidden { display: none; }
 .pz-body { grid-row: 3; width: 100%; align-self: center; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 10px; }
-.pz-btn { grid-row: 4; align-self: center; width: 100%; max-width: 400px; transform: translateY(var(--pzshift, 0px)); box-sizing: border-box; padding: 18px 10px; min-height: 62px; display: flex; align-items: center; justify-content: center; gap: 8px;
+.pz-btn { grid-row: 4; align-self: center; width: 100%; max-width: var(--pzw, 400px); transform: translateY(var(--pzshift, 0px)); box-sizing: border-box; padding: 18px 10px; min-height: 62px; display: flex; align-items: center; justify-content: center; gap: 8px;
   background: #c99a3a; color: #2a1608; border: 3px solid #5a3a14; border-radius: 3px; box-shadow: inset 0 0 0 2px #e8c36a, 0 0 0 2px #0e1220, 0 3px 0 2px #0e1220;
   font: 900 19px 'Outfit', sans-serif; letter-spacing: .05em; text-shadow: 0 1px 0 #f0d28a, 0 0 1px #2a1608; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
 .pz-btn:active:not(:disabled) { filter: brightness(1.15); }
@@ -494,7 +498,7 @@ html.narrow-layout .npc-big { margin-bottom: -22px; }
 /* --- Pipes: tuberías de cobre con bridas, agua azul, válvula roja, barril-bomba y placas --- */
 #pipeGrid { display: grid; gap: 3px; padding: 30px 11px; background: #0d1020; border: 3px solid #4a5170; border-radius: 3px; box-shadow: inset 0 0 0 2px #070913, 0 0 0 2px #1a1f33, 0 0 0 5px #6b4a2a; margin: 6px 0; image-rendering: pixelated; }
 .pipe-tile { position: relative; width: var(--pt, 58px); height: var(--pt, 58px); padding: 0; border: 0; background: transparent; border-radius: 0; overflow: visible; }
-.pipe-cv { width: 100%; height: 100%; display: block; image-rendering: pixelated; transition: transform .12s steps(3); }
+.pipe-cv { width: 100%; height: 100%; display: block; image-rendering: auto; transition: transform .12s steps(3); }
 .pipe-tile.bombhit { animation: pipeBombHit .5s steps(2) infinite; }
 @keyframes pipeBombHit { 50% { filter: brightness(2.2) saturate(2); } }
 .pipe-valve, .pipe-out { position: absolute; left: 0; right: 0; height: 28px; pointer-events: none; z-index: 2; }
@@ -560,18 +564,23 @@ html.narrow-layout #dialogueModal.dlg-shop { padding-bottom: 24px; }
 #dialogueModal.dlg-d #npcSpeechText { background: rgba(26, 14, 40, .78); border-color: rgba(138, 94, 190, .85); }
 .dlg-bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; image-rendering: pixelated; container-type: inline-size; }
 #dialogueModal.dlg-t .dlg-bg { background: #0a0910 var(--ds-trapero) bottom center / 100% auto no-repeat; }
-#dialogueModal.dlg-t .dlg-bg::after { content: ''; position: absolute; left: 0; right: 0; top: max(0px, calc(100% - 100cqw * 16 / 9)); height: 90px; background: linear-gradient(#0a0910, rgba(10, 9, 16, 0)); }
-#dialogueModal.dlg-d .dlg-bg { background: #3c2a1c var(--ds-madera) top left / 354px 192px repeat; }
-#dialogueModal.dlg-d .dlg-bg::before, #dialogueModal.dlg-d .dlg-bg::after { content: ''; position: absolute; top: 0; bottom: 0; width: 39px; background: var(--ds-marco-l) repeat-y left top / 39px 30px; image-rendering: pixelated; }
-#dialogueModal.dlg-d .dlg-bg::before { left: 0; }
-#dialogueModal.dlg-d .dlg-bg::after { right: 0; background-image: var(--ds-marco-r); }
+#dialogueModal.dlg-t .dlg-bg::after { content: ''; position: absolute; left: 0; right: 0; top: max(0px, calc(100% - 100cqw * 16 / 9)); height: calc(100cqw / 144 * 84); background: linear-gradient(#0a0910 0, #0a0910 80%, rgba(10, 9, 16, 0)); }
+#dialogueModal.dlg-t .dlg-bg::before { content: ''; position: absolute; left: 0; right: 0; top: 0; z-index: 1; height: calc(100cqw / 144 * 74); background: var(--ds-trapero) top center / 100% auto no-repeat; image-rendering: pixelated; -webkit-mask-image: linear-gradient(#000 82%, transparent); mask-image: linear-gradient(#000 82%, transparent); }
 .dlg-art { position: absolute; z-index: 1; left: 0; right: 0; bottom: 0; pointer-events: none; container-type: inline-size; image-rendering: pixelated; }
 #dialogueModal.dlg-t .dlg-art { height: calc(100cqw * 1.1); }
 #dialogueModal.dlg-t .dlg-scene { display: none; }
 #dialogueModal.dlg-t .dlg-fig { position: absolute; left: 25%; width: 50%; bottom: 15.3%; height: auto; image-rendering: pixelated; filter: drop-shadow(0 0 12px rgba(180, 30, 40, .45)); }
-#dialogueModal.dlg-d .dlg-art { left: 39px; right: 39px; aspect-ratio: 118 / 69; }
-#dialogueModal.dlg-d .dlg-scene { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
-#dialogueModal.dlg-d .dlg-fig { position: absolute; left: 0; bottom: 2.9%; width: 40.7%; height: auto; image-rendering: pixelated; }
+
+/* [0.105] Narrativa del Duende: ilustración nueva de la tienda (colores al 78 %), texto grande arriba, Duende grande algo a la derecha y botón con margen abajo */
+#dialogueModal.dlg-d .dlg-bg { background: #3a2a1c var(--ds-narr) center 38% / cover no-repeat; image-rendering: auto; }
+#dialogueModal.dlg-d .dlg-art { top: 0; height: auto; }
+#dialogueModal.dlg-d .dlg-scene { display: none; }
+#dialogueModal.dlg-d .dlg-fig { position: absolute; left: 50%; bottom: 14%; width: 54%; height: auto; transform: translateX(-42%); image-rendering: pixelated; }
+#dialogueModal.dlg-d { justify-content: flex-start; }
+#dialogueModal.dlg-d > .my-auto { margin-top: 10px; }
+#dialogueModal.dlg-d #npcSpeechText { font-size: 1.32rem; line-height: 1.55; padding: 22px 22px; min-height: 190px; background: rgba(22, 18, 28, .9); border-color: rgba(130, 100, 170, .9); }
+#dialogueModal.dlg-d #closeDialogueBtn { position: absolute; left: 20px; right: 20px; bottom: 5.5%; margin-top: 0; z-index: 4; width: auto; }
+#dialogueModal.dlg-shop > div.flex.items-center.justify-between { border-bottom-color: transparent; }   /* [0.105] sin línea morada entre la cabecera y el texto */
 
 /* [0.104] Palabras clave resaltadas en banners y diálogos */
 b.kw { font-weight: 900; font-style: normal; color: #fbbf24; text-shadow: 0 0 6px rgba(251, 191, 36, .35); }
@@ -614,3 +623,21 @@ html.narrow-layout #multiChestGrid.quad4 > button { max-width: none; min-height:
 .cf-prev-btns button { min-width: 120px; padding: 13px 16px; font: 900 16px 'Outfit', sans-serif; letter-spacing: .08em; border-radius: 12px; border: 2px solid; cursor: pointer; }
 #cfPick { background: linear-gradient(#5eead4, #14b8a6); color: #022c22; border-color: #99f6e4; }
 #cfBack { background: #1e293b; color: #cbd5e1; border-color: #475569; }
+html:not(.narrow-layout) #cofradiaModal .cf-fan { height: 230px; max-width: 520px; }
+
+/* [0.105] Letrero de estado de la ganzúa: texto limpio con sombra y subrayado del color de estado (opción C elegida) */
+.lp-state { display: inline-block; position: relative; padding-bottom: 7px; font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 1.1rem; letter-spacing: .14em; text-transform: uppercase; color: #f4ecda; text-shadow: 0 2px 6px rgba(0, 0, 0, .95), 0 0 3px rgba(0, 0, 0, .9); }
+.lp-state::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 4px; border-radius: 2px; background: var(--st, #3cd696); }
+
+/* [0.105] Terminal en móvil: letras más grandes (cuadrícula de palabras, historial y cabecera) */
+html.narrow-layout #hackWordGrid button { font-size: 16px; padding-top: 7px; padding-bottom: 7px; }
+html.narrow-layout #hackHistory, html.narrow-layout #hackHistory div { font-size: 14px !important; }
+html.narrow-layout #hackContainer .hk-head { font-size: 14px !important; }
+html.narrow-layout #hackContainer .hk-len { font-size: 12.5px !important; }
+html.narrow-layout #hackWordGrid { max-height: 250px; }
+
+/* [0.105] aviso de puzle endurecido / extremo */
+#pzHardBadge{margin:4px auto 0;padding:3px 10px;border:2px solid #c99a3a;background:rgba(40,20,5,.85);color:#f5d77a;font:700 11px 'Courier New',monospace;letter-spacing:.08em;text-align:center;max-width:92%}
+#pzHardBadge.xtr{border-color:#ff4d6d;color:#ff9aae;background:rgba(50,5,15,.9);animation:pzXtr 1s steps(2) infinite}
+@keyframes pzXtr{50%{box-shadow:0 0 8px #ff4d6d}}
+.hk-warn{color:#ff9aae;font-weight:700}

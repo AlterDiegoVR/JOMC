@@ -1,11 +1,41 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — audio.js — VERSIÓN 0.104
+// JUST ONE MORE CHEST — audio.js — VERSIÓN 0.105
 // motor de audio
 // ==========================================================================
 
 /* ==========================================================================
    MOTOR PRINCIPAL Y LÓGICA DEL JUEGO
    ========================================================================== */
+
+// [0.105] Síntesis de los sonidos nuevos (cristal irreal, pistón, persiana, campanas del Trapero, pad suave)
+function _nbuf(c){ if (!c._nb){ const n = c.sampleRate * 4, b = c.createBuffer(1, n, c.sampleRate), d = b.getChannelData(0); for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1; c._nb = b; } return c._nb; }
+function _N(c, out, t, dur, o){
+  const s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain(), a = Math.min(o.a || 0.003, dur * 0.9);
+  s.buffer = _nbuf(c); f.type = o.type || 'bandpass'; f.Q.value = o.q || 1; f.frequency.setValueAtTime(o.f, t);
+  if (o.fEnd) f.frequency.exponentialRampToValueAtTime(o.fEnd, t + dur);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(o.vol, t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  s.connect(f); f.connect(g); g.connect(out); s.start(t, Math.random() * 1.4); s.stop(t + dur + 0.05);
+}
+function _T(c, out, t, f, dur, vol, o){
+  o = o || {};
+  const os = c.createOscillator(), g = c.createGain(), a = Math.min(o.a || 0.003, dur * 0.9);
+  os.type = o.type || 'sine'; os.frequency.setValueAtTime(f, t);
+  if (o.fEnd) os.frequency.exponentialRampToValueAtTime(o.fEnd, t + dur);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  os.connect(g); g.connect(out); os.start(t); os.stop(t + dur + 0.05);
+}
+function _ring(c, out, t, f, dur, vol){ [1, 2.76, 5.4].forEach((k, i) => _T(c, out, t, f * k, dur / (1 + i * 0.6), vol / (1 + i * 1.5))); }
+function _reverb(c, out, sec, wet){
+  const n = Math.floor(c.sampleRate * sec), b = c.createBuffer(2, n, c.sampleRate);
+  for (let ch = 0; ch < 2; ch++){ const d = b.getChannelData(ch); let lp = 0; for (let i = 0; i < n; i++){ lp += ((Math.random() * 2 - 1) * Math.pow(1 - i / n, 2.4) - lp) * 0.4; d[i] = lp; } }
+  const cv = c.createConvolver(), w = c.createGain(); cv.buffer = b; w.gain.value = wet; cv.connect(w); w.connect(out); return cv;
+}
+function _tinkles(c, out, t, count, spread, fLo, fHi, dMin, dVar, vol){
+  for (let i = 0; i < count; i++){
+    const u = Math.pow(Math.random(), 1.6), tt = t + 0.04 + u * spread, f = fLo + Math.random() * (fHi - fLo);
+    _T(c, out, tt, f, dMin + Math.random() * dVar, vol * (0.5 + Math.random() * 0.5) * (1 - u * 0.55), { type: i % 3 ? 'sine' : 'triangle', a: 0.001 });
+  }
+}
 
 class AudioEngine {
   constructor() {
@@ -352,6 +382,45 @@ class AudioEngine {
 
     osc.start();
     osc.stop(this.ctx.currentTime + 0.04);
+  }
+  // [0.105] Sonidos nuevos. _fx crea una salida con ganancia propia y ejecuta la síntesis
+  _fx(g, fn) {
+    if (!this.ctx || this.muted) return;
+    const c = this.ctx, o = c.createGain(); o.gain.value = g; o.connect(this.dest());
+    fn(c, c.currentTime + 0.03, o);
+  }
+  playGlassIrreal() {   // cristal roto del colapso final: silbido que sube, rotura y nota larga con eco
+    this._fx(0.8, (c, t, o) => {
+      const bus = c.createGain(); bus.connect(o); bus.connect(_reverb(c, o, 2.6, 0.7));
+      _N(c, bus, t, 0.8, { f: 300, fEnd: 7000, q: 2, vol: 0.4, a: 0.7 });
+      const k = t + 0.8; _N(c, bus, k, 0.06, { type: 'highpass', f: 1800, vol: 0.55, a: 0.001 }); _T(c, bus, k, 170, 0.2, 0.45, { fEnd: 50 });
+      _tinkles(c, bus, k, 30, 1.8, 1200, 4600, 0.15, 0.4, 0.09);
+      _T(c, bus, k, 392, 2.4, 0.09, { a: 0.05, fEnd: 366 }); _T(c, bus, k, 587, 2.2, 0.05, { a: 0.05, fEnd: 560 });
+    });
+  }
+  playPistonSeal() {   // pistones sellados en la línea azul: matraca y campanilla
+    this._fx(1, (c, t, o) => {
+      for (let i = 0; i < 3; i++) _N(c, o, t + i * 0.045, 0.02, { f: 2200 + i * 500, q: 6, vol: 0.3, a: 0.001 });
+      _T(c, o, t + 0.14, 100, 0.1, 0.3, { fEnd: 60 }); _ring(c, o, t + 0.14, 1400, 0.4, 0.2);
+    });
+  }
+  playShutter() {   // persiana de la tienda del Duende: tablillas pesadas y golpe final
+    this._fx(1.4, (c, t, o) => {
+      let tt = t;
+      for (let i = 0; i < 16; i++) { _N(c, o, tt, 0.045, { f: 1500 + Math.random() * 1200, q: 3, vol: 0.4 + Math.random() * 0.15, a: 0.001 }); _T(c, o, tt, 190 + Math.random() * 60, 0.07, 0.4, { fEnd: 90, a: 0.001 }); tt += 0.055 + 0.07 * Math.abs(Math.cos(i / 16 * Math.PI)); }
+      _N(c, o, t, tt - t + 0.1, { type: 'lowpass', f: 220, vol: 0.2, a: 0.1 });
+      _T(c, o, tt, 80, 0.35, 0.9, { fEnd: 38, a: 0.002 }); _N(c, o, tt, 0.18, { type: 'lowpass', f: 700, vol: 0.6, a: 0.002 }); _N(c, o, tt, 0.04, { type: 'highpass', f: 2500, vol: 0.4, a: 0.001 });
+    });
+  }
+  playDealBell(i = 0) {   // cada uno de los 3 tratos del Trapero: campana descendente (la, fa#, re)
+    this._fx(1.5, (c, t, o) => _ring(c, o, t, [440, 370, 294][i % 3], 0.9, 0.22));
+  }
+  playSoftPad() {   // fundido de ambiente / fin de maldición: pad con quinta
+    this._fx(0.9, (c, t, o) => {
+      const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 900; lp.connect(o);
+      const bus = c.createGain(); bus.connect(lp); bus.connect(_reverb(c, o, 2.6, 0.55));
+      [[196, 0], [293.7, 4], [196, -5]].forEach(p => { const os = c.createOscillator(), g = c.createGain(); os.type = 'triangle'; os.frequency.value = p[0]; os.detune.value = p[1]; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.09, t + 0.9); g.gain.exponentialRampToValueAtTime(0.0001, t + 2.6); os.connect(g); g.connect(bus); os.start(t); os.stop(t + 2.7); });
+    });
   }
   playBreak() {
     if (!this.ctx || this.muted) return;

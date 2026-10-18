@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — puzles.js — VERSIÓN 0.104
+// JUST ONE MORE CHEST — puzles.js — VERSIÓN 0.105
 // minijuegos: ganzúa, pistones, hackeo, tuberías
 // ==========================================================================
 
@@ -22,6 +22,22 @@ function isAdvancedLoopFor(rarityId) {
 }
 
 // [0.103] Texto de la tarjeta de instrucciones de cada puzle (DATOS_JUEGO.AYUDAS.PUZLES). Antes quedaba siempre el de la ganzúa.
+// [0.105] Nivel de dureza del puzle: 0 normal, 1 difícil (Pacto de la Sombra, Dedos Torpes, puzles duros), 2 extremo (Pulso Tembloroso)
+function pzHardLevel() {
+  if (STATE.extremePuzzlesLeft > 0) return 2;
+  return (STATE.traperoBuffs.harderMinigames || STATE.harderPuzzlesLeft > 0) ? 1 : 0;
+}
+function pzXtr() { return DATOS_JUEGO.MINIJUEGOS.EXTREMO; }
+function pzHardBadgeUpdate() {
+  const el = document.getElementById('pzHardBadge'); if (!el) return;
+  const lv = pzHardLevel();
+  if (!lv) { el.classList.add('hidden'); el.textContent = ''; return; }
+  const src = STATE.extremePuzzlesLeft > 0 ? (STATE.extremeSrc || 'Pulso Tembloroso') : (STATE.harderSrc || 'Puzles duros');
+  el.textContent = (lv === 2 ? '☠ PUZLE EXTREMO · ' : '💀 PUZLE ENDURECIDO · ') + src;
+  el.classList.toggle('xtr', lv === 2);
+  el.classList.remove('hidden');
+}
+
 function setPuzzleHelp(juego) {
   const h = document.getElementById('minigameHelp');
   const t = (DATOS_JUEGO.AYUDAS && DATOS_JUEGO.AYUDAS.PUZLES && DATOS_JUEGO.AYUDAS.PUZLES[juego]) || '';
@@ -31,7 +47,7 @@ function setPuzzleHelp(juego) {
 function startLockpickGame() {
   setPuzzleHelp('lockpick');
   const configLP = DATOS_JUEGO.MINIJUEGOS.LOCKPICK;
-  startMinigameTimer(configLP.TIEMPO_BASE_SEGUNDOS, 'picks');
+  startMinigameTimer(configLP.TIEMPO_BASE_SEGUNDOS * (pzHardLevel() === 2 ? pzXtr().LOCKPICK.TIEMPO_MULT : 1), 'picks');
 
   lpState.angle = 0;
   lpState.screwdriver = 0;
@@ -47,7 +63,7 @@ function startLockpickGame() {
   lpState.tanteoActive = isAdvancedLoopFor(rarityId);
   lpState.tanteoUsed = false;
 
-  let baseTol = (STATE.traperoBuffs.harderMinigames || STATE.harderPuzzlesLeft > 0) ? configLP.TOLERANCIA_DIFICIL : configLP.TOLERANCIA_NORMAL;
+  let baseTol = pzHardLevel() === 2 ? pzXtr().LOCKPICK.TOLERANCIA : (pzHardLevel() === 1 ? configLP.TOLERANCIA_DIFICIL : configLP.TOLERANCIA_NORMAL);
   baseTol += (STATE.perks.sweetSpot * 3);
   lpState.tolerance = baseTol;
 
@@ -112,19 +128,19 @@ function updateLockpickProximityVisuals() {
   if (proxText && proxGlow) {
     if (falseWarn) {
       proxText.textContent = "¡FALSO PUNTO DULCE!";
-      proxText.className = "text-violet-400 font-bold animate-bounce";
+      proxText.className = "lp-state"; proxText.style.setProperty('--st', '#a855f7');   // [0.105] letrero limpio con sombra y subrayado del color de estado
       proxGlow.style.borderColor = "#a855f7";
     } else if (proximityRatio > 0.85) {
-      proxText.textContent = "VERDE (PUNTO DULCE)";
-      proxText.className = "text-emerald-400 font-bold animate-pulse";
+      proxText.textContent = "VERDE · PUNTO DULCE";
+      proxText.className = "lp-state"; proxText.style.setProperty('--st', '#3cd696');
       proxGlow.style.borderColor = "#34d399";
     } else if (proximityRatio > 0.5) {
-      proxText.textContent = "NARANJA (CERCA)";
-      proxText.className = "text-amber-400 font-bold";
+      proxText.textContent = "NARANJA · CERCA";
+      proxText.className = "lp-state"; proxText.style.setProperty('--st', '#fbbf24');
       proxGlow.style.borderColor = "#fbbf24";
     } else {
-      proxText.textContent = "ROJO (LEJOS)";
-      proxText.className = "text-rose-500 font-bold";
+      proxText.textContent = "ROJO · LEJOS";
+      proxText.className = "lp-state"; proxText.style.setProperty('--st', '#ef4444');
       proxGlow.style.borderColor = "#ef4444";
     }
   }
@@ -347,11 +363,12 @@ function startTumblerGame() {
   const pinCount = configT.PINS_POR_RAREZA[rarityId] || 3;
   let dynamicTime = configT.TIEMPOS_POR_PIN[pinCount] || 7;
   if (tumblerAdvanced) dynamicTime += DATOS_JUEGO.MINIJUEGOS.AVANZADO.TUMBLER.SEGUNDOS_EXTRA;
+  if (pzHardLevel() === 2) dynamicTime *= pzXtr().TUMBLER.TIEMPO_MULT;
 
   startMinigameTimer(dynamicTime, 'proPicks');
 
   tumblerPinsData = [];
-  let baseSpeed = (STATE.traperoBuffs.harderMinigames || STATE.harderPuzzlesLeft > 0) ? configT.VELOCIDAD_BASE_DIFICIL : configT.VELOCIDAD_BASE_NORMAL;
+  let baseSpeed = pzHardLevel() === 2 ? pzXtr().TUMBLER.VELOCIDAD_BASE : (pzHardLevel() === 1 ? configT.VELOCIDAD_BASE_DIFICIL : configT.VELOCIDAD_BASE_NORMAL);
   if (rarityId === 'legendario') baseSpeed = configT.VELOCIDAD_LEGENDARIA;
   baseSpeed *= ((configT.MULT_VELOCIDAD_RAREZA || {})[rarityId] || 1); // [0.086]
 
@@ -366,7 +383,7 @@ function startTumblerGame() {
   }
   activePinIdx = 0;
 
-  let allowedTolerance = (STATE.traperoBuffs.harderMinigames || STATE.harderPuzzlesLeft > 0) ? configT.TOLERANCIA_DIFICIL : configT.TOLERANCIA_NORMAL;
+  let allowedTolerance = pzHardLevel() === 2 ? pzXtr().TUMBLER.TOLERANCIA : (pzHardLevel() === 1 ? configT.TOLERANCIA_DIFICIL : configT.TOLERANCIA_NORMAL);
   allowedTolerance += (STATE.perks.sweetSpot * (configT.BONO_MANO_FIRME || 1.5));
   tumblerShearTol = allowedTolerance;
   if (shearLine) shearLine.style.height = `${Math.max(10, allowedTolerance * 1.8)}px`;
@@ -532,7 +549,7 @@ function handleTumblerSealClick() {
   if (tumblerAnimationFrameId) { cancelAnimationFrame(tumblerAnimationFrameId); tumblerAnimationFrameId = null; }
   const diff = Math.abs(tumblerSeal.y - tumblerSeal.blueY);
   if (diff <= tumblerSeal.tol + (DATOS_JUEGO.MINIJUEGOS.TUMBLER.MARGEN_INVISIBLE_PCT || 0)) {
-    audio.playClick(0.9);
+    audio.playPistonSeal();   // [0.105]
     tumblerPinsData.forEach((pin, i) => {
       const notch = document.getElementById(`pinNotch-${i}`);
       if (notch) notch.className = "w-full h-4 bg-emerald-400 rounded border border-emerald-200 shadow-md absolute inset-x-0";
@@ -551,7 +568,7 @@ function triggerFixActivePin() {
   const configT = DATOS_JUEGO.MINIJUEGOS.TUMBLER;
   const currentPin = tumblerPinsData[activePinIdx];
   const diff = Math.abs(currentPin.posY - targetShearPosY);
-  let allowedTolerance = (STATE.traperoBuffs.harderMinigames || STATE.harderPuzzlesLeft > 0) ? configT.TOLERANCIA_DIFICIL : configT.TOLERANCIA_NORMAL;
+  let allowedTolerance = pzHardLevel() === 2 ? pzXtr().TUMBLER.TOLERANCIA : (pzHardLevel() === 1 ? configT.TOLERANCIA_DIFICIL : configT.TOLERANCIA_NORMAL);
   allowedTolerance += (STATE.perks.sweetSpot * (configT.BONO_MANO_FIRME || 1.5));
   const margenInv = configT.MARGEN_INVISIBLE_PCT || 0;   // [0.088] margen no visible, el mismo por arriba y por abajo
 
@@ -623,10 +640,10 @@ function startHackGame() {
 
   const hackContainer = document.getElementById('hackContainer'); if (hackContainer) hackContainer.classList.remove('hidden');
   
-  hackAttemptsLeft = (STATE.traperoBuffs.harderMinigames || STATE.harderPuzzlesLeft > 0) ? configH.INTENTOS_DIFICIL : configH.INTENTOS_NORMAL;
+  hackAttemptsLeft = pzHardLevel() === 2 ? pzXtr().HACK.INTENTOS : (pzHardLevel() === 1 ? configH.INTENTOS_DIFICIL : configH.INTENTOS_NORMAL);
   const attemptsEl = document.getElementById('hackAttempts'); if (attemptsEl) attemptsEl.textContent = hackAttemptsLeft;
 
-  const history = document.getElementById('hackHistory'); if (history) history.innerHTML = '<div>> MATRIZ DE LONGITUD UNIFORME...</div>';
+  const history = document.getElementById('hackHistory'); if (history) history.innerHTML = '<div>> MATRIZ DE LONGITUD UNIFORME...</div>' + (pzHardLevel() ? `<div class="hk-warn">> ⚠ PUZLE ${pzHardLevel() === 2 ? 'EXTREMO' : 'ENDURECIDO'}: SOLO ${hackAttemptsLeft} INTENTOS</div>` : '');
 
   const grid = document.getElementById('hackWordGrid'); if (!grid) return;
   grid.innerHTML = '';
@@ -819,7 +836,7 @@ let pipeValidated = false;       // [0.082] el botón VALIDAR es de un solo uso
 
 /* ==========================================================================
    [0.103] ESTÉTICA DE PIPES: tuberías de cobre con bridas, agua azul, barril-bomba y placas.
-   Cada casilla es un canvas de 16x16 píxeles (id pipeSvg-N, se gira con transform) escalado sin suavizar.
+   [0.105] Ahora cada casilla es un canvas de 96x96 con dibujo vectorial suave (id pipeSvg-N, se gira con transform).
    ========================================================================== */
 const PIPE_PAT_DRY = ['#1a0e08', '#f0b070', '#d98a4a', '#bf6d33', '#bf6d33', '#8f4a22', '#5e2f14', '#1a0e08'];
 const PIPE_PAT_WET = ['#0b2a44', '#c9f6ff', '#74dcff', '#35b4f0', '#35b4f0', '#1f86c8', '#165f9a', '#0b2a44'];
@@ -827,49 +844,61 @@ const PIPE_FL_DRY = ['#1a0e08', '#e8c36a', '#c99a3a', '#8e6a22'];
 const PIPE_FL_WET = ['#0b2a44', '#e8c36a', '#c99a3a', '#8e6a22'];
 
 function drawPipePixels(g, type, wet) {
-  const px = (x, y, c) => { g.fillStyle = c; g.fillRect(x, y, 1, 1); };
+  // [0.105] Estética suave: tubos de cobre con degradado y brillo, bridas redondeadas, agua con reflejo, placas con remaches. Dibujo vectorial en un lienzo de 96x96 (unidad = 6 px por casilla de 16).
+  const K = g.canvas.width / 16;
   const kind = type === 'stone' ? 'stone' : (type === 'bomb' ? 'bomb' : 'pipe');
-  // placa de fondo con remaches
-  g.clearRect(0, 0, 16, 16);
-  g.fillStyle = kind === 'stone' ? '#4b3a2c' : (kind === 'bomb' ? '#3a1a1e' : '#1c2132'); g.fillRect(0, 0, 16, 16);
-  const hi = kind === 'stone' ? '#6b5440' : (kind === 'bomb' ? '#5a2a30' : '#2e3652');
-  const lo = kind === 'stone' ? '#2c2118' : (kind === 'bomb' ? '#240d10' : '#10131f');
-  for (let i = 0; i < 16; i++) { px(i, 0, hi); px(0, i, hi); px(i, 15, lo); px(15, i, lo); }
-  [[2, 2], [13, 2], [2, 13], [13, 13]].forEach(q => { px(q[0], q[1], '#6c748c'); px(q[0] + 1, q[1] + 1, '#10131f'); });
-  for (let i = 0; i < 14; i++) { px((i * 7 + 3) % 12 + 2, (i * 5 + 4) % 12 + 2, kind === 'stone' ? '#55432f' : '#1f2539'); }
-
+  g.setTransform(K, 0, 0, K, 0, 0); g.clearRect(0, 0, 16, 16);
+  g.lineCap = 'butt'; g.lineJoin = 'round';
+  const rr = (x, y, w, h, r) => { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); };
+  // placa de fondo
+  const pl = g.createLinearGradient(0, 0, 0, 16);
+  if (kind === 'stone') { pl.addColorStop(0, '#5a4636'); pl.addColorStop(1, '#3a2c20'); }
+  else if (kind === 'bomb') { pl.addColorStop(0, '#47222a'); pl.addColorStop(1, '#2a1216'); }
+  else { pl.addColorStop(0, '#262d47'); pl.addColorStop(1, '#171c30'); }
+  rr(0.35, 0.35, 15.3, 15.3, 1.3); g.fillStyle = pl; g.fill();
+  g.lineWidth = 0.35; g.strokeStyle = 'rgba(255,255,255,.10)'; g.stroke();
+  [[1.7, 1.7], [14.3, 1.7], [1.7, 14.3], [14.3, 14.3]].forEach(q => {
+    g.beginPath(); g.arc(q[0], q[1], 0.62, 0, 6.2832); g.fillStyle = '#4c5775'; g.fill();
+    g.beginPath(); g.arc(q[0] - 0.18, q[1] - 0.2, 0.22, 0, 6.2832); g.fillStyle = '#a3afcc'; g.fill();
+  });
   if (kind === 'stone') {
-    for (let y = 3; y <= 12; y++) for (let x = 3; x <= 12; x++) { let c = '#6e5a48'; if (x === 3 || y === 3) c = '#8c7560'; if (x === 12 || y === 12) c = '#3b2e22'; px(x, y, c); }
-    [[5, 5], [10, 5], [5, 10], [10, 10]].forEach(q => { px(q[0], q[1], '#a9936f'); px(q[0] + 1, q[1] + 1, '#2a1f16'); });
-    [[7, 6], [8, 7], [8, 8], [9, 9], [7, 9]].forEach(q => px(q[0], q[1], '#2a1f16'));
-    px(6, 8, '#9b4a22'); px(10, 7, '#9b4a22'); px(9, 6, '#9b4a22');
+    rr(2.6, 2.6, 10.8, 10.8, 1.6); const sg = g.createLinearGradient(0, 2.6, 0, 13.4); sg.addColorStop(0, '#85705c'); sg.addColorStop(1, '#58473a'); g.fillStyle = sg; g.fill();
+    g.lineWidth = 0.5; g.strokeStyle = '#2c2218'; g.stroke();
+    g.lineWidth = 0.55; g.strokeStyle = '#2c2218'; g.beginPath(); g.moveTo(6, 5.5); g.lineTo(8.2, 8); g.lineTo(7.4, 10.6); g.moveTo(8.2, 8); g.lineTo(11, 7.4); g.stroke();
+    g.fillStyle = 'rgba(190,100,50,.55)'; [[5.2, 9.4], [10.2, 10.4], [9.6, 5.2]].forEach(q => { g.beginPath(); g.arc(q[0], q[1], 0.5, 0, 6.2832); g.fill(); });
     return;
   }
   if (kind === 'bomb') {   // barril presurizado con mecha
-    for (let y = 3; y <= 13; y++) for (let x = 4; x <= 11; x++) { let c = '#a62b2b'; if (x === 4 || x === 11 || y === 3 || y === 13) c = '#1a0708'; else if (x === 5) c = '#d9544a'; else if (x >= 10) c = '#6e1b1f'; px(x, y, c); }
-    for (let x = 4; x <= 11; x++) { px(x, 5, '#1a0708'); px(x, 11, '#1a0708'); }
-    for (let x = 5; x <= 10; x++) { if (x % 2 === 0) { px(x, 6, '#f2c230'); px(x, 10, '#f2c230'); } }
-    px(7, 7, '#f2c230'); px(8, 7, '#f2c230'); px(7, 8, '#f2c230'); px(8, 8, '#f2c230'); px(7, 9, '#1a0708'); px(8, 9, '#1a0708');
-    px(7, 2, '#8a8a96'); px(8, 2, '#8a8a96'); px(9, 1, '#e9b44c'); px(10, 0, '#ff8a2a');
+    rr(4.2, 3.6, 7.6, 9.6, 1.9); const bg = g.createLinearGradient(4.2, 0, 11.8, 0); bg.addColorStop(0, '#6e1b1f'); bg.addColorStop(0.35, '#d24a42'); bg.addColorStop(1, '#6e1b1f'); g.fillStyle = bg; g.fill();
+    g.lineWidth = 0.5; g.strokeStyle = '#1a0708'; g.stroke();
+    g.fillStyle = '#2a1214'; g.fillRect(4.2, 5.6, 7.6, 0.8); g.fillRect(4.2, 10.4, 7.6, 0.8);
+    g.fillStyle = '#f2c230'; g.beginPath(); g.arc(8, 8, 1.25, 0, 6.2832); g.fill(); g.fillStyle = '#1a0708'; g.fillRect(7.7, 8.2, 0.6, 1.3);
+    g.fillStyle = '#8a8a96'; g.fillRect(7.4, 2.2, 1.2, 1.5);
+    g.strokeStyle = '#e9b44c'; g.lineWidth = 0.4; g.beginPath(); g.moveTo(8.5, 2.2); g.quadraticCurveTo(9.8, 1.2, 10.4, 0.8); g.stroke();
+    g.fillStyle = '#ff8a2a'; g.beginPath(); g.arc(10.5, 0.8, 0.55, 0, 6.2832); g.fill();
     return;
   }
-  // [0.104] Tubo más estrecho: 6 px de grosor (columnas/filas 5..10) con brida de 8 px en los extremos
-  const P0 = wet ? PIPE_PAT_WET : PIPE_PAT_DRY, F = wet ? PIPE_FL_WET : PIPE_FL_DRY;
-  const Q = [P0[0], P0[1], P0[2], P0[3], P0[5], P0[0]];
-  const vert = (y0, y1) => { for (let y = y0; y <= y1; y++) for (let i = 0; i < 6; i++) px(5 + i, y, Q[i]); };
-  const hor = (x0, x1) => { for (let x = x0; x <= x1; x++) for (let i = 0; i < 6; i++) px(x, 5 + i, Q[i]); };
-  const flV = y => { for (let k = 0; k < 2; k++) for (let x = 4; x <= 11; x++) { const i = (x === 4 || x === 11) ? 0 : (x === 5 ? 1 : (x >= 9 ? 3 : 2)); px(x, y + k, F[k === 0 && (x === 4 || x === 11) ? 0 : i]); } };
-  const flH = x => { for (let k = 0; k < 2; k++) for (let y = 4; y <= 11; y++) { const i = (y === 4 || y === 11) ? 0 : (y === 5 ? 1 : (y >= 9 ? 3 : 2)); px(x + k, y, F[i]); } };
-  if (type === 'straight') { vert(0, 15); flV(0); flV(14); }
-  else if (type === 'corner') {
-    vert(0, 10); hor(5, 15);
-    for (let y = 5; y <= 10; y++) for (let x = 5; x <= 10; x++) { const i = Math.min(x - 5, 10 - y); px(x, y, i === 0 ? Q[0] : (i === 1 ? Q[1] : (i === 2 ? Q[2] : Q[3]))); }
-    flV(0); flH(14);
-  } else {
-    vert(0, 15); hor(5, 15);
-    for (let y = 5; y <= 10; y++) px(5, y, Q[0]);
-    flV(0); flV(14); flH(14);
-  }
+  // tubos: N-S (recta), N-E (codo), N-S-E (te). Grosor 5,2 unidades.
+  const P = wet ? ['#0a3a70', '#1f98ec', '#70d2ff', '#e0f6ff'] : ['#44230f', '#b3652b', '#e6984f', '#ffd29a'];
+  const FL = wet ? ['#0a3a70', '#9a8450', '#d6bd78'] : ['#44230f', '#9b6c2a', '#e3bc66'];
+  const sides = type === 'straight' ? ['N', 'S'] : (type === 'corner' ? ['N', 'E'] : ['N', 'S', 'E']);
+  const V = { N: [0, -1], E: [1, 0], S: [0, 1], W: [-1, 0] };
+  const W0 = 5.2;
+  const layers = [[W0 + 0.9, P[0], 0], [W0, P[1], 0], [W0 * 0.56, P[2], -0.55], [W0 * 0.16, P[3], -1.05]];
+  layers.forEach(([w, col, off]) => {
+    g.strokeStyle = col; g.fillStyle = col; g.lineWidth = w;
+    sides.forEach(o => { const d = V[o], ox = d[0] === 0 ? off : 0, oy = d[0] === 0 ? 0 : off; g.beginPath(); g.moveTo(8 + ox, 8 + oy); g.lineTo(8 + d[0] * 8 + ox, 8 + d[1] * 8 + oy); g.stroke(); });
+    g.beginPath(); g.arc(8, 8, w / 2, 0, 6.2832); g.fill();
+  });
+  // bridas en los extremos abiertos
+  sides.forEach(o => {
+    const d = V[o], cx = 8 + d[0] * 7.2, cy = 8 + d[1] * 7.2, fw = W0 + 1.9, fh = 1.5;
+    g.save(); g.translate(cx, cy); if (d[0] !== 0) g.rotate(Math.PI / 2);
+    rr(-fw / 2, -fh / 2, fw, fh, 0.45); const fg = g.createLinearGradient(0, -fh / 2, 0, fh / 2); fg.addColorStop(0, FL[2]); fg.addColorStop(1, FL[1]); g.fillStyle = fg; g.fill();
+    g.lineWidth = 0.32; g.strokeStyle = FL[0]; g.stroke(); g.restore();
+  });
+  // brillo de agua
+  if (wet) { g.fillStyle = 'rgba(255,255,255,.7)'; [[7.1, 3.2], [8.9, 12.2]].forEach(q => { g.beginPath(); g.arc(q[0], q[1], 0.28, 0, 6.2832); g.fill(); }); }
 }
 
 // Repinta la casilla i (seca o con agua). El canvas conserva su giro (style.transform)
@@ -1106,6 +1135,7 @@ function startPipeGame() {
 
   let dynamicTime = rarityId === 'legendario' ? configP.TIEMPO_LEGENDARIO_SEGUNDOS : configP.TIEMPO_BASE_SEGUNDOS;
   if (pipeAdvanced) dynamicTime = advPipe.TIEMPO_SEGUNDOS;
+  if (pzHardLevel() === 2) dynamicTime *= pzXtr().PIPE.TIEMPO_MULT;
   startMinigameTimer(dynamicTime, 'valves');
 
   pipeAdvancedActive = pipeAdvanced;
@@ -1246,7 +1276,7 @@ function startPipeGame() {
     tile.className = 'pipe-tile';   // [0.103] aspecto en style.css; el tamaño sale de --pt de la rejilla
     tile.id = `pipeTile-${i}`;
     const rotStyle = (item.type === 'stone' || item.type === 'bomb') ? '' : `transform: rotate(${item.rot * 90}deg)`;
-    tile.innerHTML = `<canvas id="pipeSvg-${i}" class="pipe-cv" width="16" height="16" style="${rotStyle}"></canvas>`
+    tile.innerHTML = `<canvas id="pipeSvg-${i}" class="pipe-cv" width="96" height="96" style="${rotStyle}"></canvas>`
       + (i === 0 ? '<span class="pipe-valve" title="Entrada de agua"><i class="pv-wheel"></i><i class="pv-stem"></i><b class="pv-lab">IN</b><em class="pv-arrow">&#9660;</em></span>' : '')
       + (i === totalTiles - 1 ? '<span class="pipe-out" id="pipeOut" title="Salida (desagüe)"><i class="po-stem"></i><i class="po-basin"></i><b class="po-lab">OUT</b><em class="po-arrow">&#9660;</em></span>' : '');
     drawPipePixels(tile.querySelector('canvas').getContext('2d'), item.type, false);

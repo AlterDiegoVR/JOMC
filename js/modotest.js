@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — modotest.js — VERSIÓN 0.104
+// JUST ONE MORE CHEST — modotest.js — VERSIÓN 0.105
 // Modo test
 // ==========================================================================
 
@@ -306,7 +306,7 @@ function testKeyHash(seq, salt) {
       { id: 'ab_riskPot', label: 'CARTA APUESTA', kind: 'num', min: 0, max: 9, def: 3 },
       { id: 'ab_perdedor', label: 'CARTA PERDEDOR', kind: 'num', min: 0, max: 9, def: 3 },
       { id: 'ab_summonDuende', label: 'CARTA DUENDE', kind: 'num', min: 0, max: 9, def: 3 },
-      { id: 'ab_cofradia', label: 'CARTA COFRADÍA', kind: 'num', min: 0, max: 9, def: 0 },
+      { id: 'ab_cofradia', label: 'CARTA COFRADÍA DEL COFRE', kind: 'num', min: 0, max: 9, def: 0 },
       { id: 'curse', label: 'MALDICIÓN (COFRES)', kind: 'num', min: 1, max: 30, def: 10 },
       { id: 'clearAch', label: 'BORRAR LOGROS', kind: 'bool' }
     ] },

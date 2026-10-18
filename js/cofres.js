@@ -1,9 +1,10 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — cofres.js — VERSIÓN 0.104
+// JUST ONE MORE CHEST — cofres.js — VERSIÓN 0.105
 // selección de cofres, banner, diálogos, post-its, botín y subida de nivel
 // ==========================================================================
 
 function generateScreenChests() {
+  quadPicked = false;
   STATE.screenChests = [];
   let chestCount = STATE.chestsOpened < 4 ? 1 : (Math.random() < 0.6 ? 2 : 3);
   const destino = modOn('destino') && !isClimaxActive();
@@ -39,7 +40,7 @@ function generateScreenChests() {
       let pLegendario = probMap.legendario;
 
       if (STATE.perks.rarityBonus > 0) {
-        const bonus = STATE.perks.rarityBonus * 0.10;
+        const bonus = STATE.perks.rarityBonus * 0.15;   // [0.105] 15% por nivel (como dice la carta)
         pNormal = Math.max(0.10, pNormal - bonus);
 
         if (pLegendario > 0) {
@@ -61,7 +62,7 @@ function generateScreenChests() {
       else rarity = CHEST_RARITIES[0];
     }
 
-    STATE.screenChests.push({ type: randomType, rarity, fog: modOn('niebla') });   // [0.093] fog = rareza oculta
+    STATE.screenChests.push({ type: randomType, rarity: chestToolMods(rarity), fog: modOn('niebla') });   // [0.093] fog = rareza oculta
   }
 
   // [0.104] BALANCE: en el cofre 4 de cada nivel que desbloquea un tipo de puzle (3 cofres bloqueados + este), al menos un cofre en pantalla es del tipo recién desbloqueado.
@@ -90,22 +91,33 @@ function isClimaxActive() {
   return STATE.climaxPhase || (!STATE.sequenceBroken && co >= (seqConfig.COFRE_CLIMAX_INICIO - 1));
 }
 
+// [0.105] Efectos que cambian las herramientas que pide CADA cofre: se tiran al generar la pantalla y se guardan en una copia de la rareza
+function chestToolMods(rarity) {
+  const oxi = STATE.oxidadoLeft > 0, fie = modOn('fiebre') && !isClimaxActive();
+  if (!oxi && !fie) return rarity;
+  const r = Object.assign({}, rarity);
+  if (oxi) r.toolFixed = 1 + Math.floor(Math.random() * 3);
+  if (fie) { const F = DATOS_JUEGO.MODS_WILDCARD.FIEBRE_ORO; r.toolExtra = Math.random() < (F.PROB_EXTRA != null ? F.PROB_EXTRA : 0.5) ? (F.HERRAMIENTAS_EXTRA || 1) : 0; }
+  return r;
+}
+
 function getRequiredToolCount(rarity) {
   if (isClimaxActive()) return 0;
 
-  let base = rarity.id === 'legendario' ? 2 : 1;
+  let base = rarity.toolFixed != null ? rarity.toolFixed : (rarity.id === 'legendario' ? 2 : 1);   // [0.105] Cerrojos Oxidados fija 1-3
   if (STATE.heavyChestsLeft > 0 && rarity.id !== 'normal') {
     base += 1;
   }
-  if (modOn('fiebre')) base += (DATOS_JUEGO.MODS_WILDCARD.FIEBRE_ORO.HERRAMIENTAS_EXTRA || 1);   // [0.093]
+  if (rarity.toolExtra) base += rarity.toolExtra;   // [0.105] Fiebre del Oro: tirada por cofre (50%) al generar la pantalla
   return base;
 }
 
+let quadPicked = false;   // [0.105] con 4 cofres, la cuadrícula 2x2 solo se ve hasta que eliges uno
 function updateChestSelectionUI() {
   const multiGrid = document.getElementById('multiChestGrid');
   if (multiGrid) {
     multiGrid.innerHTML = '';
-    multiGrid.classList.toggle('quad4', STATE.screenChests.length === 4);   // [0.104] 4 cofres: centrados en 2x2 con velo difuminado
+    multiGrid.classList.toggle('quad4', STATE.screenChests.length === 4 && !quadPicked);   // [0.104] 4 cofres: centrados en 2x2 con velo difuminado
 
     if (STATE.screenChests.length > 1) {
       multiGrid.classList.remove('hidden');
@@ -121,6 +133,7 @@ function updateChestSelectionUI() {
           audio.init();
           if (STATE.activeChestIdx !== idx) audio.playSwoosh(); else audio.playClick(0.5);   // [0.090] swoosh al cambiar de cofre
           STATE.activeChestIdx = idx;
+          if (STATE.screenChests.length === 4) quadPicked = true;   // [0.105] al elegir, se cierra la cuadrícula y se ve el cofre elegido
           updateChestSelectionUI();
         });
         multiGrid.appendChild(btn);
@@ -614,6 +627,9 @@ function triggerLootExplosion() {
     if (STATE.heavyChestsLeft > 0) STATE.heavyChestsLeft--;
     if (STATE.greedCurseLeft > 0) STATE.greedCurseLeft--;
     if (STATE.harderPuzzlesLeft > 0) STATE.harderPuzzlesLeft--;
+    if (STATE.extremePuzzlesLeft > 0) STATE.extremePuzzlesLeft--;   // [0.105]
+    if (STATE.oxidadoLeft > 0) STATE.oxidadoLeft--;
+    rechargeTick();
 
     let baseGpMin = DATOS_JUEGO.ECONOMIA.RECOMPENSAS_BASE.gp_min;
     let baseGpMax = DATOS_JUEGO.ECONOMIA.RECOMPENSAS_BASE.gp_max;
@@ -748,7 +764,7 @@ function triggerLootExplosion() {
     }
 
     if (STATE.traperoBuffs.bonusXp) {
-      const pctS = getMasteryTorpezaPct(1);
+      const pctS = DATOS_JUEGO.ECONOMIA.TRAPERO.xp_pacto_pct;   // [0.105] 25% de verdad
       let sXp = Math.floor(finalXp * pctS);
       finalXp += sXp;
       xpLines.push({ label: "👁️ Pacto Sombra (+25%)", val: `+${sXp} XP` });
@@ -756,7 +772,7 @@ function triggerLootExplosion() {
 
     if (STATE.xpBoostChestsLeft > 0) {
       STATE.xpBoostChestsLeft--;
-      const pctC = getMasteryTorpezaPct(1);
+      const pctC = DATOS_JUEGO.ECONOMIA.TRAPERO.xp_pacto_pct;   // [0.105]
       let cXp = Math.floor(finalXp * pctC);
       finalXp += cXp;
       xpLines.push({ label: "✨ Impulso Trabajo (+25%)", val: `+${cXp} XP` });

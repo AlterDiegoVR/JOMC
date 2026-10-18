@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — graficos.js — VERSIÓN 0.104
+// JUST ONE MORE CHEST — graficos.js — VERSIÓN 0.105
 // canvas, sala, cerradura, decoración, efectos de cofre
 // ==========================================================================
 
@@ -388,7 +388,8 @@ function syncOpenButtonArmed() {
 
 // [0.089b] Nivel visual de la maldición: sube al empezar (con melodía lúgubre) y baja al terminar (melodía con nota final aguda).
 // Solo avanza cuando se ve la pantalla principal; si hay un banner o una tienda encima, espera.
-let curseLevel = 0, curseLvlT = 0, curseStartTune = false, curseEndTune = false;
+let curseLevel = 0, curseLvlT = 0, curseStartTune = false, curseEndTune = false, curseLiftT0 = 0;   // [0.105] curseLiftT0: pulso de luz al terminar la maldición (se nota aunque ya haya tinte de paranoia)
+let ambPrev = null, ambCur = null, ambT0 = 0, ambFirst = true;   // [0.105] fundido cruzado entre ambientes
 function updateCurseLevel() {
   const cfg = DATOS_JUEGO.MALDICION_TRANSICION || {};
   const now = performance.now(), dt = curseLvlT ? Math.min(100, now - curseLvlT) : 16; curseLvlT = now;
@@ -397,7 +398,7 @@ function updateCurseLevel() {
   if (curseLevel === want) { if (want) curseEndTune = false; else curseStartTune = false; return curseLevel; }
   if (!mainScreenFree()) return curseLevel;
   if (want && !curseStartTune) { curseStartTune = true; curseEndTune = false; audio.init(); audio.playCurseStart(); }
-  if (!want && !curseEndTune) { curseEndTune = true; curseStartTune = false; audio.init(); audio.playCurseEnd(); }
+  if (!want && !curseEndTune) { curseEndTune = true; curseStartTune = false; curseLiftT0 = performance.now(); audio.init(); audio.playCurseEnd(); audio.playSoftPad(); }
   const step = dt / (cfg.DURACION_MS || 2600);
   curseLevel = want ? Math.min(1, curseLevel + step) : Math.max(0, curseLevel - step);
   return curseLevel;
@@ -427,16 +428,18 @@ function renderRoom() {
     if (!roomDark) { lightOnT0 = Date.now(); audio.playLightOn(); }
     roomDarkPrev = roomDark;
   }
-  let bgGradient = ctx.createRadialGradient(cx, cy, 30, cx, cy, canvas.width);
-  let bgStops;
-  if (amb && amb.fondo) bgStops = amb.fondo;
-  else if (rtier >= 5) bgStops = ['#450a0a', '#180202', '#000000'];
-  else bgStops = ['#111827', '#0f172a', '#030712'];
-  bgGradient.addColorStop(0, bgStops[0]);
-  bgGradient.addColorStop(0.6, bgStops[1]);
-  bgGradient.addColorStop(1, bgStops[2]);
-  ctx.fillStyle = bgGradient;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  // [0.105] Fundido cruzado de 0,5 s cuando cambia el ambiente (fondo y tinte); la primera vez no se anima
+  if ((amb || null) !== ambCur) { if (!ambFirst) { ambPrev = ambCur; ambT0 = performance.now(); try { audio.init(); audio.playSoftPad(); } catch (e) {} } ambCur = amb || null; ambFirst = false; }
+  const ambP = ambPrev !== null || ambT0 ? Math.min(1, (performance.now() - ambT0) / 500) : 1;
+  const paintBg = (a, alpha) => {
+    let g = ctx.createRadialGradient(cx, cy, 30, cx, cy, canvas.width), st;
+    if (a && a.fondo) st = a.fondo;
+    else if (rtier >= 5) st = ['#450a0a', '#180202', '#000000'];
+    else st = ['#111827', '#0f172a', '#030712'];
+    g.addColorStop(0, st[0]); g.addColorStop(0.6, st[1]); g.addColorStop(1, st[2]);
+    ctx.save(); ctx.globalAlpha = alpha; ctx.fillStyle = g; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.restore();
+  };
+  if (ambP < 1) { paintBg(ambPrev, 1); paintBg(ambCur, ambP); } else paintBg(ambCur, 1);
 
   // [0.085] Fondo de la celda (pixel art, escalado "cover") + tinte según el ambiente
   if (artReady('celda')) {
@@ -462,7 +465,10 @@ function renderRoom() {
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(im, (canvas.width - dw) / 2, (canvas.height - dh) / 2, dw, dh);
     // [0.086] Tinte suave del ambiente + tinte rojo según el tier narrativo
-    if (amb && amb.tinte) { ctx.fillStyle = amb.tinte; ctx.fillRect(0, 0, canvas.width, canvas.height); }
+    if (ambP < 1) {
+      if (ambPrev && ambPrev.tinte) { ctx.save(); ctx.globalAlpha = 1 - ambP; ctx.fillStyle = ambPrev.tinte; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.restore(); }
+      if (ambCur && ambCur.tinte) { ctx.save(); ctx.globalAlpha = ambP; ctx.fillStyle = ambCur.tinte; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.restore(); }
+    } else if (amb && amb.tinte) { ctx.fillStyle = amb.tinte; ctx.fillRect(0, 0, canvas.width, canvas.height); }
     if (redAlpha > 0) { ctx.fillStyle = `rgba(140,12,12,${redAlpha})`; ctx.fillRect(0, 0, canvas.width, canvas.height); }
     // [0.090] Maldición activa: rojo rotundo con viñeta. El tinte del tier 5 manda siempre (no se añade); el progresivo del tier 4 se SUMA a la maldición.
     {
@@ -478,6 +484,18 @@ function renderRoom() {
           ctx.fillStyle = vg; ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
       }
+    }
+  }
+
+  // [0.105] Fin de la maldición: pulso de luz pálida que se abre desde el centro (se ve también con el tinte de paranoia, donde el rojo no cambia)
+  if (curseLiftT0) {
+    const lt = (performance.now() - curseLiftT0) / 1500;
+    if (lt >= 1) curseLiftT0 = 0;
+    else {
+      const a = Math.sin(Math.PI * Math.min(1, lt * 1.15)) * 0.34, R = Math.max(canvas.width, canvas.height) * (0.25 + 0.75 * lt);
+      const lg = ctx.createRadialGradient(cx, canvas.height / 2, 0, cx, canvas.height / 2, R);
+      lg.addColorStop(0, `rgba(190,235,255,${a.toFixed(3)})`); lg.addColorStop(0.65, `rgba(150,210,255,${(a * 0.45).toFixed(3)})`); lg.addColorStop(1, 'rgba(150,210,255,0)');
+      ctx.fillStyle = lg; ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
   }
 

@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — estado.js — VERSIÓN 0.104
+// JUST ONE MORE CHEST — estado.js — VERSIÓN 0.105
 // estado, wildcards, guardado, logros, estadísticas, reinicio
 // ==========================================================================
 
@@ -89,6 +89,11 @@ const STATE = {
   heavyChestsLeft: 0,
   greedCurseLeft: 0,
   harderPuzzlesLeft: 0,
+  harderSrc: '',          // [0.105] qué efecto endurece los puzles (para el aviso)
+  extremePuzzlesLeft: 0,   // [0.105] Pulso Tembloroso
+  extremeSrc: '',
+  oxidadoLeft: 0,          // [0.105] Cerrojos Oxidados: cofres restantes con 1-3 herramientas al azar
+  recharge: {},            // [0.105] cartas que vuelven (Fortuna Doble, Escudo Prestado): { prop: { armed, cd, n } }
   blankNotes: {},      // [0.095] textos del jugador por bucle: {bucle: {cofre: texto}}
   pendingNotes: [],    // [0.095] post-its de jugador visibles ahora (se guardan para poder continuar)
   mods: {},   // [0.093] modificadores de wildcard con duración: {id: cofres_restantes}
@@ -264,6 +269,20 @@ const MODS_POR_USOS = ['seda', 'congelada', 'destino'];   // [0.104] 'destino' d
 function useMod(id) { if (!STATE.mods || !(STATE.mods[id] > 0)) return 0; STATE.mods[id]--; const left = STATE.mods[id]; if (left <= 0) delete STATE.mods[id]; saveDirty = true; return Math.max(0, left); }
 function modOn(id) { return !!(STATE.mods && STATE.mods[id] > 0); }
 
+// [0.105] Cartas que vuelven: Fortuna Doble (Doble o Nada) y Escudo Prestado. La cuenta empieza al USAR la carta y baja con cada cofre abierto.
+const RECHARGE_NOMBRES = { riskPot: 'Carta Doble o Nada', shield: 'Carta Escudo' };
+function rechargeArm(prop, n) { STATE.recharge = STATE.recharge || {}; STATE.recharge[prop] = { armed: true, cd: 0, n: n || 10 }; }
+function rechargeUsed(prop) { const r = (STATE.recharge || {})[prop]; if (r && r.armed) { r.armed = false; r.cd = r.n; } }
+function rechargeTick() {
+  const R = STATE.recharge || {};
+  Object.keys(R).forEach(prop => {
+    const r = R[prop];
+    if (r.armed || !(r.cd > 0)) return;
+    r.cd--;
+    if (r.cd <= 0) { r.armed = true; STATE.abilities[prop]++; showPersistentFeedback(`🎁 ¡Tu ${RECHARGE_NOMBRES[prop] || 'carta'} ha vuelto!`); }
+  });
+}
+
 function applyWildcard(wc) {
   let extra = '';
   switch (wc.efecto) {
@@ -310,14 +329,27 @@ function applyWildcard(wc) {
       STATE.greedCurseLeft += wc.valor;
       break;
     case 'PUZLES_EXIGENTES':
-      STATE.harderPuzzlesLeft += wc.valor;
+      STATE.harderPuzzlesLeft += wc.valor; STATE.harderSrc = wc.nombre;   // [0.105]
       break;
+    case 'PUZLES_EXTREMOS':   // [0.105] Pulso Tembloroso
+      STATE.extremePuzzlesLeft += wc.valor; STATE.extremeSrc = wc.nombre;
+      break;
+    case 'COFRES_OXIDADOS':   // [0.105] Cerrojos Oxidados: cada cofre pide entre 1 y 3 herramientas al azar
+      STATE.oxidadoLeft += wc.valor;
+      break;
+    case 'DAR_CARTA_RECARGA': {   // [0.105] da 1 carta y otra cada N cofres tras usarla
+      STATE.abilities[wc.valor.prop]++;
+      rechargeArm(wc.valor.prop, wc.valor.cofres);
+      extra = '+1 ' + (RECHARGE_NOMBRES[wc.valor.prop] || 'Carta');
+      break;
+    }
     case 'OTORGAR_CARTA_TACTICA_AZAR': {
       const tacticas = DATOS_JUEGO.CARTAS_NIVEL.TACTICAS;
       const card = tacticas[Math.floor(Math.random() * tacticas.length)];
       const prop = TACTICA_A_HABILIDAD[card.id];
       if (prop) STATE.abilities[prop]++;
-      extra = `Carta: ${card.titulo}`;
+      extra = prop ? `🃏 Carta: ${card.titulo}` : `Carta: ${card.titulo}`;   // [0.105] premio visible
+      if (prop) showPersistentFeedback(`🃏 Has encontrado: ${card.titulo}`);
       break;
     }
     case 'OTORGAR_CONSUMIBLE_DOBLE_AZAR': {
@@ -376,6 +408,9 @@ function runWildcardRoulette(res, onDone) {
       <div class="text-[9px] tracking-widest opacity-60 mb-1">EL DESTINO GIRA...</div>
       <div class="font-black uppercase tracking-wider text-sm py-2">${wc.nombre}</div>`;
   };
+  // [0.105] Desde el primer instante hay carta: texto neutro "EL DESTINO GIRA" hasta que sale la primera de la ruleta
+  banner.className = 'w-full max-w-xs p-3 rounded-2xl border-2 font-mono text-xs mb-3 text-center shadow-lg flex flex-col justify-center bg-slate-900/60 border-slate-500/50 text-slate-200 lvl-card-spin';
+  banner.innerHTML = '<div class="font-black uppercase tracking-widest text-sm py-6">EL DESTINO GIRA</div>';
   const steps = Math.max(6, cfg.RULETA_PASOS || 20), d0 = cfg.RULETA_MS_INICIAL || 50, d1 = cfg.RULETA_MS_FINAL || 340, curve = cfg.RULETA_CURVA || 2.5;
   const seq = []; let prev = null;
   for (let i = 0; i < steps; i++) { let w; let guard = 0; do { w = wcList[Math.floor(Math.random() * wcList.length)]; } while ((w === prev || w === res.wc) && wcList.length > 2 && ++guard < 20); seq.push(w); prev = w; }
@@ -401,7 +436,7 @@ const SAVE_KEYS = [
   'picks', 'proPicks', 'usb', 'valves', 'noXpChestsLeft', 'picksBrokenOnUse', 'tanteoExplainedLoop', 'xpBoostChestsLeft', 'torpezas',
   'seqStage', 'traperoStrikes', 'climaxPhase', 'sequenceBroken', 'perks', 'abilities',
   'active2XMultiplier', 'activeShield', 'riskModeActive', 'riskPot', 'perdedorActive', 'perdedorLootPending', 'fallosConsecutivos',
-  'heavyChestsLeft', 'greedCurseLeft', 'harderPuzzlesLeft', 'mods', 'blankNotes', 'pendingNotes', 'traperoBuffs', 'cursedChestsLeft',
+  'heavyChestsLeft', 'greedCurseLeft', 'harderPuzzlesLeft', 'oxidadoLeft', 'recharge', 'harderSrc', 'extremePuzzlesLeft', 'extremeSrc', 'mods', 'blankNotes', 'pendingNotes', 'traperoBuffs', 'cursedChestsLeft',
   'roomDecorations', 'roomThemeFilter', 'roomDarkUntil', 'opensByType', 'acceptDelayUses', 'hintUses', 'stats'
 ];
 
@@ -748,7 +783,7 @@ function resetGame(keepLoop) {
 
   STATE.heavyChestsLeft = 0;
   STATE.greedCurseLeft = 0;
-  STATE.harderPuzzlesLeft = 0;
+  STATE.harderPuzzlesLeft = 0; STATE.harderSrc = ''; STATE.extremePuzzlesLeft = 0; STATE.extremeSrc = ''; STATE.oxidadoLeft = 0; STATE.recharge = {};
   STATE.mods = {};
   STATE.pendingNotes = [];
   if (keepLoop !== true) STATE.blankNotes = {};   // [0.095] partida nueva = post-its nuevos; el cambio de bucle los conserva

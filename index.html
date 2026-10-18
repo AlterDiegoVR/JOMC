@@ -39,7 +39,7 @@
 
     /* [0.089b] Ventanas informativas más grandes en PC (--mz lo calcula script.js). Los puzles (#minigameModal) no se tocan. */
     html:not(.narrow-layout) :is(#lootModal, #levelUpModal, #unfairDealModal, #gameOverModal, #duendeReceiptModal, #resumeGameModal, #resetConfirmModal, #optionsModal, #statsModal, #confirmModal, #achievementsModal) > div,
-    html:not(.narrow-layout) #dialogueModal > * { zoom: var(--mz, 1); }
+    html:not(.narrow-layout) #dialogueModal > :not(.dlg-bg):not(.dlg-art) { zoom: var(--mz, 1); }
     html:not(.narrow-layout) :is(#lootModal, #levelUpModal, #unfairDealModal, #gameOverModal, #duendeReceiptModal, #optionsModal, #statsModal, #confirmModal, #achievementsModal) > div { max-height: calc(94dvh / var(--mz, 1)); overflow-y: auto; }
     /* [0.097] Subida de nivel en PC: sin barra de scroll interna */
     html:not(.narrow-layout) #levelUpModal > div { max-height: none !important; overflow: visible !important; }
@@ -204,7 +204,7 @@
       </button>
       <button id="abilityCofradiaBtn" class="hidden flex-none bg-teal-950/80 border border-teal-500/40 hover:bg-teal-900 text-teal-300 px-2 py-1 rounded-xl text-[10px] flex flex-row items-center gap-1.5 active:scale-95 disabled:opacity-40">
         <i class="fa-solid fa-boxes-stacked text-xs"></i>
-        <span class="font-bold hidden">COFRADÍA</span>
+        <span class="font-bold hidden">COFRADÍA DEL COFRE</span>
         <span id="cntCofradia" class="text-[9px] text-teal-400 font-mono">x0</span>
       </button>
     </div>
@@ -273,6 +273,7 @@
       <!-- Tarjeta de instrucciones (título + texto) -->
       <div id="pzCard">
         <h3 id="minigameTitle" class="font-retro uppercase">CERRADURA TRADICIONAL</h3>
+        <div id="pzHardBadge" class="hidden"></div>
         <p id="minigameHelp"></p>
       </div>
 

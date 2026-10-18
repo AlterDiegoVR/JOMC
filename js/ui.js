@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — ui.js — VERSIÓN 0.104
+// JUST ONE MORE CHEST — ui.js — VERSIÓN 0.105
 // actualización de la interfaz (HUD)
 // ==========================================================================
 
@@ -149,7 +149,7 @@ function updateUI() {
       { active: STATE.harderPuzzlesLeft > 0, text: `💀 Puzles duros x${STATE.harderPuzzlesLeft}`, shortText: `💀 x${STATE.harderPuzzlesLeft}`, desc: `Pacto de la Sombra: los puzles son más difíciles durante los próximos ${STATE.harderPuzzlesLeft} cofres.`, isTorpeza: true },
       { active: !!(STATE.traperoBuffs && STATE.traperoBuffs.harderMinigames), text: `💀 Puzles duros ∞`, shortText: `💀 ∞`, desc: `Los puzles son más difíciles de forma permanente.`, isTorpeza: true },
       { active: !!STATE.picksBrokenOnUse, text: `🩹 Dedos Rotos`, shortText: `🩹`, desc: `Dedos Rotos: tus ganzúas se rompen al usarse (permanente).`, isTorpeza: true },
-      { active: modOn('fiebre'), text: `🔥 Fiebre x${(STATE.mods||{}).fiebre}`, shortText: `🔥 x${(STATE.mods||{}).fiebre}`, desc: `Fiebre del Oro: GP x2 durante ${(STATE.mods||{}).fiebre} cofres más, pero cada cofre pide +1 herramienta.`, isBoost: true },
+      { active: modOn('fiebre'), text: `🔥 Fiebre x${(STATE.mods||{}).fiebre}`, shortText: `🔥 x${(STATE.mods||{}).fiebre}`, desc: `Fiebre del Oro: GP x2 durante ${(STATE.mods||{}).fiebre} cofres más, pero cada cofre tiene un 50% de pedir +1 herramienta.`, isBoost: true },
       { active: modOn('seda'), text: `🧤 Seda x${(STATE.mods||{}).seda}`, shortText: `🧤 x${(STATE.mods||{}).seda}`, desc: `Manos de Seda: los próximos ${(STATE.mods||{}).seda} fallos no gastan herramientas.`, isBoost: true },
       { active: modOn('solitario'), text: `🕯️ Solitarios x${(STATE.mods||{}).solitario}`, shortText: `🕯️ x${(STATE.mods||{}).solitario}`, desc: `Cofres Solitarios: 1 cofre por pantalla y +50% XP durante ${(STATE.mods||{}).solitario} cofres más.`, isBoost: true },
       { active: modOn('niebla'), text: `🌫️ Niebla x${(STATE.mods||{}).niebla}`, shortText: `🌫️ x${(STATE.mods||{}).niebla}`, desc: `Niebla Espesa: rareza oculta pero botín +40% durante ${(STATE.mods||{}).niebla} cofres más.`, isBoost: true },
@@ -158,6 +158,8 @@ function updateUI() {
       { active: modOn('hambre'), text: `🍽️ Hambre x${(STATE.mods||{}).hambre}`, shortText: `🍽️ x${(STATE.mods||{}).hambre}`, desc: `Hambre de XP: XP x2 pero sin GP durante ${(STATE.mods||{}).hambre} cofres más.`, kind: 'bad' },
       { active: modOn('destino'), text: `🎲 Destino`, shortText: `🎲`, desc: `Cofre del Destino: las pantallas pueden mostrar hasta 4 cofres a elegir.`, isBoost: true },
       { active: modOn('relojMalo'), text: `⌛ Tiempo -30% x${(STATE.mods||{}).relojMalo}`, shortText: `⌛ x${(STATE.mods||{}).relojMalo}`, desc: `Reloj Roto: -30% de tiempo en los puzles durante ${(STATE.mods||{}).relojMalo} cofres más.`, isTorpeza: true },
+      { active: STATE.extremePuzzlesLeft > 0, text: `☠ Extremos x${STATE.extremePuzzlesLeft}`, shortText: `☠ x${STATE.extremePuzzlesLeft}`, desc: `${STATE.extremeSrc || 'Pulso Tembloroso'}: los próximos ${STATE.extremePuzzlesLeft} puzles son extremos.`, isTorpeza: true },
+      { active: STATE.oxidadoLeft > 0, text: `🔒 Oxidados x${STATE.oxidadoLeft}`, shortText: `🔒 x${STATE.oxidadoLeft}`, desc: `Cerrojos Oxidados: los próximos ${STATE.oxidadoLeft} cofres piden entre 1 y 3 herramientas al azar.`, isTorpeza: true },
       { active: STATE.heavyChestsLeft > 0, text: `📜 Contrato x${STATE.heavyChestsLeft}`, shortText: `📜 x${STATE.heavyChestsLeft}`, desc: `Contrato Leonino: los próximos ${STATE.heavyChestsLeft} cofres Raros o superiores piden +1 herramienta.`, isTorpeza: true }
     );
     const activePerks = perkList.filter(p => p.active);
