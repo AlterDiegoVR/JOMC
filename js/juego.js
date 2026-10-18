@@ -150,7 +150,7 @@ function triggerLevelUpChoice() {
   if (nextBtn) { nextBtn.classList.remove('hidden'); nextBtn.classList.add('invisible'); }   // [0.095] su sitio queda reservado desde el principio: al aparecer no mueve la carta
 
   // [0.093] Banner viejo fuera al abrir (si no, se veía el resultado del nivel anterior hasta empezar la ruleta)
-  const bn = document.getElementById('wildcardBanner'); if (bn) { bn.innerHTML = (typeof wcNeutralHtml === 'function') ? wcNeutralHtml() : ''; bn.className = 'wcard-host lvl-card-spin'; bn.style.minHeight = 'min(300px, 40vh)'; }   // [0.106b] desde el primer instante, carta neutra con marco (antes un hueco vacío)   // [0.104] hueco con fondo traslúcido desde el principio   // [0.095] hueco reservado y vacío (sin saltos de layout)
+  const bn = document.getElementById('wildcardBanner'); if (bn) { bn.innerHTML = (typeof wcFirstSpinHtml === 'function') ? wcFirstSpinHtml() : ''; bn.className = 'wcard-host lvl-card-spin'; bn.style.minHeight = 'min(300px, 40vh)'; }   // [0.106b] desde el primer instante, carta neutra con marco (antes un hueco vacío)   // [0.104] hueco con fondo traslúcido desde el principio   // [0.095] hueco reservado y vacío (sin saltos de layout)
   { const lm = document.getElementById('levelUpModal'); if (lm) lm.style.overflowY = 'hidden'; }   // [0.096] sin barra de scroll mientras dura la animación (se reevalúa al acabar de aparecer las 3 mejoras)
   lvlSpectacle();
   // [0.092] Fanfarria + cartel; ruleta de wildcard (se aplica ya, se muestra al frenar); SIGUIENTE; y entonces las 3 mejoras como cofres abiertos

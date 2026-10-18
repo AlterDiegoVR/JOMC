@@ -240,47 +240,37 @@ function showShopReceipt(onCloseCallback) {
     duendeQuote = frasesRecibo.SOLO_RECICLAJE;
   }
 
-  const itemsHTML = validItems.map(item => `
-    <div class="flex items-center justify-between bg-slate-900 border border-amber-500/30 px-3 py-3 rounded-xl text-xs font-mono">
-      <span class="flex items-center gap-2 text-amber-200">
-        <i class="fa-solid ${item.icon || 'fa-box'} text-amber-400"></i> ${item.name}
-      </span>
-      <span class="text-amber-400 font-black">${item.costText}</span>
-    </div>
-  `).join('');
+  // [0.2] Factura como papel de recibo: crece con las compras (el modal hace scroll), con el sello PAGADO anclado al total
+  shopArtInit();
+  const A = (typeof ASSETS !== 'undefined' && ASSETS) || {};
+  const duendeSrc = (A.duende || {}).codicia || (A.duende || {}).base || '';
+  const itemsHTML = validItems.map(item => {
+    const sp = item.ic ? shopImg(item.ic) : '';
+    const ic = sp ? `<img src="${sp}" alt="">` : `<i class="fa-solid ${item.icon || 'fa-box'}"></i>`;
+    return `<div class="rc-li">${ic}<span>${item.name}</span><b>${item.costText}</b></div>`;
+  }).join('');
+  const coinSp = shopImg('moneda'), pickSp = shopImg('ic_ganzua');
 
   const receiptModal = document.createElement('div');
   receiptModal.id = 'duendeReceiptModal';
-  receiptModal.className = 'fixed inset-0 z-[10000] bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 font-sans';
+  receiptModal.className = 'rc-modal animate-fade-in';
   receiptModal.innerHTML = `
-    <div class="bg-slate-950 border-2 border-amber-500/60 w-full max-w-md p-5 rounded-2xl shadow-2xl flex flex-col gap-4 text-white relative animate-fade-in">
-      <div class="flex items-center gap-3 border-b border-amber-500/30 pb-3">
-        <div class="w-10 h-10 rounded-xl bg-purple-950 border border-purple-500/50 flex items-center justify-center text-purple-300 text-xl shadow-inner">
-          <i class="fa-solid fa-receipt"></i>
+    <div class="rc-wrap">
+      <div class="rc-paper">
+        <div class="rc-hdr">
+          <div><h3>RECIBO DE LA VISITA</h3><div class="rc-shop">Tienda del Duende Mercader</div></div>
+          ${duendeSrc ? `<img class="rc-duen" src="${duendeSrc}" alt="">` : ''}
         </div>
-        <div>
-          <h3 class="text-base font-black tracking-wide text-amber-400 uppercase">Recibo de la Visita</h3>
-          <p class="text-[11px] font-mono text-slate-400">Tienda del Duende Mercader</p>
-        </div>
-      </div>
-
-      <div class="receipt-quote bg-purple-950/40 border border-purple-500/30 p-3 rounded-xl text-xs italic text-purple-200 leading-relaxed font-serif">
-        ${duendeQuote}
-      </div>
-
-      <div class="space-y-1.5 max-h-48 overflow-y-auto">
+        <div class="rc-quote">${duendeQuote}</div>
         ${itemsHTML}
+        <div class="rc-sum">
+          ${session.totalPicksRecycled > 0 ? `<div class="rc-sub2"><span>${pickSp ? `<img src="${pickSp}" alt="">` : ''}Ganzúas recicladas</span><span>-${session.totalPicksRecycled} Ganzúas</span></div>` : ''}
+          ${session.totalGold > 0 ? `<div class="rc-total"><span>TOTAL</span><b>${coinSp ? `<img src="${coinSp}" alt="">` : ''}-${session.totalGold} GP</b></div>` : ''}
+          <div class="rc-iva">IVA 21% INCLUIDO · NO SE ADMITEN DEVOLUCIONES</div>
+        </div>
+        <div class="rc-stamp">PAGADO</div>
       </div>
-
-      <div class="bg-slate-900 border border-amber-500/30 px-3 py-3 rounded-xl flex flex-col gap-2 text-xs font-mono">
-        <span class="text-slate-400 font-bold uppercase">Balance Final:</span>
-        ${session.totalGold > 0 ? `<div class="flex items-center justify-between"><span class="text-slate-300">GP gastados</span><span class="text-amber-400 font-black"><i class="fa-solid fa-coins"></i> -${session.totalGold} GP</span></div>` : ''}
-        ${session.totalPicksRecycled > 0 ? `<div class="flex items-center justify-between"><span class="text-slate-300">Ganzúas recicladas</span><span class="text-amber-300 font-black"><i class="fa-solid fa-screwdriver"></i> -${session.totalPicksRecycled} Ganzúas</span></div>` : ''}
-      </div>
-
-      <button id="closeReceiptBtn" class="w-full py-3 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 active:scale-95 text-slate-950 font-black text-xs uppercase tracking-widest rounded-xl shadow-lg transition-all cursor-pointer">
-        Continuar
-      </button>
+      <button id="closeReceiptBtn" class="gm-btn" type="button">CONTINUAR</button>
     </div>
   `;
 
@@ -374,7 +364,7 @@ function renderMerchantShopGrid() {
     const row = dshopRowEl({
       vis, desc: desc[item.id], own,
       label: isStealAvailable ? (B.ROBAR || 'ROBAR') : (B.COMPRAR || 'COMPRAR'),
-      price: isStealAvailable ? 'GRATIS' : dshopGoldPrice(currentPrice),
+      price: isStealAvailable ? '' : dshopGoldPrice(currentPrice),   // [0.2] con Ladrón solo «ROBAR»
       cls: isStealAvailable ? 'steal' : 'w',
       poor,
       onPoor: () => dshopPoorReact(cfg.FRASES_SIN_ORO),
@@ -385,7 +375,7 @@ function renderMerchantShopGrid() {
           STATE.perks.shopStealFree = false;
           grantItem(item);
 
-          STATE.shopSession.items.push({ name: item.name, costText: 'GRATIS (ROBO)', icon: item.icon, isStolen: true });
+          STATE.shopSession.items.push({ name: item.name, costText: 'GRATIS (ROBO)', icon: item.icon, ic: vis.ic, isStolen: true });
 
           // [0.084] Al robar solo suena el efecto; la frase de culpa se muestra al salir de la tienda, tras el recibo
           const culpaList = DATOS_JUEGO.NARRATIVA.FRASES_CULPA_ROBO;
@@ -399,7 +389,7 @@ function renderMerchantShopGrid() {
           STATE.gold -= currentPrice;
           const spoke = grantItem(item);   // [0.104] el contador de cofres ya trae su propia frase
 
-          STATE.shopSession.items.push({ name: item.name, costText: `${currentPrice} GP`, icon: item.icon, isStolen: false });
+          STATE.shopSession.items.push({ name: item.name, costText: `${currentPrice} GP`, icon: item.icon, ic: vis.ic, isStolen: false });
           STATE.shopSession.totalGold += currentPrice;
 
           item.purchaseCount++;
@@ -443,7 +433,7 @@ function renderMerchantShopGrid() {
           STATE.picks -= reqGanzuasReciclaje;
           STATE[target.prop] += ((DATOS_JUEGO.ECONOMIA.RECICLAJE.otorgadas || {})[target.prop] || DATOS_JUEGO.ECONOMIA.RECICLAJE.herramientas_otorgadas);   // [0.105] por herramienta
 
-          STATE.shopSession.items.push({ name: `Reciclaje: ${target.name}`, costText: `${reqGanzuasReciclaje} Ganzúas`, icon: target.icon, isStolen: false });
+          STATE.shopSession.items.push({ name: `Reciclaje: ${target.name}`, costText: `${reqGanzuasReciclaje} Ganzúas`, icon: target.icon, ic: vis.ic, isStolen: false });
           STATE.shopSession.totalPicksRecycled += reqGanzuasReciclaje;
 
           audio.playClick(0.9);
@@ -535,28 +525,8 @@ function traperoCascade() {
   const leave = document.getElementById('leaveTraperoShopBtn'), pj = document.getElementById('tshopPj');
   if (!list) return;
   const cards = Array.from(list.querySelectorAll('.tcard'));
-  // Si los tratos taparían demasiado al Trapero, se muestra a la mitad de tamaño (de 3x a 2x)
-  if (pj && stage && cards.length && pj.style.display !== 'none') {
-    const sr = stage.getBoundingClientRect(), pr = pj.getBoundingClientRect();
-    const cardsBottom = cards[cards.length - 1].getBoundingClientRect().bottom;
-    const visible = pr.bottom - Math.max(pr.top, cardsBottom);
-    if (pr.height > 0 && visible < (cfg.ESCALA_PJ_MIN_ESPACIO != null ? cfg.ESCALA_PJ_MIN_ESPACIO : 0.8) * pr.height) pj.classList.add('small');
-  }
-  // [0.106b] En móviles alargados sobra hueco entre los tratos y el botón: el Trapero crece hasta llenarlo (nunca por debajo de su tamaño normal)
-  if (pj && stage && cards.length && pj.style.display !== 'none' && pj.naturalWidth > 0) {
-    const sr = stage.getBoundingClientRect(), u = sr.width / 144;
-    const cardsBottom = cards[cards.length - 1].getBoundingClientRect().bottom;
-    const leaveTop = sr.bottom - 24 * u;
-    const avail = leaveTop - cardsBottom - 2 * u;
-    const asp = pj.naturalHeight / pj.naturalWidth;
-    const w = Math.min(avail / asp, 118 * u);
-    if (w > 72 * u * 1.04) {
-      pj.classList.remove('small');
-      pj.style.width = w + 'px';
-      pj.style.left = ((sr.width - w) / 2) + 'px';
-      pj.style.top = (leaveTop - 1 * u - w * asp - sr.top) + 'px';
-    }
-  }
+  // [0.2] El Trapero tiene UN solo tamaño grande en bienvenida, tratos y cierre (sin cálculo): los tratos son transparentes y pueden tapar parte del personaje
+  if (pj) { pj.classList.remove('small'); pj.style.left = pj.style.top = pj.style.width = ''; }
   cards.forEach((c, i) => {
     traperoTimers.push(setTimeout(() => {
       c.classList.remove('pre');

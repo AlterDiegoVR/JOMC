@@ -225,6 +225,30 @@ function kwHighlight(text) {
   const badRe = bad ? new RegExp('^(?:' + bad + ')$', 'iu') : null;
   return esc.replace(re, m => `<b class="${badRe && badRe.test(m) ? 'kw kw-bad' : 'kw'}">${m}</b>`);
 }
+// [0.2] Tipo de aviso según su texto: MALDICIÓN/¡CUIDADO! (rojo), PREMIO (verde), AYUDA o AVISO (latón). Retrato pixel art del juego.
+function fbVariant(raw) {
+  const cfg = DATOS_JUEGO.PALABRAS_CLAVE || {};
+  const has = list => { const l = (list || []).join('|'); return !!l && new RegExp('(?<![\\p{L}])(?:' + l + ')(?![\\p{L}])', 'iu').test(raw); };
+  const bad = has(cfg.MALAS), curse = /maldici|trato injusto|castigo|trampa|robo|oscuridad|condena/i.test(raw);
+  const gain = /recib|ganas|premio|regalo|obtien|\+\s?\d/i.test(raw) && has(cfg.BUENAS);   // «Ganzúa Perdida: recibes +5 ganzúas» es un premio aunque lleve «perdida»
+  if (/^\s*ℹ️/.test(raw)) return { cls: '', seal: 'AYUDA', art: 'pergamino' };
+  if (curse) return /maldici|trato|condena/i.test(raw) ? { cls: 'curse', seal: 'MALDICIÓN', art: 'trapero' } : { cls: 'curse', seal: '¡CUIDADO!', art: 'pergamino' };
+  if (gain) return { cls: 'good', seal: 'PREMIO', art: 'duende' };
+  if (bad) return { cls: 'curse', seal: '¡CUIDADO!', art: 'pergamino' };
+  return { cls: '', seal: 'AVISO', art: 'pergamino' };
+}
+function fbApplyVariant(raw) {
+  const card = document.getElementById('fbCard'), seal = document.getElementById('fbSeal'), img = document.getElementById('fbImg');
+  if (!card) return;
+  const v = fbVariant(raw);
+  card.classList.toggle('curse', v.cls === 'curse'); card.classList.toggle('good', v.cls === 'good');
+  if (seal) seal.textContent = v.seal;
+  if (img) {
+    const A = (typeof ASSETS !== 'undefined' && ASSETS) || {};
+    const src = v.art === 'trapero' ? (A.trapero || {}).amenaza : v.art === 'duende' ? (A.duende || {}).alegre : (A.decoraciones || {}).pergamino;
+    if (src) { img.src = src; img.parentElement.style.display = ''; } else img.parentElement.style.display = 'none';
+  }
+}
 let acceptDelayTimer = null;
 function showPersistentFeedback(message, delayKey = null) {
   const banner = document.getElementById('persistentFeedbackBanner');
@@ -253,6 +277,7 @@ function showPersistentFeedback(message, delayKey = null) {
     else raw = message;
     txt.dataset.raw = raw;
     txt.innerHTML = kwHighlight(raw);   // [0.104] palabras clave resaltadas
+    try { fbApplyVariant(raw); } catch (e) {}   // [0.2] sello, color y retrato según el tipo
   }
   if (banner) banner.classList.remove('hidden');
 }
@@ -394,7 +419,7 @@ function queueCurseEndMessage() {
 function placeStickyNote(note, container) {
   const cr = container.getBoundingClientRect();
   const hud = document.getElementById('persistentHUD');
-  const topMin = hud ? Math.max(0, hud.getBoundingClientRect().bottom - cr.top) + 8 : cr.height * 0.22;
+  const topMin = hud ? Math.max(0, hud.getBoundingClientRect().bottom - cr.top) + 8 : cr.height * 0.22;   // [0.2] reflowNotes() lo mantiene si el HUD crece después
   const nw = note.offsetWidth, nh = note.offsetHeight;
   const xMax = Math.max(6, cr.width - nw - 6);
   const yMax = Math.max(topMin, cr.height * 0.80 - nh);
@@ -468,6 +493,29 @@ function buildSceneNote(p) {
   return el;
 }
 
+// [0.2] Borde inferior del HUD (barra de cartas incluida) en coordenadas del contenedor de post-its: por encima de él el clic lo recibe el HUD
+function hudFloor(container) {
+  const hud = document.getElementById('persistentHUD'); if (!hud) return 70;
+  const cr = container.getBoundingClientRect();
+  return Math.max(0, Math.ceil(hud.getBoundingClientRect().bottom - cr.top)) + 10;
+}
+// [0.2] El HUD crece cuando aparece la barra de cartas/bote: baja los post-its que hayan quedado debajo para que se puedan pulsar
+let _reflowQueued = false;
+function reflowNotes() {
+  if (_reflowQueued) return; _reflowQueued = true;
+  requestAnimationFrame(() => {
+    _reflowQueued = false;
+    const container = document.getElementById('notesContainer'); if (!container) return;
+    const floor = hudFloor(container), cr = container.getBoundingClientRect();
+    container.querySelectorAll('.sticky-note').forEach(n => {
+      const top = parseFloat(n.style.top) || 0;
+      if (top < floor) n.style.top = Math.round(floor) + "px";
+    });
+    try { positionSceneNotes(); } catch (e) {}
+  });
+}
+window.addEventListener('resize', () => reflowNotes());
+
 function positionSceneNotes() {
   const container = document.getElementById('notesContainer'); if (!container) return;
   const notes = [...container.querySelectorAll('.scene-note')]; if (!notes.length) return;
@@ -481,7 +529,7 @@ function positionSceneNotes() {
     const w = el.offsetWidth, h = el.offsetHeight;
     const off = n === 1 ? 0 : (i - (n - 1) / 2) * Math.min(110, w * 0.55);
     el.style.left = Math.round(Math.max(6, Math.min(cr.width - w - 6, cx - w / 2 + off))) + 'px';
-    el.style.top = Math.round(Math.max(70, topA - h - 10 - (n > 1 && i % 2 ? 12 : 0))) + 'px';
+    el.style.top = Math.round(Math.max(hudFloor(container), topA - h - 10 - (n > 1 && i % 2 ? 12 : 0))) + 'px';   // [0.2] nunca bajo el HUD (que crece con la barra de cartas)
     el.style.setProperty('--rot', (n === 1 ? -2 : (i === 0 ? -4 : 3)) + 'deg');
     el.style.visibility = '';
   });
@@ -579,6 +627,8 @@ function spawnStickyNote() {
    BOTÍN Y RECOMPENSAS
    ========================================================================== */
 
+// [0.2] Estrella pixel art de la experiencia (único dibujo nuevo del botín)
+const LOOT_STAR_SVG = '<svg class="star" viewBox="0 0 11 11"><g fill="#0c0f24"><rect x="4" y="0" width="3" height="11"/><rect x="0" y="4" width="11" height="3"/><rect x="1" y="1" width="9" height="9"/></g><g fill="#c7d2fe"><rect x="5" y="1" width="1" height="9"/><rect x="1" y="5" width="9" height="1"/><rect x="4" y="3" width="3" height="5"/><rect x="3" y="4" width="5" height="3"/></g><g fill="#818cf8"><rect x="5" y="4" width="1" height="3"/><rect x="4" y="5" width="3" height="1"/></g></svg>';
 function triggerLootExplosion() {
   if (TEST_SERIES.active) { testPuzzleResult(true); return; }   // [0.090] Modo test: sin botín, pasa al siguiente puzle
   // 🟢 CERROJO ANTI-DUPLICACIÓN
@@ -829,8 +879,11 @@ function triggerLootExplosion() {
     STATE.gold += finalGp;
     STATE.xp += finalXp;
 
-    let gpLinesHTML = gpLines.map(l => `<div class="flex justify-between items-center text-xs font-mono text-amber-200/90"><span>${l.label}</span><span class="font-bold text-amber-300 whitespace-nowrap pl-2">${l.val}</span></div>`).join('');
-    let xpLinesHTML = xpLines.map(l => `<div class="flex justify-between items-center text-xs font-mono text-indigo-200/90"><span>${l.label}</span><span class="font-bold text-indigo-300 whitespace-nowrap pl-2">${l.val}</span></div>`).join('');
+    // [0.2] Desglose línea a línea (mismas etiquetas de siempre): positivas en verde, negativas en rojo, multiplicadores en amarillo
+    const lootLineCls = v => /^\s*\+/.test(v) ? 'p' : /^\s*(-|sin)/i.test(v) ? 'n' : 'm';
+    const lootLines = L => '<div class="lt-sub">' + L.map(l => `<div><span>${l.label}</span><b class="${lootLineCls(String(l.val))}">${l.val}</b></div>`).join('') + '</div>';
+    let gpLinesHTML = lootLines(gpLines);
+    let xpLinesHTML = lootLines(xpLines);
 
     let extraLootHTML = "";
     let toolDropChance = DATOS_JUEGO.PROBABILIDADES.HERRAMIENTA_EXTRA_CHANCE;
@@ -887,9 +940,9 @@ function triggerLootExplosion() {
       const chosenDrop = forcedDrop || availableDrops[Math.floor(Math.random() * availableDrops.length)];
       STATE[chosenDrop.prop]++;
       extraLootHTML += `
-        <div class="flex items-center justify-between ${chosenDrop.color} font-bold text-xs bg-slate-900 p-2.5 rounded-xl border border-slate-800">
-          <span class="flex items-center gap-2"><i class="fa-solid ${chosenDrop.icon}"></i> ${chosenDrop.name}</span>
-          <span class="text-sm font-black">+1</span>
+        <div class="lt-extra ${chosenDrop.color}">
+          <span><i class="fa-solid ${chosenDrop.icon}"></i> ${chosenDrop.name}</span>
+          <b>+1</b>
         </div>
       `;
     }
@@ -897,33 +950,34 @@ function triggerLootExplosion() {
     if (active.rarity.id === 'epico' || active.rarity.id === 'legendario' || Math.random() < DATOS_JUEGO.PROBABILIDADES.ADORNO_SALA_CHANCE) {
       const decorTextStr = spawnSpookyPerimeterDecoration();
       extraLootHTML += `
-        <div class="flex items-center justify-between text-purple-300 font-bold text-xs bg-purple-950/40 p-2.5 rounded-xl border border-purple-500/30">
-          <span class="flex items-center gap-2 text-sm">${decorTextStr}</span>
+        <div class="lt-extra dc">
+          <span>${decorTextStr}</span>
         </div>
       `;
     }
 
     const lootList = document.getElementById('lootList');
     if (lootList) {
+      const A = (typeof ASSETS !== 'undefined' && ASSETS) || {};
+      const coin = (A.tienda || {}).moneda || '';
       lootList.innerHTML = `
-        <div class="bg-amber-950/40 border border-amber-500/50 p-3 rounded-xl space-y-1">
-          <div class="flex justify-between items-center text-amber-400 font-black text-xs border-b border-amber-500/30 pb-1 mb-1">
-            <span class="flex items-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-coins"></i> MONEDAS DE ORO (GP)</span>
-            <span class="text-sm font-black text-amber-300 whitespace-nowrap">+${finalGp} GP</span>
-          </div>
+        <div>
+          <div class="lt-row lt-gp top"><div class="lt-ri">${coin ? `<img src="${coin}" alt="">` : '<i class="fa-solid fa-coins"></i>'}</div><div class="lt-lab">ORO</div><div class="lt-am">+${finalGp} GP</div></div>
           ${gpLinesHTML}
         </div>
-
-        <div class="bg-indigo-950/40 border border-indigo-500/50 p-3 rounded-xl space-y-1">
-          <div class="flex justify-between items-center text-indigo-400 font-black text-xs border-b border-indigo-500/30 pb-1 mb-1">
-            <span class="flex items-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-star"></i> EXPERIENCIA (XP)</span>
-            <span class="text-sm font-black text-indigo-300 whitespace-nowrap">+${finalXp} XP</span>
-          </div>
+        <div>
+          <div class="lt-row lt-xp top"><div class="lt-ri">${LOOT_STAR_SVG}</div><div class="lt-lab">EXPERIENCIA</div><div class="lt-am">+${finalXp} XP</div></div>
           ${xpLinesHTML}
         </div>
-
         ${extraLootHTML}
       `;
+      // [0.2] Color, sello y cofre de la tarjeta según la rareza
+      const LR = { normal: ['#94a3b8', '#475569', '#94a3b855'], raro: ['#3b82f6', '#1e3a8a', '#3b82f655'], epico: ['#a855f7', '#581c87', '#a855f755'], legendario: ['#f59e0b', '#78490c', '#f59e0b66'] }[active.rarity.id] || ['#c99a3a', '#6b4a2a', '#c99a3a55'];
+      const lc = document.getElementById('lootCard');
+      if (lc) { lc.style.setProperty('--ac', LR[0]); lc.style.setProperty('--ac2', LR[1]); lc.style.setProperty('--glow', LR[2]); }
+      const ls = document.getElementById('lootSeal'); if (ls) ls.textContent = active.rarity.name;
+      const li = document.getElementById('lootChestImg'), cs = chestSpriteSrc(active.type, active.rarity);
+      if (li) { if (cs) { li.src = cs; li.parentElement.style.display = ''; } else li.parentElement.style.display = 'none'; }
     }
 
     const lootTitle = document.getElementById('lootHeaderTitle');
