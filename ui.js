@@ -4,6 +4,7 @@
 // ==========================================================================
 
 function updateUI() {
+  try { reflowNotes(); } catch (e) {}   // [0.2] el HUD puede cambiar de alto con esta actualización
   trackStats();   // [0.090]
   const levelEl = document.getElementById('playerLevel'); if (levelEl) levelEl.textContent = STATE.level;
   

@@ -413,6 +413,12 @@ function wcNeutralHtml() {
   const cr = '<i class="wc-cr a"></i><i class="wc-cr b"></i><i class="wc-cr c"></i><i class="wc-cr d"></i>';
   return `<div class="wcard neutral"><i class="wc-seal">DESTINO</i><div class="wc-in">${cr}<div class="wc-ttl">EL DESTINO GIRA</div><div class="wc-art"><i class="fa-solid fa-question"></i></div><div class="wc-tx"><span>...</span></div></div></div>`;
 }
+// [0.2] Carta de arranque: una wildcard cualquiera ya girando (con icono, nombre y sello), en vez de un marco vacío
+function wcFirstSpinHtml() {
+  const l = (DATOS_JUEGO.WILDCARDS || []);
+  if (!l.length) return (typeof wcNeutralHtml === 'function') ? wcNeutralHtml() : '';
+  return wcCardHtml(l[Math.floor(Math.random() * l.length)], 'spin');
+}
 function runWildcardRoulette(res, onDone) {
   const banner = document.getElementById('wildcardBanner');
   const cfg = DATOS_JUEGO.SUBIDA_NIVEL || {};
@@ -428,7 +434,7 @@ function runWildcardRoulette(res, onDone) {
   };
   // [0.105] Desde el primer instante hay carta: texto neutro "EL DESTINO GIRA" hasta que sale la primera de la ruleta
   banner.className = 'wcard-host lvl-card-spin';
-  banner.innerHTML = wcNeutralHtml();
+  banner.innerHTML = wcFirstSpinHtml();   // [0.2] desde el primer instante una carta real de la ruleta (nunca un hueco vacío)
   const steps = Math.max(6, cfg.RULETA_PASOS || 20), d0 = cfg.RULETA_MS_INICIAL || 50, d1 = cfg.RULETA_MS_FINAL || 340, curve = cfg.RULETA_CURVA || 2.5;
   const seq = []; let prev = null;
   for (let i = 0; i < steps; i++) { let w; let guard = 0; do { w = wcList[Math.floor(Math.random() * wcList.length)]; } while ((w === prev || w === res.wc) && wcList.length > 2 && ++guard < 20); seq.push(w); prev = w; }

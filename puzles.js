@@ -290,24 +290,32 @@ function resetTumblerSealUI() {
 // Los pistones se mueven en % de su carril (más corto que la caja por la luz superior),
 // así que las líneas se colocan en píxeles a partir del carril medido.
 let tumblerShearTol = 6;
+// [0.106c] Posición local (sin zoom) de un elemento respecto al borde interior de `ancestor`, sumando solo offsetTop/clientTop.
+// Se evita getBoundingClientRect: con el zoom del puzle en PC devuelve píxeles ampliados y cada navegador los trata a su manera.
+function tumblerLocalY(el, ancestor) {
+  let y = 0;
+  while (el && el !== ancestor) {
+    const p = el.offsetParent;
+    y += el.offsetTop;
+    if (p && p !== ancestor) y += p.clientTop;
+    el = p;
+  }
+  return el === ancestor ? y : null;
+}
 function layoutTumblerLines() {
   const shear = document.getElementById('shearLine');
   const notch = document.getElementById('pinNotch-0');
   if (!shear || !notch || !notch.parentElement || !shear.parentElement) return;
   const box = shear.parentElement;
   const track = notch.parentElement;
-  const tr = track.getBoundingClientRect();
-  const br = box.getBoundingClientRect();
-  if (!tr.height || !br.height || !track.offsetHeight) return;
-  // [0.106b] El puzle puede estar ampliado con zoom (PC): getBoundingClientRect devuelve píxeles ya ampliados y style.top se amplía otra vez.
-  // Se pasa todo a píxeles locales dividiendo por el factor real (alto medido / alto de diseño del carril).
-  const zf = tr.height / track.offsetHeight || 1;
-  const trH = track.offsetHeight;
+  const ty = tumblerLocalY(track, box);
+  const trH = track.clientHeight;
+  if (ty === null || !trH) return;
   const notchH = notch.offsetHeight || 16;
   const place = (el, pct, tol, minH) => {
     if (!el) return;
     const h = Math.max(minH, 2 * tol * trH / 100);
-    const centre = (tr.top - br.top) / zf - box.clientTop + (pct / 100) * trH + notchH / 2;
+    const centre = ty + track.clientTop + (pct / 100) * trH + notchH / 2;
     el.style.top = `${centre - h / 2}px`;
     el.style.height = `${h}px`;
   };
@@ -434,6 +442,7 @@ function updateSequentialPinLights() {
 
 let humHoldChest = null;   // [0.091] cofre legendario para el que el zumbido se calló al empezar el puzle; no vuelve en el botín
 let tumblerPinsLastTs = null;
+let tumblerLayoutTick = 0;
 function animateSequentialTumblerPins(ts) {
   const tumblerContainer = document.getElementById('tumblerContainer');
   if (!tumblerContainer || tumblerContainer.classList.contains('hidden')) return;
@@ -442,6 +451,7 @@ function animateSequentialTumblerPins(ts) {
   if (typeof ts !== 'number') ts = performance.now();
   const dtPins = tumblerPinsLastTs === null ? 0 : Math.max(0, Math.min(0.05, (ts - tumblerPinsLastTs) / 1000));   // [0.091] tiempo real ([0.092b] nunca negativo)
   tumblerPinsLastTs = ts;
+  if ((tumblerLayoutTick = (tumblerLayoutTick + 1) % 20) === 0) { try { layoutTumblerLines(); } catch (e) {} }   // [0.106c] la línea verde se reajusta sola cada ~0,3 s (cualquier cambio de tamaño tardío)
   const fpsRef = DATOS_JUEGO.MINIJUEGOS.TUMBLER.VELOCIDAD_FPS_REFERENCIA || 90;
   tumblerPinsData.forEach((pin, i) => {
     if (!pin.locked) {

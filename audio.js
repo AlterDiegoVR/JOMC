@@ -404,8 +404,8 @@ class AudioEngine {
       _T(c, o, t + 0.14, 100, 0.1, 0.3, { fEnd: 60 }); _ring(c, o, t + 0.14, 1400, 0.4, 0.2);
     });
   }
-  playShutter() {   // persiana de la tienda del Duende: tablillas pesadas y golpe final
-    this._fx(1.4, (c, t, o) => {
+  playShutter() {   // persiana de la tienda del Duende: tablillas pesadas y golpe final ([0.2] ganancia 1.4 → 1.0)
+    this._fx(1.0, (c, t, o) => {
       let tt = t;
       for (let i = 0; i < 16; i++) { _N(c, o, tt, 0.045, { f: 1500 + Math.random() * 1200, q: 3, vol: 0.4 + Math.random() * 0.15, a: 0.001 }); _T(c, o, tt, 190 + Math.random() * 60, 0.07, 0.4, { fEnd: 90, a: 0.001 }); tt += 0.055 + 0.07 * Math.abs(Math.cos(i / 16 * Math.PI)); }
       _N(c, o, t, tt - t + 0.1, { type: 'lowpass', f: 220, vol: 0.2, a: 0.1 });
