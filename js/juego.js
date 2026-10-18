@@ -150,7 +150,7 @@ function triggerLevelUpChoice() {
   if (nextBtn) { nextBtn.classList.remove('hidden'); nextBtn.classList.add('invisible'); }   // [0.095] su sitio queda reservado desde el principio: al aparecer no mueve la carta
 
   // [0.093] Banner viejo fuera al abrir (si no, se veía el resultado del nivel anterior hasta empezar la ruleta)
-  const bn = document.getElementById('wildcardBanner'); if (bn) { bn.innerHTML = ''; bn.className = 'w-full max-w-xs mb-3 rounded-2xl border-2 border-indigo-500/40 bg-indigo-950/40'; bn.style.minHeight = '150px'; }   // [0.104] hueco con fondo traslúcido desde el principio   // [0.095] hueco reservado y vacío (sin saltos de layout)
+  const bn = document.getElementById('wildcardBanner'); if (bn) { bn.innerHTML = (typeof wcNeutralHtml === 'function') ? wcNeutralHtml() : ''; bn.className = 'wcard-host lvl-card-spin'; bn.style.minHeight = 'min(300px, 40vh)'; }   // [0.106b] desde el primer instante, carta neutra con marco (antes un hueco vacío)   // [0.104] hueco con fondo traslúcido desde el principio   // [0.095] hueco reservado y vacío (sin saltos de layout)
   { const lm = document.getElementById('levelUpModal'); if (lm) lm.style.overflowY = 'hidden'; }   // [0.096] sin barra de scroll mientras dura la animación (se reevalúa al acabar de aparecer las 3 mejoras)
   lvlSpectacle();
   // [0.092] Fanfarria + cartel; ruleta de wildcard (se aplica ya, se muestra al frenar); SIGUIENTE; y entonces las 3 mejoras como cofres abiertos
@@ -438,6 +438,7 @@ function pzScale(m) {
   z = Math.max(0.55, z);
   if (z > 1.005 || z < 0.995) body.style.zoom = z.toFixed(3);
   if (z > 1.005) frame.style.setProperty('--pzw', Math.round(400 * z) + 'px');
+  if (which === 'tumbler' && typeof layoutTumblerLines === 'function') { try { layoutTumblerLines(); } catch (e) {} }   // [0.106b] recolocar la línea verde tras el zoom
 }
 window.addEventListener('resize', pzFit);
 if (window.ResizeObserver) { const c = document.getElementById('pzCard'); if (c) new ResizeObserver(pzFit).observe(c); }

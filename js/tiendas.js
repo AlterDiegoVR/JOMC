@@ -506,7 +506,7 @@ function triggerTraperoShopSequence() {
       const bank = (typeof ASSETS !== 'undefined' && ASSETS.trapero) || {};
       const src = bank[t.mood] || bank.base || '';
       if (src) { pj.setAttribute('src', src); pj.style.display = ''; } else pj.style.display = 'none';
-      pj.classList.remove('small');
+      pj.classList.remove('small'); pj.style.left = pj.style.top = pj.style.width = '';
       npcMotion(pj, 'trapero', t.mood);   // [0.106]
     }
     const sp = document.getElementById('tshopSpeech'), st = document.getElementById('tshopSpeechText'), go = document.getElementById('tshopContinueBtn');
@@ -541,6 +541,21 @@ function traperoCascade() {
     const cardsBottom = cards[cards.length - 1].getBoundingClientRect().bottom;
     const visible = pr.bottom - Math.max(pr.top, cardsBottom);
     if (pr.height > 0 && visible < (cfg.ESCALA_PJ_MIN_ESPACIO != null ? cfg.ESCALA_PJ_MIN_ESPACIO : 0.8) * pr.height) pj.classList.add('small');
+  }
+  // [0.106b] En móviles alargados sobra hueco entre los tratos y el botón: el Trapero crece hasta llenarlo (nunca por debajo de su tamaño normal)
+  if (pj && stage && cards.length && pj.style.display !== 'none' && pj.naturalWidth > 0) {
+    const sr = stage.getBoundingClientRect(), u = sr.width / 144;
+    const cardsBottom = cards[cards.length - 1].getBoundingClientRect().bottom;
+    const leaveTop = sr.bottom - 24 * u;
+    const avail = leaveTop - cardsBottom - 2 * u;
+    const asp = pj.naturalHeight / pj.naturalWidth;
+    const w = Math.min(avail / asp, 118 * u);
+    if (w > 72 * u * 1.04) {
+      pj.classList.remove('small');
+      pj.style.width = w + 'px';
+      pj.style.left = ((sr.width - w) / 2) + 'px';
+      pj.style.top = (leaveTop - 1 * u - w * asp - sr.top) + 'px';
+    }
   }
   cards.forEach((c, i) => {
     traperoTimers.push(setTimeout(() => {

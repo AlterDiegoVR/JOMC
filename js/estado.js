@@ -408,6 +408,11 @@ function wcCardFit(host) {
   while (card.querySelector('.wc-in').scrollHeight > card.querySelector('.wc-in').clientHeight + 1 && fs > 8) { fs -= 0.5; tx.style.fontSize = fs + 'px'; }
 }
 
+// [0.106b] Carta neutra "EL DESTINO GIRA": la que se ve desde que se abre la subida de nivel hasta que sale la primera de la ruleta (mismo marco que las demás)
+function wcNeutralHtml() {
+  const cr = '<i class="wc-cr a"></i><i class="wc-cr b"></i><i class="wc-cr c"></i><i class="wc-cr d"></i>';
+  return `<div class="wcard neutral"><i class="wc-seal">DESTINO</i><div class="wc-in">${cr}<div class="wc-ttl">EL DESTINO GIRA</div><div class="wc-art"><i class="fa-solid fa-question"></i></div><div class="wc-tx"><span>...</span></div></div></div>`;
+}
 function runWildcardRoulette(res, onDone) {
   const banner = document.getElementById('wildcardBanner');
   const cfg = DATOS_JUEGO.SUBIDA_NIVEL || {};
@@ -423,7 +428,7 @@ function runWildcardRoulette(res, onDone) {
   };
   // [0.105] Desde el primer instante hay carta: texto neutro "EL DESTINO GIRA" hasta que sale la primera de la ruleta
   banner.className = 'wcard-host lvl-card-spin';
-  banner.innerHTML = `<div class="wcard neutral"><div class="wc-in"><i class="wc-cr a"></i><i class="wc-cr b"></i><i class="wc-cr c"></i><i class="wc-cr d"></i><div class="wc-ttl">EL DESTINO GIRA</div><div class="wc-art"><i class="fa-solid fa-question"></i></div><div class="wc-tx"><span>...</span></div></div></div>`;
+  banner.innerHTML = wcNeutralHtml();
   const steps = Math.max(6, cfg.RULETA_PASOS || 20), d0 = cfg.RULETA_MS_INICIAL || 50, d1 = cfg.RULETA_MS_FINAL || 340, curve = cfg.RULETA_CURVA || 2.5;
   const seq = []; let prev = null;
   for (let i = 0; i < steps; i++) { let w; let guard = 0; do { w = wcList[Math.floor(Math.random() * wcList.length)]; } while ((w === prev || w === res.wc) && wcList.length > 2 && ++guard < 20); seq.push(w); prev = w; }

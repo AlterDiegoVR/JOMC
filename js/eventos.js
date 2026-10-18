@@ -645,6 +645,7 @@ function startMinigameTimer(seconds, consumableName) {
   let adjustedSeconds = seconds + STATE.perks.extraTime;
   if (modOn('relojBueno')) adjustedSeconds = Math.round(adjustedSeconds * DATOS_JUEGO.MODS_WILDCARD.RELOJ_BUENO.TIEMPO_MULT);   // [0.093]
   if (modOn('relojMalo')) adjustedSeconds = Math.max(5, Math.round(adjustedSeconds * DATOS_JUEGO.MODS_WILDCARD.RELOJ_MALO.TIEMPO_MULT));
+  adjustedSeconds = Math.max(1, Math.round(adjustedSeconds));   // [0.106b] siempre segundos completos (los multiplicadores del puzle extremo dejaban decimales)
   globalPuzzleTimeLeft = adjustedSeconds;
   currentPuzzleConsumable = consumableName;
   paintBigTimer(globalPuzzleTimeLeft);

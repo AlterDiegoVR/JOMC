@@ -4,7 +4,7 @@
 // ==========================================================================
 
 function generateScreenChests() {
-  quadPicked = false;
+  quadPicked = false; quadMarked = -1;
   STATE.screenChests = [];
   let chestCount = STATE.chestsOpened < 4 ? 1 : (Math.random() < 0.6 ? 2 : 3);
   const destino = modOn('destino') && !isClimaxActive();
@@ -112,6 +112,7 @@ function getRequiredToolCount(rarity) {
   return base;
 }
 
+let quadMarked = -1;   // [0.106b] cofre marcado (primer toque) en la cuadrícula de 4
 let quadPicked = false;   // [0.105] con 4 cofres, la cuadrícula 2x2 solo se ve hasta que eliges uno
 function updateChestSelectionUI() {
   const multiGrid = document.getElementById('multiChestGrid');
@@ -124,16 +125,21 @@ function updateChestSelectionUI() {
       STATE.screenChests.forEach((c, idx) => {
         const btn = document.createElement('button');
         const isSelected = idx === STATE.activeChestIdx;
-        btn.className = `p-2 rounded-xl text-xs font-bold border flex flex-col items-center gap-1 transition-all ${c.rarity.border} ${isSelected ? 'bg-slate-800 scale-105 ring-2 ring-amber-400' : 'bg-slate-900/80 opacity-70'}`;
+        const quadMk = STATE.screenChests.length === 4 && !quadPicked && quadMarked === idx;   // [0.106b]
+        btn.className = `${quadMk ? 'quad-mark ' : ''}p-2 rounded-xl text-xs font-bold border flex flex-col items-center gap-1 transition-all ${c.rarity.border} ${isSelected ? 'bg-slate-800 scale-105 ring-2 ring-amber-400' : 'bg-slate-900/80 opacity-70'}`;
         btn.innerHTML = `
           <span class="text-[9px] font-extrabold font-mono" style="color: ${c.fog ? '#94a3b8' : c.rarity.color}">${c.fog ? '???' : c.rarity.name}</span>
           ${ART_ON && ASSETS.cofres[c.type.id] ? `<img src="${chestSpriteSrc(c.type, c.fog ? CHEST_RARITIES[0] : c.rarity)}" alt="" style="image-rendering:pixelated;width:44px;height:auto">` : '<i class="fa-solid fa-box text-sm"></i>'}
         `;
         btn.addEventListener('click', () => {
           audio.init();
+          // [0.106b] Con 4 cofres: el primer toque solo marca (marco brillante) y el segundo sobre el mismo confirma
+          if (STATE.screenChests.length === 4 && !quadPicked) {
+            if (quadMarked === idx) { audio.playClick(0.8); quadPicked = true; quadMarked = -1; STATE.activeChestIdx = idx; updateChestSelectionUI(); return; }
+            audio.playSwoosh(); quadMarked = idx; STATE.activeChestIdx = idx; updateChestSelectionUI(); return;
+          }
           if (STATE.activeChestIdx !== idx) audio.playSwoosh(); else audio.playClick(0.5);   // [0.090] swoosh al cambiar de cofre
           STATE.activeChestIdx = idx;
-          if (STATE.screenChests.length === 4) quadPicked = true;   // [0.105] al elegir, se cierra la cuadrícula y se ve el cofre elegido
           updateChestSelectionUI();
         });
         multiGrid.appendChild(btn);
