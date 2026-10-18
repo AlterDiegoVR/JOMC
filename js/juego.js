@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — juego.js — VERSIÓN 0.105
+// JUST ONE MORE CHEST — juego.js — VERSIÓN 0.106
 // arte del cofre abierto, subida de nivel, abrir cofre
 // ==========================================================================
 
@@ -290,6 +290,7 @@ function openActiveChest() {
       return;
     }
 
+    const staleHelp = document.getElementById('pipeAdvancedHelp'); if (staleHelp) staleHelp.remove();   // [0.105b] el aviso de bombas de las tuberías no debe quedarse en otros puzles
     const reqCount = getRequiredToolCount(active.rarity);
     const toolProp = active.type.consumible;
 

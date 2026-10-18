@@ -1,11 +1,19 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — eventos.js — VERSIÓN 0.105
+// JUST ONE MORE CHEST — eventos.js — VERSIÓN 0.106
 // tiendas especiales, visitas, habilidades, temporizador, fallo y Game Over
 // ==========================================================================
 
 /* ==========================================================================
    TIENDA ESPECIAL 'NO COMPRAR NADA' (85, 88 Y 90)
    ========================================================================== */
+
+// [0.105b] Condena: el bucle ya no se rompe (el juego sigue sin final) y el Trapero lo dice tras la reacción del Duende
+function seqCondemn() {
+  STATE.sequenceBroken = true; STATE.climaxPhase = false;
+  STATE.eventQueue.push(() => {
+    triggerSequentialDialogue("EL TRAPERO", DATOS_JUEGO.NARRATIVA.HISTORIA_SECUENCIA.COFRE_89_TRAPERO_CONDENA, "fa-mask", "Condena Eterna", "text-rose-700");
+  });
+}
 
 function triggerSpecialMerchantShop() {
   const co = STATE.chestsOpened;
@@ -15,6 +23,7 @@ function triggerSpecialMerchantShop() {
   if (co === DATOS_JUEGO.PROGRESIÓN.SECUENCIA_HISTORIA.COFRE_OFERTA_1) speech = seqHist.COFRE_85_DUENDE;
   else if (co === DATOS_JUEGO.PROGRESIÓN.SECUENCIA_HISTORIA.COFRE_OFERTA_2) speech = seqHist.COFRE_88_DUENDE;
   else if (co === DATOS_JUEGO.PROGRESIÓN.SECUENCIA_HISTORIA.COFRE_OFERTA_3) speech = seqHist.COFRE_90_DUENDE;
+  else if (STATE.seqLastChance) speech = seqHist.COFRE_91_DUENDE;   // [0.105b] oferta extra
 
   // [0.102] Primero se abre la tienda y luego habla el Duende en su bocadillo
   dshopOpening = speech;
@@ -25,6 +34,7 @@ function triggerSpecialMerchantShop() {
 function handleSpecialShopNoBuy() {
   specialShopOpen = false;
   STATE.boughtInCurrentShop = false;
+  if (STATE.seqLastChance) { STATE.seqLastChance = false; STATE.climaxPhase = true; }   // [0.105b] superó la oportunidad extra: sigue el final
   const merchantModal = document.getElementById('merchantModal');
   if (merchantModal) merchantModal.classList.add('hidden');
 
@@ -86,6 +96,8 @@ function openSpecialShopModal() {
 
         STATE.boughtInCurrentShop = true;
         STATE.traperoStrikes++;
+        STATE.seqLastBuyCo = STATE.chestsOpened;
+        if (STATE.seqLastChance) { STATE.seqLastChance = false; seqCondemn(); }   // [0.105b] volvió a comprar en la oferta extra: el bucle no se romperá
         specialShopOpen = false;
 
         updateUI();
@@ -368,7 +380,7 @@ function triggerDuendeNarrativeVisit() {
     m.innerHTML = `
       <div class="bg-slate-900 border-2 border-amber-500/70 rounded-3xl p-6 w-full max-w-xs shadow-2xl text-center flex flex-col items-center gap-3">
         <h3 class="text-xl font-black text-amber-300 font-retro">CARTA ${NOMBRES[key]}</h3>
-        <p class="text-sm font-mono text-slate-200 leading-relaxed">${((DATOS_JUEGO.TEXTOS_AYUDA.cartas || {})[key]) || ''}</p>
+        <p class="text-sm font-mono text-slate-200 leading-relaxed">${(((DATOS_JUEGO.TEXTOS_AYUDA.cartas || {})[key]) || '').replace(/^Carta [^:]+:\s*/, '').replace(/^./, ch => ch.toUpperCase())}</p>
         <button id="cardPreUse" class="w-full py-3 bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-black text-sm rounded-xl shadow-lg cursor-pointer">USAR</button>
         <button id="cardPreBack" class="w-full py-2.5 bg-slate-800 text-slate-300 font-bold text-xs rounded-xl cursor-pointer">VOLVER</button>
       </div>`;
@@ -565,6 +577,14 @@ function cofradiaStart() {
   function openPrev(i) {
     sel = i; try { audio.playClick(0.6); } catch (e) {}
     prevCard.innerHTML = `<div class="cf-big">${cardHtml(picks[i]).replace('cf-face cf-front', 'cf-face cf-front show').replace('<div class="cf-face cf-back"><i class="fa-solid fa-boxes-stacked"></i></div>', '')}</div>`;
+    {   // [0.106] aviso si no tienes herramientas para ese cofre
+      const c = picks[i], need = getRequiredToolCount(c.rarity), have = STATE[c.type.consumible] || 0;
+      const NM = { picks: ['Ganzúa', 'Ganzúas'], proPicks: ['Pin de Acero', 'Pines de Acero'], usb: ['Llave USB', 'Llaves USB'], valves: ['Válvula', 'Válvulas'] }[c.type.consumible] || ['herramienta', 'herramientas'];
+      const pickBtn = m.querySelector('#cfPick');
+      pickBtn.classList.toggle('nohave', have < need);
+      const old = prevCard.querySelector('.cf-warn'); if (old) old.remove();
+      if (have < need) { const w = document.createElement('div'); w.className = 'cf-warn'; w.textContent = `⚠ Pide ${need} ${NM[need === 1 ? 0 : 1]} y tienes ${have}`; prevCard.appendChild(w); }
+    }
     prev.classList.remove('hidden');
     cards.forEach((el, k) => el.classList.toggle('sel', k === i));
   }
@@ -579,6 +599,7 @@ function cofradiaStart() {
       cofradiaOpen = false;
       const f2 = document.getElementById('gameFrame'); if (f2) f2.classList.remove('cofradia-on');
       updateChestSelectionUI();   // [0.105] al volver se ve el cofre ANTERIOR; el elegido aparece dentro del destello
+      chestHoldLift = STATE.screenChests.length > 1;   // [0.106] el cofre elegido se dibuja a la misma altura que el que había
       chestMutateFxNow(() => { STATE.screenChests = [chosen]; STATE.activeChestIdx = 0; updateChestSelectionUI(); updateUI(); });   // mismo destello que el reroll; el cofre NO se abre solo
       cofradiaBusy = false;
       updateUI();

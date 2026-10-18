@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — estado.js — VERSIÓN 0.105
+// JUST ONE MORE CHEST — estado.js — VERSIÓN 0.106
 // estado, wildcards, guardado, logros, estadísticas, reinicio
 // ==========================================================================
 
@@ -52,6 +52,8 @@ const STATE = {
 
   seqStage: 0,
   traperoStrikes: 0,
+  seqLastBuyCo: 0,         // [0.105b] cofre de la última compra al Duende en la secuencia final
+  seqLastChance: false,    // [0.105b] oferta extra del Duende tras comprar solo en la última oferta
   boughtInCurrentShop: false,
   climaxPhase: false,
   sequenceBroken: false,
@@ -388,29 +390,40 @@ function pickWildcard() {
 // Después aparece SIGUIENTE para ver las 3 mejoras. Tiempos y número de pasos en DATOS_JUEGO.SUBIDA_NIVEL.
 let lvlTimers = [];
 function lvlClearTimers() { lvlTimers.forEach(t => clearTimeout(t)); lvlTimers = []; }
+// [0.106] HTML de la carta de wildcard (marco, ilustración, sello). state: 'spin' | 'win'
+function wcCardHtml(wc, state, extra) {
+  const bad = wc.tipo === 'PERJUDICIAL';
+  const ic = (DATOS_JUEGO.WILDCARD_ICONOS || {})[wc.id] || (bad ? 'fa-skull' : 'fa-wand-magic-sparkles');
+  const cr = '<i class="wc-cr a"></i><i class="wc-cr b"></i><i class="wc-cr c"></i><i class="wc-cr d"></i>';
+  const body = state === 'win'
+    ? `<span>${wcDesc(wc)}</span>${extra ? `<b class="wc-ex">${extra}</b>` : ''}`
+    : '<span>EL DESTINO GIRA...</span>';
+  return `<div class="wcard${bad ? ' bad' : ''}"><i class="wc-seal">${bad ? 'MALDICIÓN' : 'BENEFICIO'}</i><div class="wc-in">${cr}<div class="wc-ttl">${wc.nombre}</div><div class="wc-art"><i class="fa-solid ${ic}"></i></div><div class="wc-tx">${body}</div></div></div>`;
+}
+// Si la descripción no cabe, se reduce la letra hasta que quepa
+function wcCardFit(host) {
+  const card = host.querySelector('.wcard'), tx = host.querySelector('.wc-tx');
+  if (!card || !tx) return;
+  let fs = 12; tx.style.fontSize = fs + 'px';
+  while (card.querySelector('.wc-in').scrollHeight > card.querySelector('.wc-in').clientHeight + 1 && fs > 8) { fs -= 0.5; tx.style.fontSize = fs + 'px'; }
+}
+
 function runWildcardRoulette(res, onDone) {
   const banner = document.getElementById('wildcardBanner');
   const cfg = DATOS_JUEGO.SUBIDA_NIVEL || {};
   const wcList = DATOS_JUEGO.WILDCARDS || [];
   if (!banner || !res) { if (banner) banner.classList.add('hidden'); onDone(); return; }
   banner.classList.remove('hidden');
-  banner.style.minHeight = '150px';   // [0.095] misma altura al girar y al parar: la carta no cambia de tamaño
+  banner.style.minHeight = 'min(300px, 40vh)';   // [0.095] misma altura al girar y al parar: la carta no cambia de tamaño ([0.106] ahora es una carta con marco)
   const paint = (wc, state, extra) => {   // state: 'spin' | 'win'
-    const bad = wc.tipo === 'PERJUDICIAL';
-    const tone = bad ? 'bg-rose-950/80 border-rose-500/60 text-rose-200' : 'bg-emerald-950/80 border-emerald-500/60 text-emerald-200';
-    const toneSpin = bad ? 'bg-rose-950/50 border-rose-500/50 text-rose-200' : 'bg-emerald-950/50 border-emerald-500/50 text-emerald-200';   // [0.104] clases escritas completas (antes se fabricaban con replace y Tailwind no las generaba: la carta quedaba hueca)
-    banner.className = 'w-full max-w-xs p-3 rounded-2xl border-2 font-mono text-xs mb-3 text-center shadow-lg flex flex-col justify-center ' + (state === 'win' ? tone + ' lvl-card-win' : toneSpin + ' lvl-card-spin');
-    banner.innerHTML = state === 'win' ? `
-      <div class="text-[9px] tracking-widest opacity-70 mb-1">${bad ? 'EVENTO ADVERSO' : 'EVENTO FAVORABLE'}</div>
-      <div class="font-black uppercase tracking-wider mb-1 text-sm">${bad ? '⚠️' : '✨'} ${wc.nombre}</div>
-      <div class="opacity-90">${wcDesc(wc)}</div>
-      ${extra ? `<div class="mt-1 font-bold">${extra}</div>` : ''}` : `
-      <div class="text-[9px] tracking-widest opacity-60 mb-1">EL DESTINO GIRA...</div>
-      <div class="font-black uppercase tracking-wider text-sm py-2">${wc.nombre}</div>`;
+    // [0.106] Carta con marco, ilustración (icono) y sello; al girar muestra solo nombre e icono, al parar añade la descripción y el resultado
+    banner.className = 'wcard-host ' + (state === 'win' ? 'lvl-card-win' : 'lvl-card-spin');
+    banner.innerHTML = wcCardHtml(wc, state, extra);
+    if (state === 'win') wcCardFit(banner);
   };
   // [0.105] Desde el primer instante hay carta: texto neutro "EL DESTINO GIRA" hasta que sale la primera de la ruleta
-  banner.className = 'w-full max-w-xs p-3 rounded-2xl border-2 font-mono text-xs mb-3 text-center shadow-lg flex flex-col justify-center bg-slate-900/60 border-slate-500/50 text-slate-200 lvl-card-spin';
-  banner.innerHTML = '<div class="font-black uppercase tracking-widest text-sm py-6">EL DESTINO GIRA</div>';
+  banner.className = 'wcard-host lvl-card-spin';
+  banner.innerHTML = `<div class="wcard neutral"><div class="wc-in"><i class="wc-cr a"></i><i class="wc-cr b"></i><i class="wc-cr c"></i><i class="wc-cr d"></i><div class="wc-ttl">EL DESTINO GIRA</div><div class="wc-art"><i class="fa-solid fa-question"></i></div><div class="wc-tx"><span>...</span></div></div></div>`;
   const steps = Math.max(6, cfg.RULETA_PASOS || 20), d0 = cfg.RULETA_MS_INICIAL || 50, d1 = cfg.RULETA_MS_FINAL || 340, curve = cfg.RULETA_CURVA || 2.5;
   const seq = []; let prev = null;
   for (let i = 0; i < steps; i++) { let w; let guard = 0; do { w = wcList[Math.floor(Math.random() * wcList.length)]; } while ((w === prev || w === res.wc) && wcList.length > 2 && ++guard < 20); seq.push(w); prev = w; }
@@ -434,7 +447,7 @@ const SAVE_KEYS = [
   'currentLoop', 'level', 'xp', 'gold', 'chestsOpened', 'chestsAtLevelUp', 'chestCounterUnlocked',
   'cleanStreak', 'paranoiaStage', 'traperoVisits', 'lastTraperoChest', 'salvageDealsCount', 'salvageCurseActive',
   'picks', 'proPicks', 'usb', 'valves', 'noXpChestsLeft', 'picksBrokenOnUse', 'tanteoExplainedLoop', 'xpBoostChestsLeft', 'torpezas',
-  'seqStage', 'traperoStrikes', 'climaxPhase', 'sequenceBroken', 'perks', 'abilities',
+  'seqStage', 'traperoStrikes', 'seqLastBuyCo', 'seqLastChance', 'climaxPhase', 'sequenceBroken', 'perks', 'abilities',
   'active2XMultiplier', 'activeShield', 'riskModeActive', 'riskPot', 'perdedorActive', 'perdedorLootPending', 'fallosConsecutivos',
   'heavyChestsLeft', 'greedCurseLeft', 'harderPuzzlesLeft', 'oxidadoLeft', 'recharge', 'harderSrc', 'extremePuzzlesLeft', 'extremeSrc', 'mods', 'blankNotes', 'pendingNotes', 'traperoBuffs', 'cursedChestsLeft',
   'roomDecorations', 'roomThemeFilter', 'roomDarkUntil', 'opensByType', 'acceptDelayUses', 'hintUses', 'stats'
@@ -759,7 +772,7 @@ function resetGame(keepLoop) {
   STATE.torpezas = { madera: 0, acero: 0, digital: 0, vapor: 0 };
 
   STATE.seqStage = 0;
-  STATE.traperoStrikes = 0;
+  STATE.traperoStrikes = 0; STATE.seqLastBuyCo = 0; STATE.seqLastChance = false;
   STATE.boughtInCurrentShop = false;
   STATE.climaxPhase = false;
   STATE.sequenceBroken = false;

@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — datos.js — VERSIÓN 0.105
+// JUST ONE MORE CHEST — datos.js — VERSIÓN 0.106
 // DATOS_JUEGO: configuración y balance
 // ==========================================================================
 
@@ -9,7 +9,7 @@
 
 const DATOS_JUEGO = {
   // [0.088] Versión visible en pantalla (esquina inferior central) para que las capturas la incluyan
-  VERSION: '0.105',
+  VERSION: '0.106',
   // [0.104] Efectos de la apertura automática de la secuencia final (cofres 101-110); la intensidad sube del primero al último (k = 0..1)
   SECUENCIA_FINAL_FX: { ACTIVAR: true, ESTALLIDOS_BASE: 2, ESTALLIDOS_EXTRA: 4, PARTICULAS_POR_ESTALLIDO: 40, HACIA_CENTRO_BASE: 30, HACIA_CENTRO_EXTRA: 60,
     SACUDIDA_PX: 6, SACUDIDA_EXTRA_PX: 10, SACUDIDA_MS: 520, PULSO_ZOOM: 0.02, DESTELLO: 0.10 },
@@ -122,6 +122,25 @@ const DATOS_JUEGO = {
     ESCALA_UI_MAX: 1.6,          // tope del zoom de la interfaz en pantallas grandes (HUD y tarjeta del cofre)
 
     // [0.101] Tiendas con arte propio (Duende y Trapero)
+    /* [0.106] MOVIMIENTO DE LOS PERSONAJES (Duende y Trapero): respiran y se balancean según su mood. ms = duración del ciclo; y = subida (% del alto);
+       rot = balanceo (grados); esc = estirado vertical (%). Pon ACTIVAR en false para dejarlos quietos. Moods no listados usan 'base'. */
+    MOVIMIENTO: {
+      ACTIVAR: true,
+      duende: {
+        base: { ms: 2600, y: 1.0, rot: 0.8, esc: 1.2 },
+        alegre: { ms: 1500, y: 2.0, rot: 1.6, esc: 1.4 }, risa: { ms: 1100, y: 2.6, rot: 2.0, esc: 1.5 }, picardia: { ms: 1700, y: 1.6, rot: 1.8, esc: 1.2 },
+        codicia: { ms: 1900, y: 1.2, rot: 1.2, esc: 1.6 }, rey: { ms: 3000, y: 0.8, rot: 0.5, esc: 1.5 },
+        enfadado: { ms: 800, y: 1.0, rot: 2.2, esc: 1.0 }, ira: { ms: 520, y: 1.2, rot: 3.0, esc: 0.8 },
+        asustado: { ms: 380, y: 0.5, rot: 1.0, esc: 0.4 }, sorpresa: { ms: 1000, y: 2.2, rot: 0.6, esc: 1.6 },
+        triste: { ms: 4200, y: 0.6, rot: 0.4, esc: 1.8 }, duerme: { ms: 4800, y: 0.4, rot: 0, esc: 2.0 }, pensando: { ms: 3200, y: 0.6, rot: 1.0, esc: 1.0 }
+      },
+      trapero: {
+        base: { ms: 4200, y: 0.7, rot: 0.3, esc: 1.5 },
+        amenaza: { ms: 3200, y: 0.9, rot: 0.2, esc: 2.0 }, alerta: { ms: 1800, y: 0.8, rot: 0.6, esc: 1.2 }, conspira: { ms: 3600, y: 0.5, rot: 0.9, esc: 1.0 },
+        sonrisa: { ms: 3000, y: 0.9, rot: 0.5, esc: 1.5 }, risa: { ms: 1300, y: 1.6, rot: 1.0, esc: 1.4 }, trato: { ms: 3400, y: 0.6, rot: 0.4, esc: 1.5 },
+        duerme: { ms: 5200, y: 0.3, rot: 0, esc: 2.0 }
+      }
+    },
     TIENDAS: {
       CONFIRMAR_CON_SEGUNDO_TOQUE: true,   // 1er toque: elige la tarjeta · 2º toque: confirma (como la cerradura del cofre)
       APERTURA: { ACTIVAR: true, SACUDIDA_MS: 450, SUBIDA_MS: 1300 },   // la persiana del Duende se sacude y sube al entrar
@@ -885,6 +904,8 @@ const DATOS_JUEGO = {
       COFRE_88_DUENDE: "No escuches a ese maldito Trapero... {enfadado}",
       COFRE_89_TRAPERO_CONDENA: "Tu codicia te ha condenado. Disfruta de tu prisión de cofres eterna. {amenaza}",
       COFRE_89_TRAPERO_PRECLIMAX: "Ya casi lo tienes, está fuera de sí. NO COMPRES. {alerta}",
+      COFRE_91_TRAPERO_ULTIMA: "Has vuelto a caer... Te doy otra oportunidad. Ni una moneda más a ese ladrón. {amenaza}",   // [0.105b] texto provisional, a revisar en la sesión de narrativa
+      COFRE_91_DUENDE: "Una última oferta, solo para ti... Trae el ORO. {asustado}",   // [0.105b] texto provisional
       COFRE_90_DUENDE: "Por favor, te haré descuento, pero tienes que traerme ese ORO... {asustado}"
     },
 
@@ -968,6 +989,17 @@ const DATOS_JUEGO = {
     DESTINO_RAREZAS: ['normal', 'raro', 'epico'],   // [0.104] ya no se usa
     DESTINO_REPARTO: { 2: 0.5, 3: 0.3, 4: 0.2 }   // [0.104] Cofre del Destino: probabilidad de 2 / 3 / 4 cofres por pantalla
   },
+  // [0.106] Icono (Font Awesome) de cada wildcard para su carta; las que no estén usan el de su tipo
+  WILDCARD_ICONOS: {
+    cofres_pesados: 'fa-weight-hanging', impuesto_trapero: 'fa-coins', maldicion_codicia: 'fa-skull-crossbones', dedos_torpes: 'fa-bandage',
+    hallazgo_sombra: 'fa-key', bono_experiencia: 'fa-star', sombra_favorable: 'fa-wand-magic-sparkles', regalo_tactico: 'fa-scroll',
+    suministros_inesperados: 'fa-box-open', bolsa_olvidada: 'fa-sack-dollar', ganzuas_cortesia: 'fa-key', chispa_genio: 'fa-lightbulb',
+    fortuna_doble: 'fa-dice', escudo_prestado: 'fa-shield-halved', cofradia_cofre: 'fa-boxes-stacked', recado_duende: 'fa-hat-wizard',
+    peaje_sombras: 'fa-ghost', pulso_tembloroso: 'fa-heart-pulse', cerrojos_oxidados: 'fa-lock', fiebre_oro: 'fa-fire',
+    manos_seda: 'fa-hand-sparkles', cofres_solitarios: 'fa-cube', niebla_botin: 'fa-cloud', racha_congelada: 'fa-snowflake',
+    reloj_lento: 'fa-hourglass-half', hambre_xp: 'fa-utensils', cofre_destino: 'fa-compass', reloj_roto: 'fa-stopwatch', ganzua_perdida: 'fa-screwdriver'
+  },
+
   WILDCARDS: [
     { id: "cofres_pesados", nombre: "Cofres Pesados", tipo: "PERJUDICIAL", desc: "Próximos 5 cofres Raros+ piden +1 herramienta extra.", efecto: "COFRES_PESADOS", valor: 5 },
     { id: "impuesto_trapero", nombre: "Impuesto del Trapero", tipo: "PERJUDICIAL", desc: "Pérdida inmediata de {30} Monedas GP.", efecto: "PERDER_ORO", valor: 30 },

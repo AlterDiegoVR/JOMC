@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — cofres.js — VERSIÓN 0.105
+// JUST ONE MORE CHEST — cofres.js — VERSIÓN 0.106
 // selección de cofres, banner, diálogos, post-its, botín y subida de nivel
 // ==========================================================================
 
@@ -62,7 +62,7 @@ function generateScreenChests() {
       else rarity = CHEST_RARITIES[0];
     }
 
-    STATE.screenChests.push({ type: randomType, rarity: chestToolMods(rarity), fog: modOn('niebla') });   // [0.093] fog = rareza oculta
+    STATE.screenChests.push({ type: randomType, rarity: chestToolMods(rarity), fog: modOn('niebla') }); chestHoldLift = false;   // [0.093] fog = rareza oculta
   }
 
   // [0.104] BALANCE: en el cofre 4 de cada nivel que desbloquea un tipo de puzle (3 cofres bloqueados + este), al menos un cofre en pantalla es del tipo recién desbloqueado.
@@ -321,6 +321,7 @@ function triggerSequentialDialogue(speaker, speechText, iconClass, subtitleText,
       dlgM.classList.toggle('dlg-shop', bigOn); dlgM.classList.toggle('dlg-t', bigOn && isTrap); dlgM.classList.toggle('dlg-d', bigOn && !isTrap);
       if (bigOn && dlgFig) {
         dlgFig.src = src;
+        npcMotion(dlgFig, isTrap ? 'trapero' : 'duende', taggedMood || mood);   // [0.106]
         if (!isTrap && dlgScene && typeof shopImg === 'function') { shopArtInit(); const sc = shopImg('escena'); if (sc) dlgScene.src = sc; }
       }
     }
@@ -1060,7 +1061,18 @@ if (claimLootBtn) {
       } else if (co === seqConfig.COFRE_OFERTA_3) {
         STATE.eventQueue.push(() => triggerSpecialMerchantShop());
       } else if (co === seqConfig.COFRE_CLIMAX_INICIO) {
-        STATE.climaxPhase = true;
+        // [0.105b] Se evalúan las compras de la última oferta (cofre 90)
+        if (STATE.traperoStrikes >= 2) {
+          seqCondemn();
+        } else if (STATE.traperoStrikes === 1 && STATE.seqLastBuyCo === seqConfig.COFRE_OFERTA_3) {
+          STATE.seqLastChance = true;   // compró solo en la última oferta: otra oportunidad
+          STATE.eventQueue.push(() => {
+            triggerSequentialDialogue("EL TRAPERO", seqHist.COFRE_91_TRAPERO_ULTIMA, "fa-mask", "Última Oportunidad", "text-rose-500");
+          });
+          STATE.eventQueue.push(() => triggerSpecialMerchantShop());
+        } else {
+          STATE.climaxPhase = true;
+        }
       } else if (co === seqConfig.COFRE_COLAPSO_FINAL) {
         triggerSensoryOverloadCollapse();
         return;

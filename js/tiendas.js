@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — tiendas.js — VERSIÓN 0.105
+// JUST ONE MORE CHEST — tiendas.js — VERSIÓN 0.106
 // tienda del Duende y del Trapero
 // ==========================================================================
 
@@ -38,6 +38,19 @@ function shopSplitMood(text) {
   return mm ? { text: text.slice(0, mm.index), mood: mm[1] } : { text: text, mood: null };
 }
 
+// [0.106] Movimiento de respiración/balanceo de un personaje según su mood (valores en DATOS_JUEGO.GRAFICOS.MOVIMIENTO)
+function npcMotion(el, who, mood) {
+  if (!el) return;
+  const cfg = (DATOS_JUEGO.GRAFICOS || {}).MOVIMIENTO;
+  if (!cfg || !cfg.ACTIVAR) { el.classList.remove('npc-mv'); return; }
+  const bank = cfg[who] || {};
+  const m = bank[mood] || bank.base;
+  if (!m) { el.classList.remove('npc-mv'); return; }
+  el.style.setProperty('--mv-ms', m.ms + 'ms'); el.style.setProperty('--mv-y', m.y + '%');
+  el.style.setProperty('--mv-rot', m.rot + 'deg'); el.style.setProperty('--mv-esc', String(m.esc / 100));
+  el.classList.add('npc-mv');
+}
+
 let shopArtReady = false;
 function shopArtInit() {
   if (shopArtReady || typeof ASSETS === 'undefined' || !ASSETS.tienda) return;
@@ -63,6 +76,7 @@ function dshopMood(name) {
   if (!im || typeof ASSETS === 'undefined' || !ASSETS.duende) return;
   const u = ASSETS.duende[name] || ASSETS.duende.base;
   if (im.getAttribute('src') !== u) im.setAttribute('src', u);
+  npcMotion(im, 'duende', name);   // [0.106]
 }
 // El bocadillo conserva SIEMPRE la altura de la frase de apertura; si otra frase es más larga, se reduce la letra
 function dshopFit() {
@@ -493,6 +507,7 @@ function triggerTraperoShopSequence() {
       const src = bank[t.mood] || bank.base || '';
       if (src) { pj.setAttribute('src', src); pj.style.display = ''; } else pj.style.display = 'none';
       pj.classList.remove('small');
+      npcMotion(pj, 'trapero', t.mood);   // [0.106]
     }
     const sp = document.getElementById('tshopSpeech'), st = document.getElementById('tshopSpeechText'), go = document.getElementById('tshopContinueBtn');
     if (st) st.textContent = t.text;
@@ -525,7 +540,7 @@ function traperoCascade() {
     const sr = stage.getBoundingClientRect(), pr = pj.getBoundingClientRect();
     const cardsBottom = cards[cards.length - 1].getBoundingClientRect().bottom;
     const visible = pr.bottom - Math.max(pr.top, cardsBottom);
-    if (pr.height > 0 && visible < (cfg.ESCALA_PJ_MIN_ESPACIO || 0.8) * pr.height) pj.classList.add('small');
+    if (pr.height > 0 && visible < (cfg.ESCALA_PJ_MIN_ESPACIO != null ? cfg.ESCALA_PJ_MIN_ESPACIO : 0.8) * pr.height) pj.classList.add('small');
   }
   cards.forEach((c, i) => {
     traperoTimers.push(setTimeout(() => {

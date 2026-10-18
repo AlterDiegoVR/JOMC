@@ -641,3 +641,41 @@ html.narrow-layout #hackWordGrid { max-height: 250px; }
 #pzHardBadge.xtr{border-color:#ff4d6d;color:#ff9aae;background:rgba(50,5,15,.9);animation:pzXtr 1s steps(2) infinite}
 @keyframes pzXtr{50%{box-shadow:0 0 8px #ff4d6d}}
 .hk-warn{color:#ff9aae;font-weight:700}
+
+/* [0.106] Cofradía: aviso de herramientas insuficientes en la carta ampliada */
+.cf-warn{margin-top:10px;padding:6px 10px;border:2px solid #fb7185;border-radius:8px;background:rgba(60,6,16,.92);color:#fecdd3;font:800 13px 'Outfit',sans-serif;letter-spacing:.03em;text-align:center}
+.cf-prev-btns button.nohave{opacity:.75}
+
+/* [0.106] Movimiento de los personajes (respiración y balanceo; valores por mood en DATOS_JUEGO.GRAFICOS.MOVIMIENTO) */
+.npc-mv { transform-origin: 50% 100%; animation: npcMv var(--mv-ms, 3000ms) ease-in-out infinite; will-change: translate, rotate, scale; }
+@keyframes npcMv {
+  0%, 100% { translate: 0 0; rotate: calc(var(--mv-rot, 0deg) * -1); scale: 1 1; }
+  50% { translate: 0 calc(var(--mv-y, 0%) * -1); rotate: var(--mv-rot, 0deg); scale: 1 calc(1 + var(--mv-esc, 0)); }
+}
+@media (prefers-reduced-motion: reduce) { .npc-mv { animation: none; } }
+
+/* [0.106] Movimiento de los personajes (respiración y balanceo; valores por mood en DATOS_JUEGO.GRAFICOS.MOVIMIENTO) */
+.npc-mv { transform-origin: 50% 100%; animation: npcMv var(--mv-ms, 3000ms) ease-in-out infinite; will-change: translate, rotate, scale; }
+@keyframes npcMv {
+  0%, 100% { translate: 0 0; rotate: calc(var(--mv-rot, 0deg) * -1); scale: 1 1; }
+  50% { translate: 0 calc(var(--mv-y, 0%) * -1); rotate: var(--mv-rot, 0deg); scale: 1 calc(1 + var(--mv-esc, 0)); }
+}
+@media (prefers-reduced-motion: reduce) { .npc-mv { animation: none; } }
+
+/* [0.106] CARTAS WILDCARD con marco (ruleta de la subida de nivel) */
+.wcard-host { display: flex; justify-content: center; margin-bottom: 12px; }
+.wcard { --c1:#34d399; --c2:#065f46; --bd:#6ee7b7; --bg1:#0b2a20; --bg2:#04140f; --seal:#10b981; position: relative; height: min(300px, 40vh); aspect-ratio: 2 / 3; border-radius: 12px; padding: 7px; background: linear-gradient(160deg, var(--c1), var(--c2) 55%, var(--c1)); box-shadow: 0 8px 22px rgba(0,0,0,.55), 0 0 18px color-mix(in srgb, var(--c1) 30%, transparent); }
+.wcard.bad { --c1:#fb7185; --c2:#7f1d1d; --bd:#fda4af; --bg1:#2a0b13; --bg2:#14040a; --seal:#e11d48; }
+.wcard.neutral { --c1:#94a3b8; --c2:#334155; --bd:#cbd5e1; --bg1:#141a28; --bg2:#080b14; --seal:#64748b; }
+.wc-in { height: 100%; border-radius: 7px; border: 2px solid #0006; background: linear-gradient(180deg, var(--bg1), var(--bg2)); display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 6px; padding: 7px; position: relative; overflow: hidden; }
+.wc-in::before { content: ''; position: absolute; inset: 3px; border: 1px solid color-mix(in srgb, var(--bd) 45%, transparent); border-radius: 5px; pointer-events: none; }
+.wc-cr { position: absolute; width: 9px; height: 9px; border: 2px solid var(--bd); opacity: .8; }
+.wc-cr.a { top: 5px; left: 5px; border-right: 0; border-bottom: 0; } .wc-cr.b { top: 5px; right: 5px; border-left: 0; border-bottom: 0; }
+.wc-cr.c { bottom: 5px; left: 5px; border-right: 0; border-top: 0; } .wc-cr.d { bottom: 5px; right: 5px; border-left: 0; border-top: 0; }
+.wc-ttl { font: 400 21px/1 'VT323', monospace; letter-spacing: .05em; text-align: center; color: #fff; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--seal) 55%, #000), transparent); padding: 3px 4px; margin: 2px -4px 0; text-shadow: 0 1px 0 #0008; text-transform: uppercase; }
+.wc-art { border: 2px solid color-mix(in srgb, var(--bd) 70%, #000); border-radius: 5px; background: radial-gradient(circle at 50% 55%, color-mix(in srgb, var(--c1) 38%, #000), #05060b 78%); display: grid; place-items: center; min-height: 0; position: relative; overflow: hidden; }
+.wc-art i { font-size: clamp(34px, 9vh, 64px); color: #fde68a; filter: drop-shadow(0 0 8px color-mix(in srgb, var(--c1) 60%, transparent)); }
+.wc-art::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, #0000 0 3px, #0002 3px 4px); pointer-events: none; }
+.wc-tx { font: 400 12px/1.3 'Outfit', sans-serif; text-align: center; color: #e8dcc0; padding: 4px 3px; background: #0005; border-radius: 4px; min-height: 48px; display: flex; flex-direction: column; justify-content: center; gap: 3px; }
+.wc-ex { color: #fde68a; font-weight: 800; }
+.wc-seal { position: absolute; top: -1px; right: 12px; font: 400 14px 'VT323', monospace; letter-spacing: .08em; font-style: normal; background: var(--seal); color: #fff; padding: 2px 7px; border-radius: 0 0 5px 5px; z-index: 2; box-shadow: 0 2px 4px #0008; }

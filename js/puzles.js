@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — puzles.js — VERSIÓN 0.105
+// JUST ONE MORE CHEST — puzles.js — VERSIÓN 0.106
 // minijuegos: ganzúa, pistones, hackeo, tuberías
 // ==========================================================================
 

@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — graficos.js — VERSIÓN 0.105
+// JUST ONE MORE CHEST — graficos.js — VERSIÓN 0.106
 // canvas, sala, cerradura, decoración, efectos de cofre
 // ==========================================================================
 
@@ -389,6 +389,7 @@ function syncOpenButtonArmed() {
 // [0.089b] Nivel visual de la maldición: sube al empezar (con melodía lúgubre) y baja al terminar (melodía con nota final aguda).
 // Solo avanza cuando se ve la pantalla principal; si hay un banner o una tienda encima, espera.
 let curseLevel = 0, curseLvlT = 0, curseStartTune = false, curseEndTune = false, curseLiftT0 = 0;   // [0.105] curseLiftT0: pulso de luz al terminar la maldición (se nota aunque ya haya tinte de paranoia)
+let chestHoldLift = false;   // [0.106]
 let ambPrev = null, ambCur = null, ambT0 = 0, ambFirst = true;   // [0.105] fundido cruzado entre ambientes
 function updateCurseLevel() {
   const cfg = DATOS_JUEGO.MALDICION_TRANSICION || {};
@@ -563,7 +564,7 @@ function renderRoom() {
     const im = ART[chestImgKey];
     const sc = Math.min((canvas.width * g.COFRE_ANCHO_PCT) / im.naturalWidth, (canvas.height * 0.24) / im.naturalHeight);
     const dw = im.naturalWidth * sc, dh = im.naturalHeight * sc;
-    const mobileMulti = !isWideLayout() && STATE.screenChests.length > 1;
+    const mobileMulti = !isWideLayout() && (STATE.screenChests.length > 1 || chestHoldLift);   // [0.106] chestHoldLift: tras la Cofradía se conserva la altura
     const ccx = canvas.width / 2, ccy = canvas.height * (g.COFRE_Y_PCT - (mobileMulti ? (g.COFRE_SUBE_MOVIL_MULTI || 0) : 0));
     const bob = Math.sin(Date.now() * 0.002) * 2;
     const halo = (g.HALO_RAREZA || {})[activeChest.rarity.id] || { a: '88', r: 0.85, anillo: false };
