@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — eventos.js — VERSIÓN 0.102
+// JUST ONE MORE CHEST — eventos.js — VERSIÓN 0.103
 // tiendas especiales, visitas, habilidades, temporizador, fallo y Game Over
 // ==========================================================================
 
@@ -113,6 +113,66 @@ function openSpecialShopModal() {
    COLAPSO SENSORIAL Y SECUENCIA FINAL
    ========================================================================== */
 
+/* [0.103] CRISTAL ROTO EN VIVO: al llegar al punto álgido del colapso, la pantalla real (el marco de juego) se agrieta desde el centro y se rompe en trozos que caen.
+   Cada trozo es un clon del marco, recortado con clip-path (con el lienzo de la sala copiado). Mientras caen, el marco real se oculta y deja ver el negro. */
+function glassShatterFx() {
+  const fr = document.getElementById('gameFrame');
+  if (!fr || document.getElementById('shatterRoot')) return;
+  const r = fr.getBoundingClientRect(), W = r.width, H = r.height;
+  const root = document.createElement('div');
+  root.id = 'shatterRoot';
+  root.style.cssText = `position:fixed;left:${r.left}px;top:${r.top}px;width:${W}px;height:${H}px;z-index:20000;pointer-events:none;overflow:visible`;
+  // 1) puntos: centro de impacto + dos anillos (el segundo pasa de las esquinas) con ángulos y radios irregulares
+  const cx = W * (0.42 + Math.random() * 0.16), cy = H * (0.4 + Math.random() * 0.14);
+  const n = 11, diag = Math.hypot(W, H);
+  const ang0 = Math.random() * Math.PI * 2, angs = [];
+  for (let i = 0; i < n; i++) angs.push(ang0 + (i + (Math.random() - 0.5) * 0.55) * (Math.PI * 2 / n));
+  const ring = (k, rmin, rmax) => angs.map(a => { const rr = diag * (rmin + Math.random() * (rmax - rmin)); return [cx + Math.cos(a) * rr, cy + Math.sin(a) * rr]; });
+  const r1 = ring(1, 0.13, 0.24), r2 = ring(2, 0.9, 1.05);
+  const shards = [];
+  for (let i = 0; i < n; i++) { const j = (i + 1) % n; shards.push([[cx, cy], r1[i], r1[j]]); shards.push([r1[i], r2[i], r2[j], r1[j]]); }
+  // 2) grietas (se ven un instante antes de romper)
+  let lines = '';
+  shards.forEach(sh => { for (let k = 0; k < sh.length; k++) { const a = sh[k], b = sh[(k + 1) % sh.length]; lines += `<line x1="${a[0].toFixed(1)}" y1="${a[1].toFixed(1)}" x2="${b[0].toFixed(1)}" y2="${b[1].toFixed(1)}"/>`; } });
+  const svg = document.createElement('div');
+  svg.style.cssText = 'position:absolute;inset:0;overflow:hidden;z-index:2';
+  svg.innerHTML = `<svg width="${W}" height="${H}" style="position:absolute;left:0;top:0"><g stroke="rgba(255,255,255,.85)" stroke-width="1.4" fill="none" style="filter:drop-shadow(0 0 3px #fff)">${lines}</g></svg><div style="position:absolute;inset:0;background:radial-gradient(circle at ${cx}px ${cy}px,rgba(255,255,255,.55),transparent 55%)"></div>`;
+  root.appendChild(svg);
+  // 3) un clon del marco por trozo
+  const srcCanv = fr.querySelectorAll('canvas');
+  const clone = () => {
+    const c = fr.cloneNode(true);
+    c.setAttribute('aria-hidden', 'true'); c.setAttribute('inert', '');
+    c.style.cssText = `position:absolute;left:0;top:0;width:${W}px;height:${H}px;margin:0;visibility:visible;pointer-events:none`;
+    const dst = c.querySelectorAll('canvas');
+    srcCanv.forEach((sc, i) => { const d = dst[i]; if (!d) return; try { d.width = sc.width; d.height = sc.height; d.getContext('2d').drawImage(sc, 0, 0); } catch (e) {} });
+    return c;
+  };
+  const pieces = shards.map(sh => {
+    const w = document.createElement('div');
+    const mx = sh.reduce((a, p) => a + p[0], 0) / sh.length, my = sh.reduce((a, p) => a + p[1], 0) / sh.length;
+    w.style.cssText = `position:absolute;left:0;top:0;width:${W}px;height:${H}px;transform-origin:${mx}px ${my}px;clip-path:polygon(${sh.map(p => p[0].toFixed(1) + 'px ' + p[1].toFixed(1) + 'px').join(',')});will-change:transform`;
+    w.appendChild(clone());
+    root.appendChild(w);
+    return { w, mx, my };
+  });
+  document.body.appendChild(root);
+  try { audio.playBreak(); } catch (e) {}
+  // 4) tiempo de grietas y caída
+  setTimeout(() => {
+    svg.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 500, fill: 'forwards' });
+    fr.style.visibility = 'hidden';   // detrás de los trozos solo queda el negro del fondo
+    pieces.forEach(({ w, mx, my }) => {
+      const out = Math.hypot(mx - cx, my - cy) || 1;
+      const dx = (mx - cx) / out * (40 + Math.random() * 90), dy = H * (0.9 + Math.random() * 0.5), rot = (Math.random() - 0.5) * 80;
+      try { w.animate([{ transform: 'translate(0,0) rotate(0deg)' }, { transform: `translate(${dx * 0.3}px,${dy * 0.08}px) rotate(${rot * 0.15}deg)`, offset: .18 }, { transform: `translate(${dx}px,${dy}px) rotate(${rot}deg)` }],
+        { duration: 1100 + Math.random() * 700, delay: Math.random() * 260, easing: 'cubic-bezier(.5,0,.9,.55)', fill: 'forwards' }); } catch (e) {}
+    });
+    setTimeout(() => root.remove(), 2400);
+  }, 380);
+}
+function glassShatterRestore() { const fr = document.getElementById('gameFrame'); if (fr) fr.style.visibility = ''; const r = document.getElementById('shatterRoot'); if (r) r.remove(); }
+
 function triggerSensoryOverloadCollapse() {
   stopMinigameTimer();
   const modals = ['merchantModal', 'traperoModal', 'minigameModal', 'dialogueModal', 'lootModal', 'persistentFeedbackBanner', 'duendeReceiptModal'];
@@ -138,6 +198,7 @@ function triggerSensoryOverloadCollapse() {
       spawnParticles(cx, cy, bursts % 2 === 0 ? '#c084fc' : '#f43f5e', 50, true);
     }
 
+    if (bursts === 13) { try { glassShatterFx(); } catch (e) { glassShatterRestore(); } }   // [0.103] a mitad del colapso, la pantalla se rompe como un cristal
     if (bursts >= 35) {
       clearInterval(overloadInterval);
       appBody.classList.remove('shake-screen');
@@ -156,6 +217,7 @@ function executeDiffuseEchoTransition() {
     overlay.className = 'fixed inset-0 bg-black z-[10000] flex flex-col items-center justify-center p-8 transition-opacity duration-1000 opacity-0 pointer-events-none text-center';
     uiHost().appendChild(overlay);
   }
+  overlay.style.visibility = 'visible';   // [0.103] el marco puede estar oculto por el cristal roto; el aviso final sí se ve
 
   const ecos = DATOS_JUEGO.NARRATIVA.ECOS_FINALES;
 
@@ -195,6 +257,7 @@ function executeDiffuseEchoTransition() {
             
             // 🟢 TRANSICIÓN AL BUCLE 2
             STATE.currentLoop = 2;
+            glassShatterRestore();   // [0.103] el marco vuelve a verse
             resetGame(true);
             // [0.084] Sin ningún aviso sobre el bucle: el jugador lo deduce por lo que ve y por las pistas de tenderos y post-its
           }, 1000);
@@ -368,18 +431,30 @@ let currentPuzzleConsumable = 'picks';
 let TEST_SERIES = { active: false };   // [0.090] Modo test: puzles en serie
 let puzzleToolPaid = null;   // [0.090] herramienta avanzada pagada al entrar al puzle en curso
 
+// [0.103] Reloj grande e independiente (#bigTimer). Rojo en los últimos 5 s; "SIN TIEMPO" en los puzles sin reloj
+function paintBigTimer(seconds) {
+  const box = document.getElementById('bigTimer'); const dig = document.getElementById('bigTimerDigits');
+  if (!box || !dig) return;
+  const lab = box.querySelector('.lab');
+  if (seconds === null) {
+    dig.textContent = '∞'; if (lab) lab.textContent = 'SIN TIEMPO';
+    box.classList.remove('low'); box.classList.add('notime');
+    return;
+  }
+  const s = Math.max(0, seconds);
+  dig.textContent = String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+  if (lab) lab.textContent = 'TIEMPO';
+  box.classList.remove('notime');
+  box.classList.toggle('low', s <= 5);
+}
+
 function startMinigameTimer(seconds, consumableName) {
   stopMinigameTimer();
   // [CAMBIO] Se fija ANTES del return para los puzles sin tiempo (hack no legendario); si no, la X cobraba la herramienta equivocada
   currentPuzzleConsumable = consumableName;
-  
-  const timerEl = document.getElementById('puzzleTimerDisplay');
 
   if (seconds === null) {
-    if (timerEl) {
-      timerEl.textContent = `⏱️ ∞ SIN TIEMPO`;
-      timerEl.className = "bg-emerald-950/90 text-emerald-300 border border-emerald-500/60 font-mono font-extrabold text-xs px-2.5 py-0.5 rounded-full";
-    }
+    paintBigTimer(null);
     return;
   }
 
@@ -388,16 +463,17 @@ function startMinigameTimer(seconds, consumableName) {
   if (modOn('relojMalo')) adjustedSeconds = Math.max(5, Math.round(adjustedSeconds * DATOS_JUEGO.MODS_WILDCARD.RELOJ_MALO.TIEMPO_MULT));
   globalPuzzleTimeLeft = adjustedSeconds;
   currentPuzzleConsumable = consumableName;
-
-  if (timerEl) {
-    timerEl.textContent = `⏱️ ${globalPuzzleTimeLeft}s`;
-    timerEl.className = "bg-rose-950/90 text-rose-300 border border-rose-500/60 font-mono font-extrabold text-xs px-2.5 py-0.5 rounded-full animate-pulse";
-  }
+  paintBigTimer(globalPuzzleTimeLeft);
 
   globalPuzzleTimerInterval = setInterval(() => {
     if (typeof rotateBlocked !== 'undefined' && rotateBlocked) return;   // [0.088] pausa mientras se pide girar el móvil
     globalPuzzleTimeLeft--;
-    if (timerEl) timerEl.textContent = `⏱️ ${globalPuzzleTimeLeft}s`;
+    paintBigTimer(globalPuzzleTimeLeft);
+    // [0.103] Pitido por segundo en los últimos 5 s, cada vez más agudo (Variante D "Latido")
+    const ca = DATOS_JUEGO.CUENTA_ATRAS;
+    if (ca && ca.ACTIVAR && globalPuzzleTimeLeft > 0 && globalPuzzleTimeLeft <= ca.SEGUNDOS) {
+      audio.playCountdownBeep(ca.SEGUNDOS - globalPuzzleTimeLeft);
+    }
 
     if (globalPuzzleTimeLeft <= 0) {
       audio.playBreak();

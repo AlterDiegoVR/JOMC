@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — modotest.js — VERSIÓN 0.102
+// JUST ONE MORE CHEST — modotest.js — VERSIÓN 0.103
 // Modo test
 // ==========================================================================
 
@@ -134,10 +134,8 @@ function testKeyHash(seq, salt) {
   })();
 
   // ---- estadísticas: pizarra con tiza ----
-  window.openStatsBoard = function () {
-    audio.init(); try { audio.playChalk(); } catch (e) {}
-    const o = overlay('statsModal', 10020);
-    o.className += ' bg-slate-950/90 backdrop-blur-md';
+  // [0.103] El contenido se construye aparte para usarlo igual en la ventana (móvil) y en la pizarra de la marquesina derecha (PC)
+  function statsRowsHtml(animate) {
     const C = STATE.stats || blankStats(), L = lifeStats;
     const pz = (S, t) => { const q = S.puz[t], tot = q.ok + q.fail; return tot ? `<span>${q.ok}/${tot}</span> <span style="font-size:15px;opacity:.85">${Math.round(q.ok * 100 / tot)}%</span>` : '—'; };
     const rows = [
@@ -148,14 +146,63 @@ function testKeyHash(seq, salt) {
     rows.push(['ORO GANADO', C.goldEarned, L.goldEarned], ['ORO GASTADO', C.goldSpent, L.goldSpent], ['GANZÚAS ROTAS', C.picksBroken, L.picksBroken], ['MEJOR RACHA', C.bestStreak, L.bestStreak]);
     rows.push(['#H', 'PUZLES SUPERADOS']);
     [['lockpick', 'MADERA'], ['tumbler', 'ACERO'], ['hack', 'DIGITAL'], ['pipe', 'VAPOR']].forEach(([t, n]) => rows.push([n, pz(C, t), pz(L, t)]));
-    const html = rows.map((r, i) => r[0] === '#H'
-      ? `<div class="jm-chalk jm-chalk-row" style="animation-delay:${i * 70}ms;font-size:19px;text-align:center;margin-top:8px;border-top:2px dashed rgba(238,243,234,.35);padding-top:6px;letter-spacing:.12em">${r[1]}</div>`
-      : `<div class="jm-chalk jm-chalk-row" style="animation-delay:${i * 70}ms;display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr);gap:5px;font-size:19px;line-height:1.25;white-space:nowrap;border-bottom:1px dotted rgba(238,243,234,.18)"><span style="opacity:.92">${r[0]}</span><span style="text-align:right;color:#ffe9a8">${r[1]}</span><span style="text-align:right;color:#bfe9ff">${r[2]}</span></div>`).join('');
+    const cls = animate ? 'jm-chalk jm-chalk-row' : 'jm-chalk';
+    return rows.map((r, i) => r[0] === '#H'
+      ? `<div class="${cls}" style="animation-delay:${i * 70}ms;font-size:19px;text-align:center;margin-top:8px;border-top:2px dashed rgba(238,243,234,.35);padding-top:6px;letter-spacing:.12em">${r[1]}</div>`
+      : `<div class="${cls}" style="animation-delay:${i * 70}ms;display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr);gap:5px;font-size:19px;line-height:1.25;white-space:nowrap;border-bottom:1px dotted rgba(238,243,234,.18)"><span style="opacity:.92">${r[0]}</span><span style="text-align:right;color:#ffe9a8">${r[1]}</span><span style="text-align:right;color:#bfe9ff">${r[2]}</span></div>`).join('');
+  }
+  const STATS_COLS_HTML = `<div class="jm-chalk" style="display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr);gap:5px;font-size:15px;opacity:.9;margin:6px 0 4px;border-bottom:2px solid rgba(238,243,234,.4);padding-bottom:3px"><span></span><span style="text-align:right;color:#ffe9a8">PARTIDA<br>ACTUAL</span><span style="text-align:right;color:#bfe9ff">ACUMULADO</span></div>`;
+  function achievementsChalkHtml(animate) {
+    const all = (DATOS_JUEGO.LOGROS && DATOS_JUEGO.LOGROS.LISTA) || [];
+    const got = all.filter(l => achievementsUnlocked[l.id]).sort((a, b) => achievementsUnlocked[a.id] - achievementsUnlocked[b.id]);
+    if (!got.length) return `<div class="jm-chalk" style="text-align:center;font-size:19px;opacity:.8;padding:18px 6px">Aún no has desbloqueado ningún logro.</div>`;
+    const cls = animate ? 'jm-chalk jm-chalk-row' : 'jm-chalk';
+    return `<div class="jm-chalk" style="text-align:center;font-size:15px;opacity:.8;margin-bottom:4px">${got.length} desbloqueado${got.length === 1 ? '' : 's'}</div>` + got.map((l, i) =>
+      `<div class="${cls}" style="animation-delay:${i * 70}ms;display:flex;gap:10px;align-items:center;padding:5px 2px;border-bottom:1px dotted rgba(238,243,234,.18)"><div style="font-size:24px;line-height:1">${l.icono || '🏆'}</div><div style="min-width:0"><div style="color:#ffe9a8;font-size:21px;letter-spacing:.06em;line-height:1.05">${l.titulo}</div><div style="font-size:16px;line-height:1.1;opacity:.85">${l.descripcion || ''}</div></div></div>`).join('');
+  }
+
+  // [0.103] PC: el cartel de la marquesina derecha se convierte en una pizarra con ESTADÍSTICAS y LOGROS. Móvil / pantalla estrecha: ventanas como hasta ahora.
+  let boardTab = 'stats', boardTimer = null;
+  function marqueeBoardOk() { return !!(typeof ART_ON !== 'undefined' && ART_ON && document.getElementById('marqueeR') && typeof isWideLayout === 'function' && isWideLayout()); }
+  function closeMarqueeBoard() { if (boardTimer) { clearInterval(boardTimer); boardTimer = null; } const b = document.getElementById('marqueeBoard'); if (b) b.remove(); }
+  function paintMarqueeBoard(animate) {
+    const b = document.getElementById('marqueeBoard'); if (!b) return;
+    const body = b.querySelector('.mb-body');
+    const prev = body.scrollTop;
+    body.innerHTML = boardTab === 'stats' ? (STATS_COLS_HTML + statsRowsHtml(animate)) : achievementsChalkHtml(animate);
+    body.scrollTop = prev;
+    b.querySelectorAll('.mb-tab').forEach(t => t.classList.toggle('on', t.dataset.t === boardTab));
+  }
+  function openMarqueeBoard(tab) {
+    audio.init(); try { audio.playChalk(); } catch (e) {}
+    boardTab = tab || 'stats';
+    closeMarqueeBoard();
+    const m = document.getElementById('marqueeR');
+    const b = document.createElement('div'); b.id = 'marqueeBoard';
+    b.innerHTML = `<div class="mb-frame"><div class="mb-slate">
+        <div class="mb-tabs"><button class="mb-tab jm-chalk" data-t="stats">ESTADÍSTICAS</button><button class="mb-tab jm-chalk" data-t="logros">LOGROS</button></div>
+        <div class="mb-body"></div>
+        <button class="mb-close jm-chalk">✕ CERRAR LA PIZARRA</button>
+      </div></div>`;
+    m.appendChild(b);
+    b.querySelectorAll('.mb-tab').forEach(t => t.addEventListener('click', () => { boardTab = t.dataset.t; try { audio.playChalk(); } catch (e) {} paintMarqueeBoard(true); }));
+    b.querySelector('.mb-close').addEventListener('click', closeMarqueeBoard);
+    paintMarqueeBoard(true);
+    boardTimer = setInterval(() => { if (!marqueeBoardOk()) { closeMarqueeBoard(); return; } paintMarqueeBoard(false); }, 1500);   // se mantiene al día mientras juegas
+  }
+  window.closeMarqueeBoard = closeMarqueeBoard;
+
+  window.openStatsBoard = function () {
+    if (marqueeBoardOk()) { openMarqueeBoard('stats'); return; }
+    audio.init(); try { audio.playChalk(); } catch (e) {}
+    const o = overlay('statsModal', 10020);
+    o.className += ' bg-slate-950/90 backdrop-blur-md';
+    const html = statsRowsHtml(true);
     o.innerHTML = `
       <div style="width:100%;max-width:23rem;background:#5b3a1e;border:3px solid #3c2412;border-radius:14px;padding:10px;box-shadow:0 10px 40px rgba(0,0,0,.7), inset 0 0 0 2px #7a5230">
         <div style="background:radial-gradient(ellipse at 30% 20%, #2a3c34 0, #1b2a24 60%, #15211c 100%);border-radius:6px;padding:14px 12px 12px;box-shadow:inset 0 0 28px rgba(0,0,0,.65)">
           <div class="jm-chalk jm-chalk-row" style="font-size:30px;text-align:center;letter-spacing:.14em;margin-bottom:2px">ESTADÍSTICAS</div>
-          <div class="jm-chalk" style="display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr);gap:5px;font-size:15px;opacity:.9;margin:6px 0 4px;border-bottom:2px solid rgba(238,243,234,.4);padding-bottom:3px"><span></span><span style="text-align:right;color:#ffe9a8">PARTIDA<br>ACTUAL</span><span style="text-align:right;color:#bfe9ff">ACUMULADO</span></div>
+          ${STATS_COLS_HTML}
           ${html}
         </div>
         <button id="statsClose" class="mt-3 w-full py-2.5 bg-amber-700/90 active:bg-amber-600 text-amber-50 font-extrabold text-xs rounded-xl cursor-pointer" style="border:1px solid #c69a5a">CERRAR</button>
@@ -166,6 +213,7 @@ function testKeyHash(seq, salt) {
 
   // ---- [0.091] lista de logros desbloqueados ----
   window.openAchievementsList = function () {
+    if (marqueeBoardOk()) { openMarqueeBoard('logros'); return; }   // [0.103] en PC, en la pizarra de la marquesina
     audio.init(); try { audio.playUiClick(); } catch (e) {}
     const o = overlay('achievementsModal', 10020);
     o.className += ' bg-slate-950/90 backdrop-blur-md';
@@ -524,8 +572,8 @@ function testKeyHash(seq, salt) {
     STATE.hintUses.lockTouch = used + 1;
     const mk = html => { const d = document.createElement('div'); d.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:5'; d.innerHTML = html; dial.appendChild(d); return d; };
     hintCenter = mk(`
-      <div style="position:absolute;left:50%;top:50%;width:112px;height:112px;margin:-56px 0 0 -56px;border:3px dashed #34d399;border-radius:50%;animation:cardPulse 1.1s ease-in-out infinite"></div>
-      <div style="position:absolute;left:0;right:0;top:50%;margin-top:34px;text-align:center;font:700 10px Outfit,sans-serif;color:#34d399;text-shadow:0 1px 2px #000">${hc.CENTRO}</div>`);
+      <div class="lp-hint-ring" style="animation:cardPulse 1.1s ease-in-out infinite"></div>
+      <div class="lp-hint-txt">${hc.CENTRO}</div>`);   // [0.103] el texto va debajo del círculo, dentro de la placa, más grande
   };
 
   // [0.091] Háptica del punto dulce: la intensidad sube al acercarse al punto dulce MÁS CERCANO (real o falso, sin distinguirlos).

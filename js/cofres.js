@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — cofres.js — VERSIÓN 0.102
+// JUST ONE MORE CHEST — cofres.js — VERSIÓN 0.103
 // selección de cofres, banner, diálogos, post-its, botín y subida de nivel
 // ==========================================================================
 
@@ -899,6 +899,15 @@ function processLevelUp(fromDeal) {
   STATE.level++;
   STATE.chestsAtLevelUp = STATE.chestsOpened;
   STATE.xpNext = getXpForLevel(STATE.level);
+
+  // [0.103] En la secuencia final (fase de clímax) la subida de nivel NO abre la ventana de mejoras: solo efecto en la barra, sonido y cartel rápido
+  if (STATE.climaxPhase) {
+    quickLevelUpFx();
+    updateUI();
+    if (STATE.xp >= STATE.xpNext) STATE.eventQueue.unshift(() => processLevelUp());   // si sobra XP para otro nivel, se repite el efecto
+    processNextQueuedEvent();
+    return;
+  }
 
   const unlockKey = `nivel_${STATE.level}`;
   if (DATOS_JUEGO.NARRATIVA.DUENDE_DESBLOQUEOS[unlockKey]) {

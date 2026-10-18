@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — inicio.js — VERSIÓN 0.102
+// JUST ONE MORE CHEST — inicio.js — VERSIÓN 0.103
 // portada, arranque, avisos, pantalla completa
 // ==========================================================================
 
@@ -13,6 +13,46 @@ function attachCoverClose(cover) {
     try { requestGameFullscreen(); } catch (e) {}   // [0.088]
   }, { once: true });
 }
+
+// [0.103] Filtro 2x fino (Scale2x/EPX) para los sprites del Trapero: duplica la resolución suavizando solo las diagonales, así se ve menos blocky
+// en la tienda y en los diálogos sin perder el estilo pixel art. Se aplica una vez al arrancar (DATOS_JUEGO.GRAFICOS.FILTRO_2X).
+(function scale2xFilter() {
+  const cfg = (DATOS_JUEGO.GRAFICOS && DATOS_JUEGO.GRAFICOS.FILTRO_2X) || {};
+  if (!cfg.ACTIVAR || typeof ASSETS === 'undefined') return;
+  (cfg.BANCOS || []).forEach(name => {
+    const bank = ASSETS[name]; if (!bank) return;
+    Object.keys(bank).forEach(key => {
+      const src = bank[key];
+      if (typeof src !== 'string' || src.indexOf('data:image') !== 0) return;
+      const im = new Image();
+      im.onload = () => {
+        try {
+          const w = im.width, h = im.height;
+          const c1 = document.createElement('canvas'); c1.width = w; c1.height = h;
+          const g1 = c1.getContext('2d'); g1.drawImage(im, 0, 0);
+          const a = new Uint32Array(g1.getImageData(0, 0, w, h).data.buffer);
+          const c2 = document.createElement('canvas'); c2.width = w * 2; c2.height = h * 2;
+          const g2 = c2.getContext('2d'); const out = g2.createImageData(w * 2, h * 2); const o = new Uint32Array(out.data.buffer);
+          const at = (x, y) => a[Math.max(0, Math.min(h - 1, y)) * w + Math.max(0, Math.min(w - 1, x))];
+          for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+            const P = at(x, y), A = at(x, y - 1), B = at(x + 1, y), C = at(x - 1, y), D = at(x, y + 1);
+            let p1 = P, p2 = P, p3 = P, p4 = P;
+            if (C === A && C !== D && A !== B) p1 = A;
+            if (A === B && A !== C && B !== D) p2 = B;
+            if (D === C && D !== B && C !== A) p3 = C;
+            if (B === D && B !== A && D !== C) p4 = D;
+            const i = (y * 2) * (w * 2) + x * 2;
+            o[i] = p1; o[i + 1] = p2; o[i + w * 2] = p3; o[i + w * 2 + 1] = p4;
+          }
+          g2.putImageData(out, 0, 0);
+          bank[key] = c2.toDataURL('image/png');
+          if (name === 'trapero' && key === 'base') { const im2 = document.querySelector('#traperoPortrait img'); if (im2) im2.src = bank[key]; }
+        } catch (e) { /* si el navegador no deja leer los píxeles, se queda el sprite original */ }
+      };
+      im.src = src;
+    });
+  });
+})();
 
 // [0.085] Arte del marco: marquesinas laterales, retratos de las tiendas y portada de inicio
 (function initArtFrame() {

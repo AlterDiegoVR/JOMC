@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — juego.js — VERSIÓN 0.102
+// JUST ONE MORE CHEST — juego.js — VERSIÓN 0.103
 // arte del cofre abierto, subida de nivel, abrir cofre
 // ==========================================================================
 
@@ -110,6 +110,19 @@ function lvlSpectacle() {
   }
   try { screenShake(cfg.SACUDIDA_PX != null ? cfg.SACUDIDA_PX : 9, cfg.SACUDIDA_MS || 520); } catch (e) {}
   lvlTimers.push(setTimeout(() => { if (fx.parentNode) fx.remove(); }, 5200));
+}
+
+// [0.103] Subida de nivel "al vuelo" durante la secuencia final: destello en la barra de XP, notas cortas y cartel que entra con zoom y se va rápido. No bloquea nada.
+function quickLevelUpFx() {
+  try { audio.init(); audio.playLevelUpQuick(); } catch (e) {}
+  const bar = document.getElementById('xpBar');
+  if (bar && bar.parentElement) { const c = bar.parentElement; c.classList.remove('xp-flash'); void c.offsetWidth; c.classList.add('xp-flash'); setTimeout(() => c.classList.remove('xp-flash'), 900); }
+  const host = (typeof uiHost === 'function') ? uiHost() : document.body;
+  const b = document.createElement('div');
+  b.className = 'lvl-quick';
+  b.innerHTML = `<span>SUBIDA DE NIVEL</span><b>NIVEL ${STATE.level}</b>`;
+  host.appendChild(b);
+  setTimeout(() => b.remove(), 1100);
 }
 
 function triggerLevelUpChoice() {
@@ -311,6 +324,7 @@ function openActiveChest() {
 
     const minigameModal = document.getElementById('minigameModal');
     if (minigameModal) minigameModal.classList.remove('hidden');
+    pzFit();   // [0.103] reparte la pantalla del puzle (puzle centrado, reloj y botón a mitad de camino)
 }
 
 if (openChestBtn) {
@@ -374,3 +388,16 @@ function setPuzzleBackground(juego) {
   m.style.setProperty('--puz-velo', String(cfg.VELO != null ? cfg.VELO : 0.5));
   m.classList.add('puz-bg');
 }
+
+
+// [0.103] Pantalla de puzles: el pie ("Listo") reserva la altura de la tarjeta de arriba para que el puzle quede centrado en la pantalla,
+// y el botón se desplaza media diferencia para quedar a mitad de camino entre el puzle y "Listo".
+function pzFit() {
+  const m = document.getElementById('minigameModal'), card = document.getElementById('pzCard'), st = document.getElementById('minigameStatus');
+  if (!m || !card || !st) return;
+  const ch = card.offsetHeight, sh = st.offsetHeight;
+  m.style.setProperty('--pzcardh', ch + 'px');
+  m.style.setProperty('--pzshift', Math.max(0, (ch - sh) / 2) + 'px');
+}
+window.addEventListener('resize', pzFit);
+if (window.ResizeObserver) { const c = document.getElementById('pzCard'); if (c) new ResizeObserver(pzFit).observe(c); }

@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — puzles.js — VERSIÓN 0.102
+// JUST ONE MORE CHEST — puzles.js — VERSIÓN 0.103
 // minijuegos: ganzúa, pistones, hackeo, tuberías
 // ==========================================================================
 
@@ -21,7 +21,15 @@ function isAdvancedLoopFor(rarityId) {
   return A.BUCLES_ACTIVOS.includes(loop) && A.RAREZAS.includes(rarityId);
 }
 
+// [0.103] Texto de la tarjeta de instrucciones de cada puzle (DATOS_JUEGO.AYUDAS.PUZLES). Antes quedaba siempre el de la ganzúa.
+function setPuzzleHelp(juego) {
+  const h = document.getElementById('minigameHelp');
+  const t = (DATOS_JUEGO.AYUDAS && DATOS_JUEGO.AYUDAS.PUZLES && DATOS_JUEGO.AYUDAS.PUZLES[juego]) || '';
+  if (h) h.innerHTML = t;
+}
+
 function startLockpickGame() {
+  setPuzzleHelp('lockpick');
   const configLP = DATOS_JUEGO.MINIJUEGOS.LOCKPICK;
   startMinigameTimer(configLP.TIEMPO_BASE_SEGUNDOS, 'picks');
 
@@ -254,12 +262,10 @@ let tumblerOriginalBtnHTML = null;
 function resetTumblerSealUI() {
   const oldLine = document.getElementById('sealLine');
   if (oldLine) oldLine.remove();
-  const tc = document.getElementById('tumblerContainer');
-  const help = tc ? tc.querySelector('p') : null;
+  const help = document.getElementById('minigameHelp');   // [0.103] la ayuda va en la tarjeta de arriba
   const btn = document.getElementById('tapPinBtn');
-  if (help && tumblerOriginalHelpHTML === null) tumblerOriginalHelpHTML = help.innerHTML;
   if (btn && tumblerOriginalBtnHTML === null) tumblerOriginalBtnHTML = btn.innerHTML;
-  if (help && tumblerOriginalHelpHTML !== null) help.innerHTML = tumblerOriginalHelpHTML;
+  setPuzzleHelp('tumbler');
   if (btn && tumblerOriginalBtnHTML !== null) btn.innerHTML = tumblerOriginalBtnHTML;
   tumblerSeal = null;
 }
@@ -487,8 +493,7 @@ function startTumblerSealPhase() {
     shearLine.parentElement.appendChild(line);
   }
 
-  const tc = document.getElementById('tumblerContainer');
-  const help = tc ? tc.querySelector('p') : null;
+  const help = document.getElementById('minigameHelp');   // [0.103]
   if (help) help.innerHTML = cfg.TEXTO_AYUDA_FINAL;
   const btn = document.getElementById('tapPinBtn');
   if (btn) btn.innerHTML = `<i class="fa-solid fa-hand"></i> ${cfg.TEXTO_BOTON_FINAL}`;
@@ -604,6 +609,7 @@ let targetWord = "";
 let hackAttemptsLeft = 4;
 
 function startHackGame() {
+  setPuzzleHelp('hack');
   const configH = DATOS_JUEGO.MINIJUEGOS.HACK;
   const active = STATE.screenChests[STATE.activeChestIdx];
   const rarityId = active ? active.rarity.id : 'normal';
@@ -784,6 +790,7 @@ function submitHackWord(word, btn) {
     const attemptsEl = document.getElementById('hackAttempts'); 
     if (attemptsEl) attemptsEl.textContent = hackAttemptsLeft; 
     if (history) history.innerHTML += `<div>> DENEGADO (${matches}/${cleanTarget.length})</div>`;
+    { const hc = document.getElementById('hackContainer'); if (hc) { hc.classList.add('glitch'); setTimeout(() => hc.classList.remove('glitch'), 520); } }   // [0.103] fallo tipo VHS
 
     if (hackAttemptsLeft <= 0) { 
       audio.playBreak(); 
@@ -809,6 +816,68 @@ let pipeAdvancedActive = false;  // [0.082] ¿este intento usa bombas + VALIDAR?
 let pipeValidated = false;       // [0.082] el botón VALIDAR es de un solo uso
 
 // [0.082] Prepara (o limpia) el texto de ayuda y el botón VALIDAR del puzle hidráulico
+
+/* ==========================================================================
+   [0.103] ESTÉTICA DE PIPES: tuberías de cobre con bridas, agua azul, barril-bomba y placas.
+   Cada casilla es un canvas de 16x16 píxeles (id pipeSvg-N, se gira con transform) escalado sin suavizar.
+   ========================================================================== */
+const PIPE_PAT_DRY = ['#1a0e08', '#f0b070', '#d98a4a', '#bf6d33', '#bf6d33', '#8f4a22', '#5e2f14', '#1a0e08'];
+const PIPE_PAT_WET = ['#0b2a44', '#c9f6ff', '#74dcff', '#35b4f0', '#35b4f0', '#1f86c8', '#165f9a', '#0b2a44'];
+const PIPE_FL_DRY = ['#1a0e08', '#e8c36a', '#c99a3a', '#8e6a22'];
+const PIPE_FL_WET = ['#0b2a44', '#e8c36a', '#c99a3a', '#8e6a22'];
+
+function drawPipePixels(g, type, wet) {
+  const px = (x, y, c) => { g.fillStyle = c; g.fillRect(x, y, 1, 1); };
+  const kind = type === 'stone' ? 'stone' : (type === 'bomb' ? 'bomb' : 'pipe');
+  // placa de fondo con remaches
+  g.clearRect(0, 0, 16, 16);
+  g.fillStyle = kind === 'stone' ? '#4b3a2c' : (kind === 'bomb' ? '#3a1a1e' : '#1c2132'); g.fillRect(0, 0, 16, 16);
+  const hi = kind === 'stone' ? '#6b5440' : (kind === 'bomb' ? '#5a2a30' : '#2e3652');
+  const lo = kind === 'stone' ? '#2c2118' : (kind === 'bomb' ? '#240d10' : '#10131f');
+  for (let i = 0; i < 16; i++) { px(i, 0, hi); px(0, i, hi); px(i, 15, lo); px(15, i, lo); }
+  [[2, 2], [13, 2], [2, 13], [13, 13]].forEach(q => { px(q[0], q[1], '#6c748c'); px(q[0] + 1, q[1] + 1, '#10131f'); });
+  for (let i = 0; i < 14; i++) { px((i * 7 + 3) % 12 + 2, (i * 5 + 4) % 12 + 2, kind === 'stone' ? '#55432f' : '#1f2539'); }
+
+  if (kind === 'stone') {
+    for (let y = 3; y <= 12; y++) for (let x = 3; x <= 12; x++) { let c = '#6e5a48'; if (x === 3 || y === 3) c = '#8c7560'; if (x === 12 || y === 12) c = '#3b2e22'; px(x, y, c); }
+    [[5, 5], [10, 5], [5, 10], [10, 10]].forEach(q => { px(q[0], q[1], '#a9936f'); px(q[0] + 1, q[1] + 1, '#2a1f16'); });
+    [[7, 6], [8, 7], [8, 8], [9, 9], [7, 9]].forEach(q => px(q[0], q[1], '#2a1f16'));
+    px(6, 8, '#9b4a22'); px(10, 7, '#9b4a22'); px(9, 6, '#9b4a22');
+    return;
+  }
+  if (kind === 'bomb') {   // barril presurizado con mecha
+    for (let y = 3; y <= 13; y++) for (let x = 4; x <= 11; x++) { let c = '#a62b2b'; if (x === 4 || x === 11 || y === 3 || y === 13) c = '#1a0708'; else if (x === 5) c = '#d9544a'; else if (x >= 10) c = '#6e1b1f'; px(x, y, c); }
+    for (let x = 4; x <= 11; x++) { px(x, 5, '#1a0708'); px(x, 11, '#1a0708'); }
+    for (let x = 5; x <= 10; x++) { if (x % 2 === 0) { px(x, 6, '#f2c230'); px(x, 10, '#f2c230'); } }
+    px(7, 7, '#f2c230'); px(8, 7, '#f2c230'); px(7, 8, '#f2c230'); px(8, 8, '#f2c230'); px(7, 9, '#1a0708'); px(8, 9, '#1a0708');
+    px(7, 2, '#8a8a96'); px(8, 2, '#8a8a96'); px(9, 1, '#e9b44c'); px(10, 0, '#ff8a2a');
+    return;
+  }
+  const P = wet ? PIPE_PAT_WET : PIPE_PAT_DRY, F = wet ? PIPE_FL_WET : PIPE_FL_DRY;
+  const vert = (y0, y1) => { for (let y = y0; y <= y1; y++) for (let i = 0; i < 8; i++) px(4 + i, y, P[i]); };
+  const hor = (x0, x1) => { for (let x = x0; x <= x1; x++) for (let i = 0; i < 8; i++) px(x, 4 + i, P[i]); };
+  const flV = y => { for (let k = 0; k < 2; k++) for (let x = 3; x <= 12; x++) { const i = (x === 3 || x === 12) ? 0 : (x === 4 ? 1 : (x >= 10 ? 3 : 2)); px(x, y + k, F[k === 0 && (x === 3 || x === 12) ? 0 : i]); } };
+  const flH = x => { for (let k = 0; k < 2; k++) for (let y = 3; y <= 12; y++) { const i = (y === 3 || y === 12) ? 0 : (y === 4 ? 1 : (y >= 10 ? 3 : 2)); px(x + k, y, F[i]); } };
+  if (type === 'straight') { vert(0, 15); flV(0); flV(14); }
+  else if (type === 'corner') {
+    vert(0, 11); hor(4, 15);
+    for (let y = 4; y <= 11; y++) for (let x = 4; x <= 11; x++) { const i = Math.min(x - 4, 11 - y); px(x, y, i === 0 ? P[0] : (i === 1 ? P[1] : (i === 2 ? P[2] : P[3]))); }
+    flV(0); flH(14);
+  } else {
+    vert(0, 15); hor(4, 15);
+    for (let y = 4; y <= 11; y++) for (let x = 4; x <= 11; x++) { if (x === 4) px(x, y, P[0]); else px(x, y, (y === 4 || y === 11) ? P[0] : (y === 5 ? P[1] : (y === 6 ? P[2] : (y >= 9 ? P[5] : P[3])))); }
+    for (let y = 4; y <= 11; y++) px(11, y, (y === 4 || y === 11) ? P[0] : (y === 5 ? P[1] : (y === 6 ? P[2] : (y >= 9 ? P[5] : P[3]))));
+    flV(0); flV(14); flH(14);
+  }
+}
+
+// Repinta la casilla i (seca o con agua). El canvas conserva su giro (style.transform)
+function pipePaintTile(i, wet) {
+  const cv = document.getElementById(`pipeSvg-${i}`); const item = pipeGridData[i];
+  if (!cv || !item || !cv.getContext) return;
+  drawPipePixels(cv.getContext('2d'), item.type, !!wet);
+}
+
 function setupPipeAdvancedUI(advanced) {
   const pipeContainer = document.getElementById('pipeContainer');
   if (!pipeContainer) return;
@@ -823,11 +892,12 @@ function setupPipeAdvancedUI(advanced) {
   help.id = 'pipeAdvancedHelp';
   help.className = 'text-[10px] text-center text-rose-300 font-mono leading-snug';
   help.innerHTML = '<i class="fa-solid fa-bomb"></i> Evita las bombas. El fluido no se ve hasta que pulses <span class="text-sky-300 font-bold">VALIDAR</span> (un solo intento).';
-  pipeContainer.insertBefore(help, grid);
+  const card = document.getElementById('pzCard');   // [0.103] la ayuda de bombas va en la tarjeta de arriba
+  if (card) card.appendChild(help); else pipeContainer.insertBefore(help, grid);
 
   const btn = document.createElement('button');
   btn.id = 'pipeValidateBtn';
-  btn.className = 'w-full py-3 bg-gradient-to-r from-sky-600 to-cyan-600 active:from-sky-500 text-white font-extrabold text-sm rounded-xl shadow-lg border border-sky-400/40 flex items-center justify-center gap-2';
+  btn.className = 'pz-btn';   // [0.103]
   btn.innerHTML = '<i class="fa-solid fa-play"></i> VALIDAR';
   btn.addEventListener('click', validatePipeAdvanced);
   pipeContainer.appendChild(btn);
@@ -972,19 +1042,15 @@ function validatePipeAdvanced() {
   const exploded = sim.bombs.size > 0;
   const success = sim.goal && !exploded;
 
-  // Mostramos el recorrido del fluido
+  // Mostramos el recorrido del fluido (agua azul en lo recorrido; las bombas alcanzadas parpadean)
   for (let i = 0; i < total; i++) {
-    const svgEl = document.getElementById(`pipeSvg-${i}`);
     const item = pipeGridData[i];
-    if (svgEl && item.type !== 'stone' && item.type !== 'bomb') {
-      const on = sim.visited.has(i);
-      svgEl.style.color = on ? (exploded ? '#fb7185' : (success ? '#34d399' : '#fbbf24')) : '#64748b';
-      svgEl.className = `w-full h-full ${on ? 'text-amber-400' : 'text-slate-500'} transition-colors`;
-    }
+    if (item.type !== 'stone' && item.type !== 'bomb') pipePaintTile(i, sim.visited.has(i));
   }
+  const outEl = document.getElementById(`pipeTile-${total - 1}`); if (outEl && success) outEl.classList.add('pipe-ok');
   sim.bombs.forEach(b => {
     const t = document.getElementById(`pipeTile-${b}`);
-    if (t) { t.classList.add('animate-pulse'); t.style.background = '#be123c'; t.innerHTML += '<span class="absolute inset-0 flex items-center justify-center text-xl">💥</span>'; }
+    if (t) { t.classList.add('bombhit'); t.insertAdjacentHTML('beforeend', '<span class="absolute inset-0 flex items-center justify-center text-xl">💥</span>'); }
   });
 
   if (exploded) {
@@ -1026,6 +1092,7 @@ function getPipeSides(type, rot) {
 }
 
 function startPipeGame() {
+  setPuzzleHelp('pipe');
   const configP = DATOS_JUEGO.MINIJUEGOS.PIPE;
   const active = STATE.screenChests[STATE.activeChestIdx];
   const rarityId = active ? active.rarity.id : 'normal';
@@ -1050,7 +1117,8 @@ function startPipeGame() {
 
   pipeGridSize = cfgRar.size;
   const totalTiles = pipeGridSize * pipeGridSize;
-  grid.style.gridTemplateColumns = `repeat(${pipeGridSize}, minmax(0, 1fr))`;
+  grid.style.gridTemplateColumns = `repeat(${pipeGridSize}, var(--pt))`;
+  grid.style.setProperty('--pt', (pipeGridSize <= 3 ? 60 : (pipeGridSize === 4 ? 56 : 48)) + 'px');   // [0.103] tamaño de casilla
 
   let generatedAndValid = false;
   let generateAttempts = 0;
@@ -1174,38 +1242,13 @@ function startPipeGame() {
   for (let i = 0; i < totalTiles; i++) {
     const item = pipeGridData[i];
     const tile = document.createElement('button');
-    const tileSizeClass = pipeGridSize === 3 ? 'w-14 h-14' : (pipeGridSize === 4 ? 'w-11 h-11' : 'w-9 h-9');
-
-    let borderClass = 'border-slate-700 bg-slate-800';
-    if (item.type === 'stone') borderClass = 'border-amber-600/80 bg-amber-950/40';
-    if (item.type === 'bomb') borderClass = 'border-rose-600/80 bg-rose-950/50';
-
-    tile.className = `${tileSizeClass} ${borderClass} border-2 rounded-lg flex items-center justify-center p-1 transition-all relative`;
+    tile.className = 'pipe-tile';   // [0.103] aspecto en style.css; el tamaño sale de --pt de la rejilla
     tile.id = `pipeTile-${i}`;
-
-    let label = '';
-    if (i === 0) label = '<span class="absolute top-0.5 left-1 text-[8px] font-mono font-bold text-emerald-400">IN</span>';
-    if (i === totalTiles - 1) label = '<span class="absolute bottom-0.5 right-1 text-[8px] font-mono font-bold text-rose-400">OUT</span>';
-    if (item.type === 'stone') label += '<span class="absolute top-0.5 right-1 text-[9px] text-amber-500"><i class="fa-solid fa-cube"></i></span>';
-    if (item.type === 'bomb') label += '<span class="absolute inset-0 flex items-center justify-center text-lg text-rose-400"><i class="fa-solid fa-bomb"></i></span>';
-
-    let svgContent = '';
-    if (item.type === 'straight') {
-      svgContent = `<line x1="20" y1="0" x2="20" y2="40" stroke="currentColor" stroke-width="8" stroke-linecap="round"/>`;
-    } else if (item.type === 'corner') {
-      svgContent = `<path d="M 20,0 A 20,20 0 0,1 40,20" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round"/>`;
-    } else if (item.type === 't_junction') {
-      svgContent = `<line x1="20" y1="0" x2="20" y2="40" stroke="currentColor" stroke-width="8" stroke-linecap="round"/><line x1="20" y1="20" x2="40" y2="20" stroke="currentColor" stroke-width="8" stroke-linecap="round"/>`;
-    } else {
-      svgContent = `<div class="w-4 h-4 bg-amber-800 rounded border border-amber-600"></div>`;
-    }
-
-    tile.innerHTML = `
-      ${label}
-      <svg id="pipeSvg-${i}" class="w-full h-full ${(item.type === 'stone' || item.type === 'bomb') ? 'hidden' : 'text-slate-500'} transition-colors" viewBox="0 0 40 40" style="transform: rotate(${item.rot * 90}deg)">
-        ${svgContent}
-      </svg>
-    `;
+    const rotStyle = (item.type === 'stone' || item.type === 'bomb') ? '' : `transform: rotate(${item.rot * 90}deg)`;
+    tile.innerHTML = `<canvas id="pipeSvg-${i}" class="pipe-cv" width="16" height="16" style="${rotStyle}"></canvas>`
+      + (i === 0 ? '<span class="pipe-valve" title="Válvula de entrada"></span>' : '')
+      + (i === totalTiles - 1 ? '<span class="pipe-out" id="pipeOut" title="Salida"></span>' : '');
+    drawPipePixels(tile.querySelector('canvas').getContext('2d'), item.type, false);
 
     if (item.type !== 'stone' && item.type !== 'bomb') {
       tile.addEventListener('click', () => {
@@ -1313,30 +1356,15 @@ function evaluatePipeFlow() {
   }
 
   for (let i = 0; i < totalTiles; i++) {
-    const svgEl = document.getElementById(`pipeSvg-${i}`);
-    if (svgEl && pipeGridData[i].type !== 'stone') {
-      if (visited.has(i)) {
-        svgEl.style.color = '#fbbf24';
-        svgEl.className = "w-full h-full text-amber-400 transition-colors";
-      } else {
-        svgEl.style.color = '#64748b';
-        svgEl.className = "w-full h-full text-slate-500 transition-colors";
-      }
-    }
+    if (pipeGridData[i].type !== 'stone' && pipeGridData[i].type !== 'bomb') pipePaintTile(i, visited.has(i));   // [0.103] agua azul en lo conectado
   }
 
   const outConnected = visited.has(totalTiles - 1);
 
   const tileOut = document.getElementById(`pipeTile-${totalTiles - 1}`);
   if (tileOut) {
+    tileOut.classList.toggle('pipe-ok', outConnected);
     if (outConnected) {
-      tileOut.className = tileOut.className.replace('border-slate-700 bg-slate-800', 'border-emerald-500 bg-emerald-950/60 shadow-lg shadow-emerald-900/40');
-      const outSvg = document.getElementById(`pipeSvg-${totalTiles - 1}`);
-      if (outSvg) {
-        outSvg.style.color = '#34d399';
-        outSvg.className = "w-full h-full text-emerald-400 transition-colors";
-      }
-      
       minigameInProgress = false;
       stopMinigameTimer();
       setTimeout(() => {
@@ -1350,8 +1378,6 @@ function evaluatePipeFlow() {
         puzzleToolPaid = null;   // [0.090] ya pagada al entrar
         triggerLootExplosion();
       }, 400);
-    } else {
-      tileOut.className = tileOut.className.replace('border-emerald-500 bg-emerald-950/60 shadow-lg shadow-emerald-900/40', 'border-slate-700 bg-slate-800');
     }
   }
 }

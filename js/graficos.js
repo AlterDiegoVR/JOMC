@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — graficos.js — VERSIÓN 0.102
+// JUST ONE MORE CHEST — graficos.js — VERSIÓN 0.103
 // canvas, sala, cerradura, decoración, efectos de cofre
 // ==========================================================================
 
@@ -532,6 +532,7 @@ function renderRoom() {
     ctx.beginPath(); ctx.ellipse(ccx, ccy + dh / 2 + 4, dw * 0.46, dh * 0.08, 0, 0, Math.PI * 2); ctx.fill();
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(im, ccx - dw / 2, ccy - dh / 2 + bob, dw, dh);
+    if (chestSwapFx) drawChestSwapOverlay(ctx, im, ccx, ccy + bob, dw, dh);   // [0.103] destello blanco + cruz de luz del cambio de cofre
     // [0.097] PRUEBA: chispas doradas subiendo sobre el cofre legendario (como las de la pantalla de subida de nivel). Se apaga con GRAFICOS.CHISPAS_LEGENDARIO.ACTIVAR:false
     const chs = g.CHISPAS_LEGENDARIO;
     if (chs && chs.ACTIVAR && activeChest.rarity.id === 'legendario') {
@@ -803,22 +804,47 @@ setInterval(() => {
   const fn = pendingChestFx; pendingChestFx = false;
   chestMutateFxNow(typeof fn === 'function' ? fn : null);
 }, 150);
+// [0.103] Cambio de cofre (reroll / mutación / ascenso): el cofre se vuelve blanco, desaparece con un destello de luz en cruz y aparece el nuevo.
+// Cronología (ms): 0-320 el cofre se blanquea · 320 cambio real + "plop" · 200-720 cruz de luz · 320-650 el nuevo cofre sale del blanco
+let chestSwapFx = null;
+const CHEST_SWAP_MS = { CAMBIO: 320, FIN: 720 };
+function chestWhite(im) {
+  if (im._white) return im._white;
+  try {
+    const c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight;
+    const g = c.getContext('2d'); g.drawImage(im, 0, 0); g.globalCompositeOperation = 'source-in'; g.fillStyle = '#ffffff'; g.fillRect(0, 0, c.width, c.height);
+    im._white = c;
+  } catch (e) { im._white = null; }
+  return im._white;
+}
+function drawChestSwapOverlay(ctx, im, ccx, ccy, dw, dh) {
+  const t = performance.now() - chestSwapFx.t0;
+  const wh = chestWhite(im);
+  const a = t < CHEST_SWAP_MS.CAMBIO ? Math.min(1, t / CHEST_SWAP_MS.CAMBIO) : Math.max(0, 1 - (t - CHEST_SWAP_MS.CAMBIO) / 330);
+  if (wh && a > 0) { ctx.save(); ctx.globalAlpha = a; ctx.imageSmoothingEnabled = false; ctx.drawImage(wh, ccx - dw / 2, ccy - dh / 2, dw, dh); ctx.restore(); }
+  const tf = (t - 200) / 520;
+  if (tf > 0 && tf < 1) {
+    const inten = Math.sin(Math.PI * tf), ease = 1 - Math.pow(1 - tf, 3);
+    const th = Math.max(3, dw * 0.03) * (1 - tf * 0.55);
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    const R = dw * 0.85 * inten;
+    const gl = ctx.createRadialGradient(ccx, ccy, 2, ccx, ccy, Math.max(4, R)); gl.addColorStop(0, 'rgba(255,255,255,.9)'); gl.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = gl; ctx.globalAlpha = inten; ctx.beginPath(); ctx.arc(ccx, ccy, Math.max(4, R), 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = inten; ctx.fillStyle = '#ffffff';
+    const L = dw * 1.2 * ease, V = dh * 1.5 * ease;
+    ctx.fillRect(ccx - L, ccy - th / 2, L * 2, th);            // brazo horizontal
+    ctx.fillRect(ccx - th / 2, ccy - V, th, V * 2);            // brazo vertical
+    ctx.globalAlpha = inten * 0.5; ctx.fillRect(ccx - L * 0.55, ccy - th * 1.4, L * 1.1, th * 2.8); ctx.fillRect(ccx - th * 1.4, ccy - V * 0.55, th * 2.8, V * 1.1);
+    ctx.restore();
+  }
+}
 function chestMutateFxNow(applyFn) {
-  try { audio.init(); audio.playChestMutate(); } catch (e) {}
-  try { flashScreen('rgba(255,255,255,.35)', 350); } catch (e) {}
-  if (applyFn) setTimeout(() => { try { applyFn(); } catch (e) {} }, 260);
-  ['chestActionCard', 'multiChestGrid'].forEach(id => {
-    const el = document.getElementById(id);
-    if (!el || el.classList.contains('hidden')) return;
-    try {
-      el.animate([
-        { transform: 'translateX(0) scale(1)', filter: 'brightness(1)' },
-        { transform: 'translateX(-7px) scale(1.06)', filter: 'brightness(2.2) saturate(1.8)', offset: .2 },
-        { transform: 'translateX(6px) scale(.94)', filter: 'brightness(1.6)', offset: .4 },
-        { transform: 'translateX(-4px) scale(1.04)', filter: 'brightness(1.3)', offset: .6 },
-        { transform: 'translateX(2px) scale(1)', filter: 'brightness(1.1)', offset: .8 },
-        { transform: 'translateX(0) scale(1)', filter: 'brightness(1)' }
-      ], { duration: 520, easing: 'ease-out' });
-    } catch (e) {}
-  });
+  chestSwapFx = { t0: performance.now() };
+  setTimeout(() => {
+    try { audio.init(); audio.playChestMutate(); } catch (e) {}
+    if (applyFn) { try { applyFn(); } catch (e) {} }
+    const g = document.getElementById('multiChestGrid');
+    if (g && !g.classList.contains('hidden')) { try { g.animate([{ filter: 'brightness(3)' }, { filter: 'brightness(1)' }], { duration: 380, easing: 'ease-out' }); } catch (e) {} }
+  }, CHEST_SWAP_MS.CAMBIO);
+  setTimeout(() => { chestSwapFx = null; }, CHEST_SWAP_MS.FIN + 80);
 }

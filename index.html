@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Just One More Chest</title>
   <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAFd0lEQVR42u2Xy44kVxGGv4hzyarqnpmeu8fYAx4hJCSPPHsvWuYlYMkbgFghPwVL2HjHigdg3RKIrSUL5IWRhmGMe9pdVd11y8yTeU6wyJq+zEUWGAwLh1TKiyri/HH7IxK+lW/lfyzyL77/umJfdZADVEW6/8bpxSwABchf5ekICFvE8h/wWoAOaF4XAQXMj3bfL8kevf/uGz+vvLuTi50BsBeUDJDtjb0qhwI2qJtXkZTz0R/+/OWvoi8fN83qj1szRQA1w0S488F77zx9483v+9M0wfqGKjp2yxdUQRlVHivnLjmF6aJhdxIJTl9COF1suLV3laW+zfFsRts7fJ7x7Ogf/cd//ftbZhyJIH5/f19VDvrb125/+MO3r/synjSfPaEKKvTrnqpdsbcTmYwCpZQzAMEph/MN11Km8p7yHB0gIhzONiAVMy2crA0R5d7Itz/4zt7o8KT5UOTLn+3v7zt/liQnj8bR23HqfFAv169ETk4bRCB4xTuhiF5KQ3CKd4ooBHFDTM0QEaJXghc8xpWxB3U0Te9vXPWmqo+4kPvnss5mIiIgwt8+XwLCThW2uTwXVWj7jAg4FfZ2In3O1Kkb6mLrlBk4p0xPGmbzBu+UPpsA6+e2/EW7zyvSDO7dmVDXPfnC4WZDca3rQlDHapPxmsE62mTEoC/1Tc7G3tUKwxO84pxQ7Nxx/0Kfbr0drttbzKAUI3ihTYWf/uS73L5ZUbc93g1GZ/PEb3/3hGyDdbOhCwzDilFkuL4YTX+xbXYqT2OREDzzRcPOKFCJUgXHKHrG0aGa2bMp14ujygbZmIyUbJkqepwORRiDDjpuxHR+OkRlokTvcCovA2hT5k+fHtPQMmsipU+sl8JxWhCDErzS5yG+s8Utvnc38MvfPCZ1hV//4gHT04ZPHs8IbijRZd0yW2WSV1abDSKOdrHmmUvUbX8BwMHB2UOdMsu0ZLFRxAoicGfXwTY146hMFy3FDHXQ9cb9u9XwLJBzRrdVOI6OTZNY9TParscQJHZIyOe0dnCAZ38fDg6oguODh3eZ2l0+feap1ytiUB7sHqEY6oVRcDw+XOGcsG4KP/7RTU5WmSYVRtHz3oNbOAVVYbVJJHP4Gw958vkz1EVuxhkxz5mvO2anwP7+eQpsG4HWOrrOCN7IuaftCk6M3BspZfpSsJyp655374+o20JdZ8TK8F8FdULqCz1CSQmRgkih63rEChfr0L/I37rtoZs3xkxnNcj2vQmqgnfC7w827E0SKRteha7P9KYEHyhlaIFSCndu7DAXYWcScD6QF3aZeV4EcMaKIjz9YkUV9NIo7LPRpp7DesSiBHIuBK+0feb4pOb+7YiJMa486zoxW7ZwFU5OW3yA0GeiH2j5lQDsNZOtmG29V4oZQYefAkpBLHN17MjFtv0/6HW94bfkVcy4Mg64LNiFuXEJQAyKz4KZ8da9XaazGqeCojivjKNjUgVEBNnOYlWlCp5xFRCEUozUF5xTigm5GHvXRqgL9CsjqlyK6hmAAjw+XGI713A6YTqvKcWYLRtUCqUIIrBJHV0uLDeJ1BeujCOLTQvA7jhSig2zIvWYBka7sF53OC+4PmO5I/X2Mg9YsfyXJ1O7++YtUzexTdPhnHB4ugbLZwT/3PNhLgjzVYPb9v7pur1UTTEaoRRSl/EUUtPZOrWWuj6f88C5wt5OFWRUBS9SSYwVquCiB5PXbmbCq+vGrBCDo4oVMUZ8iJTOe8yJiOydReBgq29WPno6bx7O2iellyPtunZYq9Lq31sNzVCXOFx/Qt3UqHqsWxZKq5bLRwAHW9cuypVv6HNg+aqtWAXK2UZxsTe/1peHvGRrS0flVWu5fEMRMP5f5J+8D+XcifRafQAAAABJRU5ErkJggg==">   <!-- [0.101] icono de pestaña (cofre); evita el 404 de favicon.ico -->
-  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="./style.css">
   <!-- [0.085] Estilos CRÍTICOS del marco vertical: van aquí (además de en style.css) para que el diseño no dependa de que style.css esté actualizado -->
@@ -83,6 +82,8 @@
       #chestSubtitle { font-size: 11px !important; }
     }
   </style>
+  <!-- [0.103] Tailwind propio (tailwind.css, generado con la CLI) en lugar del CDN: sin aviso de consola y sin depender de internet. Va al final del head, igual que lo inyectaba el CDN, para conservar el orden de las reglas -->
+  <link rel="stylesheet" href="./tailwind.css">
 </head>
 <body id="appBody" class="select-none relative overflow-hidden bg-slate-950">
 
@@ -255,99 +256,94 @@
   <!-- CONTENEDOR DE POST-ITS -->
   <div id="notesContainer" class="absolute inset-0 z-15 pointer-events-none"></div>
 
-  <!-- MODAL DE PUZLES / MINIJUEGOS -->
-  <div id="minigameModal" class="fixed inset-0 z-40 bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-3 hidden">
-    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 w-full max-w-sm shadow-2xl relative flex flex-col items-center max-h-[90vh] overflow-y-auto">
+  <!-- MODAL DE PUZLES / MINIJUEGOS
+       [0.103] Pantalla nueva: tarjeta de instrucciones arriba, reloj grande, puzle centrado, botón entre el puzle y "Listo". La maqueta (rejilla) está en style.css, bloque "PUZLES 0.103". -->
+  <div id="minigameModal" class="fixed inset-0 z-40 bg-slate-950/95 hidden">
+    <div id="pzFrame">
 
-      <button id="closeMinigameBtn" class="absolute top-3 right-3 text-slate-500 hover:text-slate-300 text-lg w-8 h-8 flex items-center justify-center rounded-full bg-slate-800/50">
+      <button id="closeMinigameBtn" aria-label="Cerrar puzle">
         <i class="fa-solid fa-xmark"></i>
       </button>
 
-      <!-- TEMPORIZADOR DEL PUZLE -->
-      <div class="flex items-center gap-2 mb-1">
-        <h3 id="minigameTitle" class="text-xl font-black text-amber-400 tracking-wider font-retro uppercase">
-          CERRADURA TRADICIONAL
-        </h3>
-        <span id="puzzleTimerDisplay" class="bg-rose-950/90 text-rose-300 border border-rose-500/60 font-mono font-extrabold text-xs px-2.5 py-0.5 rounded-full animate-pulse">
-          ⏱️ 10s
-        </span>
+      <!-- Tarjeta de instrucciones (título + texto) -->
+      <div id="pzCard">
+        <h3 id="minigameTitle" class="font-retro uppercase">CERRADURA TRADICIONAL</h3>
+        <p id="minigameHelp"></p>
       </div>
 
-      <p id="minigameHelp" class="text-[11px] text-slate-400 mb-3 text-center">
-        Ajusta la posición de la ganzúa. Las zonas falsas hacen vibrar tu herramienta.
-      </p>
+      <!-- Reloj grande (independiente). El texto lo escribe startMinigameTimer -->
+      <div id="bigTimer"><span class="lab">TIEMPO</span><span id="bigTimerDigits" class="dig">--</span></div>
 
       <!-- 1. GANZÚA BÁSICA -->
-      <div id="lockpickContainer" class="w-full flex flex-col items-center gap-3">
-        <div class="w-full bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex flex-col gap-1">
-          <div class="flex justify-between text-[11px] font-bold text-amber-400">
-            <span>POSICIÓN DE LA GANZÚA</span>
-            <span id="angleReadout">0°</span>
-          </div>
-          <input id="angleSlider" type="range" min="-85" max="85" value="0" step="1">
-        </div>
-
-        <div class="relative w-48 h-48 flex items-center justify-center">
-          <div id="proximityGlow" class="absolute inset-0 rounded-full transition-all duration-150 border-4 border-slate-800 bg-slate-950 flex items-center justify-center">
-            <div id="cylinderGraphic" class="w-28 h-28 rounded-full bg-slate-800 border-4 border-slate-600 flex items-center justify-center transition-transform duration-75 relative shadow-inner">
-              <div class="w-3.5 h-12 bg-slate-950 rounded-sm border border-slate-700"></div>
+      <div id="lockpickContainer" class="pz-group hidden">
+        <div class="pz-body">
+          <div class="lp-slider">
+            <div class="lp-slider-head">
+              <span>POSICIÓN DE LA GANZÚA</span>
+              <span id="angleReadout">0°</span>
             </div>
-            <div id="pickNeedle" class="absolute top-4 w-1.5 h-16 bg-amber-400 origin-bottom rounded-full transition-transform duration-75" style="transform: rotate(0deg);"></div>
+            <input id="angleSlider" type="range" min="-85" max="85" value="0" step="1">
+          </div>
+
+          <div class="lp-dial relative flex items-center justify-center">
+            <div id="proximityGlow" class="absolute inset-0 flex items-center justify-center">
+              <div id="cylinderGraphic" class="rounded-full flex items-center justify-center relative">
+                <div class="lp-keyhole"></div>
+              </div>
+              <div id="pickNeedle" class="absolute origin-bottom" style="transform: rotate(0deg);"></div>
+              <div id="tensionWrench"></div>
+            </div>
+          </div>
+
+          <div class="lp-prox">
+            <span id="proximityText" class="text-rose-500">ROJO (LEJOS)</span>
           </div>
         </div>
 
-        <div class="w-full text-center text-[12px] font-bold py-1">
-          <span id="proximityText" class="text-rose-500">ROJO (LEJOS)</span>
-        </div>
-
-        <button id="forceLockBtn" class="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 active:from-emerald-500 text-white font-extrabold text-sm rounded-xl shadow-lg border border-emerald-400/30 flex items-center justify-center gap-2">
+        <button id="forceLockBtn" class="pz-btn">
           <i class="fa-solid fa-hand-pointer"></i> MANTÉN PARA PROBAR GIRAR
         </button>
       </div>
 
       <!-- 2. PISTONES DE ACERO -->
-      <div id="tumblerContainer" class="w-full bg-slate-950 border border-emerald-500/30 rounded-2xl p-3 flex flex-col items-center gap-3 hidden">
-        <p class="text-[10px] text-slate-400 text-center">
-          Pulsa el botón o toca la pantalla para fijar el <span class="text-amber-400 font-bold">pistón activo</span> en la <span class="text-emerald-400 font-bold">línea verde</span>.
-        </p>
-        <p id="tumblerTapHint" class="hidden text-[10px] text-emerald-300 font-bold text-center -mt-1"></p>
-
-        <div class="relative w-full h-52 bg-slate-900 rounded-xl border border-slate-800 p-2 flex justify-around items-center overflow-hidden">
-          <div id="shearLine" class="absolute left-0 right-0 h-3 bg-emerald-500/50 border-y border-emerald-400 z-10 pointer-events-none flex items-center justify-end pr-2 transition-all" style="top: 50%;">
-            <span class="text-[9px] font-mono text-emerald-300 font-bold tracking-widest uppercase bg-slate-950/80 px-1 rounded">CORTE</span>
+      <div id="tumblerContainer" class="pz-group hidden">
+        <div class="pz-body">
+          <p id="tumblerTapHint" class="hidden text-[10px] text-emerald-300 font-bold text-center"></p>
+          <div id="tumblerBoard" class="relative w-full overflow-hidden">
+            <div id="shearLine" class="absolute left-0 right-0 z-10 pointer-events-none flex items-center justify-end pr-2" style="top: 50%;">
+              <span>CORTE</span>
+            </div>
+            <div class="flex justify-around items-center w-full h-full relative z-0" id="tumblerPins"></div>
           </div>
-          <div class="flex justify-around items-center w-full h-full relative z-0 gap-1" id="tumblerPins"></div>
         </div>
 
-        <button id="tapPinBtn" class="w-full py-3.5 bg-gradient-to-r from-amber-500 to-yellow-500 active:from-amber-400 text-slate-950 font-black text-sm rounded-xl shadow-lg border border-yellow-300/50 flex items-center justify-center gap-2">
+        <button id="tapPinBtn" class="pz-btn">
           <i class="fa-solid fa-bolt"></i> ¡FIJAR PISTÓN AHORA!
         </button>
       </div>
 
-      <!-- 3. TERMINAL DIGITAL / HACKEO USB -->
-      <div id="hackContainer" class="w-full bg-slate-950 border border-emerald-500/30 rounded-2xl p-3 text-emerald-400 font-retro text-xs flex flex-col gap-2.5 hidden">
-        <div class="flex justify-between border-b border-emerald-900/50 pb-1.5 text-xs">
+      <!-- 3. TERMINAL DIGITAL / HACKEO USB (monitor CRT) -->
+      <div id="hackContainer" class="pz-body flex flex-col hidden">
+        <div class="hk-head flex justify-between pb-1.5 text-xs">
           <span>TERMINAL SECURE V5</span>
-          <span>INTENTOS: <span id="hackAttempts" class="text-emerald-300 font-bold">4</span></span>
+          <span>INTENTOS: <span id="hackAttempts" class="font-bold">4</span></span>
         </div>
-        <div id="hackHistory" class="h-20 overflow-y-auto space-y-1 text-xs text-emerald-500/90 pr-1 font-mono">
+        <div id="hackHistory" class="h-20 overflow-y-auto space-y-1 text-xs pr-1 font-mono">
           <div>> MATRIZ DE LONGITUD UNIFORME...</div>
         </div>
-        <div class="text-[10px] text-emerald-300 font-bold">PALABRAS DE LONGITUD <span id="hackWordLength" class="text-amber-400">6</span>:</div>
+        <div class="text-[10px] font-bold hk-len">PALABRAS DE LONGITUD <span id="hackWordLength">6</span>:</div>
         <div id="hackWordGrid" class="grid grid-cols-2 gap-1.5 max-h-36 overflow-y-auto pr-1"></div>
+        <div class="crt-vig"></div><div class="crt-roll"></div><div class="crt-slice"></div>
       </div>
 
       <!-- 4. RED HIDRÁULICA DE VAPOR -->
-      <div id="pipeContainer" class="w-full bg-slate-950 border border-sky-500/30 rounded-2xl p-3 flex flex-col items-center gap-2.5 hidden">
-        <div class="text-xs text-sky-400 font-bold flex justify-between w-full">
-          <span class="flex items-center gap-1.5"><i class="fa-solid fa-faucet"></i> UNE ENTRADA Y SALIDA</span>
+      <div id="pipeContainer" class="pz-group hidden">
+        <div class="pz-body">
+          <div id="pipeGrid" class="grid"></div>
         </div>
-        <div id="pipeGrid" class="grid gap-1.5 bg-slate-900 p-2.5 rounded-xl border border-slate-800"></div>
       </div>
 
-      <div id="minigameStatus" class="mt-2 text-xs font-bold text-slate-300 h-5 flex items-center text-center">
-        Listo
-      </div>
+      <div id="pzFoot"><div id="minigameStatus">Listo</div></div>
     </div>
   </div>
 
@@ -367,7 +363,7 @@
 
     <div class="my-auto py-4 flex flex-col items-center gap-3">
       <div id="npcBigWrap" class="npc-big hidden"><img id="npcBigImg" alt=""></div>
-      <p id="npcSpeechText" class="w-full text-lg sm:text-xl font-mono leading-relaxed italic bg-slate-900/60 border border-slate-800 p-5 rounded-2xl shadow-inner text-center">
+      <p id="npcSpeechText" class="w-full text-lg sm:text-xl font-mono leading-relaxed italic bg-slate-900 border border-slate-700 p-5 rounded-2xl shadow-inner text-center" style="position:relative;z-index:1">   <!-- [0.103] banner SÓLIDO: no se ve el personaje detrás -->
         "..."
       </p>
 

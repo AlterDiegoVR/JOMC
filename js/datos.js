@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — datos.js — VERSIÓN 0.102
+// JUST ONE MORE CHEST — datos.js — VERSIÓN 0.103
 // DATOS_JUEGO: configuración y balance
 // ==========================================================================
 
@@ -9,7 +9,7 @@
 
 const DATOS_JUEGO = {
   // [0.088] Versión visible en pantalla (esquina inferior central) para que las capturas la incluyan
-  VERSION: '0.102',
+  VERSION: '0.103',
 
   // [0.089] Avisos "+N" / "-N" de herramientas. ESPERAR_PANTALLA_LIBRE:true = recupera la idea anterior (esperar a que no haya
   // banners, tiendas ni diálogos encima). Con false salen siempre, por encima de todo.
@@ -47,7 +47,16 @@ const DATOS_JUEGO = {
   // [0.095] Post-its en blanco donde escribe el jugador. COFRES = cofres tras los que aparece el post-it vacío; en el bucle siguiente
   // el texto sale en el cofre anterior (COFRE-1). MAX_CARACTERES = límite al escribir.
   NOTAS_JUGADOR: { COFRES: [13, 37], MAX_CARACTERES: 60, ANCHO_PX: 210 },
-  AYUDAS: { GANZUA_TACTIL: { VECES: 3, ANILLO: 'AGARRA LA GANZÚA Y ARRÁSTRALA', CENTRO: 'MANTÉN EL CENTRO' }, PISTONES_TOQUE: { VECES: 3, TEXTO: 'También puedes tocar cualquier punto de la pantalla para fijar el pistón.' } },
+  AYUDAS: { GANZUA_TACTIL: { VECES: 3, ANILLO: 'AGARRA LA GANZÚA Y ARRÁSTRALA', CENTRO: 'MANTÉN EL CENTRO' }, PISTONES_TOQUE: { VECES: 3, TEXTO: 'También puedes tocar cualquier punto de la pantalla para fijar el pistón.' },
+    // [0.103] Texto de la tarjeta de instrucciones de cada puzle (HTML permitido)
+    PUZLES: {
+      lockpick: 'Ajusta la posición de la ganzúa. Las zonas falsas hacen vibrar tu herramienta.',
+      tumbler: 'Pulsa el botón o toca la pantalla para fijar el <span class="text-amber-400 font-bold">pistón activo</span> con la <span class="text-amber-400 font-bold">unión latón/acero</span> sobre la <span class="text-emerald-400 font-bold">línea verde</span>.',
+      hack: 'Elige la palabra de la lista. Cada intento te dice cuántas letras coinciden.',
+      pipe: 'Gira las tuberías para llevar el agua de la válvula a la salida.'
+    } },
+  // [0.103] Pitido de cuenta atrás de los puzles (Variante D, Latido): uno por segundo en los últimos SEGUNDOS s, cada vez más agudo
+  CUENTA_ATRAS: { ACTIVAR: true, SEGUNDOS: 5 },
 
   // [0.090] Enfado del Duende al NO comprar en la tienda especial (cofres 85/88/90): sacudida (px, ms) y nivel de sonido 1-3
   ENFADO_DUENDE: { 85: { SACUDIDA_PX: 5, MS: 380, NIVEL: 1 }, 88: { SACUDIDA_PX: 9, MS: 560, NIVEL: 2 }, 90: { SACUDIDA_PX: 15, MS: 900, NIVEL: 3 }, DEFAULT: { SACUDIDA_PX: 5, MS: 380, NIVEL: 1 } },
@@ -141,8 +150,11 @@ const DATOS_JUEGO = {
       }
     },
 
+    // [0.103] Filtro 2x fino (Scale2x) sobre los sprites de estos bancos de ASSETS. ACTIVAR: false = sprites tal cual.
+    FILTRO_2X: { ACTIVAR: true, BANCOS: ['trapero'] },
+
     // [0.101] Imagen de fondo de cada puzle (VELO: 0 = imagen limpia, 1 = negro)
-    FONDOS_PUZLES: { ACTIVAR: true, VELO: 0.5 },
+    FONDOS_PUZLES: { ACTIVAR: true, VELO: 0 },
 
     // [0.086] Texto un poco más grande (post-its, descripciones, etiquetas). false = tamaños de la 0.085.
     TEXTO_GRANDE: true,

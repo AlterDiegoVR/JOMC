@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — audio.js — VERSIÓN 0.102
+// JUST ONE MORE CHEST — audio.js — VERSIÓN 0.103
 // motor de audio
 // ==========================================================================
 
@@ -242,6 +242,18 @@ class AudioEngine {
     this._tone(233, 220, 0.9, 'sawtooth', 0.05, 0.3);
   }
   // [0.092] Subida de nivel: fanfarria 8/16 bits (arpegio de onda cuadrada, bajo triangular y remate largo)
+  // [0.103] Cuenta atrás de los puzles (Variante D "Latido"): golpe grave que sube de tono + clic agudo. i = 0..4 (5 s … 1 s)
+  playCountdownBeep(i = 0) {
+    if (!this.ctx || this.muted) return;
+    const f = [70, 78, 88, 100, 115][Math.max(0, Math.min(4, i))];
+    this._tone(f, f * 0.55, 0.2, 'sine', 0.5);
+    this._tone(1800 + i * 250, 1800 + i * 250, 0.02, 'square', 0.05, 0.02);
+  }
+  // [0.103] Subida de nivel rápida (durante la secuencia final, sin parar el juego): cuatro notas muy cortas
+  playLevelUpQuick() {
+    if (!this.ctx || this.muted) return;
+    [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => this._tone(f, f, 0.08, 'square', 0.07, i * 0.06));
+  }
   playLevelUpFanfare() {
     if (!this.ctx || this.muted) return;
     [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => this._tone(f, f, 0.11, 'square', 0.07, i * 0.09));
@@ -378,13 +390,13 @@ class AudioEngine {
 }
 const audio = new AudioEngine();
 // [0.087] Registro del último sonido para que el clic de interfaz no se solape con sonidos propios
-['playClick', 'playPaperRustle', 'playDecoyBuzz', 'playBreak', 'playUnlockFanfare', 'playLockCharge', 'playLockOpen', 'playGameOver', 'playDarkOut', 'playLightOn', 'playDecorTap', 'playKeyPickup', 'playKeySpend', 'playCardBeep', 'playCashRegister', 'playCurseStart', 'playCurseEnd', 'playDialogueMelody', 'playIntro', 'playDuendeAngry', 'playSwoosh', 'playGameOverStrike', 'playLevelUpFanfare', 'playRouletteTick', 'playCardRise', 'playChestMutate'].forEach(n => {
+['playClick', 'playPaperRustle', 'playDecoyBuzz', 'playBreak', 'playUnlockFanfare', 'playLockCharge', 'playLockOpen', 'playGameOver', 'playDarkOut', 'playLightOn', 'playDecorTap', 'playKeyPickup', 'playKeySpend', 'playCardBeep', 'playCashRegister', 'playCurseStart', 'playCurseEnd', 'playDialogueMelody', 'playIntro', 'playDuendeAngry', 'playSwoosh', 'playGameOverStrike', 'playLevelUpFanfare', 'playLevelUpQuick', 'playRouletteTick', 'playCardRise', 'playChestMutate'].forEach(n => {
   const f = AudioEngine.prototype[n];
   AudioEngine.prototype[n] = function (...a) { this.lastSound = performance.now(); return f.apply(this, a); };
 });
 // [0.090] Categorías de volumen: los sonidos pequeños (clics, avisos) y los de botín pasan por su bus, con volumen distinto en escritorio y móvil
 [[ 'busSmall', ['playClick', 'playChestMutate', 'playUiClick', 'playDecoyBuzz', 'playPaperRustle', 'playLockCharge', 'playDecorTap', 'playCardBeep', 'playKeyPickup', 'playKeySpend', 'playSwoosh', 'playRouletteTick', 'playCardRise'] ],
- [ 'busLoot', ['playUnlockFanfare', 'playCashRegister', 'playLevelUpFanfare'] ]].forEach(([bus, names]) => names.forEach(n => {
+ [ 'busLoot', ['playUnlockFanfare', 'playCashRegister', 'playLevelUpFanfare', 'playLevelUpQuick'] ]].forEach(([bus, names]) => names.forEach(n => {
   const f = AudioEngine.prototype[n];
   AudioEngine.prototype[n] = function (...a) { const prev = this._bus; this._bus = this[bus] || null; try { return f.apply(this, a); } finally { this._bus = prev; } };
 }));
