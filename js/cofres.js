@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — cofres.js — VERSIÓN 0.103
+// JUST ONE MORE CHEST — cofres.js — VERSIÓN 0.104
 // selección de cofres, banner, diálogos, post-its, botín y subida de nivel
 // ==========================================================================
 
@@ -8,7 +8,11 @@ function generateScreenChests() {
   let chestCount = STATE.chestsOpened < 4 ? 1 : (Math.random() < 0.6 ? 2 : 3);
   const destino = modOn('destino') && !isClimaxActive();
   if (modOn('solitario')) chestCount = 1;   // [0.093] Cofres Solitarios
-  if (destino) chestCount = 3;              // [0.093] Cofre del Destino: eliges entre 3 rarezas
+  // [0.104] Cofre del Destino: reparto 50% dos / 30% tres / 20% cuatro cofres (rarezas y tipos con las probabilidades normales)
+  if (destino && STATE.chestsOpened >= 4) {
+    const dc = DATOS_JUEGO.MODS_WILDCARD.DESTINO_REPARTO || { 2: 0.5, 3: 0.3, 4: 0.2 };
+    const r0 = Math.random(); chestCount = r0 < dc[2] ? 2 : (r0 < dc[2] + dc[3] ? 3 : 4);
+  }
 
   for (let i = 0; i < chestCount; i++) {
     const availableTypes = DATOS_JUEGO.COFRES.ESTANDAR.filter(t => {
@@ -57,11 +61,22 @@ function generateScreenChests() {
       else rarity = CHEST_RARITIES[0];
     }
 
-    if (destino) {   // [0.093]
-      const ids = DATOS_JUEGO.MODS_WILDCARD.DESTINO_RAREZAS;
-      rarity = CHEST_RARITIES.find(r => r.id === ids[i % ids.length]) || rarity;
-    }
     STATE.screenChests.push({ type: randomType, rarity, fog: modOn('niebla') });   // [0.093] fog = rareza oculta
+  }
+
+  // [0.104] BALANCE: en el cofre 4 de cada nivel que desbloquea un tipo de puzle (3 cofres bloqueados + este), al menos un cofre en pantalla es del tipo recién desbloqueado.
+  // La garantía se repite si la pantalla se regenera (reroll, luz misteriosa...) mientras sea ese mismo cofre.
+  {
+    const since = STATE.chestsOpened - (STATE.chestsAtLevelUp || 0);
+    const forced = DATOS_JUEGO.COFRES.ESTANDAR.filter(t => t.minNivel > 1 && STATE.level === t.minNivel && since === 3);
+    let used = [];
+    forced.forEach(t => {
+      if (STATE.screenChests.some(c => c.type.id === t.id)) return;
+      const free = STATE.screenChests.map((c, k) => k).filter(k => !used.includes(k));
+      if (!free.length) return;
+      const k = free[Math.floor(Math.random() * free.length)];
+      STATE.screenChests[k].type = t; used.push(k);
+    });
   }
 
   STATE.activeChestIdx = 0;
@@ -90,6 +105,7 @@ function updateChestSelectionUI() {
   const multiGrid = document.getElementById('multiChestGrid');
   if (multiGrid) {
     multiGrid.innerHTML = '';
+    multiGrid.classList.toggle('quad4', STATE.screenChests.length === 4);   // [0.104] 4 cofres: centrados en 2x2 con velo difuminado
 
     if (STATE.screenChests.length > 1) {
       multiGrid.classList.remove('hidden');
@@ -179,6 +195,17 @@ function setHelp(el, text) {
 }
 
 // [0.089b] delayKey (opcional): tipo de mensaje de "clic compulsivo". Las primeras VECES de cada tipo, por partida, el botón de cerrar aparece tras RETARDO_MS.
+// [0.104] Resalta palabras clave de un texto (para quien lee en diagonal): devuelve HTML seguro. Listas en DATOS_JUEGO.PALABRAS_CLAVE
+function kwHighlight(text) {
+  const esc = String(text == null ? '' : text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const cfg = DATOS_JUEGO.PALABRAS_CLAVE || {};
+  if (cfg.ACTIVAR === false) return esc;
+  const bad = (cfg.MALAS || []).join('|'), good = (cfg.BUENAS || []).join('|');
+  const W = list => list && '(?<![\\p{L}])(?:' + list + ')(?![\\p{L}])';
+  const re = new RegExp('(' + [W(bad), W(good), '[+\\-]?#?\\d+(?:[.,]\\d+)?(?:\\s?(?:cofres?|GP|XP|ganz[uú]as?|llaves?|segundos?|%))?'].filter(Boolean).join('|') + ')', 'giu');
+  const badRe = bad ? new RegExp('^(?:' + bad + ')$', 'iu') : null;
+  return esc.replace(re, m => `<b class="${badRe && badRe.test(m) ? 'kw kw-bad' : 'kw'}">${m}</b>`);
+}
 let acceptDelayTimer = null;
 function showPersistentFeedback(message, delayKey = null) {
   const banner = document.getElementById('persistentFeedbackBanner');
@@ -201,8 +228,12 @@ function showPersistentFeedback(message, delayKey = null) {
   const visible = banner && !banner.classList.contains('hidden');
   if (txt) {
     txt.style.whiteSpace = 'pre-line';
-    if (visible && txt.textContent && txt.textContent !== message && !txt.textContent.includes(message)) txt.textContent = txt.textContent + '\n\n' + message;
-    else txt.textContent = message;
+    const prev = txt.dataset.raw || txt.textContent;
+    let raw;
+    if (visible && prev && prev !== message && !prev.includes(message)) raw = prev + '\n\n' + message;
+    else raw = message;
+    txt.dataset.raw = raw;
+    txt.innerHTML = kwHighlight(raw);   // [0.104] palabras clave resaltadas
   }
   if (banner) banner.classList.remove('hidden');
 }
@@ -233,7 +264,7 @@ function triggerSequentialDialogue(speaker, speechText, iconClass, subtitleText,
   if (npcSub) npcSub.textContent = subtitleText;
 
   const npcSpeech = document.getElementById('npcSpeechText');
-  if (npcSpeech) npcSpeech.textContent = speechText;
+  if (npcSpeech) npcSpeech.innerHTML = kwHighlight(speechText);   // [0.104] palabras clave resaltadas
 
   const npcIcon = document.getElementById('npcIcon');
   if (npcIcon) npcIcon.className = `fa-solid ${iconClass}`;
@@ -270,6 +301,15 @@ function triggerSequentialDialogue(speaker, speechText, iconClass, subtitleText,
     if (bigWrap) {
       if (bigOn) { bigImg.src = src; bigWrap.classList.remove('hidden'); bigWrap.classList.toggle('trap', isTrap); }
       else bigWrap.classList.add('hidden');
+    }
+    // [0.104] Fondo de tienda + personaje de cuerpo entero abajo (texto arriba)
+    const dlgM = document.getElementById('dialogueModal'), dlgFig = document.getElementById('dlgFig'), dlgScene = document.getElementById('dlgScene');
+    if (dlgM) {
+      dlgM.classList.toggle('dlg-shop', bigOn); dlgM.classList.toggle('dlg-t', bigOn && isTrap); dlgM.classList.toggle('dlg-d', bigOn && !isTrap);
+      if (bigOn && dlgFig) {
+        dlgFig.src = src;
+        if (!isTrap && dlgScene && typeof shopImg === 'function') { shopArtInit(); const sc = shopImg('escena'); if (sc) dlgScene.src = sc; }
+      }
     }
     let img = document.getElementById('npcPortraitImg');
     if (src && !bigOn) {
@@ -544,6 +584,7 @@ function triggerLootExplosion() {
     spawnParticles(cx, cy, active.rarity.color, active.rarity.id === 'legendario' ? 100 : 50, active.rarity.id === 'legendario');
 
     STATE.chestsOpened++;
+    if (isAutoOpenPhase()) { try { autoOpenFx(STATE.chestsOpened); } catch (e) {} }   // [0.104] más partículas, vibración y movimiento en la secuencia final
     // [0.096] Los post-its de jugador ya NO se borran solos: se quedan hasta que el jugador los toque
     statsAdd('chests', 1); if (puzzleStat) { statsPuzzle(puzzleStat, true); puzzleStat = null; }   // [0.090]
     STATE.opensByType = STATE.opensByType || {};
@@ -885,6 +926,11 @@ function triggerLootExplosion() {
   }
 }
 
+// [0.104] ¿Estamos en la parte automática de la secuencia final (cofres 101-110)?
+function isAutoOpenPhase() {
+  const c = DATOS_JUEGO.PROGRESIÓN.SECUENCIA_HISTORIA;
+  return !STATE.sequenceBroken && STATE.climaxPhase && STATE.chestsOpened >= c.COFRE_AUTO_OPEN_INICIO && STATE.chestsOpened <= c.COFRE_AUTO_OPEN_FIN;
+}
 function processLevelUp(fromDeal) {
   // [CAMBIO] Si viene del Empujón Siniestro (fromDeal === true) la XP se trata según DATOS_JUEGO.ECONOMIA.TRAPERO.empujon_siniestro_xp
   if (fromDeal === true) {
@@ -900,8 +946,8 @@ function processLevelUp(fromDeal) {
   STATE.chestsAtLevelUp = STATE.chestsOpened;
   STATE.xpNext = getXpForLevel(STATE.level);
 
-  // [0.103] En la secuencia final (fase de clímax) la subida de nivel NO abre la ventana de mejoras: solo efecto en la barra, sonido y cartel rápido
-  if (STATE.climaxPhase) {
+  // [0.104] Subida de nivel rápida SOLO cuando la apertura de cofres ya es totalmente automática (cofres 101-110); antes de eso, subida normal
+  if (isAutoOpenPhase()) {
     quickLevelUpFx();
     updateUI();
     if (STATE.xp >= STATE.xpNext) STATE.eventQueue.unshift(() => processLevelUp());   // si sobra XP para otro nivel, se repite el efecto
@@ -938,7 +984,7 @@ const claimLootBtn = document.getElementById('claimLootBtn');
 if (claimLootBtn) {
   claimLootBtn.addEventListener('click', () => {
     const lootModal = document.getElementById('lootModal');
-    showSceneVeil();   // [0.088] el telón entra antes de cerrar el botín (sin destello de la habitación)
+    if (isAutoOpenPhase()) killSceneVeil(); else showSceneVeil();   // [0.088] el telón entra antes de cerrar el botín; [0.104] en la secuencia automática NO hay telón (se ve la sala)
     if (lootModal) lootModal.classList.add('hidden');
 
     STATE.eventQueue = [];

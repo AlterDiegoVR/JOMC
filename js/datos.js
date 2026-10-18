@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — datos.js — VERSIÓN 0.103
+// JUST ONE MORE CHEST — datos.js — VERSIÓN 0.104
 // DATOS_JUEGO: configuración y balance
 // ==========================================================================
 
@@ -9,7 +9,14 @@
 
 const DATOS_JUEGO = {
   // [0.088] Versión visible en pantalla (esquina inferior central) para que las capturas la incluyan
-  VERSION: '0.103',
+  VERSION: '0.104',
+  // [0.104] Efectos de la apertura automática de la secuencia final (cofres 101-110); la intensidad sube del primero al último (k = 0..1)
+  SECUENCIA_FINAL_FX: { ACTIVAR: true, ESTALLIDOS_BASE: 2, ESTALLIDOS_EXTRA: 4, PARTICULAS_POR_ESTALLIDO: 40, HACIA_CENTRO_BASE: 30, HACIA_CENTRO_EXTRA: 60,
+    SACUDIDA_PX: 6, SACUDIDA_EXTRA_PX: 10, SACUDIDA_MS: 520, PULSO_ZOOM: 0.02, DESTELLO: 0.10 },
+  // [0.104] Palabras clave resaltadas en banners y diálogos (MALAS en rojo, BUENAS y cifras en ámbar). Se escriben como parte de una expresión regular.
+  PALABRAS_CLAVE: { ACTIVAR: true,
+    MALAS: ['maldici[oó]n', 'maldit[oa]s?', 'robo', 'robad[oa]s?', 'pierdes', 'perdido', 'p[eé]rdida', 'fallo', 'fallaste', 'se rompe', 'rot[oa]s?', 'oscuridad', 'trampa', 'castigo', 'trato injusto'],
+    BUENAS: ['oro', 'GP', 'XP', 'nivel', 'escudo', 'racha', 'bote de riesgo', 'apuesta', 'regalo', 'gratis', 'descuento', 'doble', 'ganz[uú]as?', 'llaves?', 'v[aá]lvulas?'] },
 
   // [0.089] Avisos "+N" / "-N" de herramientas. ESPERAR_PANTALLA_LIBRE:true = recupera la idea anterior (esperar a que no haya
   // banners, tiendas ni diálogos encima). Con false salen siempre, por encima de todo.
@@ -125,6 +132,7 @@ const DATOS_JUEGO = {
       FRASES_ROBO: ['...ME HA PARECIDO VER ALGO', '¿DÓNDE HA IDO MI MERCANCÍA?', 'QUÉ MANOS TAN LISTAS'],
       FRASES_RECICLAJE: ['EL TALLER LO AGRADECE', 'DE LATÓN A ACERO', 'BUEN CANJE'],
       FRASE_ESPECIAL: ['SOLO UNA COSITA...', 'NO SE VAYA SIN NADA', 'SE LO PONGO FÁCIL'],
+      COFRADIA_PROB_TIENDA: 0.5,   // [0.104] probabilidad de que la Carta Cofradía entre en el catálogo de la tienda del Duende
       // [0.102] Descripciones visibles en cada fila de la tienda del Duende
       DESCRIPCIONES: {
         pack_ganzuas: 'Tres ganzúas básicas para los cofres de madera.',
@@ -133,6 +141,7 @@ const DATOS_JUEGO = {
         pack_valvulas: 'Una válvula para los cofres de vapor.',
         carta_auto_open: 'Abre al instante el cofre activo, sin puzle.',
         carta_escudo: 'Si fallas el siguiente puzle, no pierdes la herramienta.',
+        carta_cofradia: 'Cambia los cofres de la pantalla por 10 al azar, de cualquier rareza. Tú eliges uno.',
         carta_apuesta: 'Activa el Bote de Riesgo: doble o nada. Cóbralo cuando quieras.',
         contador_cofres: 'Un contador que muestra cuántos cofres llevas abiertos.',
         reciclaje_proPicks: 'Funde tus ganzúas y fórjalas en un pin de acero.',
@@ -141,7 +150,7 @@ const DATOS_JUEGO = {
       },
       BOTONES: { COMPRAR: 'COMPRAR', ROBAR: 'ROBAR', CANJEAR: 'CANJEAR' },
       // [0.102] Tratos del Trapero: fundido a negro, texto del Trapero y tratos en cascada
-      TRAPERO: { FUNDIDO_MS: 600, CASCADA_MS: 380, SONIDO_CASCADA: true, ESCALA_PJ_MIN_ESPACIO: 0.8 },
+      TRAPERO: { FUNDIDO_MS: 230, CASCADA_MS: 380, SONIDO_CASCADA: true, ESCALA_PJ_MIN_ESPACIO: 0 }   /* [0.104] fundido a negro de 600 a 230 ms (antes ≈1,3 s de negro, ahora ≈0,5 s); ESCALA_PJ_MIN_ESPACIO 0 = el Trapero NO se reduce con los tratos (0.8 era la regla anterior) */,
       ETIQUETAS_TRAPERO: {
         vender_ganzuas: 'VENTA', vender_avanzada: 'VENTA', canje_directo: 'CANJE',
         pacto_sangre: 'PACTO', pacto_sombra: 'PACTO', amor_arte: 'PACTO', dedos_rotos: 'PACTO',
@@ -185,6 +194,11 @@ const DATOS_JUEGO = {
 
     // [0.089b] Escala de las ventanas informativas en PC: ancho del marco / ANCHO_BASE, con tope MAX. Los puzles (minigameModal) no se escalan.
     ESCALA_VENTANAS: { ACTIVAR: true, ANCHO_BASE: 390, MAX: 1.7 },
+
+    // [0.104] Escalado de los puzles ganzúa / tuberías / terminal al espacio libre en PC (zoom máximo y margen vertical en px). En móvil no se agranda (salvo las tuberías, que llenan el ancho).
+    ESCALA_PUZLES: { ACTIVAR: true, MAX: { lockpick: 1.7, pipe: 2.1, hack: 1.6 }, MARGEN_PX: 26, PIPE_TOPE_CASILLA_PX: 72 },
+    // [0.104] Terminal: 'SCANLINES' = opacidad de las líneas de barrido (0 = sin líneas, 0.38 = como la 0.103). 'BRILLO' multiplica el halo verde de las letras.
+    TERMINAL_CRT: { SCANLINES: 0.06, BRILLO: 1.5 },
 
     // [0.089] Doble toque también con un solo cofre; el botón "Forzar cerradura" comparte el estado "armado" con la cerradura
     BOTON_ARMADO_TEXTO: 'PULSA DE NUEVO',
@@ -232,7 +246,8 @@ const DATOS_JUEGO = {
       shield: "Carta ESCUDO: si fallas el siguiente puzle, no pierdes la herramienta.",
       riskPot: "Carta APUESTA: activa el Bote de Riesgo (Doble o Nada). Cobra el bote cuando quieras con «Cobrar Bote».",
       perdedor: "Carta PERDEDOR: tras 5 fallos (seguidos o no), el botín del siguiente cofre será Legendario x2.",
-      summonDuende: "Carta DUENDE: invoca al Duende y su tienda al momento."
+      summonDuende: "Carta DUENDE: invoca al Duende y su tienda al momento.",
+      cofradia: "Carta COFRADÍA: cambia los cofres de la pantalla por 10 cofres aleatorios, de cualquier rareza, para que elijas uno."
     }
   },
 
@@ -281,6 +296,7 @@ const DATOS_JUEGO = {
       carta_escudo: 40,
       carta_apuesta: 50,
       contador_cofres: 100,
+      carta_cofradia: 100,   // [0.104]
       aumento_precio_por_compra: 5
     },
     RECICLAJE: {
@@ -937,7 +953,8 @@ const DATOS_JUEGO = {
     NIEBLA:       { BOTIN_PCT: 0.4 },
     RELOJ_BUENO:  { TIEMPO_MULT: 1.5 },
     RELOJ_MALO:   { TIEMPO_MULT: 0.7 },
-    DESTINO_RAREZAS: ['normal', 'raro', 'epico']
+    DESTINO_RAREZAS: ['normal', 'raro', 'epico'],   // [0.104] ya no se usa
+    DESTINO_REPARTO: { 2: 0.5, 3: 0.3, 4: 0.2 }   // [0.104] Cofre del Destino: probabilidad de 2 / 3 / 4 cofres por pantalla
   },
   WILDCARDS: [
     { id: "cofres_pesados", nombre: "Cofres Pesados", tipo: "PERJUDICIAL", desc: "Próximos 5 cofres Raros+ piden +1 herramienta extra.", efecto: "COFRES_PESADOS", valor: 5 },
@@ -955,6 +972,7 @@ const DATOS_JUEGO = {
     { id: "chispa_genio", nombre: "Chispa de Genio", tipo: "BENEFICIOSO", desc: "Una idea te ilumina de golpe: recibes el 35% de la XP que exige tu nivel.", efecto: "DAR_XP_PCT_NIVEL", valor: 0.35, peso: 0.5 },
     { id: "fortuna_doble", nombre: "Fortuna Doble", tipo: "BENEFICIOSO", desc: "Sientes que hoy todo vale el doble: obtienes +1 Carta Doble o Nada.", efecto: "DAR_CARTA", valor: { double: 1 } },
     { id: "escudo_prestado", nombre: "Escudo Prestado", tipo: "BENEFICIOSO", desc: "Algo invisible te cubre las espaldas: obtienes +1 Carta Escudo.", efecto: "DAR_CARTA", valor: { shield: 1 } },
+    { id: "cofradia_cofre", nombre: "Cofradía del Cofre", tipo: "BENEFICIOSO", desc: "Una cofradía de cofres te ofrece sus servicios: obtienes +1 Carta COFRADÍA (10 cofres aleatorios a elegir).", efecto: "DAR_CARTA", valor: { cofradia: 1 }, minNivel: 2, peso: 0.6 },
     { id: "recado_duende", nombre: "Recado del Duende", tipo: "BENEFICIOSO", desc: "Un papelito arrugado con un sello conocido: obtienes +1 Carta Invoca al Duende.", efecto: "DAR_CARTA", valor: { summonDuende: 1 }, peso: 0.6 },
     { id: "peaje_sombras", nombre: "Peaje de las Sombras", tipo: "PERJUDICIAL", desc: "Algo te vacía los bolsillos al pasar: pierdes {20} GP.", efecto: "PERDER_ORO", valor: 20 },
     { id: "pulso_tembloroso", nombre: "Pulso Tembloroso", tipo: "PERJUDICIAL", desc: "Te tiemblan las manos: minijuegos un 25% más exigentes durante 3 cofres.", efecto: "PUZLES_EXIGENTES", valor: 3 },
@@ -967,7 +985,7 @@ const DATOS_JUEGO = {
     { id: "racha_congelada", nombre: "Racha Congelada", tipo: "BENEFICIOSO", desc: "Tus próximos 6 fallos en un puzle NO rompen tu racha.", efecto: "MODIFICADOR", valor: { id: "congelada", usos: 6 } },
     { id: "reloj_lento", nombre: "Reloj Lento", tipo: "BENEFICIOSO", desc: "Durante 6 cofres tienes un 50% más de tiempo en los puzles.", efecto: "MODIFICADOR", valor: { id: "relojBueno", cofres: 6 } },
     { id: "hambre_xp", nombre: "Hambre de XP", tipo: "BENEFICIOSO", desc: "Durante 5 cofres tu XP se DUPLICA... pero no ganas nada de GP.", efecto: "MODIFICADOR", valor: { id: "hambre", cofres: 5 }, minNivel: 2 },
-    { id: "cofre_destino", nombre: "Cofre del Destino", tipo: "BENEFICIOSO", desc: "La próxima pantalla muestra 3 cofres de distinta rareza: tú eliges cuál abrir.", efecto: "MODIFICADOR", valor: { id: "destino", cofres: 1 }, minNivel: 2, peso: 0.7 },
+    { id: "cofre_destino", nombre: "Cofre del Destino", tipo: "BENEFICIOSO", desc: "Las pantallas pueden mostrar hasta 4 cofres a elegir.", efecto: "MODIFICADOR", valor: { id: "destino", cofres: 1 }, minNivel: 2, peso: 0.7 },
     { id: "reloj_roto", nombre: "Reloj Roto", tipo: "PERJUDICIAL", desc: "Durante 5 cofres tienes un 30% menos de tiempo en los puzles.", efecto: "MODIFICADOR", valor: { id: "relojMalo", cofres: 5 } },
     { id: "ganzua_perdida", nombre: "Ganzúa Perdida", tipo: "PERJUDICIAL", desc: "Se te cae una ganzúa por una rendija: pierdes 1 Ganzúa (si tienes más de 1).", efecto: "PERDER_HERRAMIENTAS", valor: { picks: 1 } }
   ],

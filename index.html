@@ -202,6 +202,11 @@
         <span class="font-bold hidden">DUENDE</span>
         <span id="cntSummon" class="text-[9px] text-fuchsia-400 font-mono">x0</span>
       </button>
+      <button id="abilityCofradiaBtn" class="hidden flex-none bg-teal-950/80 border border-teal-500/40 hover:bg-teal-900 text-teal-300 px-2 py-1 rounded-xl text-[10px] flex flex-row items-center gap-1.5 active:scale-95 disabled:opacity-40">
+        <i class="fa-solid fa-boxes-stacked text-xs"></i>
+        <span class="font-bold hidden">COFRADÍA</span>
+        <span id="cntCofradia" class="text-[9px] text-teal-400 font-mono">x0</span>
+      </button>
     </div>
   </header>
 
@@ -349,6 +354,9 @@
 
   <!-- MODAL DE DIÁLOGOS NARRATIVOS -->
   <div id="dialogueModal" class="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-xl p-6 flex flex-col justify-between hidden">
+    <!-- [0.104] Diálogos narrativos con fondo de tienda: texto arriba, personaje de cuerpo entero abajo (como la apertura de la tienda del Trapero) -->
+    <div id="dlgBg" class="dlg-bg"></div>
+    <div id="dlgArt" class="dlg-art"><img id="dlgScene" class="dlg-scene" alt=""><img id="dlgFig" class="dlg-fig" alt=""></div>
     <div class="flex items-center justify-between border-b border-slate-800 pb-4">
       <div class="flex items-center gap-3">
         <div id="npcAvatar" class="w-14 h-14 rounded-2xl bg-purple-950 border border-purple-500 flex items-center justify-center text-2xl text-purple-400 shadow-xl">

@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — puzles.js — VERSIÓN 0.103
+// JUST ONE MORE CHEST — puzles.js — VERSIÓN 0.104
 // minijuegos: ganzúa, pistones, hackeo, tuberías
 // ==========================================================================
 
@@ -853,20 +853,21 @@ function drawPipePixels(g, type, wet) {
     px(7, 2, '#8a8a96'); px(8, 2, '#8a8a96'); px(9, 1, '#e9b44c'); px(10, 0, '#ff8a2a');
     return;
   }
-  const P = wet ? PIPE_PAT_WET : PIPE_PAT_DRY, F = wet ? PIPE_FL_WET : PIPE_FL_DRY;
-  const vert = (y0, y1) => { for (let y = y0; y <= y1; y++) for (let i = 0; i < 8; i++) px(4 + i, y, P[i]); };
-  const hor = (x0, x1) => { for (let x = x0; x <= x1; x++) for (let i = 0; i < 8; i++) px(x, 4 + i, P[i]); };
-  const flV = y => { for (let k = 0; k < 2; k++) for (let x = 3; x <= 12; x++) { const i = (x === 3 || x === 12) ? 0 : (x === 4 ? 1 : (x >= 10 ? 3 : 2)); px(x, y + k, F[k === 0 && (x === 3 || x === 12) ? 0 : i]); } };
-  const flH = x => { for (let k = 0; k < 2; k++) for (let y = 3; y <= 12; y++) { const i = (y === 3 || y === 12) ? 0 : (y === 4 ? 1 : (y >= 10 ? 3 : 2)); px(x + k, y, F[i]); } };
+  // [0.104] Tubo más estrecho: 6 px de grosor (columnas/filas 5..10) con brida de 8 px en los extremos
+  const P0 = wet ? PIPE_PAT_WET : PIPE_PAT_DRY, F = wet ? PIPE_FL_WET : PIPE_FL_DRY;
+  const Q = [P0[0], P0[1], P0[2], P0[3], P0[5], P0[0]];
+  const vert = (y0, y1) => { for (let y = y0; y <= y1; y++) for (let i = 0; i < 6; i++) px(5 + i, y, Q[i]); };
+  const hor = (x0, x1) => { for (let x = x0; x <= x1; x++) for (let i = 0; i < 6; i++) px(x, 5 + i, Q[i]); };
+  const flV = y => { for (let k = 0; k < 2; k++) for (let x = 4; x <= 11; x++) { const i = (x === 4 || x === 11) ? 0 : (x === 5 ? 1 : (x >= 9 ? 3 : 2)); px(x, y + k, F[k === 0 && (x === 4 || x === 11) ? 0 : i]); } };
+  const flH = x => { for (let k = 0; k < 2; k++) for (let y = 4; y <= 11; y++) { const i = (y === 4 || y === 11) ? 0 : (y === 5 ? 1 : (y >= 9 ? 3 : 2)); px(x + k, y, F[i]); } };
   if (type === 'straight') { vert(0, 15); flV(0); flV(14); }
   else if (type === 'corner') {
-    vert(0, 11); hor(4, 15);
-    for (let y = 4; y <= 11; y++) for (let x = 4; x <= 11; x++) { const i = Math.min(x - 4, 11 - y); px(x, y, i === 0 ? P[0] : (i === 1 ? P[1] : (i === 2 ? P[2] : P[3]))); }
+    vert(0, 10); hor(5, 15);
+    for (let y = 5; y <= 10; y++) for (let x = 5; x <= 10; x++) { const i = Math.min(x - 5, 10 - y); px(x, y, i === 0 ? Q[0] : (i === 1 ? Q[1] : (i === 2 ? Q[2] : Q[3]))); }
     flV(0); flH(14);
   } else {
-    vert(0, 15); hor(4, 15);
-    for (let y = 4; y <= 11; y++) for (let x = 4; x <= 11; x++) { if (x === 4) px(x, y, P[0]); else px(x, y, (y === 4 || y === 11) ? P[0] : (y === 5 ? P[1] : (y === 6 ? P[2] : (y >= 9 ? P[5] : P[3])))); }
-    for (let y = 4; y <= 11; y++) px(11, y, (y === 4 || y === 11) ? P[0] : (y === 5 ? P[1] : (y === 6 ? P[2] : (y >= 9 ? P[5] : P[3]))));
+    vert(0, 15); hor(5, 15);
+    for (let y = 5; y <= 10; y++) px(5, y, Q[0]);
     flV(0); flV(14); flH(14);
   }
 }
@@ -1118,7 +1119,7 @@ function startPipeGame() {
   pipeGridSize = cfgRar.size;
   const totalTiles = pipeGridSize * pipeGridSize;
   grid.style.gridTemplateColumns = `repeat(${pipeGridSize}, var(--pt))`;
-  grid.style.setProperty('--pt', (pipeGridSize <= 3 ? 60 : (pipeGridSize === 4 ? 56 : 48)) + 'px');   // [0.103] tamaño de casilla
+  grid.style.setProperty('--pt', (pipeGridSize <= 3 ? 60 : (pipeGridSize === 4 ? 56 : 48)) + 'px');   // [0.103] tamaño de casilla (pzFit lo recalcula en [0.104] para llenar el ancho)
 
   let generatedAndValid = false;
   let generateAttempts = 0;
@@ -1246,8 +1247,8 @@ function startPipeGame() {
     tile.id = `pipeTile-${i}`;
     const rotStyle = (item.type === 'stone' || item.type === 'bomb') ? '' : `transform: rotate(${item.rot * 90}deg)`;
     tile.innerHTML = `<canvas id="pipeSvg-${i}" class="pipe-cv" width="16" height="16" style="${rotStyle}"></canvas>`
-      + (i === 0 ? '<span class="pipe-valve" title="Válvula de entrada"></span>' : '')
-      + (i === totalTiles - 1 ? '<span class="pipe-out" id="pipeOut" title="Salida"></span>' : '');
+      + (i === 0 ? '<span class="pipe-valve" title="Entrada de agua"><i class="pv-wheel"></i><i class="pv-stem"></i><b class="pv-lab">IN</b><em class="pv-arrow">&#9660;</em></span>' : '')
+      + (i === totalTiles - 1 ? '<span class="pipe-out" id="pipeOut" title="Salida (desagüe)"><i class="po-stem"></i><i class="po-basin"></i><b class="po-lab">OUT</b><em class="po-arrow">&#9660;</em></span>' : '');
     drawPipePixels(tile.querySelector('canvas').getContext('2d'), item.type, false);
 
     if (item.type !== 'stone' && item.type !== 'bomb') {

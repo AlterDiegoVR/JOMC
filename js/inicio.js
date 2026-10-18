@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — inicio.js — VERSIÓN 0.103
+// JUST ONE MORE CHEST — inicio.js — VERSIÓN 0.104
 // portada, arranque, avisos, pantalla completa
 // ==========================================================================
 
@@ -196,7 +196,7 @@ setInterval(() => {
   if (document.getElementById('resumeGameModal') || document.getElementById('coverScreen')) return;
   if (modalVisible('levelUpModal')) return;   // [0.097] los efectos de las wildcards esperan al final de la secuencia de subida de nivel (ruleta + elección)
   if (cfgK.ESPERAR_PANTALLA_LIBRE) {
-    const blockers = ['lootModal', 'dialogueModal', 'levelUpModal', 'merchantModal', 'traperoShopModal', 'traperoModal', 'unfairDealModal', 'gameOverModal', 'minigameModal'];
+    const blockers = ['lootModal', 'cofradiaModal', 'dialogueModal', 'levelUpModal', 'merchantModal', 'traperoShopModal', 'traperoModal', 'unfairDealModal', 'gameOverModal', 'minigameModal'];
     if (blockers.some(modalVisible) || document.getElementById('duendeReceiptModal')) return;
   }
   const q = keyToastQueue.shift();

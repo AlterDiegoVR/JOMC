@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — modotest.js — VERSIÓN 0.103
+// JUST ONE MORE CHEST — modotest.js — VERSIÓN 0.104
 // Modo test
 // ==========================================================================
 
@@ -173,6 +173,14 @@ function testKeyHash(seq, salt) {
     body.scrollTop = prev;
     b.querySelectorAll('.mb-tab').forEach(t => t.classList.toggle('on', t.dataset.t === boardTab));
   }
+  // [0.104] La pizarra ocupa EXACTAMENTE el cartel JUST ONE MORE CHEST de la marquesina (imagen de 108x192 px; cartel en x 16,5-91,5 / y 14,5-104,5) y el texto se escala con ella
+  function layoutMarqueeBoard() {
+    const m = document.getElementById('marqueeR'), b = document.getElementById('marqueeBoard'); if (!m || !b) return;
+    const k = m.clientHeight / 192;
+    b.style.left = (16.5 * k) + 'px'; b.style.top = (14.5 * k) + 'px'; b.style.width = (75 * k) + 'px'; b.style.height = (90 * k) + 'px';
+    const sl = b.querySelector('.mb-slate'); if (sl) sl.style.zoom = Math.max(.8, Math.min(1.4, k / 4.6)).toFixed(3);
+  }
+  window.addEventListener('resize', layoutMarqueeBoard);
   function openMarqueeBoard(tab) {
     audio.init(); try { audio.playChalk(); } catch (e) {}
     boardTab = tab || 'stats';
@@ -185,6 +193,7 @@ function testKeyHash(seq, salt) {
         <button class="mb-close jm-chalk">✕ CERRAR LA PIZARRA</button>
       </div></div>`;
     m.appendChild(b);
+    layoutMarqueeBoard();
     b.querySelectorAll('.mb-tab').forEach(t => t.addEventListener('click', () => { boardTab = t.dataset.t; try { audio.playChalk(); } catch (e) {} paintMarqueeBoard(true); }));
     b.querySelector('.mb-close').addEventListener('click', closeMarqueeBoard);
     paintMarqueeBoard(true);
@@ -297,6 +306,7 @@ function testKeyHash(seq, salt) {
       { id: 'ab_riskPot', label: 'CARTA APUESTA', kind: 'num', min: 0, max: 9, def: 3 },
       { id: 'ab_perdedor', label: 'CARTA PERDEDOR', kind: 'num', min: 0, max: 9, def: 3 },
       { id: 'ab_summonDuende', label: 'CARTA DUENDE', kind: 'num', min: 0, max: 9, def: 3 },
+      { id: 'ab_cofradia', label: 'CARTA COFRADÍA', kind: 'num', min: 0, max: 9, def: 0 },
       { id: 'curse', label: 'MALDICIÓN (COFRES)', kind: 'num', min: 1, max: 30, def: 10 },
       { id: 'clearAch', label: 'BORRAR LOGROS', kind: 'bool' }
     ] },
@@ -363,7 +373,7 @@ function testKeyHash(seq, salt) {
     set(v.level != null, () => { STATE.level = v.level; STATE.xp = 0; STATE.xpNext = getXpForLevel(v.level); STATE.chestsAtLevelUp = Math.max(0, STATE.chestsOpened - 3); STATE.chestsOpened = Math.max(STATE.chestsOpened, 3); });
     set(v.gold != null, () => { STATE.gold = v.gold; });
     ['picks', 'proPicks', 'usb', 'valves'].forEach(k => set(v[k] != null, () => { STATE[k] = v[k]; }));
-    ['auto', 'double', 'shield', 'riskPot', 'perdedor', 'summonDuende'].forEach(k => set(v['ab_' + k] != null, () => { STATE.abilities[k] = v['ab_' + k]; }));
+    ['auto', 'double', 'shield', 'riskPot', 'perdedor', 'summonDuende', 'cofradia'].forEach(k => set(v['ab_' + k] != null, () => { STATE.abilities[k] = v['ab_' + k]; }));
     set(v.curse != null, () => { STATE.cursedChestsLeft = v.curse; });
     set(!!v.clearAch, () => { clearAchievements(); });
     ['sweetSpot', 'rarityBonus', 'discount', 'slowerPistons', 'goldStreak', 'extraTime', 'bonusMadera', 'bonusAcero', 'bonusDigital', 'bonusVapor'].forEach(k => set(v['ps_' + k] != null, () => { STATE.perks[k] = v['ps_' + k]; }));   // [0.097b]

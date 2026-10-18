@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — graficos.js — VERSIÓN 0.103
+// JUST ONE MORE CHEST — graficos.js — VERSIÓN 0.104
 // canvas, sala, cerradura, decoración, efectos de cofre
 // ==========================================================================
 
@@ -46,6 +46,9 @@ function chestSpriteKey(type, rarity) {
 }
 // [0.086] Texto un poco mayor (CSS: html.texto-grande). Reversible con GRAFICOS.TEXTO_GRANDE = false
 document.documentElement.classList.toggle('texto-grande', !!(DATOS_JUEGO.GRAFICOS && DATOS_JUEGO.GRAFICOS.TEXTO_GRANDE));
+// [0.104] Terminal CRT: líneas de barrido suaves y halo verde más fuerte (valores en DATOS_JUEGO.GRAFICOS.TERMINAL_CRT)
+(function () { const c = (DATOS_JUEGO.GRAFICOS && DATOS_JUEGO.GRAFICOS.TERMINAL_CRT) || {}; const st = document.documentElement.style;
+  if (c.SCANLINES != null) st.setProperty('--crt-scan', String(c.SCANLINES)); if (c.BRILLO != null) st.setProperty('--cg', String(c.BRILLO)); })();
 // [0.086] ¿Pantalla ancha? (se ven las marquesinas laterales). Solo ahí se puede abrir tocando la cerradura
 function isWideLayout() {
   const fr = document.getElementById('gameFrame');
@@ -61,6 +64,7 @@ let lockShakeUntil = 0;
 let darkFlickerT0 = 0;
 let lightOnT0 = 0;            // [0.087b] inicio de la animación de encendido de la luz
 let roomDarkPrev = null;      // para detectar el paso oscuro → encendido
+let cofradiaOpen = false;     // [0.104] la Cofradía está abierta: sala vacía (sin cofre) y sin interfaz
 let npcHideUntil = 0;         // [0.087b] el cofre no se dibuja mientras entra el Duende / Trapero
 let chestFade = 1;            // opacidad actual del cofre (fundido)
 let keysBaseline = null;      // [0.087b] avisos "+N" de llaves
@@ -134,9 +138,41 @@ function hideSceneVeil() {
   el.style.transition = 'opacity .22s ease';
   setTimeout(() => { el.style.opacity = '0'; }, 120);
 }
+// [0.104] Quita el telón del todo (sin fundido): antes del cristal roto, para que los trozos copien la sala y no el azul marino
+function killSceneVeil() {
+  clearInterval(sceneVeilTimer); sceneVeilTimer = null;
+  if (sceneVeilEl) { try { sceneVeilEl.remove(); } catch (e) {} sceneVeilEl = null; }
+  document.querySelectorAll('#sceneVeil').forEach(e => e.remove());
+}
+// [0.104] Efectos de la apertura automática (cofres 101-110): ráfagas de partículas (también hacia el centro), vibración creciente, pulso de la sala y destello suave.
+// Todo se regula en DATOS_JUEGO.SECUENCIA_FINAL_FX; la intensidad sube con cada cofre.
+function autoOpenFx(co) {
+  const cfg = DATOS_JUEGO.SECUENCIA_FINAL_FX || {};
+  if (cfg.ACTIVAR === false || !canvas) return;
+  const c = DATOS_JUEGO.PROGRESIÓN.SECUENCIA_HISTORIA;
+  const k = Math.max(0, Math.min(1, (co - c.COFRE_AUTO_OPEN_INICIO) / Math.max(1, c.COFRE_AUTO_OPEN_FIN - c.COFRE_AUTO_OPEN_INICIO)));
+  const W = canvas.width, H = canvas.height;
+  const bursts = Math.round((cfg.ESTALLIDOS_BASE || 2) + (cfg.ESTALLIDOS_EXTRA || 4) * k);
+  for (let i = 0; i < bursts; i++) {
+    setTimeout(() => { try { spawnParticles(Math.random() * W, Math.random() * H, ['#c084fc', '#f43f5e', '#fbbf24', '#38bdf8'][i % 4], cfg.PARTICULAS_POR_ESTALLIDO || 40, i % 2 === 0); } catch (e) {} }, i * 70);
+  }
+  // partículas que entran desde los bordes hacia el centro
+  const nIn = Math.round((cfg.HACIA_CENTRO_BASE || 30) + (cfg.HACIA_CENTRO_EXTRA || 60) * k);
+  for (let i = 0; i < nIn; i++) {
+    const a = Math.random() * Math.PI * 2, R = Math.hypot(W, H) * 0.55;
+    const x = W / 2 + Math.cos(a) * R, y = H / 2 + Math.sin(a) * R, sp = 7 + Math.random() * 7;
+    particles.push({ x, y, vx: -Math.cos(a) * sp, vy: -Math.sin(a) * sp, radius: 2 + Math.random() * 4, color: `hsl(${Math.floor(Math.random() * 360)}, 100%, 65%)`, alpha: 1, decay: 0.012 + Math.random() * 0.012 });
+  }
+  try { screenShake((cfg.SACUDIDA_PX || 6) + (cfg.SACUDIDA_EXTRA_PX || 10) * k, cfg.SACUDIDA_MS || 520); } catch (e) {}
+  try { flashScreen(`rgba(255,255,255,${((cfg.DESTELLO || 0.10) + 0.12 * k).toFixed(2)})`, 380); } catch (e) {}
+  const z = (cfg.PULSO_ZOOM || 0.02) * (0.6 + k);
+  try { canvas.animate([{ transform: 'scale(1)' }, { transform: `scale(${(1 + z).toFixed(4)})`, offset: .25 }, { transform: 'scale(1)' }], { duration: 480, easing: 'ease-out' }); } catch (e) {}
+  if (navigator.vibrate) { try { navigator.vibrate([60, 30, 60 + Math.round(80 * k)]); } catch (e) {} }
+}
 // [0.087b] ¿Está entrando el Duende o el Trapero (o hay uno en pantalla)?
 function npcSceneActive() {
   if (Date.now() < npcHideUntil) return true;
+  if (cofradiaOpen) return true;
   const ids = ['dialogueModal', 'merchantModal', 'traperoShopModal', 'traperoModal'];
   for (const id of ids) { const e = document.getElementById(id); if (e && !e.classList.contains('hidden')) return true; }
   return false;
@@ -735,7 +771,12 @@ function triggerSecretDecorationReward(decor) {
 
   if (roll < 20) {
     const themes = DATOS_JUEGO.DECORACIONES_SALA.AMBIENTES_AZAR;
-    const chosen = themes[Math.floor(Math.random() * themes.length)];
+    let chosen = themes[Math.floor(Math.random() * themes.length)];
+    // [0.104] Si toca "color original" y la sala YA tiene su iluminación normal (ni tinte ni oscuridad), se sustituye por otro ambiente al azar
+    if (chosen === 'normal' && (!STATE.roomThemeFilter || STATE.roomThemeFilter === 'normal') && !((STATE.roomDarkUntil || 0) > STATE.chestsOpened)) {
+      const others = themes.filter(t => t !== 'normal');
+      if (others.length) chosen = others[Math.floor(Math.random() * others.length)];
+    }
     // [0.088] El efecto no se aplica hasta cerrar el banner (con el banner delante, la sala está difuminada y no se vería)
     const cursedNow = STATE.cursedChestsLeft > 0;
     const finalTier = getNarrativeTier() >= 5;

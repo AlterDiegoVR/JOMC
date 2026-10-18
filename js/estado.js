@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — estado.js — VERSIÓN 0.103
+// JUST ONE MORE CHEST — estado.js — VERSIÓN 0.104
 // estado, wildcards, guardado, logros, estadísticas, reinicio
 // ==========================================================================
 
@@ -75,7 +75,7 @@ const STATE = {
     bonusVapor: 0
   },
 
-  abilities: { auto: 0, double: 0, shield: 0, reveal: 0, riskPot: 0, perdedor: 0, summonDuende: 0 },
+  abilities: { auto: 0, double: 0, shield: 0, reveal: 0, riskPot: 0, perdedor: 0, summonDuende: 0, cofradia: 0 },
   active2XMultiplier: false,
   activeShield: false,
   
@@ -259,7 +259,8 @@ function getUnlockedConsumables() {
 // [0.093] Oro fijo de los wildcards escalado por nivel; y descripción con {n} escalado
 function wcGold(n) { return Math.max(1, Math.round(n * (1 + ((DATOS_JUEGO.MODS_WILDCARD || {}).ESCALA_ORO_POR_NIVEL || 0) * Math.max(0, STATE.level - 1)))); }
 function wcDesc(wc) { return String(wc.desc).replace(/\{(\d+)\}/g, (m, n) => wcGold(+n)); }
-const MODS_POR_USOS = ['seda', 'congelada'];   // [0.096] caducan por USOS (un fallo salvado = 1), no por cofres abiertos
+const MODS_POR_USOS = ['seda', 'congelada', 'destino'];   // [0.104] 'destino' dura toda la partida (hasta el reinicio del bucle)
+// (comentario anterior:)   // [0.096] caducan por USOS (un fallo salvado = 1), no por cofres abiertos
 function useMod(id) { if (!STATE.mods || !(STATE.mods[id] > 0)) return 0; STATE.mods[id]--; const left = STATE.mods[id]; if (left <= 0) delete STATE.mods[id]; saveDirty = true; return Math.max(0, left); }
 function modOn(id) { return !!(STATE.mods && STATE.mods[id] > 0); }
 
@@ -365,7 +366,8 @@ function runWildcardRoulette(res, onDone) {
   const paint = (wc, state, extra) => {   // state: 'spin' | 'win'
     const bad = wc.tipo === 'PERJUDICIAL';
     const tone = bad ? 'bg-rose-950/80 border-rose-500/60 text-rose-200' : 'bg-emerald-950/80 border-emerald-500/60 text-emerald-200';
-    banner.className = 'w-full max-w-xs p-3 rounded-2xl border-2 font-mono text-xs mb-3 text-center shadow-lg flex flex-col justify-center ' + (state === 'win' ? tone + ' lvl-card-win' : tone.replace('/80', '/40').replace('/60', '/50') + ' lvl-card-spin');
+    const toneSpin = bad ? 'bg-rose-950/50 border-rose-500/50 text-rose-200' : 'bg-emerald-950/50 border-emerald-500/50 text-emerald-200';   // [0.104] clases escritas completas (antes se fabricaban con replace y Tailwind no las generaba: la carta quedaba hueca)
+    banner.className = 'w-full max-w-xs p-3 rounded-2xl border-2 font-mono text-xs mb-3 text-center shadow-lg flex flex-col justify-center ' + (state === 'win' ? tone + ' lvl-card-win' : toneSpin + ' lvl-card-spin');
     banner.innerHTML = state === 'win' ? `
       <div class="text-[9px] tracking-widest opacity-70 mb-1">${bad ? 'EVENTO ADVERSO' : 'EVENTO FAVORABLE'}</div>
       <div class="font-black uppercase tracking-wider mb-1 text-sm">${bad ? '⚠️' : '✨'} ${wc.nombre}</div>
@@ -592,7 +594,7 @@ function mainScreenFree() {
 }
 function isGameIdle() {
   if (isLootProcessing || minigameInProgress || STATE.eventQueue.length > 0) return false;
-  const blockers = ['minigameModal', 'dialogueModal', 'lootModal', 'levelUpModal', 'merchantModal', 'traperoShopModal', 'traperoModal', 'unfairDealModal', 'gameOverModal'];
+  const blockers = ['minigameModal', 'cofradiaModal', 'dialogueModal', 'lootModal', 'levelUpModal', 'merchantModal', 'traperoShopModal', 'traperoModal', 'unfairDealModal', 'gameOverModal'];
   for (const id of blockers) {
     const el = document.getElementById(id);
     if (el && !el.classList.contains('hidden')) return false;
@@ -735,7 +737,7 @@ function resetGame(keepLoop) {
     bonusDigital: 0, bonusVapor: 0
   };
 
-  STATE.abilities = { auto: 0, double: 0, shield: 0, reveal: 0, riskPot: 0, perdedor: 0, summonDuende: 0 };
+  STATE.abilities = { auto: 0, double: 0, shield: 0, reveal: 0, riskPot: 0, perdedor: 0, summonDuende: 0, cofradia: 0 };
   STATE.active2XMultiplier = false;
   STATE.activeShield = false;
   STATE.riskModeActive = false;

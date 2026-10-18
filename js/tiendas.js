@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — tiendas.js — VERSIÓN 0.103
+// JUST ONE MORE CHEST — tiendas.js — VERSIÓN 0.104
 // tienda del Duende y del Trapero
 // ==========================================================================
 
@@ -19,7 +19,8 @@ const SHOP_VIS = {
   carta_auto_open: { n: 'CARTA AUTO-OPEN', ic: 'ic_auto' },
   carta_escudo:    { n: 'CARTA ESCUDO',    ic: 'ic_escudo' },
   carta_apuesta:   { n: 'CARTA APUESTA',   ic: 'ic_apuesta' },
-  contador_cofres: { n: 'CONTADOR DE COFRES', ic: 'ic_contador' }
+  contador_cofres: { n: 'CONTADOR DE COFRES', ic: 'ic_contador' },
+  carta_cofradia:  { n: 'CARTA COFRADÍA',  ic: 'ic_cofradia' }   // [0.104]
 };
 const SHOP_VIS_RECICLAJE = {
   proPicks: { n: 'PIN DE ACERO +1',    ic: 'ic_pin' },
@@ -300,6 +301,11 @@ function openMerchantShop() {
       { id: 'carta_apuesta', name: 'Carta Doble o Nada', baseCost: Math.round(DATOS_JUEGO.ECONOMIA.TIENDA_DUENDE.carta_apuesta * discountMult), icon: 'fa-dice', abilityProp: 'riskPot' }
     ];
 
+    // [0.104] Carta COFRADÍA: de vez en cuando aparece en la tienda (100 GP). Fuera de la secuencia final.
+    if (STATE.level >= 2 && !isClimaxActive() && Math.random() < ((DATOS_JUEGO.GRAFICOS.TIENDAS || {}).COFRADIA_PROB_TIENDA != null ? DATOS_JUEGO.GRAFICOS.TIENDAS.COFRADIA_PROB_TIENDA : 0.30)) {
+      catalog.push({ id: 'carta_cofradia', name: 'Carta Cofradía del Cofre', baseCost: Math.round(DATOS_JUEGO.ECONOMIA.TIENDA_DUENDE.carta_cofradia * discountMult), icon: 'fa-boxes-stacked', abilityProp: 'cofradia' });
+    }
+
     if (!STATE.chestCounterUnlocked) {
       catalog.push({
         id: 'contador_cofres',
@@ -328,10 +334,9 @@ function renderMerchantShopGrid() {
   function grantItem(item) {
     if (item.isChestCounter) {
       STATE.chestCounterUnlocked = true;
-      // [0.087b] La respuesta la dice el Duende con su retrato (el diálogo se pone por encima de la tienda)
-      const dm = document.getElementById('dialogueModal');
-      if (dm) dm.style.zIndex = '60';
-      triggerSequentialDialogue("EL DUENDE", DATOS_JUEGO.NARRATIVA.FRASES_RECIBO_DUENDE.CONTADOR_RESPUESTA, "fa-hat-wizard", "Contador de cofres", "text-purple-300", null, () => { if (dm) dm.style.zIndex = ''; });
+      // [0.104] La respuesta la dice el Duende en la propia tienda (burbuja de texto), sin pantalla narrativa
+      dshopSay(DATOS_JUEGO.NARRATIVA.FRASES_RECIBO_DUENDE.CONTADOR_RESPUESTA);
+      return true;
     } else if (item.prop) {
       STATE[item.prop] += item.qty;
     } else if (item.abilityProp) {
@@ -378,7 +383,7 @@ function renderMerchantShopGrid() {
           dshopSay(shopRandom(cfg.FRASES_ROBO), 'sorpresa');
         } else {
           STATE.gold -= currentPrice;
-          grantItem(item);
+          const spoke = grantItem(item);   // [0.104] el contador de cofres ya trae su propia frase
 
           STATE.shopSession.items.push({ name: item.name, costText: `${currentPrice} GP`, icon: item.icon, isStolen: false });
           STATE.shopSession.totalGold += currentPrice;
@@ -389,7 +394,7 @@ function renderMerchantShopGrid() {
           audio.playUnlockFanfare('raro');
           updateUI();
           renderMerchantShopGrid();
-          dshopSay(shopRandom(cfg.FRASES_COMPRA), 'alegre');
+          if (!spoke) dshopSay(shopRandom(cfg.FRASES_COMPRA), 'alegre');
         }
       }
     });

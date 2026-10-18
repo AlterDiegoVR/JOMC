@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — ui.js — VERSIÓN 0.103
+// JUST ONE MORE CHEST — ui.js — VERSIÓN 0.104
 // actualización de la interfaz (HUD)
 // ==========================================================================
 
@@ -101,7 +101,7 @@ function updateUI() {
     if (el) setHelp(el, helpText(key));
   });
   // y de las cartas consumibles (tooltip; al pulsarlas ya muestran su propio aviso al activarse)
-  [['abilityAutoBtn', 'auto'], ['ability2xBtn', 'double'], ['abilityShieldBtn', 'shield'], ['abilityRiskBtn', 'riskPot'], ['abilityPerdedorBtn', 'perdedor'], ['abilitySummonDuendeBtn', 'summonDuende']].forEach(([id, key]) => {
+  [['abilityAutoBtn', 'auto'], ['ability2xBtn', 'double'], ['abilityShieldBtn', 'shield'], ['abilityRiskBtn', 'riskPot'], ['abilityPerdedorBtn', 'perdedor'], ['abilitySummonDuendeBtn', 'summonDuende'], ['abilityCofradiaBtn', 'cofradia']].forEach(([id, key]) => {
     const el = document.getElementById(id);
     if (el) el.title = ((DATOS_JUEGO.TEXTOS_AYUDA.cartas || {})[key]) || '';
   });
@@ -156,7 +156,7 @@ function updateUI() {
       { active: modOn('congelada'), text: `🧊 Racha x${(STATE.mods||{}).congelada}`, shortText: `🧊 x${(STATE.mods||{}).congelada}`, desc: `Racha Congelada: tus próximos ${(STATE.mods||{}).congelada} fallos no rompen tu racha.`, isBoost: true },
       { active: modOn('relojBueno'), text: `⏳ Tiempo +50% x${(STATE.mods||{}).relojBueno}`, shortText: `⏳ x${(STATE.mods||{}).relojBueno}`, desc: `Reloj Lento: +50% de tiempo en los puzles durante ${(STATE.mods||{}).relojBueno} cofres más.`, isBoost: true },
       { active: modOn('hambre'), text: `🍽️ Hambre x${(STATE.mods||{}).hambre}`, shortText: `🍽️ x${(STATE.mods||{}).hambre}`, desc: `Hambre de XP: XP x2 pero sin GP durante ${(STATE.mods||{}).hambre} cofres más.`, kind: 'bad' },
-      { active: modOn('destino'), text: `🎲 Destino`, shortText: `🎲`, desc: `Cofre del Destino: la próxima pantalla te deja elegir entre 3 cofres.`, isBoost: true },
+      { active: modOn('destino'), text: `🎲 Destino`, shortText: `🎲`, desc: `Cofre del Destino: las pantallas pueden mostrar hasta 4 cofres a elegir.`, isBoost: true },
       { active: modOn('relojMalo'), text: `⌛ Tiempo -30% x${(STATE.mods||{}).relojMalo}`, shortText: `⌛ x${(STATE.mods||{}).relojMalo}`, desc: `Reloj Roto: -30% de tiempo en los puzles durante ${(STATE.mods||{}).relojMalo} cofres más.`, isTorpeza: true },
       { active: STATE.heavyChestsLeft > 0, text: `📜 Contrato x${STATE.heavyChestsLeft}`, shortText: `📜 x${STATE.heavyChestsLeft}`, desc: `Contrato Leonino: los próximos ${STATE.heavyChestsLeft} cofres Raros o superiores piden +1 herramienta.`, isTorpeza: true }
     );
@@ -192,6 +192,7 @@ function updateUI() {
   const cntShield = document.getElementById('cntShield'); if (cntShield) cntShield.textContent = `x${STATE.abilities.shield}`;
   const cntRisk = document.getElementById('cntRisk'); if (cntRisk) cntRisk.textContent = `x${STATE.abilities.riskPot}`;
   const cntPerdedor = document.getElementById('cntPerdedor'); if (cntPerdedor) cntPerdedor.textContent = `x${STATE.abilities.perdedor}`;
+  const cntCofradia = document.getElementById('cntCofradia'); if (cntCofradia) cntCofradia.textContent = `x${STATE.abilities.cofradia || 0}`;
   const cntSummon = document.getElementById('cntSummon'); if (cntSummon) cntSummon.textContent = `x${STATE.abilities.summonDuende}`;
 
   const btnAutoEl = document.getElementById('abilityAutoBtn');
@@ -200,6 +201,7 @@ function updateUI() {
   const btnRiskEl = document.getElementById('abilityRiskBtn');
   const btnPerdedorEl = document.getElementById('abilityPerdedorBtn');
   const btnSummonEl = document.getElementById('abilitySummonDuendeBtn');
+  const btnCofradiaEl = document.getElementById('abilityCofradiaBtn');
 
   if (btnAutoEl) { if (STATE.abilities.auto <= 0) btnAutoEl.classList.add('hidden'); else btnAutoEl.classList.remove('hidden'); btnAutoEl.disabled = STATE.abilities.auto <= 0; }
   if (btn2xEl) { if (STATE.abilities.double <= 0) btn2xEl.classList.add('hidden'); else btn2xEl.classList.remove('hidden'); btn2xEl.disabled = STATE.abilities.double <= 0 || STATE.active2XMultiplier; }
@@ -207,6 +209,9 @@ function updateUI() {
   if (btnRiskEl) { if (STATE.abilities.riskPot <= 0) btnRiskEl.classList.add('hidden'); else btnRiskEl.classList.remove('hidden'); btnRiskEl.disabled = STATE.abilities.riskPot <= 0 || STATE.riskModeActive; }
   if (btnPerdedorEl) { if (STATE.abilities.perdedor <= 0) btnPerdedorEl.classList.add('hidden'); else btnPerdedorEl.classList.remove('hidden'); btnPerdedorEl.disabled = STATE.abilities.perdedor <= 0 || STATE.perdedorActive; }
   if (btnSummonEl) { if (STATE.abilities.summonDuende <= 0) btnSummonEl.classList.add('hidden'); else btnSummonEl.classList.remove('hidden'); btnSummonEl.disabled = STATE.abilities.summonDuende <= 0; }
+
+  // [0.104] Carta COFRADÍA: visible mientras quede alguna; se desactiva en la secuencia final
+  if (btnCofradiaEl) { const n = STATE.abilities.cofradia || 0; btnCofradiaEl.classList.toggle('hidden', n <= 0); btnCofradiaEl.disabled = n <= 0 || isClimaxActive(); }
 
   // [0.087b] Las cartas AUTO y DUENDE palpitan cuando ningún cofre en pantalla se puede abrir con las llaves actuales
   const blockedNow = STATE.screenChests.length > 0 && !isClimaxActive() && !STATE.screenChests.some(c => (STATE[c.type.consumible] || 0) >= getRequiredToolCount(c.rarity));   // [0.088] ya no cuenta la propia carta AUTO

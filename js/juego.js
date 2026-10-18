@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — juego.js — VERSIÓN 0.103
+// JUST ONE MORE CHEST — juego.js — VERSIÓN 0.104
 // arte del cofre abierto, subida de nivel, abrir cofre
 // ==========================================================================
 
@@ -109,7 +109,7 @@ function lvlSpectacle() {
     fx.appendChild(c);
   }
   try { screenShake(cfg.SACUDIDA_PX != null ? cfg.SACUDIDA_PX : 9, cfg.SACUDIDA_MS || 520); } catch (e) {}
-  lvlTimers.push(setTimeout(() => { if (fx.parentNode) fx.remove(); }, 5200));
+  lvlTimers.push(setTimeout(() => { fx.querySelectorAll('.lvl-coin, .lvl-spark, .lvl-flash').forEach(e => e.remove()); }, 5200));   // [0.104] la lluvia se acaba, los haces giratorios siguen hasta pulsar SIGUIENTE
 }
 
 // [0.103] Subida de nivel "al vuelo" durante la secuencia final: destello en la barra de XP, notas cortas y cartel que entra con zoom y se va rápido. No bloquea nada.
@@ -117,12 +117,16 @@ function quickLevelUpFx() {
   try { audio.init(); audio.playLevelUpQuick(); } catch (e) {}
   const bar = document.getElementById('xpBar');
   if (bar && bar.parentElement) { const c = bar.parentElement; c.classList.remove('xp-flash'); void c.offsetWidth; c.classList.add('xp-flash'); setTimeout(() => c.classList.remove('xp-flash'), 900); }
+  // [0.104] Solo letras, más espectaculares (cada letra entra con zoom, brilla y se va), dibujadas ENCIMA de todo y sin fondo ni pantalla negra
   const host = (typeof uiHost === 'function') ? uiHost() : document.body;
+  const letters = (txt, base) => [...txt].map((ch, i) => ch === ' ' ? '<span class="lq-sp"></span>' : `<span class="lq-l" style="animation-delay:${base + i * 38}ms,${base + 600 + i * 38}ms">${ch}</span>`).join('');
   const b = document.createElement('div');
   b.className = 'lvl-quick';
-  b.innerHTML = `<span>SUBIDA DE NIVEL</span><b>NIVEL ${STATE.level}</b>`;
+  b.innerHTML = `<div class="lq-row lq-t">${letters('SUBIDA DE NIVEL', 0)}</div><div class="lq-row lq-n">${letters('NIVEL ' + STATE.level, 260)}</div>`;
   host.appendChild(b);
-  setTimeout(() => b.remove(), 1100);
+  try { const cx = canvas ? canvas.width / 2 : 200, cy = canvas ? canvas.height * 0.33 : 200; spawnParticles(cx, cy, '#fbbf24', 55, false); spawnParticles(cx, cy, '#fff7cc', 30, false); } catch (e) {}
+  try { screenShake(5, 380); } catch (e) {}
+  setTimeout(() => b.remove(), 1900);
 }
 
 function triggerLevelUpChoice() {
@@ -146,7 +150,7 @@ function triggerLevelUpChoice() {
   if (nextBtn) { nextBtn.classList.remove('hidden'); nextBtn.classList.add('invisible'); }   // [0.095] su sitio queda reservado desde el principio: al aparecer no mueve la carta
 
   // [0.093] Banner viejo fuera al abrir (si no, se veía el resultado del nivel anterior hasta empezar la ruleta)
-  const bn = document.getElementById('wildcardBanner'); if (bn) { bn.innerHTML = ''; bn.className = 'w-full max-w-xs mb-3'; bn.style.minHeight = '150px'; }   // [0.095] hueco reservado y vacío (sin saltos de layout)
+  const bn = document.getElementById('wildcardBanner'); if (bn) { bn.innerHTML = ''; bn.className = 'w-full max-w-xs mb-3 rounded-2xl border-2 border-indigo-500/40 bg-indigo-950/40'; bn.style.minHeight = '150px'; }   // [0.104] hueco con fondo traslúcido desde el principio   // [0.095] hueco reservado y vacío (sin saltos de layout)
   { const lm = document.getElementById('levelUpModal'); if (lm) lm.style.overflowY = 'hidden'; }   // [0.096] sin barra de scroll mientras dura la animación (se reevalúa al acabar de aparecer las 3 mejoras)
   lvlSpectacle();
   // [0.092] Fanfarria + cartel; ruleta de wildcard (se aplica ya, se muestra al frenar); SIGUIENTE; y entonces las 3 mejoras como cofres abiertos
@@ -155,6 +159,7 @@ function triggerLevelUpChoice() {
   updateUI();
   const revealChoices = () => {
     if (nextBtn) nextBtn.classList.add('hidden');   // en la pantalla de las 3 cartas ya no hace falta
+    { const fxe = document.getElementById('lvlFx'); if (fxe) { fxe.style.transition = 'opacity .5s'; fxe.style.opacity = '0'; setTimeout(() => fxe.remove(), 520); } }   // [0.104] los haces se apagan al pasar a las 3 mejoras
     const bnr = document.getElementById('wildcardBanner'); if (bnr) bnr.classList.add('hidden');   // [0.093b] el evento ya se vio en su pantalla: se quita para que quepan las 3 cartas
     if (choices) choices.classList.remove('hidden');
     const step = (DATOS_JUEGO.SUBIDA_NIVEL || {}).ESCALONADO_COFRES_MS || 260;
@@ -398,6 +403,39 @@ function pzFit() {
   const ch = card.offsetHeight, sh = st.offsetHeight;
   m.style.setProperty('--pzcardh', ch + 'px');
   m.style.setProperty('--pzshift', Math.max(0, (ch - sh) / 2) + 'px');
+  pzScale(m);
+}
+// [0.104] Escala el puzle activo (ganzúa, tuberías, terminal) al espacio libre. En PC hasta un tope; en móvil solo se reduce si no cabe.
+// Las tuberías llenan además el ancho del móvil (el tamaño de casilla sale del ancho del marco).
+function pzScale(m) {
+  const cfg = DATOS_JUEGO.GRAFICOS.ESCALA_PUZLES || {};
+  const frame = document.getElementById('pzFrame'), card = document.getElementById('pzCard'), timer = document.getElementById('bigTimer'), foot = document.getElementById('pzFoot');
+  if (!frame || m.classList.contains('hidden')) return;
+  const sel = { lockpick: '#lockpickContainer .pz-body', pipe: '#pipeContainer .pz-body', hack: '#hackContainer' };
+  const idOf = { lockpick: 'lockpickContainer', pipe: 'pipeContainer', hack: 'hackContainer' };
+  Object.keys(sel).forEach(k => { const e = document.querySelector(sel[k]); if (e) e.style.zoom = ''; });
+  frame.style.removeProperty('--pzw');
+  let which = null;
+  Object.keys(idOf).forEach(k => { const e = document.getElementById(idOf[k]); if (e && !e.classList.contains('hidden')) which = k; });
+  if (!which || cfg.ACTIVAR === false) return;
+  const narrow = document.documentElement.classList.contains('narrow-layout');
+  const body = document.querySelector(sel[which]); if (!body) return;
+  if (which === 'pipe') {   // tamaño de casilla: llena el ancho disponible (marco de 400 px como máximo)
+    const grid = document.getElementById('pipeGrid'), n = (typeof pipeGridSize === 'number') ? pipeGridSize : 0;
+    if (grid && n > 0) {
+      const W = narrow ? Math.min(frame.clientWidth, 400) : 400;
+      const pt = Math.max(30, Math.min(cfg.PIPE_TOPE_CASILLA_PX || 72, Math.floor((W - 16 - 22 - 6 - 3 * (n - 1)) / n)));
+      grid.style.setProperty('--pt', pt + 'px');
+    }
+  }
+  const btn = m.querySelector('#' + idOf[which] + ' .pz-btn');
+  const used = card.offsetHeight + timer.offsetHeight + foot.offsetHeight + (btn ? btn.offsetHeight : 0) + 20 + 2 * (cfg.MARGEN_PX || 26);
+  const natH = body.offsetHeight || 1;
+  const maxZ = narrow ? 1 : ((cfg.MAX && cfg.MAX[which]) || 1.5);
+  let z = Math.min(maxZ, (frame.clientHeight - used) / natH, (m.clientWidth - 16) / 400);   // el ancho útil es el del marco de juego (9:16), no el de la ventana
+  z = Math.max(0.55, z);
+  if (z > 1.005 || z < 0.995) body.style.zoom = z.toFixed(3);
+  if (z > 1.005) frame.style.setProperty('--pzw', Math.round(400 * z) + 'px');
 }
 window.addEventListener('resize', pzFit);
 if (window.ResizeObserver) { const c = document.getElementById('pzCard'); if (c) new ResizeObserver(pzFit).observe(c); }

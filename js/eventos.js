@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — eventos.js — VERSIÓN 0.103
+// JUST ONE MORE CHEST — eventos.js — VERSIÓN 0.104
 // tiendas especiales, visitas, habilidades, temporizador, fallo y Game Over
 // ==========================================================================
 
@@ -113,11 +113,47 @@ function openSpecialShopModal() {
    COLAPSO SENSORIAL Y SECUENCIA FINAL
    ========================================================================== */
 
+/* [0.104] FONDO DE ESTRELLAS Y GALAXIAS: es lo que queda detrás del cristal cuando se rompe (ya no hay negro plano). Lienzo propio con estrellas que titilan y dos galaxias en espiral que giran despacio. */
+let starfieldRaf = null;
+function starfieldStart(r) {
+  starfieldStop();
+  const W = Math.round(r.width), H = Math.round(r.height);
+  const cv = document.createElement('canvas');
+  cv.id = 'starfieldBg'; cv.width = W; cv.height = H;
+  cv.style.cssText = `position:fixed;left:${r.left}px;top:${r.top}px;width:${W}px;height:${H}px;z-index:19999;pointer-events:none;opacity:0;transition:opacity .35s ease`;
+  document.body.appendChild(cv);
+  requestAnimationFrame(() => { cv.style.opacity = '1'; });
+  const g = cv.getContext('2d');
+  const stars = Array.from({ length: Math.round(W * H / 2600) }, () => ({ x: Math.random() * W, y: Math.random() * H, s: Math.random() < .12 ? 2 : 1, p: Math.random() * 6.28, v: .8 + Math.random() * 2.2, c: ['#ffffff', '#cfe3ff', '#ffe9c4', '#ffd0f0'][Math.floor(Math.random() * 4)] }));
+  const mkGal = (cx, cy, R, hue, tilt) => { const pts = []; for (let i = 0; i < 520; i++) { const arm = i % 2, t = Math.pow(Math.random(), .7) * 3.6, a = t * 2.1 + arm * Math.PI + (Math.random() - .5) * .5, rr = R * (t / 3.6) + (Math.random() - .5) * R * .12; pts.push({ a, r: rr, h: hue + (Math.random() - .5) * 40, l: 55 + Math.random() * 35, z: Math.random() < .15 ? 2 : 1 }); } return { cx, cy, R, tilt, pts, rot: 0 }; };
+  const gals = [mkGal(W * .27, H * .3, Math.min(W, H) * .34, 270, .45), mkGal(W * .74, H * .68, Math.min(W, H) * .27, 195, -.5)];
+  const t0 = performance.now();
+  const frame = now => {
+    if (!document.getElementById('starfieldBg')) return;
+    const t = (now - t0) / 1000;
+    g.fillStyle = '#02030a'; g.fillRect(0, 0, W, H);
+    const neb = g.createRadialGradient(W * .5, H * .5, 0, W * .5, H * .5, Math.max(W, H) * .7); neb.addColorStop(0, 'rgba(60,30,110,.28)'); neb.addColorStop(1, 'rgba(2,3,10,0)');
+    g.fillStyle = neb; g.fillRect(0, 0, W, H);
+    stars.forEach(s => { g.globalAlpha = .35 + .65 * Math.abs(Math.sin(s.p + t * s.v)); g.fillStyle = s.c; g.fillRect(s.x, s.y, s.s, s.s); });
+    gals.forEach((G, gi) => {
+      const core = g.createRadialGradient(G.cx, G.cy, 0, G.cx, G.cy, G.R * .22); core.addColorStop(0, 'rgba(255,240,210,.9)'); core.addColorStop(1, 'rgba(255,200,160,0)');
+      g.globalAlpha = 1; g.fillStyle = core; g.fillRect(G.cx - G.R * .25, G.cy - G.R * .25, G.R * .5, G.R * .5);
+      const rot = t * (gi ? -.12 : .1);
+      G.pts.forEach(p => { const a = p.a + rot, x = G.cx + Math.cos(a) * p.r, y = G.cy + Math.sin(a) * p.r * G.tilt * 1.4 + Math.cos(a) * p.r * .15 * G.tilt; g.globalAlpha = .55 + .4 * (1 - p.r / G.R); g.fillStyle = `hsl(${p.h},85%,${p.l}%)`; g.fillRect(x, y, p.z, p.z); });
+    });
+    g.globalAlpha = 1;
+    starfieldRaf = requestAnimationFrame(frame);
+  };
+  starfieldRaf = requestAnimationFrame(frame);
+}
+function starfieldStop() { if (starfieldRaf) cancelAnimationFrame(starfieldRaf); starfieldRaf = null; const e = document.getElementById('starfieldBg'); if (e) e.remove(); }
+
 /* [0.103] CRISTAL ROTO EN VIVO: al llegar al punto álgido del colapso, la pantalla real (el marco de juego) se agrieta desde el centro y se rompe en trozos que caen.
    Cada trozo es un clon del marco, recortado con clip-path (con el lienzo de la sala copiado). Mientras caen, el marco real se oculta y deja ver el negro. */
 function glassShatterFx() {
   const fr = document.getElementById('gameFrame');
   if (!fr || document.getElementById('shatterRoot')) return;
+  killSceneVeil();   // [0.104] sin telón azul marino: los trozos copian la sala real, con sus cofres e interfaz
   const r = fr.getBoundingClientRect(), W = r.width, H = r.height;
   const root = document.createElement('div');
   root.id = 'shatterRoot';
@@ -161,7 +197,8 @@ function glassShatterFx() {
   // 4) tiempo de grietas y caída
   setTimeout(() => {
     svg.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 500, fill: 'forwards' });
-    fr.style.visibility = 'hidden';   // detrás de los trozos solo queda el negro del fondo
+    fr.style.visibility = 'hidden';   // [0.104] detrás de los trozos quedan estrellas y galaxias
+    starfieldStart(r);
     pieces.forEach(({ w, mx, my }) => {
       const out = Math.hypot(mx - cx, my - cy) || 1;
       const dx = (mx - cx) / out * (40 + Math.random() * 90), dy = H * (0.9 + Math.random() * 0.5), rot = (Math.random() - 0.5) * 80;
@@ -171,10 +208,11 @@ function glassShatterFx() {
     setTimeout(() => root.remove(), 2400);
   }, 380);
 }
-function glassShatterRestore() { const fr = document.getElementById('gameFrame'); if (fr) fr.style.visibility = ''; const r = document.getElementById('shatterRoot'); if (r) r.remove(); }
+function glassShatterRestore() { const fr = document.getElementById('gameFrame'); if (fr) fr.style.visibility = ''; const r = document.getElementById('shatterRoot'); if (r) r.remove(); starfieldStop(); }
 
 function triggerSensoryOverloadCollapse() {
   stopMinigameTimer();
+  killSceneVeil();   // [0.104]
   const modals = ['merchantModal', 'traperoModal', 'minigameModal', 'dialogueModal', 'lootModal', 'persistentFeedbackBanner', 'duendeReceiptModal'];
   modals.forEach(id => {
     const el = document.getElementById(id);
@@ -224,6 +262,8 @@ function executeDiffuseEchoTransition() {
   setTimeout(() => {
     overlay.classList.remove('opacity-0');
     overlay.classList.add('opacity-100');
+    const sf = document.getElementById('starfieldBg');   // [0.104] las estrellas se funden a negro a la vez que entra el fundido con las dos frases
+    if (sf) { sf.style.transition = 'opacity 1s ease'; sf.style.opacity = '0'; }
   }, 100);
 
   setTimeout(() => {
@@ -293,8 +333,8 @@ function triggerDuendeNarrativeVisit() {
 /* [0.089b] En pantallas táctiles, tocar una carta abre primero una pantalla con su descripción y los botones USAR / VOLVER
    (en PC se mantiene el clic directo + tooltip). Se intercepta en fase de captura, antes de los manejadores de cada carta. */
 (function () {
-  const ids = { abilityAutoBtn: 'auto', ability2xBtn: 'double', abilityShieldBtn: 'shield', abilityRiskBtn: 'riskPot', abilityPerdedorBtn: 'perdedor', abilitySummonDuendeBtn: 'summonDuende' };
-  const NOMBRES = { auto: 'AUTO', double: '2X', shield: 'ESCUDO', riskPot: 'APUESTA', perdedor: 'PERDEDOR', summonDuende: 'DUENDE' };
+  const ids = { abilityAutoBtn: 'auto', ability2xBtn: 'double', abilityShieldBtn: 'shield', abilityRiskBtn: 'riskPot', abilityPerdedorBtn: 'perdedor', abilitySummonDuendeBtn: 'summonDuende', abilityCofradiaBtn: 'cofradia' };
+  const NOMBRES = { auto: 'AUTO', double: '2X', shield: 'ESCUDO', riskPot: 'APUESTA', perdedor: 'PERDEDOR', summonDuende: 'DUENDE', cofradia: 'COFRADÍA' };
   let bypass = false;
   document.addEventListener('click', (e) => {
     const cfg = DATOS_JUEGO.CARTAS_PANTALLA_PREVIA || {};
@@ -424,6 +464,112 @@ if (btnSummon) {
     }
   });
 }
+
+/* ==========================================================================
+   [0.104] CARTA COFRADÍA DEL COFRE
+   Sustituye los cofres de la pantalla por 10 cofres aleatorios (cualquier rareza, con las probabilidades del último escalón).
+   Se presenta barajando y abriendo en abanico sobre la habitación vacía (sin cofre ni interfaz, conservando el ambiente). Tocar una carta la amplía; ELEGIR la confirma.
+   El cofre elegido aparece en la sala con el destello del reroll y NO se abre solo. Consumible de un solo uso; no disponible en la secuencia final.
+   ========================================================================== */
+function cofradiaRoll() {
+  const types = DATOS_JUEGO.COFRES.ESTANDAR.filter(t => STATE.level >= t.minNivel);
+  const tier = DATOS_JUEGO.PROBABILIDADES.RAREZAS_COFRES_POR_NIVEL[4];
+  const out = [];
+  for (let i = 0; i < 10; i++) {
+    const type = types[Math.floor(Math.random() * types.length)];
+    const roll = Math.random();
+    let rarity = CHEST_RARITIES[0];
+    if (roll < tier.legendario) rarity = CHEST_RARITIES[3];
+    else if (roll < tier.legendario + tier.epico) rarity = CHEST_RARITIES[2];
+    else if (roll < tier.legendario + tier.epico + tier.raro) rarity = CHEST_RARITIES[1];
+    out.push({ type, rarity, fog: false });
+  }
+  return out;
+}
+let cofradiaBusy = false;
+function cofradiaStart() {
+  if (cofradiaBusy || document.getElementById('cofradiaModal')) return;
+  if ((STATE.abilities.cofradia || 0) <= 0) return;
+  if (isClimaxActive()) { showPersistentFeedback('🃏 La Cofradía ya no responde...'); return; }
+  if (minigameInProgress || isLootProcessing || !mainScreenFree()) return;
+  cofradiaBusy = true;
+  STATE.abilities.cofradia--;
+  audio.init(); audio.playClick(0.9);
+  const picks = cofradiaRoll();
+  const host = uiHost();
+  const fr = document.getElementById('gameFrame'); if (fr) fr.classList.add('cofradia-on');
+  cofradiaOpen = true;   // la sala se queda vacía (el cofre se desvanece) y la interfaz se oculta
+  updateUI();
+  const m = document.createElement('div');
+  m.id = 'cofradiaModal';
+  m.innerHTML = `<div class="cf-title">COFRADÍA DEL COFRE</div><div class="cf-sub" id="cfSub">Barajando...</div><div class="cf-fan" id="cfFan"></div>
+    <div class="cf-prev hidden" id="cfPrev"><div class="cf-prev-card" id="cfPrevCard"></div><div class="cf-prev-btns"><button id="cfPick" type="button">ELEGIR</button><button id="cfBack" type="button">VOLVER</button></div></div>`;
+  host.appendChild(m);
+  const fan = m.querySelector('#cfFan'), prev = m.querySelector('#cfPrev'), prevCard = m.querySelector('#cfPrevCard'), sub = m.querySelector('#cfSub');
+  const W = fan.clientWidth || 360;
+  const cw = Math.min(74, Math.round(W * 0.19)), step = Math.min(34, (W - cw - 12) / 9);
+  const cardHtml = c => {
+    const src = (ART_ON && ASSETS.cofres[c.type.id]) ? chestSpriteSrc(c.type, c.rarity) : '';
+    return `<div class="cf-face cf-front" style="border-color:${c.rarity.color}"><span class="cf-rar" style="color:${c.rarity.color}">${c.rarity.name}</span>${src ? `<img src="${src}" alt="">` : '<i class="fa-solid fa-box"></i>'}<span class="cf-typ">${c.type.nombre}</span></div><div class="cf-face cf-back"><i class="fa-solid fa-boxes-stacked"></i></div>`;
+  };
+  const cards = picks.map((c, i) => {
+    const el = document.createElement('div');
+    el.className = 'cf-card';
+    el.style.cssText = `width:${cw}px;height:${Math.round(cw * 1.4)}px;left:${W / 2 - cw / 2}px;`;
+    el.innerHTML = `<div class="cf-in">${cardHtml(c)}</div>`;
+    fan.appendChild(el);
+    el.style.transform = `translate(0px, 0px) rotate(${(Math.random() * 8 - 4).toFixed(1)}deg)`;
+    return el;
+  });
+  // 1) baraja: las cartas se reparten a izquierda y derecha varias veces
+  const shuffleMs = 1000;
+  cards.forEach((el, i) => {
+    const dir = i % 2 ? 1 : -1;
+    try { el.animate([{ transform: el.style.transform }, { transform: `translate(${dir * 46}px, ${-6 * (i % 3)}px) rotate(${dir * 9}deg)` }, { transform: `translate(${-dir * 30}px, 0px) rotate(${-dir * 6}deg)` }, { transform: `translate(${dir * 38}px, ${4 * (i % 3)}px) rotate(${dir * 7}deg)` }, { transform: 'translate(0px, 0px) rotate(0deg)' }], { duration: shuffleMs, delay: i * 14, easing: 'ease-in-out' }); } catch (e) {}
+  });
+  [0, 280, 560].forEach(t => setTimeout(() => { try { audio.playSwoosh(); } catch (e) {} }, t));
+  // 2) abanico
+  setTimeout(() => {
+    sub.textContent = 'Toca un cofre para verlo';
+    cards.forEach((el, i) => {
+      const k = i - 4.5, x = k * step, y = Math.pow(Math.abs(k) / 4.5, 2) * 28, rot = k * 4.6;
+      setTimeout(() => {
+        el.style.transition = 'transform .5s cubic-bezier(.2,1.3,.4,1)';
+        el.style.transform = `translate(${x}px, ${y}px) rotate(${rot}deg)`;
+        el.classList.add('flip');
+        el.dataset.k = String(i);
+        if (i % 3 === 0) { try { audio.playCardRise(); } catch (e) {} }
+      }, i * 55);
+    });
+    setTimeout(() => cards.forEach((el, i) => { el.classList.add('ready'); el.addEventListener('click', () => openPrev(i)); }), 10 * 55 + 520);
+  }, shuffleMs + 120);
+  let sel = -1;
+  function openPrev(i) {
+    sel = i; try { audio.playClick(0.6); } catch (e) {}
+    prevCard.innerHTML = `<div class="cf-big">${cardHtml(picks[i]).replace('cf-face cf-front', 'cf-face cf-front show').replace('<div class="cf-face cf-back"><i class="fa-solid fa-boxes-stacked"></i></div>', '')}</div>`;
+    prev.classList.remove('hidden');
+    cards.forEach((el, k) => el.classList.toggle('sel', k === i));
+  }
+  m.querySelector('#cfBack').addEventListener('click', () => { sel = -1; prev.classList.add('hidden'); cards.forEach(el => el.classList.remove('sel')); try { audio.playClick(0.5); } catch (e) {} });
+  m.querySelector('#cfPick').addEventListener('click', () => {
+    if (sel < 0) return;
+    const chosen = picks[sel];
+    try { audio.playUnlockFanfare(chosen.rarity.id); } catch (e) {}
+    m.style.transition = 'opacity .35s ease'; m.style.opacity = '0';
+    STATE.screenChests = [chosen]; STATE.activeChestIdx = 0;   // el cofre está oculto hasta que se retire el telón de la sala vacía
+    setTimeout(() => {
+      m.remove();
+      cofradiaOpen = false;
+      const f2 = document.getElementById('gameFrame'); if (f2) f2.classList.remove('cofradia-on');
+      updateChestSelectionUI();
+      chestMutateFxNow(null);   // mismo destello que el reroll; el cofre NO se abre solo
+      cofradiaBusy = false;
+      updateUI();
+    }, 380);
+  });
+}
+const btnCofradia = document.getElementById('abilityCofradiaBtn');
+if (btnCofradia) btnCofradia.addEventListener('click', () => cofradiaStart());
 
 let globalPuzzleTimerInterval = null;
 let globalPuzzleTimeLeft = 10;
