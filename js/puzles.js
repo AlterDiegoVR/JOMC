@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — puzles.js — VERSIÓN 0.205
+// JUST ONE MORE CHEST — puzles.js — VERSIÓN 0.206
 // minijuegos: ganzúa, pistones, hackeo, tuberías
 // ==========================================================================
 
@@ -1568,17 +1568,20 @@ function fzGenerate(rarityId) {
   const C = DATOS_JUEGO.MINIJUEGOS.FUSIBLES, cfg = C.POR_RAREZA[rarityId] || C.POR_RAREZA.normal, n = cfg.tamano || C.TAMANO || 4, total = n * n;
   const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
   const variant = (cfg.variantes && cfg.variantes.length) ? cfg.variantes[Math.floor(Math.random() * cfg.variantes.length)] : 'clasico';
-  const M = variant === 'tres_estados' ? 3 : 2;
+  const M = variant.indexOf('tres') === 0 ? 3 : 2;   // 'tres_estados' y 'tres_fundidos' usan 3 estados
   const shuffled = Array.from({ length: total }, (_, i) => i).sort(() => Math.random() - 0.5);
   const dead = Array(total).fill(false), short = Array(total).fill(false);
-  if (variant === 'fundidos') shuffled.slice(0, rnd(C.FUNDIDOS.MIN, C.FUNDIDOS.MAX)).forEach(i => { dead[i] = true; });
+  if (variant === 'fundidos' || variant === 'tres_fundidos') { const F = cfg.fundidos || C.FUNDIDOS; shuffled.slice(0, rnd(F.min != null ? F.min : F.MIN, F.max != null ? F.max : F.MAX)).forEach(i => { dead[i] = true; }); }
   if (variant === 'cortocircuito') shuffled.filter(i => !dead[i]).slice(0, rnd(C.CORTOCIRCUITOS.MIN, C.CORTOCIRCUITOS.MAX)).forEach(i => { short[i] = true; });
+  // [0.206] perfil de dificultad dentro de la misma rareza (reparto por pesos)
+  let mezclaCfg = cfg.mezcla;
+  if (cfg.perfiles && cfg.perfiles.length) { const tot = cfg.perfiles.reduce((a, q) => a + q.peso, 0); let r = Math.random() * tot; for (const q of cfg.perfiles) { if ((r -= q.peso) < 0) { mezclaCfg = q.mezcla; break; } } }
   const allowed = []; for (let i = 0; i < total; i++) if (!dead[i]) allowed.push(i);
   let st = null, solveMoves = 0;
   for (let attempt = 0; attempt < 300; attempt++) {
     st = { n, M, cells: Array(total).fill(M - 1), dead, short };
     const mult = {}; let done = 0, guard = 0;
-    const mez = M === 3 ? Math.ceil(cfg.mezcla / 2) : cfg.mezcla;   // con 3 estados cada toque pide 2 de vuelta: se mezcla la mitad
+    const mez = M === 3 ? Math.ceil(mezclaCfg / 2) : mezclaCfg;   // con 3 estados cada toque pide 2 de vuelta: se mezcla la mitad
     while (done < mez && guard++ < 200) {
       const i = allowed[Math.floor(Math.random() * allowed.length)];
       if ((mult[i] || 0) >= M - 1) continue;      // sin repetir un fusible más de M-1 veces (más veces se cancelaría)

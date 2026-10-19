@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — juego.js — VERSIÓN 0.205
+// JUST ONE MORE CHEST — juego.js — VERSIÓN 0.206
 // arte del cofre abierto, subida de nivel, abrir cofre
 // ==========================================================================
 
