@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — eventos.js — VERSIÓN 0.202
+// JUST ONE MORE CHEST — eventos.js — VERSIÓN 0.203
 // tiendas especiales, visitas, habilidades, temporizador, fallo y Game Over
 // ==========================================================================
 
@@ -11,13 +11,13 @@
 function seqCondemn() {
   STATE.sequenceBroken = true; STATE.climaxPhase = false;
   STATE.eventQueue.push(() => {
-    triggerSequentialDialogue("EL TRAPERO", DATOS_JUEGO.NARRATIVA.HISTORIA_SECUENCIA.COFRE_89_TRAPERO_CONDENA, "fa-mask", "Condena Eterna", "text-rose-700");
+    triggerSequentialDialogue("EL TRAPERO", narr('HISTORIA_SECUENCIA').COFRE_89_TRAPERO_CONDENA, "fa-mask", "Condena Eterna", "text-rose-700");
   });
 }
 
 function triggerSpecialMerchantShop() {
   const co = STATE.chestsOpened;
-  const seqHist = DATOS_JUEGO.NARRATIVA.HISTORIA_SECUENCIA;
+  const seqHist = narr('HISTORIA_SECUENCIA');
   let speech = "";
 
   if (co === DATOS_JUEGO.PROGRESIÓN.SECUENCIA_HISTORIA.COFRE_OFERTA_1) speech = seqHist.COFRE_85_DUENDE;
@@ -39,7 +39,7 @@ function handleSpecialShopNoBuy() {
   if (merchantModal) merchantModal.classList.add('hidden');
 
   const co = STATE.chestsOpened;
-  const reac = DATOS_JUEGO.NARRATIVA.REACCIONES_DUENDE_NO_COMPRAR;
+  const reac = narr('REACCIONES_DUENDE_NO_COMPRAR');
   let reactionText = reac[co] || reac.DEFAULT;
   {   // [0.090] Enfado: sonido y sacudida de pantalla, más fuertes cuanto más avanzado el final
     const ec = DATOS_JUEGO.ENFADO_DUENDE || {}; const e = ec[co] || ec.DEFAULT;
@@ -73,7 +73,8 @@ function openSpecialShopModal() {
     { id: 'pack_pines', name: '+2 Pines de Acero', cost: Math.round(shopBasePrice('pack_pines') * discountMult), icon: 'fa-screwdriver', prop: 'proPicks', qty: 2, minLvl: 2 },
     { id: 'pack_usb', name: '+2 Llaves USB', cost: Math.round(shopBasePrice('pack_usb') * discountMult), icon: 'fa-microchip', prop: 'usb', qty: 2, minLvl: 3 },
     { id: 'pack_valvulas', name: '+2 Válvulas Hidráulicas', cost: Math.round(shopBasePrice('pack_valvulas') * discountMult), icon: 'fa-faucet', prop: 'valves', qty: 2, minLvl: valvesShopLevel() },
-    { id: 'pack_pilas', name: '+2 Pilas', cost: Math.round(shopBasePrice('pack_pilas') * discountMult), icon: 'fa-battery-half', prop: 'batteries', qty: 2, needUnlocked: 'batteries' },   // [0.201]
+    { id: 'pack_pilas', name: '+2 Pilas', cost: Math.round(shopBasePrice('pack_pilas') * discountMult), icon: 'fa-battery-half', prop: 'batteries', qty: 2, needUnlocked: 'batteries' },
+    { id: 'pack_fusibles', name: '+2 Fusibles', cost: Math.round(shopBasePrice('pack_fusibles') * discountMult), icon: 'fa-bolt', prop: 'fuses', qty: 2, needUnlocked: 'fuses' },   // [0.201]
     { id: 'carta_auto_open', name: 'Carta Auto-Open', cost: Math.round(shopBasePrice('carta_auto_open') * discountMult), icon: 'fa-wand-magic-sparkles', abilityProp: 'auto' },
     { id: 'carta_escudo', name: 'Carta Escudo Protector', cost: Math.round(shopBasePrice('carta_escudo') * discountMult), icon: 'fa-shield-halved', abilityProp: 'shield' }
   ];
@@ -107,7 +108,7 @@ function openSpecialShopModal() {
 
         triggerSequentialDialogue(
           "EL DUENDE",
-          DATOS_JUEGO.NARRATIVA.REACCIONES_DUENDE_NO_COMPRAR.COMPRA_EXITOSA,
+          narr('REACCIONES_DUENDE_NO_COMPRAR').COMPRA_EXITOSA,
           "fa-hat-wizard",
           "Codicia Satisfactoria",
           "text-purple-300",
@@ -295,52 +296,42 @@ function executeDiffuseEchoTransition() {
     if (sf) { sf.style.transition = 'opacity 1s ease'; sf.style.opacity = '0'; }
   }, 100);
 
+  // [0.203] Dos voces en la oscuridad: cada frase entra con un fundido muy lento y se cruza con la siguiente
+  const FADE = 3500;   // ms de cada fundido (entrada y salida)
   setTimeout(() => {
     overlay.innerHTML = `
-      <div id="echoMsg1" class="text-2xl sm:text-4xl font-mono font-bold tracking-widest text-[#c084fc] blur-[0.6px] drop-shadow-[0_0_15px_rgba(192,132,252,0.6)] transition-opacity duration-700 opacity-0 select-none">
-        ${ecos.MENSAJE_1}
+      <div class="relative w-full" style="min-height:4rem">
+        <div id="echoMsg1" class="absolute inset-0 flex items-center justify-center text-2xl sm:text-4xl font-mono font-bold tracking-widest text-[#c084fc] blur-[0.6px] drop-shadow-[0_0_15px_rgba(192,132,252,0.6)] select-none" style="opacity:0;transition:opacity ${FADE}ms ease-in-out">${ecos.MENSAJE_1}</div>
+        <div id="echoMsg2" class="absolute inset-0 flex items-center justify-center text-2xl sm:text-4xl font-mono font-bold tracking-widest text-[#f43f5e] blur-[0.6px] drop-shadow-[0_0_15px_rgba(244,63,94,0.6)] select-none" style="opacity:0;transition:opacity ${FADE}ms ease-in-out">${ecos.MENSAJE_2}</div>
       </div>
     `;
-    const msg1 = document.getElementById('echoMsg1');
-    setTimeout(() => { if (msg1) msg1.classList.remove('opacity-0'); }, 50);
-
+    const msg1 = document.getElementById('echoMsg1'), msg2 = document.getElementById('echoMsg2');
+    setTimeout(() => { if (msg1) msg1.style.opacity = '1'; }, 50);
+    // la primera voz se apaga mientras la segunda empieza a oírse
     setTimeout(() => {
-      if (msg1) msg1.classList.add('opacity-0');
-
+      if (msg1) msg1.style.opacity = '0';
+      if (msg2) msg2.style.opacity = '1';
+    }, 50 + FADE + 1500);
+    setTimeout(() => {
+      if (msg2) msg2.style.opacity = '0';
+      overlay.classList.add('opacity-0');
       setTimeout(() => {
-        overlay.innerHTML = `
-          <div id="echoMsg2" class="text-2xl sm:text-4xl font-mono font-bold tracking-widest text-[#f43f5e] blur-[0.6px] drop-shadow-[0_0_15px_rgba(244,63,94,0.6)] transition-opacity duration-700 opacity-0 select-none">
-            ${ecos.MENSAJE_2}
-          </div>
-        `;
-        const msg2 = document.getElementById('echoMsg2');
-        setTimeout(() => { if (msg2) msg2.classList.remove('opacity-0'); }, 50);
+        overlay.remove();
+        if (typeof audio !== 'undefined' && audio.ctx) audio.ctx.resume();
 
-        setTimeout(() => {
-          if (msg2) msg2.classList.add('opacity-0');
-          overlay.classList.add('opacity-0');
-
-          setTimeout(() => {
-            overlay.remove();
-            if (typeof audio !== 'undefined' && audio.ctx) audio.ctx.resume();
-            
-            // 🟢 TRANSICIÓN AL BUCLE 2
-            STATE.currentLoop = 2;
-            glassShatterRestore();   // [0.103] el marco vuelve a verse
-            resetGame(true);
-            // [0.084] Sin ningún aviso sobre el bucle: el jugador lo deduce por lo que ve y por las pistas de tenderos y post-its
-          }, 1000);
-        }, 2000);
-
-      }, 600);
-    }, 2000);
-
+        // 🟢 TRANSICIÓN AL SIGUIENTE BUCLE (1→2, 2→3; el 3 es el último por ahora y se repite con el mismo final)
+        STATE.currentLoop = Math.min((STATE.currentLoop || 1) + 1, 3);   // [0.203]
+        glassShatterRestore();   // [0.103] el marco vuelve a verse
+        resetGame(true);
+        // [0.084] Sin ningún aviso sobre el bucle: el jugador lo deduce por lo que ve y por las pistas de tenderos y post-its
+      }, 1000);
+    }, 50 + FADE + 1500 + FADE + 2500);
   }, 1000);
 }
 
 function triggerDuendeNarrativeVisit() {
   const tier = getNarrativeTier();
-  const phrases = DATOS_JUEGO.NARRATIVA.DUENDE_FRASES[tier];
+  const phrases = narr('DUENDE_FRASES')[tier];
   const speech = phrases[Math.floor(Math.random() * phrases.length)];
 
   const smallGifts = [
@@ -350,6 +341,7 @@ function triggerDuendeNarrativeVisit() {
     { prop: 'valves', name: '+1 Válvula Hidráulica', icon: 'fa-faucet' }
   ];
   if (STATE.batteriesUnlocked) smallGifts.push({ prop: 'batteries', name: '+1 Pila', icon: 'fa-battery-half' });   // [0.201]
+  if (toolUnlocked('fuses')) smallGifts.push({ prop: 'fuses', name: '+1 Fusible', icon: 'fa-bolt' });   // [0.203]
 
   const gift = smallGifts[Math.floor(Math.random() * smallGifts.length)];
   STATE[gift.prop]++;
@@ -581,7 +573,7 @@ function cofradiaStart() {
     prevCard.innerHTML = `<div class="cf-big">${cardHtml(picks[i]).replace('cf-face cf-front', 'cf-face cf-front show').replace('<div class="cf-face cf-back"><i class="fa-solid fa-boxes-stacked"></i></div>', '')}</div>`;
     {   // [0.106] aviso si no tienes herramientas para ese cofre
       const c = picks[i], need = getRequiredToolCount(c.rarity), have = STATE[c.type.consumible] || 0;
-      const NM = { picks: ['Ganzúa', 'Ganzúas'], proPicks: ['Pin de Acero', 'Pines de Acero'], usb: ['Llave USB', 'Llaves USB'], valves: ['Válvula', 'Válvulas'], batteries: ['Pila', 'Pilas'] }[c.type.consumible] || ['herramienta', 'herramientas'];
+      const NM = { picks: ['Ganzúa', 'Ganzúas'], proPicks: ['Pin de Acero', 'Pines de Acero'], usb: ['Llave USB', 'Llaves USB'], valves: ['Válvula', 'Válvulas'], batteries: ['Pila', 'Pilas'], fuses: ['Fusible', 'Fusibles'] }[c.type.consumible] || ['herramienta', 'herramientas'];
       const pickBtn = m.querySelector('#cfPick');
       pickBtn.classList.toggle('nohave', have < need);
       const old = prevCard.querySelector('.cf-warn'); if (old) old.remove();
@@ -956,6 +948,7 @@ function openUnfairDeal() {
   if (active.type.consumible === 'usb') toolTitle = 'Llave USB';
   if (active.type.consumible === 'valves') toolTitle = 'Válvula Hidráulica';
   if (active.type.consumible === 'batteries') toolTitle = 'Pila';
+  if (active.type.consumible === 'fuses') toolTitle = 'Fusible';   // [0.203]
 
   const curseBase = DATOS_JUEGO.ECONOMIA.MALDICION_SALVAMENTO.DURACION_BASE;
   const curseInc = DATOS_JUEGO.ECONOMIA.MALDICION_SALVAMENTO.INCREMENTO_POR_TRATO;
@@ -970,7 +963,7 @@ function openUnfairDeal() {
   }
   const showDeal = () => { const dealModal = document.getElementById('unfairDealModal'); if (dealModal) dealModal.classList.remove('hidden'); };
   // Diálogo del Trapero (la primera vez más explicativo)
-  const fr = (DATOS_JUEGO.NARRATIVA.TRAPERO_GAME_OVER || {});
+  const fr = (narr('TRAPERO_GAME_OVER') || {});
   const first = STATE.salvageDealsCount === 0;
   const pool = first ? [].concat(fr.PRIMERA || []) : (fr.OTRAS || []);
   const phrase = (pool.filter(Boolean).length ? pool.filter(Boolean)[Math.floor(Math.random() * pool.filter(Boolean).length)] : '');

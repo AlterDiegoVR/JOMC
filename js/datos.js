@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — datos.js — VERSIÓN 0.202
+// JUST ONE MORE CHEST — datos.js — VERSIÓN 0.203
 // DATOS_JUEGO: configuración y balance
 // ==========================================================================
 
@@ -9,7 +9,7 @@
 
 const DATOS_JUEGO = {
   // [0.088] Versión visible en pantalla (esquina inferior central) para que las capturas la incluyan
-  VERSION: '0.202',
+  VERSION: '0.203',
   // [0.104] Efectos de la apertura automática de la secuencia final (cofres 101-110); la intensidad sube del primero al último (k = 0..1)
   SECUENCIA_FINAL_FX: { ACTIVAR: true, ESTALLIDOS_BASE: 2, ESTALLIDOS_EXTRA: 4, PARTICULAS_POR_ESTALLIDO: 40, HACIA_CENTRO_BASE: 30, HACIA_CENTRO_EXTRA: 60,
     SACUDIDA_PX: 6, SACUDIDA_EXTRA_PX: 10, SACUDIDA_MS: 520, PULSO_ZOOM: 0.02, DESTELLO: 0.10 },
@@ -58,7 +58,7 @@ const DATOS_JUEGO = {
   // La palabra elegida se guarda por bucle y pasa de un bucle a otro. Frases y palabras PROVISIONALES: edítalas aquí (cada bucle: frase + exactamente 10 palabras).
   CONTRASENA: {
     COFRE: 53,
-    HUECO: '_ _ _ _ _',
+    HUECO: '',   // [0.203] el hueco es ahora una línea continua con cursor (CSS .pass-gap); sin texto
     BUCLES: {
       1: { frase: 'Los cofres son como', palabras: ['espejos', 'jaulas', 'relojes', 'puertas', 'sueños', 'deudas', 'vicios', 'regalos', 'promesas', 'bucles'] },
       2: { frase: 'El ORO es genial pero', palabras: ['pesa', 'quema', 'miente', 'cansa', 'ciega', 'engaña', 'acaba', 'envenena', 'pasa', 'duele'] },
@@ -72,6 +72,7 @@ const DATOS_JUEGO = {
       tumbler: 'Pulsa el botón o toca la pantalla para fijar el <span class="text-amber-400 font-bold">pistón activo</span> con la <span class="text-amber-400 font-bold">unión latón/acero</span> sobre la <span class="text-emerald-400 font-bold">línea verde</span>.',
       hack: 'Elige la palabra de la lista. Cada intento te dice cuántas letras coinciden.',
       pipe: 'Gira las tuberías para llevar el agua de la válvula a la salida.',
+      fuses: 'Toca un fusible: <span class="text-amber-400 font-bold">se invierte él y sus vecinos</span>. Deja <span class="text-amber-400 font-bold">todos los filamentos encendidos</span> antes de quedarte sin jugadas. <span class="text-emerald-400 font-bold">Sin reloj.</span>',
       sequence: 'Memoriza la <span class="text-amber-400 font-bold">secuencia de luces</span> y repítela con las mismas notas. <span class="text-emerald-400 font-bold">Una sola pifia y se acaba</span>.'   // [0.201]
     } },
   // [0.103] Pitido de cuenta atrás de los puzles (Variante D, Latido): uno por segundo en los últimos SEGUNDOS s, cada vez más agudo
@@ -121,6 +122,7 @@ const DATOS_JUEGO = {
     PINES: 0,
     USB: 0,
     VALVULAS: 0,
+    FUSIBLES: 0,   // [0.203] no existen hasta que el Duende da el primero (bucle 3, nivel 5)
     PILAS: 0,   // [0.201] no existen hasta que el Duende da la primera (bucle 2+, nivel 5)
     ORO: 0
   },
@@ -180,7 +182,8 @@ const DATOS_JUEGO = {
         reciclaje_proPicks: 'Funde tus ganzúas y fórjalas en dos pines de acero.',
         reciclaje_usb: 'Convierte tus ganzúas en una llave USB.',
         reciclaje_valves: 'Convierte tus ganzúas en una válvula hidráulica.',
-        reciclaje_batteries: 'Convierte tus ganzúas en una pila para la linterna.'   // [0.201]
+        reciclaje_batteries: 'Convierte tus ganzúas en una pila para la linterna.',   // [0.201]
+        reciclaje_fuses: 'Convierte tus ganzúas en un fusible para el Cuadro Eléctrico.'   // [0.203]
       },
       BOTONES: { COMPRAR: 'COMPRAR', ROBAR: 'ROBAR', CANJEAR: 'CANJEAR' },
       // [0.102] Tratos del Trapero: fundido a negro, texto del Trapero y tratos en cascada
@@ -230,7 +233,7 @@ const DATOS_JUEGO = {
     ESCALA_VENTANAS: { ACTIVAR: true, ANCHO_BASE: 390, MAX: 1.7 },
 
     // [0.104] Escalado de los puzles ganzúa / tuberías / terminal al espacio libre en PC (zoom máximo y margen vertical en px). En móvil no se agranda (salvo las tuberías, que llenan el ancho).
-    ESCALA_PUZLES: { ACTIVAR: true, MAX: { lockpick: 1.7, tumbler: 1.7, pipe: 2.1, hack: 1.6, sequence: 1.5 }, MARGEN_PX: 26, PIPE_TOPE_CASILLA_PX: 72 },
+    ESCALA_PUZLES: { ACTIVAR: true, MAX: { lockpick: 1.7, tumbler: 1.7, pipe: 2.1, hack: 1.6, sequence: 1.5, fuses: 1.5 }, MARGEN_PX: 26, PIPE_TOPE_CASILLA_PX: 72 },
     // [0.104] Terminal: 'SCANLINES' = opacidad de las líneas de barrido (0 = sin líneas, 0.38 = como la 0.103). 'BRILLO' multiplica el halo verde de las letras.
     TERMINAL_CRT: { SCANLINES: 0.06, BRILLO: 1.5 },
 
@@ -252,7 +255,9 @@ const DATOS_JUEGO = {
       PISTONES: { ACTIVAR: true, X: [13, 21, 29, 37], PERIODOS_S: [2.6, 3.4, 2.1, 3.0], FASES: [0, 1.3, 2.2, 0.7], Y_MIN: 29, Y_MAX: 38 },
       DIGITAL: { ACTIVAR: true, CAMBIO_MS: 1900, BARAJA_MS: 420, LEDS_PERIODOS_S: [1.1, 1.7, 2.3] },
       AGUJA: { ACTIVAR: true, CICLO_S: 10, SUBIDA_S: 1.4, ANGULO_REPOSO: -45, ANGULO_PRESION: 46, TEMBLOR_GRADOS: 6 },
-      NEON: { ACTIVAR: true, CICLO_MS: 1760 }   // [0.201] las 4 luces se encienden de una en una; los neones corren por las líneas y el aro
+      NEON: { ACTIVAR: true, CICLO_MS: 1760 },   // [0.201]
+      // [0.203] Cuadro Eléctrico: la bombilla se enciende y se apaga, el fusible apagado parpadea y rayos finos rodean el cofre (efecto DeLorean)
+      ELECTRICO: { ACTIVAR: true, PASO_MS: 100, BOMBILLA: [0,1,1,2,1,0,2,2,1,0,1,2,1,1,0,2], RAYOS: [4,6,3,7,5,2,7,4,6,3,5,7,3,6,2,5], DESTELLO_DESDE: 6, TINTE_ALFA: 0.16 }   // RAYOS = nº de rayos por fotograma; DESTELLO_DESDE = nº de rayos a partir del cual el cofre se tiñe de azul las 4 luces se encienden de una en una; los neones corren por las líneas y el aro
     },
 
     // Zona de la cerradura por tipo de cofre, como fracción del sprite (x, y desde la esquina sup. izq.; r = radio × ancho)
@@ -261,7 +266,8 @@ const DATOS_JUEGO = {
       piston:    { x: 0.50, y: 0.69, r: 0.22 },
       cyber:     { x: 0.50, y: 0.75, r: 0.20 },
       hydraulic: { x: 0.46, y: 0.74, r: 0.18 },
-      neon:      { x: 0.50, y: 0.56, r: 0.19 }   // [0.201]
+      neon:      { x: 0.50, y: 0.56, r: 0.19 },   // [0.201]
+      electric:  { x: 0.50, y: 0.72, r: 0.20 }   // [0.203] caja de fusibles
     }
   },
 
@@ -329,7 +335,7 @@ const DATOS_JUEGO = {
       pack_pines: 25,   // [0.105]
       pack_usb: 30,   // [0.105]
       pack_valvulas: 35,
-      pack_pilas: 35,   // [0.201] = la herramienta avanzada más cara
+      pack_pilas: 35, pack_fusibles: 40,   // [0.201] = la herramienta avanzada más cara
       carta_auto_open: 90,
       carta_escudo: 40,
       carta_apuesta: 50,
@@ -339,14 +345,14 @@ const DATOS_JUEGO = {
     },
     // [0.201] Precios de la tienda del Duende POR BUCLE (1, 2 y 3). De momento los tres bucles tienen los mismos valores que el bucle 1; se editan aquí.
     PRECIOS_POR_BUCLE: {
-      1: { pack_ganzuas: 20, pack_pines: 25, pack_usb: 30, pack_valvulas: 35, pack_pilas: 35, carta_auto_open: 90, carta_escudo: 40, carta_apuesta: 50, contador_cofres: 100, carta_cofradia: 100, aumento_precio_por_compra: 5 },
-      2: { pack_ganzuas: 20, pack_pines: 25, pack_usb: 30, pack_valvulas: 35, pack_pilas: 35, carta_auto_open: 90, carta_escudo: 40, carta_apuesta: 50, contador_cofres: 100, carta_cofradia: 100, aumento_precio_por_compra: 5 },
-      3: { pack_ganzuas: 20, pack_pines: 25, pack_usb: 30, pack_valvulas: 35, pack_pilas: 35, carta_auto_open: 90, carta_escudo: 40, carta_apuesta: 50, contador_cofres: 100, carta_cofradia: 100, aumento_precio_por_compra: 5 }
+      1: { pack_ganzuas: 20, pack_pines: 25, pack_usb: 30, pack_valvulas: 35, pack_pilas: 35, pack_fusibles: 40, carta_auto_open: 90, carta_escudo: 40, carta_apuesta: 50, contador_cofres: 100, carta_cofradia: 100, aumento_precio_por_compra: 5 },
+      2: { pack_ganzuas: 20, pack_pines: 25, pack_usb: 30, pack_valvulas: 35, pack_pilas: 35, pack_fusibles: 40, carta_auto_open: 90, carta_escudo: 40, carta_apuesta: 50, contador_cofres: 100, carta_cofradia: 100, aumento_precio_por_compra: 5 },
+      3: { pack_ganzuas: 20, pack_pines: 25, pack_usb: 30, pack_valvulas: 35, pack_pilas: 35, pack_fusibles: 40, carta_auto_open: 90, carta_escudo: 40, carta_apuesta: 50, contador_cofres: 100, carta_cofradia: 100, aumento_precio_por_compra: 5 }
     },
     RECICLAJE: {
       ganzuas_requeridas: 3,
       herramientas_otorgadas: 1,
-      otorgadas: { proPicks: 2, usb: 1, valves: 1, batteries: 1 }   // [0.105] por herramienta canjeada; [0.201] pilas
+      otorgadas: { proPicks: 2, usb: 1, valves: 1, batteries: 1, fuses: 1 }   // [0.105] por herramienta canjeada; [0.201] pilas
     },
     TRAPERO: {
       gp_por_dos_ganzuas: 15,
@@ -417,6 +423,22 @@ const DATOS_JUEGO = {
 
   // 🟢 CONFIGURACIÓN DE MINIJUEGOS (ADAPTADO A RAREZA DE COFRE - BUCLE 1/2)
   MINIJUEGOS: {
+    // [0.203] FUSIBLES (Cuadro Eléctrico, bucle 3): tipo "Apaga las luces". Tocar un fusible invierte su estado y el de sus 4 vecinos; hay que dejar TODOS encendidos.
+    // El tablero SIEMPRE tiene solución: se parte del tablero resuelto y se aplican tocamientos al azar permitidos (JUGADAS_EXTRA se suma al mínimo real). Sin reloj.
+    FUSIBLES: {
+      TAMANO: 4,                                       // rejilla N x N
+      POR_RAREZA: {                                    // tocamientos de mezcla (dificultad), jugadas de margen y variantes posibles (una al azar si hay varias)
+        normal:     { mezcla: 4, extra: 4, variantes: [] },
+        raro:       { mezcla: 5, extra: 3, variantes: ['fundidos'] },
+        epico:      { mezcla: 6, extra: 3, variantes: ['cortocircuito'] },
+        legendario: { mezcla: 7, extra: 2, variantes: ['fundidos', 'tres_estados', 'cortocircuito'] }
+      },
+      FUNDIDOS: { MIN: 2, MAX: 3 },                    // fusibles fundidos (✖: no se pueden tocar, pero siguen cambiando con sus vecinos)
+      CORTOCIRCUITOS: { MIN: 1, MAX: 2 },              // fusibles ⚡: al tocarlos invierten TODA su fila en vez de la cruz
+      MENOS_JUGADAS_POR_NIVEL_DURO: 1,                 // jugadas de margen que se quitan por cada nivel de dureza (puzle endurecido = 1, extremo = 2); nunca baja de 0
+      TEXTOS: { clasico: 'CLÁSICO', fundidos: 'FUNDIDOS ✖', tres_estados: 'TRES ESTADOS', cortocircuito: 'CORTOCIRCUITO ⚡' },
+      PISTAS: { clasico: 'Cada toque invierte el fusible y sus 4 vecinos.', fundidos: 'Los fusibles ✖ no se pueden tocar, pero siguen cambiando con sus vecinos.', tres_estados: 'Cada fusible tiene 3 estados: apagado → ámbar → verde. Hay que dejarlos todos en verde.', cortocircuito: 'Los fusibles ⚡ invierten toda su fila en vez de la cruz.' }
+    },
     // [0.201] SECUENCIA (Simón dice) del ARCA DE NEÓN: 4 luces con una nota cada una; UNA sola secuencia por cofre [0.202]; un fallo corta el puzle. Sin reloj.
     SECUENCIA: {
       NOTAS_HZ: [261.63, 329.63, 392.00, 523.25],      // Do, Mi, Sol, Do agudo (arriba, derecha, abajo, izquierda)
@@ -604,7 +626,8 @@ const DATOS_JUEGO = {
       { id: "piston", nombre: "CAJA DE ACERO", juego: "tumbler", consumible: "proPicks", minNivel: 2, desc: "Mecanismo Pistonado • Requiere Pin de Acero" },
       { id: "cyber", nombre: "ARCA DIGITAL", juego: "hack", consumible: "usb", minNivel: 3, desc: "Terminal Encriptada • Requiere Llave USB" },
       { id: "hydraulic", nombre: "COFRE DE VAPOR", juego: "pipe", consumible: "valves", minNivel: 5, desc: "Red Hidráulica • Requiere Válvula" },   // [0.201] bucle 2+: nivel 3 (ver chestMinLevel en estado.js)
-      { id: "neon", nombre: "ARCA DE NEÓN", juego: "sequence", consumible: "batteries", minNivel: 5, desc: "Secuencia de Luces • Requiere Pila" }   // [0.201] solo bucle 2+, nivel 5
+      { id: "neon", nombre: "ARCA DE NEÓN", juego: "sequence", consumible: "batteries", minNivel: 5, desc: "Secuencia de Luces • Requiere Pila" },   // [0.201] solo bucle 2+, nivel 5
+      { id: "electric", nombre: "CUADRO ELÉCTRICO", juego: "fuses", consumible: "fuses", minNivel: 5, desc: "Caja de Fusibles • Requiere Fusible" }   // [0.203] solo bucle 3 (ver NIVELES_COFRE_BUCLE3 en estado.js)
     ],
     INQUIETANTES: [
       { id: "organico", nombre: "COFRE PULSANTE", tipo: "sacrificio", desc: "Palpita suavemente. Abrirlo cuesta 5 GP o 2 turnos de maldición." },
@@ -788,6 +811,272 @@ const DATOS_JUEGO = {
           "Valió la pena llegar hasta aquí.", "No quiero empezar de nuevo", "Tengo que estar atento la próxima vez.",
           "Tiene que haber una manera de romper el bucle", "Sabía lo que el Trapero me iba a decir, de alguna manera"
         ]
+      },
+
+      // [0.203] Post-its del bucle 3 (copia de los del bucle 2, editables por separado)
+      BUCLE_3: {
+        "1": [
+          "Buen trabajo.",
+          "El siguiente puede ser mejor.",
+          "No parece tan difícil.",
+          "Solo uno más (mentira)",
+          "Una cerradura limpia.",
+          "Sigue probando.",
+          "Cuestión de ritmo.",
+          "Curioso.",
+          "Estas ganzúas son de calidad.",
+          "Es mi primera vez...creo.",
+          "Ese clic es hermoso.",
+          "Valioso taco de post-its.",
+          "Guau.",
+          "¿Se te da bien?",
+          "Una cerradura como las de antes.",
+          "Nunca había abierto uno antes, ¿o sí?.",
+          "La satisfacción del trabajo bien hecho.",
+          "Valdrá la pena seguir.",
+          "Ese Trapero me hiela la sangre.",
+          "¿Un duende con una tienda en un cofre?",
+          "Hay cofres diferentes.",
+          "Las ganzúas no se rompen si lo haces bien.",
+          "Espero no volver a ver a ese tipo oscuro.",
+          "¡Qué tipo tan siniestro!",
+          "El duende me ha ayudado mucho.",
+          "Necesito ver otra vez al duende.",
+          "Se te da bien.",
+          "Ojalá ese duende vendiese chuches.",
+          "Easy.",
+          "No hay muchos cofres de donde yo vengo",
+          "password:46872398",
+          "Nunca había visto un duende",
+          "Ese Trapero...no sé.",
+          "Estas ganzúas resisten, si lo hago bien",
+          "Abrí ese cofre de metal y el pin se echó a perder",
+          "Estoy en racha!",
+          "Ah allá vamos de nuevo",
+          "Esto es extrañamente familiar",
+          "Nadie hace caso a los post-its",
+          "Debes aprender de los post-its",
+          "Todo está ocurriendo de nuevo",
+          "Dejavu",
+          "¿He estado aquí antes?"
+        ],
+        "2": [
+          "Ya llevas unos cuantos.",
+          "No te cuesta seguir, ¿verdad?",
+          "Otro más tampoco cambia nada.",
+          "Las manos trabajan solas.",
+          "El tiempo vuela aquí dentro.",
+          "Un tintineo muy satisfactorio.",
+          "Casi ni piensas en ello.",
+          "Un cofre tras otro.",
+          "Ese sonido es guay.",
+          "Aquí no estás seguro.",
+          "Otra vez está ocurriendo LO MISMO",
+          "¿Y si este es mi sitio?",
+          "Sigue.",
+          "¿Hoy es jueves?",
+          "¿Hay alguien ahí?",
+          "Húmedo y oscuro.",
+          "No tengo ni que pensarlo.",
+          "Parece que lo llevas haciendo toda la vida.",
+          "Abrir, cobrar, abrir, cobrar...",
+          "Los post-its",
+          "El cofre es el juego.",
+          "Esos pistones requieren mi atención.",
+          "Es como un sueño, no puedo detenerlo",
+          "¿Estoy aquí por las monedas o por los cofres?",
+          "Los pines se gastan en cada cofre.",
+          "Alinea esos pistones.",
+          "El Trapero quiere algo de mí.",
+          "Ese trato ha sido unfair.",
+          "El duende tiene buenos precios.",
+          "Eres un experto ya.",
+          "No tengo ganas de dejarlo.",
+          "Como el río hacia la mar",
+          "Puedo dejarlo cuando quiera.",
+          "Quizás haya oro en el siguiente cofre.",
+          "Ese duende ama el oro más que yo los cofres.",
+          "El duende tiene objetos muy útiles.",
+          "Señor Trapero, Mal Agüero",
+          "Mister Duende, todo por el cliente",
+          "Esos dos necesitan mejor marketing.",
+          "Debería saber cuantos cofre llevo ya.",
+          "Duende y Trapero, expertos usureros",
+          "Los cofres esconden algo",
+          "Dentro de los cofres a veces hay objetos.",
+          "Estos objetos decoran la habitación.",
+          "Nunca acierto a la primera al meter el USB",
+          "Siempre se me dió bien la informática.",
+          "El Taller de Reciclaje es una buena forma de no quedarme sin lo que necesito.",
+          "Todo se repite, todo",
+          "Tristes alas del destino"
+        ],
+        "3": [
+          "¿Por qué empezaste otra vez?",
+          "¿Recuerdas la anterior vez?",
+          "Abre otro.",
+          "Ya descansarás después.",
+          "El techo parece más bajo hoy.",
+          "Tus dedos no tiemblan, eso es bueno.",
+          "Nadie te espera fuera.",
+          "No recuerdas la puerta.",
+          "¿Había una puerta?",
+          "¿Cómo llegué hasta aquí?",
+          "Creo que ayer fue mi cumpleaños.",
+          "¿Esto se acaba en algún momento? ¿O vuelve a empezar?",
+          "Soy yo, o era yo",
+          "Este cofre es lo mejor que me ha pasado.",
+          "¿Recuerdas cómo era todo antes?",
+          "Un tintineo muy placentero, muy placentero.",
+          "Termina con todo, rompe esas ganzúas.",
+          "¿Qué fue lo último que dijo el Trapero?",
+          "Si cierro los ojos veo cofres.",
+          "Debí dejarlo antes.",
+          "El Duende se lleva todo mi oro.",
+          "Necesito cofres para tener oro y oro para abrir cofres.",
+          "El Trapero oculta algo.",
+          "Debí traerme un libro.",
+          "Me pregunto si lloverá fuera.",
+          "Nadie te está buscando ya.",
+          "Mis dedos no parecen los mismos.",
+          "¿Qué hora es?",
+          "Falta poco.",
+          "Qué cofres tan modernos.",
+          "Cofres con USB.",
+          "Cofres con USB y Wi-Fi.",
+          "Siempre fui malo con las palabras.",
+          "La decoración me ayuda.",
+          "No se acaba este taco de post-its. ¡Qué raro!",
+          "¿Recuerdas la hierba fresca bajo tus pies?",
+          "Espero que no me rescaten pronto, todavía quedan cofres.",
+          "¡Ah, para esto era el USB!",
+          "¡Qué moderno!",
+          "Estoy seguro de que puedo hackear este sistema.",
+          "Necesito más oro para abrir cofres.",
+          "Necesito más cofres para conseguir oro.",
+          "Si salgo de aquí pienso comprarme un buen cofre.",
+          "¿El duende no puede salir de su cofre?",
+          "Al duende parece gustarle mucho el oro.",
+          "Me pregunto por qué el duende no recoge él mismo el oro.",
+          "El duende y el trapero no parecen llevarse bien.",
+          "Hoy no le compré nada al duende y su cara cambió",
+          "Nunca he visto a ese duende fuera de su cofre",
+          "El Trapero me da miedo.",
+          "Parece querer engañarme siempre.",
+          "El interior de los cofres no huele bien.",
+          "¿Cómo era todo antes de los cofres?",
+          "Me gustaría saber cuantos cofres llevo abiertos",
+          "Ahora lo recuerdo...no, creo que lo soñé",
+          "Si vuelvo...¿estos post-its seguirán aquí?",
+          "El Trapero parece querer manejarlo todo",
+          "Estoy SEGURO de que esto ya ocurrió antes"
+        ],
+        "4": [
+          "¿Qué había fuera?",
+          "Cuesta recordarlo.",
+          "El sonido de la cerradura es reconfortante.",
+          "¿Cuántas horas han pasado? ¿días?",
+          "No hay nada más que esto.",
+          "Va a volver a ocurrir",
+          "Solo la llave y el cerrojo.",
+          "La sala te cuida",
+          "No mires atrás.",
+          "Esto es precioso.",
+          "Aquí estoy a salvo.",
+          "Solo se espera de mí que abra otro cofre.",
+          "¿Cómo era todo fuera?",
+          "Es como si no fuesen mis manos.",
+          "¿Quién soy?",
+          "¿Quién era?",
+          "El Duende ahora me regala cosas. :)",
+          "¿Si hubiese una puerta la cruzarías?",
+          "Quédate conmigo.",
+          "Abrir cofres es mi lugar seguro.",
+          "¿Ese cofre me mira?",
+          "Lo peor de los cofres es que se van cuando los abres.",
+          "El mundo es un gran cofre.",
+          "¿Quién los ha puesto aquí?",
+          "Alguien me ha susurrado: abre otro.",
+          "Podría hacer esto ETERNAMENTE.",
+          "Los cofres hablan entre ellos.",
+          "¿Qué le dice un cofre de madera a uno de vapor?",
+          "Me encanta el olor a cofre por la mañana.",
+          "Creo que me estoy volviendo loco.",
+          "Nunca me había pasado. Y sin embargo...",
+          "¿Es siempre el mismo Duende?",
+          "Mis manos no parecen mías.",
+          "Me encanta abrir cofres con los pies.",
+          "¿Adónde van los cofres?",
+          "Esta sala es confortable.",
+          "Estoy solo. Casi.",
+          "Ahora soy fontanero...",
+          "Las tuberías se me dan bien.",
+          "¿Cuántos tipos de cofre hay?",
+          "Me encantan esos cofres dorados.",
+          "Las válvulas son caras, necesito cofres.",
+          "¡Soy yo, el de los cofres!",
+          "Mamma mía.",
+          "Estoy SEGURO de que alguien me ha robado un cofre.",
+          "Mi tesoro.",
+          "Mi ganzúa Wilson se ha enfadado conmigo.",
+          "Wilson no me habla.",
+          "Si Wilson se rompiese... no quiero pensarlo.",
+          "Hoy Wilson ha estado brillante.",
+          "Wilson es la mejor ganzúa, tiene muy buenas ocurrencias.",
+          "Wilson es una ganzúa especial, hoy la pillé absorta mirando un cofre de vapor.",
+          "A veces Wilson es insoportable.",
+          "No necesito dormir.",
+          "No recuerdo el hambre.",
+          "NECESITO escuchar ese clic o...",
+          "¿Quién ha tocado mis cosas?",
+          "¿Hay alguna forma de saber cuantos cofres he abierto ya?",
+          "El duende empieza a parecer enfermo por el ORO",
+          "El Trapero parece saber más",
+          "Hoy el duende dijo `ya me falta poco para tenerlo todo`.",
+          "Me quedé mirando al duende antes de irme: contaba cada moneda",
+          "El Trapero me dijo que iba bien.",
+          "Necesito más ORO para el Duende",
+          "El duende me está regalando cosas...",
+          "He visto al duende a los ojos y esa mirada la he visto antes.",
+          "El Trapero parece calcular cada palabra.",
+          "Va a volver a pasar, lo recuerdo, no lo recuerdo, pero...",
+          "El Trapero me ha visto escribir y se ha reído de mi",
+          "¿Es esto un bucle?"
+        ],
+        "5": [
+          "La sala siempre fue tu sitio.",
+          "Abre. Abre. Abre.",
+          "El último jamás existe.",
+          "Siempre queda uno más.",
+          "Está pasando...otra vez",
+          "Wilson, ya no pintas nada aquí.",
+          "Siento paz, pero es mentira",
+          "¿Tú también te sientes bien?",
+          "Los cofres no se terminan. Esa es la mejor parte.",
+          "Cofres, cofres, cofres...",
+          "Clic, clic, clic...",
+          "Nunca me iré de aquí. Espero.",
+          "Nada importaba.",
+          "Siempre fue todo sobre los cofres.",
+          "¡Diversión infinita!",
+          "No saben lo que se pierden.",
+          "Cofre cerrado, cofre que abro.",
+          "Estoy conectado al cofreverso.",
+          "Este sitio es lo mejor.",
+          "...cofre.",
+          "Clic.",
+          "No tengas prisa.",
+          "Praise the chest.",
+          "¡Eh, más oro!",
+          "Me siento como si flotara.",
+          "Qué afortunado soy.",
+          "¡Nunca se acaban!",
+          "Valió la pena llegar hasta aquí.",
+          "No quiero empezar de nuevo",
+          "Tengo que estar atento la próxima vez.",
+          "Tiene que haber una manera de romper el bucle",
+          "Sabía lo que el Trapero me iba a decir, de alguna manera"
+        ]
       }
     },
 
@@ -897,6 +1186,7 @@ const DATOS_JUEGO = {
     // [0.202] El Tomo (cuaderno antiguo): se encuentra en el bucle 1, desde el nivel 5, en un hueco libre; el Trapero lo comenta justo después
     TOMO: {
       NIVEL_MIN: 5, COFRE_MAX: 70,
+      AVISO_TITULO: "¡OBJETO ESPECIAL!",   // [0.203] cabecera del bloque destacado del botín
       BANNER: "📖 Has encontrado un viejo cuaderno de tapas gastadas.",
       TRAPERO: "Veo que has encontrado ese viejo cuaderno. Lleva tiempo dando vueltas por ahí... quédatelo, si quieres. {sonrisa}",
       BANNER_OPCIONES: "📖 Cuaderno añadido al menú de opciones.",
@@ -996,9 +1286,216 @@ const DATOS_JUEGO = {
     },
 
     // 🟢 MENSAJES DE TRANSICIÓN DEL ECO FINAL
+    // [0.203] ESQUELETO DEL BUCLE 3: cada lista es una COPIA INDEPENDIENTE de la que usa el bucle 1/2 (editarla aquí no toca los otros bucles).
+    // Se usan solo cuando currentLoop === 3 (función narr() en estado.js); si quitas una clave, el bucle 3 vuelve a usar la general.
+    // Los post-its del bucle 3 están en POST_ITS.BUCLE_3 y los regalos del Duende al subir de nivel en DUENDE_DESBLOQUEOS (aquí abajo).
+    BUCLE_3: {
+      DUENDE_FRASES: {
+        "1": [
+          "¡Casi lo tienes! Toma esto, el siguiente cofre guarda algo grande. {alegre}",
+          "¡Estás cogiendo un ritmo excelente! Te regalo esto para que no pares. {saludo}",
+          "¡Sigue así! Cada cofre abierto te acerca a mayores tesoros. {alegre}"
+        ],
+        "2": [
+          "¡Impresionante racha! Toma esta herramienta, te la has ganado a pulso. {alegre}",
+          "¡Ni se te ocurra frenar ahora! Aquí tienes ayuda para abrir el siguiente. {alegre}",
+          "¡Eso es! El sonido de los cerrojos rompiéndose es música. ¡Sigue adelante! {risa}"
+        ],
+        "3": [
+          "¡Estás imparable! Te regalo esto, demuestra de qué estás hecho. {alegre}",
+          "¡Un empujoncito más! El próximo cofre puede tener mucho ORO. ¡Abre otro! {picardia}",
+          "¡No aflojes ahora que estás en lo mejor! Un regalo de la casa para ti. {alegre}"
+        ],
+        "4": [
+          "¡La casa invita! Solo recuérdalo cuando quieras deshacerte de tu ORO. {picardia}",
+          "¡Que nada te detenga! Te traigo supplies frescos para que continúes recolectando mi ORO. {codicia}",
+          "¡Un verdadero aventurero jamás se rinde! ¡Vamos, a por más ORO! {alegre}",
+          "¿El Trapero te ha regalado algo alguna vez? Tenlo en cuenta. Tu amigo el duende te cuida. {sospechoso}",
+          "Toma esto, la gloria te espera tras la siguiente tapa. No te quedes todo el ORO. {conciliador}",
+          "¡Abre otro! Ya queda poco, necesito un poco más de ese ORO... {codicia}"
+        ],
+        "5": [
+          "¡El tesoro definitivo está a tu alcance! No te detengas por nada. ¡AHORA NO! {ira}",
+          "Toma, rápido, sigue abriendo cofres, estoy tan cerca... tan cerca... {asustado}",
+          "No te quedes ahí pasmado, toma y tráeme ese ORO. {enfadado}"
+        ]
+      },
+      TRAPERO_FRASES: {
+        "1": [
+          "No entiendes nada, ¿verdad? Te propongo un trato. {trato}",
+          "La primera herramienta siempre parece gratis. {sonrisa}",
+          "Mis tratos no son los mejores, en apariencia. {trato}",
+          "Veo que aún tienes luz en los ojos. {sonrisa}",
+          "Guarda tu oro, pronto lo necesitarás más. {conspira}"
+        ],
+        "2": [
+          "Veo que has vuelto. {sonrisa}",
+          "Siempre vuelven. {sonrisa}",
+          "No confíes demasiado en el Duende. {conspira}",
+          "Él te vende la llave, yo te vendo la esperanza. {trato}",
+          "Tengo tratos que no figuran en ningún libro. {conspira}"
+        ],
+        "3": [
+          "Ya llevas demasiados. {alerta}",
+          "Empiezas a parecerte a los otros. {alerta}",
+          "No me gusta esa mirada. {amenaza}",
+          "El vicio del cerrojo te tiene atrapado. {base}",
+          "Acepta una maldición, total... ¿qué tienes que perder? {sonrisa}",
+          "Aún estás a tiempo. {triste}",
+          "¿Por qué el duende no recoge él mismo el oro? Piénsalo. {conspira}",
+          "Todo el mundo quiere salir de aquí, de lo contrario has perdido. {base}"
+        ],
+        "4": [
+          "Voy a contarte algo. Yo también abría cofres. {triste}",
+          "Creía que podía parar cuando quisiera. {triste}",
+          "Ahora solo me quedan trozos de herramientas y tratos leoninos. {triste}",
+          "No mires los cofres como un objetivo. {alerta}",
+          "Si no quieres salir, te convertirás en otro. {amenaza}",
+          "Creo que ya es demasiado tarde, pero aún puedes volver atrás. {triste}",
+          "Aquí solo puede salir uno cada vez. Te lo advertí. {alerta}"
+        ],
+        "5": [
+          "Escúchame. {alerta}",
+          "Todavía puede haber una salida. {conspira}",
+          "La única forma es volver al principio. {alerta}",
+          "Solo puede salir uno, no dejes que sea el Duende. {conspira}",
+          "Hay que romper el ciclo. {alerta}",
+          "Nunca eres rico si portas la losa de la CODICIA. {amenaza}"
+        ]
+      },
+      DUENDE_TIENDA_FRASES: {
+        "1": [
+          "¡Bienvenido! Echa un ojo a mis herramientas de madera y ganzúas. {saludo}",
+          "El oro guardado no abre cofres. ¡Echa un vistazo a la mercancía! {picardia}",
+          "Tengo justo lo que necesitas para no quedarte atrancado hoy. {alegre}",
+          "¡Qué bien verte por aquí! Si necesitas cualquier cosa aquí estaré. {saludo}"
+        ],
+        "2": [
+          "¡Cosas de acero para manos expertas! Mira mis nuevos precios. {alegre}",
+          "¿Monedas por herramientas? El trato de siempre, sin engaños. {conciliador}",
+          "Veo que le vas cogiendo el truco. Pasa y compra algo de calidad. {alegre}",
+          "El Trapero no debería estar aquí. Céntrate en mi tienda. {sospechoso}",
+          "Echa un ojo al Taller de Reciclaje, está abierto ahora {saludo}"
+        ],
+        "3": [
+          "Cosas modernas para cofres digitales. Sin TRUCOS. {sospechoso}",
+          "El oro vuela aquí dentro, ¿tienes más? {codicia}",
+          "¿Que por qué no abro yo los cofres y cojo el Oro? No deberías hacer esas preguntas. {enfadado}",
+          "¿Has traído más oro? Necesit... te ofrezco los mejores productos. {codicia}",
+          "¿Si nunca salgo de mi cofre? Calla y compra, amigo. {enfadado}",
+          "Así que has hecho tratos con el Trapero, ¿eh? Tú mismo, ¿has traído oro? {sospechoso}",
+          "Las válvulas son caras, pero quedarse atascado sale más caro {conciliador}"
+        ],
+        "4": [
+          "Sigues aquí... me gusta tu fidelidad. Mira lo que me ha llegado. {picardia}",
+          "Tú me das oro, yo te doy supervivencia. Me necesitas. {codicia}",
+          "No preguntes de dónde saco los repuestos, dame ese reluciente ORO. {sospechoso}",
+          "Parece que llevas toda la vida aquí trayéndome precioso ORO. {codicia}",
+          "Chico, no toques el género si no vas a comprar, ¿vale? {enfadado}",
+          "Al fin...solo tráeme un poco de oro más y podré largarme de aquí {triste}",
+          "Aún queda ORO ahí fuera, humano, ¿a qué esperas? {codicia}"
+        ],
+        "5": [
+          "¡Oro, oro, oro! Tú abres, yo vendo. ¡El ciclo perfecto! {enamorado}",
+          "¡Praise the chest! Pasa a la tienda y gástate lo que llevas encima. {risa}",
+          "Al fin... solo tráeme un poco de oro más y podré largarme de aquí. {triste}",
+          "Aún queda ORO ahí fuera, humano, ¿a qué esperas? {codicia}",
+          "Ese ORO brilla como el ORO...Gástalo en mi tienda! {mareado}"
+        ]
+      },
+      FRASES_RECIBO_DUENDE: {
+        "DEFAULT": "«¡Buena elección! Esas herramientas te mantendrán con vida un rato más.»",
+        "ALTO_ORO": "«¡Un placer hacer negocios! Vuelve pronto con más de ese reluciente ORO...»",
+        "SOLO_RECICLAJE": "«Veo que aprovechas todo el metal viejo. ¡Así se economiza en la mazmorra!»",
+        "CONTADOR_RESPUESTA": "¿Y para qué quieres saber eso? Nunca se acaban... {sospechoso}",
+        "POR_TIER": {
+          "1": [
+            "«¡Buena compra! Con esto no te quedarás atascado hoy.»",
+            "«Gracias, amigo. Vuelve cuando quieras, la tienda siempre está abierta.»",
+            "«Todo lo que ves aquí es de primera. Cuídalo bien.»"
+          ],
+          "2": [
+            "«Veo que ya sabes lo que necesitas. Así da gusto.»",
+            "«Esto te durará un buen rato... si no tienes prisa por romperlo.»",
+            "«Ojo con el Trapero: ese solo te vende esperanza.»"
+          ],
+          "3": [
+            "«Buena elección. Aunque ya no recuerdo cuánto oro me has traído...»",
+            "«Más herramientas, más cofres. Más cofres, más oro. ¿Ves qué bonito?»",
+            "«No preguntes de dónde saco el género. Tú solo paga.»"
+          ],
+          "4": [
+            "«Eso, eso... gasta. Que el oro está mejor en MIS manos.»",
+            "«Cada compra me acerca un poco más a la salida...»",
+            "«Tú abre, que yo me encargo del resto. Siempre ha sido así.»"
+          ],
+          "5": [
+            "«¡Oro, oro, oro! El ciclo no se detiene.»",
+            "«Un cofre más. Solo uno más. Siempre uno más.»",
+            "«Gracias, gracias... no mires atrás, humano.»"
+          ]
+        }
+      },
+      FRASES_CULPA_ROBO: [
+        "No me está mirando... ¿verdad?",
+        "Él se lo quita a otros creo, yo se lo quito a él. Es justo.",
+        "Siento el ítem robado pesando en el bolsillo como si fuera de plomo.",
+        "El Duende me ha mirado fijamente a las manos. Sabe algo.",
+        "Cogerlo ha sido facilísimo. Demasiado fácil.",
+        "Mis dedos se movieron solos antes de que pudiera pensarlo.",
+        "Si me descubre, me dejará sin herramientas...",
+        "Me tiemblan las manos, pero el ítem ya es mío.",
+        "Un día de estos se va a dar cuenta de que falta mercancía.",
+        "No es robar si él se lo encontró en un cofre, ¿no?"
+      ],
+      REACCIONES_DUENDE_NO_COMPRAR: {
+        "85": "¡No seas tacaño! Necesito ese ORO... {enfadado}",
+        "88": "Maldito seas, estoy viendo tu ORO... ¡dame ese ORO! {ira}",
+        "90": "¡No sabes lo que estás haciendo, NO TIENES NI IDEA! {ira}",
+        "DEFAULT": "¡Tacaño! ¡El ORO es para gastar! {enfadado}",
+        "COMPRA_EXITOSA": "¡Sí! ¡Eso es! Dame más de tu precioso ORO... {enamorado}"
+      },
+      TRAPERO_GAME_OVER: {
+        "PRIMERA": [
+          "Sin llaves, el cofre no se abre. Pero la sala aún te necesita... y yo conozco un camino. Tiene un precio: la maldición te acompañará unos cofres. {sonrisa}",
+          "Qué pronto vacías las manos. Yo puedo devolverte lo que la sala te quitó. Nada es gratis aquí: algo oscuro te seguirá unos cofres. {conspira}",
+          "Aquí nada termina de verdad. Acepta mi trato y sigue. A cambio, la maldición se queda contigo unos cofres. {sonrisa}"
+        ],
+        "OTRAS": [
+          "Otra vez con las manos vacías. Sabía que volverías. Mismo precio, misma maldición. {conspira}",
+          "Se acabaron las llaves, y se acaba el juego. A no ser que me dejes ayudarte... otra vez. {codicia}",
+          "No me mires así. Yo no te empujé al borde: solo te proporciono la cuerda y ya está. ¿Seguimos? {sonrisa}"
+        ]
+      },
+      TRAPERO_FIN_MALDICION: [
+        "La maldición se ha ido. Todo se acaba... salvo lo que tú no sueltas. {sonrisa}",
+        "Tus hombros pesan menos. No me des las gracias: volverás a cargar algo peor. {conspira}",
+        "Libre de la losa... por ahora. ¿Cuánto tardarás en pedirme otra? {trato}"
+      ],
+      HISTORIA_SECUENCIA: {
+        "COFRE_79_TRAPERO": "Aún hay una manera, pero debes hacerme caso. {conspira}",
+        "COFRE_84_TRAPERO": "La próxima vez no le compres NADA al Duende. Es la ÚNICA forma. {alerta}",
+        "COFRE_85_DUENDE": "¡Bienvenido! Echa un ojo a mi mercancía... {alegre}",
+        "COFRE_86_TRAPERO": "¿Es que la codicia te ciega? Aún tienes UNA ÚLTIMA oportunidad... {amenaza}",
+        "COFRE_87_TRAPERO": "Sigue así. No le des el ORO. {conspira}",
+        "COFRE_88_DUENDE": "No escuches a ese maldito Trapero... {enfadado}",
+        "COFRE_89_TRAPERO_CONDENA": "Tu codicia te ha condenado. Disfruta de tu prisión de cofres eterna. {amenaza}",
+        "COFRE_89_TRAPERO_PRECLIMAX": "Ya casi lo tienes, está fuera de sí. NO COMPRES. {alerta}",
+        "COFRE_91_TRAPERO_ULTIMA": "Has vuelto a caer... Te doy otra oportunidad. Ni una moneda más a ese ladrón. {amenaza}",
+        "COFRE_91_DUENDE": "Una última oferta, solo para ti... Trae el ORO. {asustado}",
+        "COFRE_90_DUENDE": "Por favor, te haré descuento, pero tienes que traerme ese ORO... {asustado}"
+      },
+      // Regalos del Duende al llegar a cada nivel (bucle 3): n2 Pin de Acero + Válvula, n3 USB, n4 primera Pila, n5 primer Fusible
+      DUENDE_DESBLOQUEOS: {
+        nivel_2: "¡Eh, chico! Cajas de Acero y Cofres de Vapor, los dos a la vez. Toma un Pin de Acero y una Válvula, a la primera invita la casa. {alegre}",
+        nivel_3: "¡Oigo chispas al fondo! Son Arcas Digitales. Prueba esta Llave USB, a ver si logras descifrar lo que ocultan. {sorpresa}",
+        nivel_4: "Luces que cantan en la oscuridad... Son las Arcas de Neón. Esa linterna necesita esto: tu primera Pila, a la primera invita la casa. {sospechoso}",
+        nivel_5: "Huele a cable quemado... Cuadros Eléctricos. Toma este Fusible, y cuidado con lo que enciendes. {sospechoso}"
+      }
+    },
     ECOS_FINALES: {
-      MENSAJE_1: "Se ha ido",
-      MENSAJE_2: "Volverá"
+      MENSAJE_1: "Se ha ido.",
+      MENSAJE_2: "Volverá."
     }
   },
 

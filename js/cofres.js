@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — cofres.js — VERSIÓN 0.202
+// JUST ONE MORE CHEST — cofres.js — VERSIÓN 0.203
 // selección de cofres, banner, diálogos, post-its, botín y subida de nivel
 // ==========================================================================
 
@@ -180,6 +180,7 @@ function updateChestSelectionUI() {
     if (active.type.consumible === 'usb') toolTitle = reqCount === 1 ? "LLAVE USB" : "LLAVES USB";
     if (active.type.consumible === 'valves') toolTitle = reqCount === 1 ? "VÁLVULA" : "VÁLVULAS";
     if (active.type.consumible === 'batteries') toolTitle = reqCount === 1 ? "PILA" : "PILAS";
+    if (active.type.consumible === 'fuses') toolTitle = reqCount === 1 ? "FUSIBLE" : "FUSIBLES";   // [0.203]
 
     const reqEl = document.getElementById('chestCostRequirement');
     if (reqEl) {
@@ -236,6 +237,16 @@ function kwHighlight(text) {
   return esc.replace(re, m => `<b class="${badRe && badRe.test(m) ? 'kw kw-bad' : 'kw'}">${m}</b>`);
 }
 // [0.2] Tipo de aviso según su texto: MALDICIÓN/¡CUIDADO! (rojo), PREMIO (verde), AYUDA o AVISO (latón). Retrato pixel art del juego.
+// [0.203] Si el aviso habla de un objeto concreto (y solo de uno), el banner muestra el icono de ese objeto en lugar del Duende
+const FB_OBJETOS = [
+  { re: /ganz[uú]a/i, ic: 'ic_ganzua' }, { re: /pin de acero|\bpin\b/i, ic: 'ic_pin' }, { re: /\busb\b|llave usb/i, ic: 'ic_usb' },
+  { re: /v[aá]lvula/i, ic: 'ic_valvula' }, { re: /\bpilas?\b/i, ic: 'ic_pila' }, { re: /fusible/i, ic: 'ic_fusible' }
+];
+function fbItemIcon(raw) {
+  const T = (typeof ASSETS !== 'undefined' && ASSETS && ASSETS.tienda) || {};
+  const hits = FB_OBJETOS.filter(o => o.re.test(raw));
+  return hits.length === 1 && T[hits[0].ic] ? T[hits[0].ic] : null;
+}
 function fbVariant(raw) {
   const cfg = DATOS_JUEGO.PALABRAS_CLAVE || {};
   const has = list => { const l = (list || []).join('|'); return !!l && new RegExp('(?<![\\p{L}])(?:' + l + ')(?![\\p{L}])', 'iu').test(raw); };
@@ -243,7 +254,7 @@ function fbVariant(raw) {
   const gain = /recib|ganas|premio|regalo|obtien|\+\s?\d/i.test(raw) && has(cfg.BUENAS);   // «Ganzúa Perdida: recibes +5 ganzúas» es un premio aunque lleve «perdida»
   if (/^\s*ℹ️/.test(raw)) return { cls: '', seal: 'AYUDA', art: 'pergamino' };
   if (curse) return /maldici|trato|condena/i.test(raw) ? { cls: 'curse', seal: 'MALDICIÓN', art: 'trapero' } : { cls: 'curse', seal: '¡CUIDADO!', art: 'pergamino' };
-  if (gain) return { cls: 'good', seal: 'PREMIO', art: 'duende' };
+  if (gain) return { cls: 'good', seal: 'PREMIO', art: 'duende', item: fbItemIcon(raw) };
   if (bad) return { cls: 'curse', seal: '¡CUIDADO!', art: 'pergamino' };
   return { cls: '', seal: 'AVISO', art: 'pergamino' };
 }
@@ -255,7 +266,7 @@ function fbApplyVariant(raw) {
   if (seal) seal.textContent = v.seal;
   if (img) {
     const A = (typeof ASSETS !== 'undefined' && ASSETS) || {};
-    const src = v.art === 'trapero' ? (A.trapero || {}).amenaza : v.art === 'duende' ? (A.duende || {}).alegre : (A.decoraciones || {}).pergamino;
+    const src = v.item ? v.item : v.art === 'trapero' ? (A.trapero || {}).amenaza : v.art === 'duende' ? (A.duende || {}).alegre : (A.decoraciones || {}).pergamino;
     if (src) { img.src = src; img.parentElement.style.display = ''; } else img.parentElement.style.display = 'none';
   }
 }
@@ -433,7 +444,7 @@ function triggerSequentialDialogue(speaker, speechText, iconClass, subtitleText,
 
 // [0.087] El Trapero comenta que la maldición ha terminado (frase al azar de NARRATIVA.TRAPERO_FIN_MALDICION)
 function queueCurseEndMessage() {
-  const list = DATOS_JUEGO.NARRATIVA.TRAPERO_FIN_MALDICION || [];
+  const list = narr('TRAPERO_FIN_MALDICION') || [];
   if (!list.length) { curseHold = false; return; }
   const phrase = list[Math.floor(Math.random() * list.length)];
   // [0.096] Va al FINAL de la cola de eventos del cofre; al cerrarse, la sala suelta el tinte con la animación completa
@@ -706,7 +717,7 @@ function spawnStickyNote() {
   note.className = 'sticky-note absolute p-2.5 rounded-lg text-[11px] font-bold font-mono pointer-events-auto cursor-pointer border border-amber-300 shadow-2xl z-20';
   
   const tier = getNarrativeTier();
-  const loopKey = STATE.currentLoop === 2 ? 'BUCLE_2' : 'BUCLE_1';
+  const loopKey = 'BUCLE_' + Math.min(Math.max(STATE.currentLoop || 1, 1), 3);   // [0.203] bucle 3 con su propia lista
   const list = DATOS_JUEGO.NARRATIVA.POST_ITS[loopKey][tier];
   const randomText = list[Math.floor(Math.random() * list.length)];
   note.textContent = `"${randomText}"`;
@@ -838,7 +849,7 @@ function triggerLootExplosion() {
     } else if (active.type.id === 'hydraulic') {
       masteryLevel = STATE.perks.bonusVapor || 0;
       torpezaLevel = STATE.torpezas.vapor || 0;
-    } else if (active.type.id === 'neon') {   // [0.202]
+    } else if (active.type.id === 'neon' || active.type.id === 'electric') {   // [0.202] el Cuadro Eléctrico (0.203) comparte maestría Electricista y torpeza de neón
       masteryLevel = STATE.perks.bonusNeon || 0;
       torpezaLevel = STATE.torpezas.neon || 0;
     }
@@ -990,6 +1001,7 @@ function triggerLootExplosion() {
     let xpLinesHTML = lootLines(xpLines);
 
     let extraLootHTML = "";
+    let tomeFindHTML = "";   // [0.203]
     let toolDropChance = DATOS_JUEGO.PROBABILIDADES.HERRAMIENTA_EXTRA_CHANCE;
     const chestsSinceLevelUp = STATE.chestsOpened - (STATE.chestsAtLevelUp || 0);
     const inGracePeriod = chestsSinceLevelUp < 3 && (STATE.level === 2 || STATE.level === 3 || STATE.level === 5);
@@ -999,7 +1011,9 @@ function triggerLootExplosion() {
     // [0.202] El Tomo: bucle 1, desde el nivel 5, en un hueco de cofres sin visitas ni subida de nivel; el Trapero lo comenta justo después
     if (tomeSlotFree(STATE.chestsOpened)) {
       STATE.pendingTraperoTome = true;
-      extraLootHTML += `<div class="lt-extra text-amber-300"><span>${DATOS_JUEGO.NARRATIVA.TOMO.BANNER}</span></div>`;
+      // [0.203] El hallazgo se hace notar: bloque al principio del botín con el tomo grande, exclamaciones y fondo que parpadea
+      const TM = DATOS_JUEGO.NARRATIVA.TOMO, tomeImg = (typeof ASSETS !== 'undefined' && ASSETS.objetos && ASSETS.objetos.tomo) || '';
+      tomeFindHTML = `<div class="lt-find"><span class="lt-find-ex">!</span>${tomeImg ? `<img class="lt-find-img" src="${tomeImg}" alt="">` : ''}<div class="lt-find-txt"><b>${TM.AVISO_TITULO}</b><span>${TM.BANNER}</span></div><span class="lt-find-ex">!</span></div>`;
     }
     // [0.201] Bucle 2, nivel 2, cofre 2: aparece la linterna (no funciona todavía) y, justo al cerrar el botín, el Trapero comenta el "cacharro"
     if ((STATE.currentLoop || 1) === 2 && STATE.level === 2 && !STATE.lanternFound && chestsSinceLevelUp === 2) {
@@ -1015,9 +1029,10 @@ function triggerLootExplosion() {
     const GANZUA_DROP = { name: 'Ganzúa Básica', prop: 'picks', icon: 'fa-key', color: 'text-amber-400' };
     // [0.201] Herramientas nuevas del periodo de gracia según bucle: bucle 1 igual que siempre; bucle 2+: nivel 3 = USB y válvulas, nivel 5 = pilas
     const DROP_T = { proPicks: { name: 'Pin de Acero', prop: 'proPicks', icon: 'fa-screwdriver', color: 'text-emerald-400' }, usb: { name: 'Llave USB', prop: 'usb', icon: 'fa-microchip', color: 'text-cyan-400' },
-      valves: { name: 'Válvula Hidráulica', prop: 'valves', icon: 'fa-faucet', color: 'text-rose-400' }, batteries: { name: 'Pila', prop: 'batteries', icon: 'fa-battery-half', color: 'text-sky-300' } };
-    const graceProps = ((STATE.currentLoop || 1) >= 2 ? { 2: ['proPicks'], 3: ['usb', 'valves'], 5: ['batteries'] } : { 2: ['proPicks'], 3: ['usb'], 5: ['valves'] })[STATE.level] || [];
-    const graceList = graceProps.map(k => DROP_T[k]).filter(t => t.prop !== 'batteries' || STATE.batteriesUnlocked);
+      valves: { name: 'Válvula Hidráulica', prop: 'valves', icon: 'fa-faucet', color: 'text-rose-400' }, batteries: { name: 'Pila', prop: 'batteries', icon: 'fa-battery-half', color: 'text-sky-300' },
+      fuses: { name: 'Fusible', prop: 'fuses', icon: 'fa-bolt', color: 'text-yellow-300' } };
+    const graceProps = ((STATE.currentLoop || 1) >= 3 ? { 2: ['proPicks', 'valves'], 3: ['usb'], 4: ['batteries'], 5: ['fuses'] } : (STATE.currentLoop || 1) >= 2 ? { 2: ['proPicks'], 3: ['usb', 'valves'], 5: ['batteries'] } : { 2: ['proPicks'], 3: ['usb'], 5: ['valves'] })[STATE.level] || [];
+    const graceList = graceProps.map(k => DROP_T[k]).filter(t => (t.prop !== 'batteries' || STATE.batteriesUnlocked) && (t.prop !== 'fuses' || STATE.fusesUnlocked));
     if (dedosRotosDrop) {
       const graceTool = (inGracePeriod && graceList.length) ? graceList[Math.floor(Math.random() * graceList.length)] : null;
       // Probabilidad original de la herramienta nueva en gracia: (25% x2) repartido entre 2 opciones = 25%
@@ -1043,6 +1058,7 @@ function triggerLootExplosion() {
           { name: 'Válvula Hidráulica', prop: 'valves', icon: 'fa-faucet', color: 'text-rose-400' }
         ];
         if (STATE.batteriesUnlocked) availableDrops.push(DROP_T.batteries);   // [0.201] las pilas no existen hasta que el Duende da la primera
+        if (STATE.fusesUnlocked && (STATE.currentLoop || 1) >= 3) availableDrops.push(DROP_T.fuses);   // [0.203] ídem los fusibles
       }
 
       // [0.089] Sin válvulas en el botín hasta el nivel mínimo (bucle 2+: desde el nivel 3, con las tuberías)
@@ -1074,6 +1090,7 @@ function triggerLootExplosion() {
       const A = (typeof ASSETS !== 'undefined' && ASSETS) || {};
       const coin = (A.tienda || {}).moneda || '';
       lootList.innerHTML = `
+        ${tomeFindHTML}
         <div>
           <div class="lt-row lt-gp top"><div class="lt-ri">${coin ? `<img src="${coin}" alt="">` : '<i class="fa-solid fa-coins"></i>'}</div><div class="lt-lab">ORO</div><div class="lt-am">+${finalGp} GP</div></div>
           ${gpLinesHTML}
@@ -1147,16 +1164,24 @@ function processLevelUp(fromDeal) {
 
   const unlockKey = `nivel_${STATE.level}`;
   // [0.201] Bucle 2 en adelante: nivel 3 = USB + válvula (hackeo y tuberías a la vez); nivel 5 = primera pila (Arca de Neón). El bucle 1 no cambia.
-  const loopB2 = (STATE.currentLoop || 1) >= 2 && DATOS_JUEGO.NARRATIVA.DUENDE_DESBLOQUEOS_BUCLE2[unlockKey];
-  if (DATOS_JUEGO.NARRATIVA.DUENDE_DESBLOQUEOS[unlockKey] || loopB2) {
+  const loopB2 = (STATE.currentLoop || 1) === 2 && DATOS_JUEGO.NARRATIVA.DUENDE_DESBLOQUEOS_BUCLE2[unlockKey];
+  // [0.203] Bucle 3: nivel 2 = Pin de Acero + Válvula, 3 = USB, 4 = primera Pila, 5 = primer Fusible (textos en NARRATIVA.BUCLE_3.DUENDE_DESBLOQUEOS)
+  const loopB3 = (STATE.currentLoop || 1) >= 3 && (narr('DUENDE_DESBLOQUEOS') || {})[unlockKey];
+  if (DATOS_JUEGO.NARRATIVA.DUENDE_DESBLOQUEOS[unlockKey] || loopB2 || loopB3) {
     let giftObj = null;
-    if (STATE.level === 2) { STATE.proPicks += 1; giftObj = { name: "Pin de Acero", icon: "fa-screwdriver" }; }
+    if (loopB3) {
+      if (STATE.level === 2) { STATE.proPicks += 1; STATE.valves += 1; giftObj = { name: "Pin de Acero + Válvula Hidráulica", icon: "fa-screwdriver" }; }
+      else if (STATE.level === 3) { STATE.usb += 1; giftObj = { name: "Llave USB", icon: "fa-microchip" }; }
+      else if (STATE.level === 4) { STATE.batteriesUnlocked = true; STATE.batteries += 1; giftObj = { name: "Pila", icon: "fa-battery-half" }; }
+      else if (STATE.level === 5) { STATE.fusesUnlocked = true; STATE.fuses += 1; giftObj = { name: "Fusible", icon: "fa-bolt" }; }
+    }
+    else if (STATE.level === 2) { STATE.proPicks += 1; giftObj = { name: "Pin de Acero", icon: "fa-screwdriver" }; }
     else if (STATE.level === 3 && loopB2) { STATE.usb += 1; STATE.valves += 1; giftObj = { name: "Llave USB + Válvula Hidráulica", icon: "fa-microchip" }; }
     else if (STATE.level === 3) { STATE.usb += 1; giftObj = { name: "Llave USB", icon: "fa-microchip" }; }
     else if (STATE.level === 5 && loopB2) { STATE.batteriesUnlocked = true; STATE.batteries += 1; giftObj = { name: "Pila", icon: "fa-battery-half" }; }
     else if (STATE.level === 5) { STATE.valves += 1; giftObj = { name: "Válvula Hidráulica", icon: "fa-faucet" }; }
 
-    const speechText = loopB2 ? DATOS_JUEGO.NARRATIVA.DUENDE_DESBLOQUEOS_BUCLE2[unlockKey] : DATOS_JUEGO.NARRATIVA.DUENDE_DESBLOQUEOS[unlockKey];
+    const speechText = loopB3 ? loopB3 : loopB2 ? DATOS_JUEGO.NARRATIVA.DUENDE_DESBLOQUEOS_BUCLE2[unlockKey] : DATOS_JUEGO.NARRATIVA.DUENDE_DESBLOQUEOS[unlockKey];
     triggerSequentialDialogue(
       "EL DUENDE",
       speechText,
@@ -1210,7 +1235,7 @@ if (claimLootBtn) {
 
     const co = STATE.chestsOpened;
     queuePlayerNotes(co);   // [0.095] post-its de jugador (se muestran al generar los cofres)
-    const seqHist = DATOS_JUEGO.NARRATIVA.HISTORIA_SECUENCIA;
+    const seqHist = narr('HISTORIA_SECUENCIA');
     const seqConfig = DATOS_JUEGO.PROGRESIÓN.SECUENCIA_HISTORIA;
 
     if (!STATE.sequenceBroken) {

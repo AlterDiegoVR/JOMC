@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — tiendas.js — VERSIÓN 0.202
+// JUST ONE MORE CHEST — tiendas.js — VERSIÓN 0.203
 // tienda del Duende y del Trapero
 // ==========================================================================
 
@@ -17,6 +17,7 @@ const SHOP_VIS = {
   pack_usb:        { n: 'LLAVES USB +2',   ic: 'ic_usb' },
   pack_valvulas:   { n: 'VÁLVULAS +2',      ic: 'ic_valvula' },
   pack_pilas:      { n: 'PILAS +2',        ic: 'ic_pila' },   // [0.201]
+  pack_fusibles:   { n: 'FUSIBLES +2',     ic: 'ic_fusible' },   // [0.203]
   carta_auto_open: { n: 'CARTA AUTO-OPEN', ic: 'ic_auto' },
   carta_escudo:    { n: 'CARTA ESCUDO',    ic: 'ic_escudo' },
   carta_apuesta:   { n: 'CARTA APUESTA',   ic: 'ic_apuesta' },
@@ -27,7 +28,8 @@ const SHOP_VIS_RECICLAJE = {
   proPicks: { n: 'PIN DE ACERO +2',    ic: 'ic_pin' },
   usb:      { n: 'LLAVE USB +1',       ic: 'ic_usb' },
   valves:   { n: 'VÁLVULA +1',         ic: 'ic_valvula' },
-  batteries: { n: 'PILA +1',           ic: 'ic_pila' }   // [0.201]
+  batteries: { n: 'PILA +1',           ic: 'ic_pila' },   // [0.201]
+  fuses:    { n: 'FUSIBLE +1',        ic: 'ic_fusible' }   // [0.203]
 };
 
 function shopCfg() { return (DATOS_JUEGO.GRAFICOS && DATOS_JUEGO.GRAFICOS.TIENDAS) || {}; }
@@ -193,7 +195,7 @@ function dshopPoorReact(phrases) { try { audio.init(); audio.playBreak(); } catc
 
 function triggerMerchantShopModalSequence() {
   const tier = getNarrativeTier();
-  const phrases = DATOS_JUEGO.NARRATIVA.DUENDE_TIENDA_FRASES[tier];
+  const phrases = narr('DUENDE_TIENDA_FRASES')[tier];
   // [0.102] Primero se "abre" la tienda (persiana) y luego el Duende dice la frase dentro de su bocadillo
   dshopOpening = phrases[Math.floor(Math.random() * phrases.length)];
   openMerchantShop();
@@ -232,7 +234,7 @@ function showShopReceipt(onCloseCallback) {
   if (oldReceipt) oldReceipt.remove();
   try { audio.init(); audio.playCashRegister(); } catch (e) {}   // [0.097] caja registradora al pasar a la factura (solo si hubo compra o reciclaje; con solo robos no se llega aquí)
 
-  const frasesRecibo = DATOS_JUEGO.NARRATIVA.FRASES_RECIBO_DUENDE;
+  const frasesRecibo = narr('FRASES_RECIBO_DUENDE');
   let duendeQuote = frasesRecibo.DEFAULT;
   const bankTier = (frasesRecibo.POR_TIER || {})[getNarrativeTier()];
   if (bankTier && bankTier.length) duendeQuote = bankTier[Math.floor(Math.random() * bankTier.length)];
@@ -303,6 +305,7 @@ function openMerchantShop() {
       { id: 'pack_usb', name: '+2 Llaves USB', baseCost: Math.round(shopBasePrice('pack_usb') * discountMult), icon: 'fa-microchip', prop: 'usb', qty: 2, minLvl: 3 },
       { id: 'pack_valvulas', name: '+2 Válvulas Hidráulicas', baseCost: Math.round(shopBasePrice('pack_valvulas') * discountMult), icon: 'fa-faucet', prop: 'valves', qty: 2, minLvl: valvesShopLevel() },
       { id: 'pack_pilas', name: '+2 Pilas', baseCost: Math.round(shopBasePrice('pack_pilas') * discountMult), icon: 'fa-battery-half', prop: 'batteries', qty: 2, needUnlocked: 'batteries' },   // [0.201]
+      { id: 'pack_fusibles', name: '+2 Fusibles', baseCost: Math.round(shopBasePrice('pack_fusibles') * discountMult), icon: 'fa-bolt', prop: 'fuses', qty: 2, needUnlocked: 'fuses' },   // [0.203]
       { id: 'carta_auto_open', name: 'Carta Auto-Open', baseCost: Math.round(shopBasePrice('carta_auto_open') * discountMult), icon: 'fa-wand-magic-sparkles', abilityProp: 'auto' },
       { id: 'carta_escudo', name: 'Carta Escudo Protector', baseCost: Math.round(shopBasePrice('carta_escudo') * discountMult), icon: 'fa-shield-halved', abilityProp: 'shield' },
       { id: 'carta_apuesta', name: 'Carta Doble o Nada', baseCost: Math.round(shopBasePrice('carta_apuesta') * discountMult), icon: 'fa-dice', abilityProp: 'riskPot' }
@@ -342,7 +345,7 @@ function renderMerchantShopGrid() {
     if (item.isChestCounter) {
       STATE.chestCounterUnlocked = true;
       // [0.104] La respuesta la dice el Duende en la propia tienda (burbuja de texto), sin pantalla narrativa
-      dshopSay(DATOS_JUEGO.NARRATIVA.FRASES_RECIBO_DUENDE.CONTADOR_RESPUESTA);
+      dshopSay(narr('FRASES_RECIBO_DUENDE').CONTADOR_RESPUESTA);
       return true;
     } else if (item.prop) {
       STATE[item.prop] += item.qty;
@@ -381,7 +384,7 @@ function renderMerchantShopGrid() {
           STATE.shopSession.items.push({ name: item.name, costText: 'GRATIS (ROBO)', icon: item.icon, ic: vis.ic, isStolen: true });
 
           // [0.084] Al robar solo suena el efecto; la frase de culpa se muestra al salir de la tienda, tras el recibo
-          const culpaList = DATOS_JUEGO.NARRATIVA.FRASES_CULPA_ROBO;
+          const culpaList = narr('FRASES_CULPA_ROBO');
           STATE.shopSession.guiltPhrase = culpaList[Math.floor(Math.random() * culpaList.length)];
 
           audio.playUnlockFanfare('raro');
@@ -416,7 +419,8 @@ function renderMerchantShopGrid() {
       { name: "Pin de Acero", prop: "proPicks", icon: "fa-screwdriver", minLvl: 2 },
       { name: "Llave USB", prop: "usb", icon: "fa-microchip", minLvl: 3 },
       { name: "Válvula Hidráulica", prop: "valves", icon: "fa-faucet", minLvl: valvesShopLevel() },
-      { name: "Pila", prop: "batteries", icon: "fa-battery-half", minLvl: 1, needUnlocked: 'batteries' }   // [0.201]
+      { name: "Pila", prop: "batteries", icon: "fa-battery-half", minLvl: 1, needUnlocked: 'batteries' },   // [0.201]
+      { name: "Fusible", prop: "fuses", icon: "fa-bolt", minLvl: 1, needUnlocked: 'fuses' }   // [0.203]
     ].filter(t => STATE.level >= t.minLvl && (!t.needUnlocked || toolUnlocked(t.needUnlocked)));
 
     if (recycleTargets.length === 0) {
@@ -477,7 +481,7 @@ closeMerchantBtns.forEach(btn => {
 let traperoTimers = [];
 function triggerTraperoShopSequence() {
   const tier = getNarrativeTier();
-  const phrases = DATOS_JUEGO.NARRATIVA.TRAPERO_FRASES[tier];
+  const phrases = narr('TRAPERO_FRASES')[tier];
   const t = shopSplitMood(phrases[Math.floor(Math.random() * phrases.length)]);
   const cfg = shopCfg().TRAPERO || {};
   const fadeMs = cfg.FUNDIDO_MS || 600;
@@ -637,6 +641,7 @@ function openTraperoShop() {
           if (STATE.usb >= 1) disponibles.push({ prop: 'usb', name: 'Llave USB' });
           if (STATE.valves >= 1) disponibles.push({ prop: 'valves', name: 'Válvula Hidráulica' });
           if (STATE.batteries >= 1) disponibles.push({ prop: 'batteries', name: 'Pila' });   // [0.201]
+          if (STATE.fuses >= 1) disponibles.push({ prop: 'fuses', name: 'Fusible' });   // [0.203]
           if (disponibles.length > 0) {
             const vendida = disponibles[Math.floor(Math.random() * disponibles.length)];
             const gpVenta = DATOS_JUEGO.ECONOMIA.TRAPERO.gp_por_herramienta_avanzada;
@@ -661,12 +666,13 @@ function openTraperoShop() {
             showPersistentFeedback("⚠️ Necesitas al menos 2 Ganzúas.");
           }
         } else if (deal.id === 'purga_maldicion') {
-          const hasAdvancedTool = (STATE.proPicks >= 1 || STATE.usb >= 1 || STATE.valves >= 1 || STATE.batteries >= 1);
+          const hasAdvancedTool = (STATE.proPicks >= 1 || STATE.usb >= 1 || STATE.valves >= 1 || STATE.batteries >= 1 || STATE.fuses >= 1);
           if (hasAdvancedTool && STATE.cursedChestsLeft > 0) {
             if (STATE.proPicks >= 1) STATE.proPicks--;
             else if (STATE.usb >= 1) STATE.usb--;
             else if (STATE.valves >= 1) STATE.valves--;
             else if (STATE.batteries >= 1) STATE.batteries--;
+            else if (STATE.fuses >= 1) STATE.fuses--;
 
             STATE.cursedChestsLeft = Math.max(0, STATE.cursedChestsLeft - 4);
             if (STATE.cursedChestsLeft === 0) { STATE.salvageCurseActive = false; curseHold = true; queueCurseEndMessage(); }

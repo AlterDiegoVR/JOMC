@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — audio.js — VERSIÓN 0.202
+// JUST ONE MORE CHEST — audio.js — VERSIÓN 0.203
 // motor de audio
 // ==========================================================================
 
@@ -140,6 +140,7 @@ class AudioEngine {
     else if (typeId === 'cyber') { this._tone(880, 880, 0.06, 'triangle', 0.3); this._tone(1320, 1320, 0.08, 'triangle', 0.3, 0.07); }
     else if (typeId === 'hydraulic') { this._noise(0.16, 0.08, 0, 1800); this._tone(110, 190, 0.16, 'sawtooth', 0.05); }
     else if (typeId === 'neon') { this._tone(1046, 1046, 0.05, 'square', 0.05); this._tone(1568, 1568, 0.07, 'square', 0.05, 0.06); }   // [0.201]
+    else if (typeId === 'electric') { this._noise(0.05, 0.07, 0, 4500); this._tone(220, 1400, 0.09, 'sawtooth', 0.04); }   // [0.203] chisporroteo
     else { this._tone(170, 270, 0.1, 'triangle', 0.14); this._noise(0.03, 0.08, 0, 2500); }
   }
   // Abrir (segundo toque / único cofre / botón): sonido más grave y "resolutivo"
@@ -148,6 +149,7 @@ class AudioEngine {
     if (typeId === 'piston') { this._tone(320, 110, 0.16, 'square', 0.1); this._tone(1250, 900, 0.22, 'triangle', 0.06, 0.03); this._noise(0.04, 0.08, 0, 2000); }
     else if (typeId === 'cyber') { [660, 880, 1320].forEach((f, i) => this._tone(f, f * 1.01, 0.11, 'triangle', 0.3, i * 0.06)); }
     else if (typeId === 'hydraulic') { this._noise(0.3, 0.1, 0, 900); this._tone(95, 55, 0.28, 'sawtooth', 0.08); }
+    else if (typeId === 'electric') { this._noise(0.12, 0.09, 0, 5000); [262, 392, 523, 784].forEach((f, i) => this._tone(f, f, 0.08, 'sawtooth', 0.04, i * 0.045)); this._tone(60, 60, 0.25, 'square', 0.05, 0.02); }   // [0.203] descarga y zumbido
     else if (typeId === 'neon') { [523, 784, 1046].forEach((f, i) => this._tone(f, f, 0.1, 'square', 0.05, i * 0.05)); this._tone(2093, 2093, 0.18, 'sine', 0.03, 0.12); }   // [0.201] Arca de Neón: arpegio eléctrico
     else {   // [0.090] madera: vuelve el "barril" de la 0.089 (el ajuste de la 0.089b se descartó)
       this._tone(150, 62, 0.14, 'sine', 0.2); this._noise(0.05, 0.1, 0, 1500); this._tone(300, 180, 0.06, 'triangle', 0.08, 0.04);

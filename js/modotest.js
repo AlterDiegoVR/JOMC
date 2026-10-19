@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — modotest.js — VERSIÓN 0.202
+// JUST ONE MORE CHEST — modotest.js — VERSIÓN 0.203
 // Modo test
 // ==========================================================================
 
@@ -161,7 +161,7 @@ function testKeyHash(seq, salt) {
     if (Math.max(C.maxLoop, L.maxLoop, STATE.currentLoop || 1) >= 2) rows.push(['BUCLE MÁXIMO', C.maxLoop, L.maxLoop]);   // el bucle solo se nombra a partir del segundo
     rows.push(['ORO GANADO', C.goldEarned, L.goldEarned], ['ORO GASTADO', C.goldSpent, L.goldSpent], ['GANZÚAS ROTAS', C.picksBroken, L.picksBroken], ['MEJOR RACHA', C.bestStreak, L.bestStreak]);
     rows.push(['#H', 'PUZLES SUPERADOS']);
-    [['lockpick', 'MADERA'], ['tumbler', 'ACERO'], ['hack', 'DIGITAL'], ['pipe', 'VAPOR'], ['sequence', 'NEÓN']].forEach(([t, n]) => { if (t === 'sequence' && !(C.puz[t].ok + C.puz[t].fail + L.puz[t].ok + L.puz[t].fail)) return; rows.push([n, pz(C, t), pz(L, t)]); });   // [0.201] NEÓN solo aparece cuando se ha jugado
+    [['lockpick', 'MADERA'], ['tumbler', 'ACERO'], ['hack', 'DIGITAL'], ['pipe', 'VAPOR'], ['sequence', 'NEÓN'], ['fuses', 'FUSIBLES']].forEach(([t, n]) => { if ((t === 'sequence' || t === 'fuses') && !(C.puz[t].ok + C.puz[t].fail + L.puz[t].ok + L.puz[t].fail)) return; rows.push([n, pz(C, t), pz(L, t)]); });   // [0.201] NEÓN solo aparece cuando se ha jugado
     const cls = animate ? 'jm-chalk jm-chalk-row' : 'jm-chalk';
     return rows.map((r, i) => r[0] === '#H'
       ? `<div class="${cls}" style="animation-delay:${i * 70}ms;font-size:19px;text-align:center;margin-top:8px;border-top:2px dashed rgba(238,243,234,.35);padding-top:6px;letter-spacing:.12em">${r[1]}</div>`
@@ -314,7 +314,8 @@ function testKeyHash(seq, salt) {
       { id: 'proPicks', label: 'PINES DE ACERO', kind: 'num', min: 0, max: 99, def: 20 },
       { id: 'usb', label: 'LLAVES USB', kind: 'num', min: 0, max: 99, def: 20 },
       { id: 'valves', label: 'VÁLVULAS', kind: 'num', min: 0, max: 99, def: 20 },
-      { id: 'batteries', label: 'PILAS', kind: 'num', min: 0, max: 99, def: 20 }
+      { id: 'batteries', label: 'PILAS', kind: 'num', min: 0, max: 99, def: 20 },
+      { id: 'fuses', label: 'FUSIBLES', kind: 'num', min: 0, max: 99, def: 20 }
     ] },
     { title: 'CARTAS Y EXTRAS', rows: [
       { id: 'ab_auto', label: 'CARTA AUTO', kind: 'num', min: 0, max: 9, def: 3 },
@@ -356,7 +357,7 @@ function testKeyHash(seq, salt) {
       { id: 'ps_heavy', label: 'CONTRATO LEONINO (COFRES)', kind: 'num', min: 1, max: 30, def: 5 }
     ] },
     { title: 'PROBAR UN PUZLE (SOLO)', puzzle: true, rows: [
-      { id: 'pType', label: 'PUZLE', kind: 'list', opts: ['MADERA', 'ACERO', 'DIGITAL', 'VAPOR', 'NEON'], always: true },
+      { id: 'pType', label: 'PUZLE', kind: 'list', opts: ['MADERA', 'ACERO', 'DIGITAL', 'VAPOR', 'NEON', 'FUSIBLES'], always: true },
       { id: 'pVar', label: 'VARIANTE', kind: 'list', opts: ['RANDOM', '1x1', '1x2', '1x3', '1x4', '2x1', '2x2', '2x3', '2x4', '3x1', '3x2', '3x3', '3x4'], always: true }
     ] }
   ];
@@ -391,7 +392,7 @@ function testKeyHash(seq, salt) {
     set(v.chest != null, () => { window.goToChest(v.chest); });
     set(v.level != null, () => { STATE.level = v.level; STATE.xp = 0; STATE.xpNext = getXpForLevel(v.level); STATE.chestsAtLevelUp = Math.max(0, STATE.chestsOpened - 3); STATE.chestsOpened = Math.max(STATE.chestsOpened, 3); });
     set(v.gold != null, () => { STATE.gold = v.gold; });
-    ['picks', 'proPicks', 'usb', 'valves', 'batteries'].forEach(k => set(v[k] != null, () => { STATE[k] = v[k]; if (k === 'batteries') STATE.batteriesUnlocked = true; }));
+    ['picks', 'proPicks', 'usb', 'valves', 'batteries', 'fuses'].forEach(k => set(v[k] != null, () => { STATE[k] = v[k]; if (k === 'batteries') STATE.batteriesUnlocked = true; if (k === 'fuses') STATE.fusesUnlocked = true; }));
     ['auto', 'double', 'shield', 'riskPot', 'perdedor', 'summonDuende', 'cofradia'].forEach(k => set(v['ab_' + k] != null, () => { STATE.abilities[k] = v['ab_' + k]; }));
     set(v.curse != null, () => { STATE.cursedChestsLeft = v.curse; });
     set(!!v.clearAch, () => { clearAchievements(); });
@@ -472,7 +473,7 @@ function testKeyHash(seq, salt) {
   };
 
   /* ---- Puzles en serie (Modo test): un puzle concreto, repetido; al acabar (éxito o error) sale el siguiente ---- */
-  const JUEGO_TIPO = { MADERA: 'wooden', ACERO: 'piston', DIGITAL: 'cyber', VAPOR: 'hydraulic', NEON: 'neon' };
+  const JUEGO_TIPO = { MADERA: 'wooden', ACERO: 'piston', DIGITAL: 'cyber', VAPOR: 'hydraulic', NEON: 'neon', FUSIBLES: 'electric' };
   window.startTestSeries = function (typeName, variant) {
     if (TEST_SERIES.active) return;
     const snap = { state: {}, chests: STATE.screenChests, idx: STATE.activeChestIdx, autosave: autosaveEnabled, statsPaused };
@@ -505,7 +506,7 @@ function testKeyHash(seq, salt) {
     const type = DATOS_JUEGO.COFRES.ESTANDAR.find(t => t.id === TEST_SERIES.typeId);
     STATE.currentLoop = loop; STATE.level = Math.max(STATE.level, 6);
     STATE.chestsOpened = Math.max(STATE.chestsOpened, 20);
-    STATE.picks = STATE.proPicks = STATE.usb = STATE.valves = STATE.batteries = 99; STATE.batteriesUnlocked = true;
+    STATE.picks = STATE.proPicks = STATE.usb = STATE.valves = STATE.batteries = STATE.fuses = 99; STATE.batteriesUnlocked = STATE.fusesUnlocked = true;
     STATE.abilities.auto = 0; STATE.activeShield = false; STATE.riskModeActive = false; STATE.cursedChestsLeft = 0;
     STATE.screenChests = [{ type, rarity: CHEST_RARITIES[rar - 1] }]; STATE.activeChestIdx = 0;
     isLootProcessing = false; minigameInProgress = false; puzzleToolPaid = null;

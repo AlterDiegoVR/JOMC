@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — puzles.js — VERSIÓN 0.202
+// JUST ONE MORE CHEST — puzles.js — VERSIÓN 0.203
 // minijuegos: ganzúa, pistones, hackeo, tuberías
 // ==========================================================================
 
@@ -1543,3 +1543,133 @@ function startSequenceGame() {
     l.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sqPress(+l.dataset.i); } });
   });
 })();
+
+/* ==========================================================================
+   [0.203] MINIJUEGO 6: FUSIBLES (Cuadro Eléctrico, bucle 3). Tipo "Apaga las luces": tocar un fusible invierte su estado y el de sus 4 vecinos.
+   Objetivo: todos encendidos antes de agotar las jugadas. Sin reloj. El tablero se genera SIEMPRE con solución (ver fzGenerate).
+   Variantes (DATOS_JUEGO.MINIJUEGOS.FUSIBLES.POR_RAREZA): fundidos (✖ no tocables), tres_estados (apagado→ámbar→verde), cortocircuito (⚡ invierte la fila).
+   ========================================================================== */
+let fzState = { phase: 'idle', n: 4, M: 2, cells: [], dead: [], short: [], moves: 0, max: 0, variant: 'clasico', timers: [] };
+
+function fzLater(fn, ms) { fzState.timers.push(setTimeout(fn, ms)); }
+function fzStop() { fzState.timers.forEach(clearTimeout); fzState.timers = []; fzState.phase = 'idle'; }
+// Aplica un toque sobre (r,c): suma "dir" (módulo M) a la cruz (o a toda la fila si el fusible es ⚡). Devuelve la lista de índices afectados.
+function fzApply(st, r, c, dir) {
+  const n = st.n, hit = [];
+  if (st.short[r * n + c]) { for (let k = 0; k < n; k++) hit.push([r, k]); }
+  else hit.push([r, c], [r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]);
+  const out = [];
+  hit.forEach(([y, x]) => { if (y >= 0 && y < n && x >= 0 && x < n) { const i = y * n + x; st.cells[i] = (st.cells[i] + dir + st.M) % st.M; out.push(i); } });
+  return out;
+}
+function fzSolved(st) { return st.cells.every(v => v === st.M - 1); }
+// Genera un tablero resoluble: parte del tablero resuelto y aplica "mezcla" toques permitidos al azar. El mínimo de jugadas de esa solución se conoce de antemano.
+function fzGenerate(rarityId) {
+  const C = DATOS_JUEGO.MINIJUEGOS.FUSIBLES, cfg = C.POR_RAREZA[rarityId] || C.POR_RAREZA.normal, n = C.TAMANO || 4, total = n * n;
+  const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+  const variant = (cfg.variantes && cfg.variantes.length) ? cfg.variantes[Math.floor(Math.random() * cfg.variantes.length)] : 'clasico';
+  const M = variant === 'tres_estados' ? 3 : 2;
+  const shuffled = Array.from({ length: total }, (_, i) => i).sort(() => Math.random() - 0.5);
+  const dead = Array(total).fill(false), short = Array(total).fill(false);
+  if (variant === 'fundidos') shuffled.slice(0, rnd(C.FUNDIDOS.MIN, C.FUNDIDOS.MAX)).forEach(i => { dead[i] = true; });
+  if (variant === 'cortocircuito') shuffled.filter(i => !dead[i]).slice(0, rnd(C.CORTOCIRCUITOS.MIN, C.CORTOCIRCUITOS.MAX)).forEach(i => { short[i] = true; });
+  const allowed = []; for (let i = 0; i < total; i++) if (!dead[i]) allowed.push(i);
+  let st = null, solveMoves = 0;
+  for (let attempt = 0; attempt < 300; attempt++) {
+    st = { n, M, cells: Array(total).fill(M - 1), dead, short };
+    const mult = {}; let done = 0, guard = 0;
+    const mez = M === 3 ? Math.ceil(cfg.mezcla / 2) : cfg.mezcla;   // con 3 estados cada toque pide 2 de vuelta: se mezcla la mitad
+    while (done < mez && guard++ < 200) {
+      const i = allowed[Math.floor(Math.random() * allowed.length)];
+      if ((mult[i] || 0) >= M - 1) continue;      // sin repetir un fusible más de M-1 veces (más veces se cancelaría)
+      mult[i] = (mult[i] || 0) + 1; done++;
+      fzApply(st, Math.floor(i / n), i % n, 1);
+    }
+    solveMoves = Object.keys(mult).reduce((a, k) => a + (M - (mult[k] % M)) % M, 0);
+    if (!fzSolved(st) && solveMoves >= 2) break;
+    st = null;
+  }
+  if (!st) {   // seguridad: tablero mínimo resoluble en 2 toques
+    st = { n, M, cells: Array(total).fill(M - 1), dead: Array(total).fill(false), short: Array(total).fill(false) };
+    fzApply(st, 1, 1, 1); fzApply(st, 2, 2, 1); solveMoves = 2;
+  }
+  const hard = (typeof pzHardLevel === 'function') ? pzHardLevel() : 0;
+  st.max = solveMoves + Math.max(0, (cfg.extra || 0) - hard * (C.MENOS_JUGADAS_POR_NIVEL_DURO || 0));
+  st.variant = variant; st.moves = 0; st.solveMoves = solveMoves; st.timers = []; st.phase = 'play';
+  return st;
+}
+function fzRender(flashIdx) {
+  const grid = document.getElementById('fzGrid'); if (!grid) return;
+  const st = fzState, n = st.n;
+  if (grid.children.length !== n * n) {
+    grid.innerHTML = ''; grid.style.setProperty('--n', n);
+    for (let i = 0; i < n * n; i++) {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'fz-cell'; b.dataset.i = i; b.setAttribute('aria-label', 'Fusible ' + (i + 1));
+      b.innerHTML = '<span class="fz-glass"><span class="fz-fil"></span></span><span class="fz-badge"></span>';
+      b.addEventListener('pointerdown', e => { e.preventDefault(); fzPress(i); });
+      b.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fzPress(i); } });
+      grid.appendChild(b);
+    }
+  }
+  for (let i = 0; i < n * n; i++) {
+    const b = grid.children[i], v = st.cells[i];
+    b.className = 'fz-cell s' + v + (st.M === 3 ? ' m3' : '') + (st.dead[i] ? ' dead' : '') + (st.short[i] ? ' short' : '') + (flashIdx && flashIdx.indexOf(i) >= 0 ? ' pop' : '');
+    b.querySelector('.fz-badge').textContent = st.dead[i] ? '✖' : (st.short[i] ? '⚡' : '');
+  }
+  const m = document.getElementById('fzMoves'); if (m) { m.textContent = st.moves; m.classList.toggle('low', st.max - st.moves <= 1); }
+  const x = document.getElementById('fzMax'); if (x) x.textContent = st.max;
+}
+function fzTone(hz, dur, type, vol, delay) { try { if (audio.ctx && !audio.muted) audio._tone(hz, hz, dur, type || 'square', vol || 0.06, delay || 0); } catch (e) {} }
+function fzPress(i) {
+  const st = fzState; if (st.phase !== 'play' || !minigameInProgress) return;
+  const n = st.n, cell = document.querySelector('#fzGrid .fz-cell:nth-child(' + (i + 1) + ')');
+  if (st.dead[i]) { audio.init(); fzTone(130, 0.12, 'sawtooth', 0.07); if (cell) { cell.classList.remove('nope'); void cell.offsetWidth; cell.classList.add('nope'); } return; }
+  const hit = fzApply(st, Math.floor(i / n), i % n, 1);
+  st.moves++;
+  fzTone(392 + (st.moves % 5) * 60, 0.09, 'square', 0.06);
+  fzRender(hit);
+  if (fzSolved(st)) { fzWin(); return; }
+  if (st.moves >= st.max) fzOut();
+  else fzStatus(`Quedan ${st.max - st.moves} jugadas`);
+}
+function fzStatus(t) { const e = document.getElementById('minigameStatus'); if (e) e.textContent = t; }
+function fzWin() {
+  fzState.phase = 'won'; fzStatus('¡CUADRO ENCENDIDO!');
+  audio.playSeqWin();
+  const g = document.getElementById('fzGrid'); if (g) g.classList.add('won');
+  minigameInProgress = false;
+  fzLater(() => {
+    const mm = document.getElementById('minigameModal'); if (mm) mm.classList.add('hidden');
+    const fc = document.getElementById('fuseContainer'); if (fc) fc.classList.add('hidden');
+    if (g) g.classList.remove('won');
+    puzzleToolPaid = null;   // ya pagada al entrar
+    triggerLootExplosion();
+  }, 1700);
+}
+function fzOut() {
+  fzState.phase = 'lost'; fzStatus('Sin jugadas. Salta el diferencial');
+  audio.playSeqFail();
+  const g = document.getElementById('fzGrid'); if (g) { g.classList.remove('shake'); void g.offsetWidth; g.classList.add('shake'); }
+  fzLater(() => {
+    if (g) g.classList.remove('shake');
+    const mm = document.getElementById('minigameModal'); if (mm) mm.classList.add('hidden');
+    const fc = document.getElementById('fuseContainer'); if (fc) fc.classList.add('hidden');
+    showPersistentFeedback("⚠️ Te has quedado sin jugadas: el fusible se ha fundido.");
+    handleFailure('fuses');
+  }, 1200);
+}
+function startFuseGame() {
+  setPuzzleHelp('fuses');
+  fzStop();
+  const active = STATE.screenChests[STATE.activeChestIdx];
+  const st = fzGenerate(active ? active.rarity.id : 'normal');
+  st.timers = []; fzState = st;
+  startMinigameTimer(null, 'fuses');   // sin reloj
+  const fc = document.getElementById('fuseContainer'); if (fc) fc.classList.remove('hidden');
+  const mm = document.getElementById('minigameModal'); if (mm) mm.classList.add('pz-seq');
+  const g = document.getElementById('fzGrid'); if (g) { g.innerHTML = ''; g.classList.remove('won', 'shake'); }
+  const F = DATOS_JUEGO.MINIJUEGOS.FUSIBLES;
+  const v = document.getElementById('fzVar'); if (v) v.textContent = F.TEXTOS[st.variant] || '';
+  const h = document.getElementById('fzHint'); if (h) h.textContent = F.PISTAS[st.variant] || '';
+  fzRender(); fzStatus(`Quedan ${st.max} jugadas`);
+}

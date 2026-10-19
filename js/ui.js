@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — ui.js — VERSIÓN 0.202
+// JUST ONE MORE CHEST — ui.js — VERSIÓN 0.203
 // actualización de la interfaz (HUD)
 // ==========================================================================
 
@@ -27,6 +27,7 @@ function updateUI() {
   const usbEl = document.getElementById('usbText'); if (usbEl) usbEl.textContent = STATE.usb;
   const valveEl = document.getElementById('valveText'); if (valveEl) valveEl.textContent = STATE.valves;
   const batEl = document.getElementById('batteryText'); if (batEl) batEl.textContent = STATE.batteries;   // [0.201]
+  const fuseEl = document.getElementById('fuseText'); if (fuseEl) fuseEl.textContent = STATE.fuses;   // [0.203]
 
   let chestCounterEl = document.getElementById('loopCounterDisplay');
   const abilitiesBar = document.getElementById('abilitiesBar') || document.getElementById('tacticalCardsContainer') || document.getElementById('abilityAutoBtn')?.parentElement;
@@ -112,6 +113,7 @@ function updateUI() {
   const usbChip = document.getElementById('usbChip'); if (usbChip && STATE.level >= 3) usbChip.classList.remove('hidden');
   const valveChip = document.getElementById('valveChip'); if (valveChip && STATE.level >= valvesDropLevel()) valveChip.classList.remove('hidden');
   const batChip = document.getElementById('batteryChip'); if (batChip && STATE.batteriesUnlocked) batChip.classList.remove('hidden');   // [0.201] solo tras la primera pila del Duende
+  const fuseChip = document.getElementById('fuseChip'); if (fuseChip && STATE.fusesUnlocked) fuseChip.classList.remove('hidden');   // [0.203] ídem con el primer fusible
 
   
   // ACTUALIZACIÓN DE PERKS Y PASIVAS
@@ -265,6 +267,7 @@ function updateShopResourcesUI() {
     <span class="text-cyan-400 font-black"><i class="fa-solid fa-microchip"></i> ${STATE.usb}</span>
     <span class="text-rose-400 font-black"><i class="fa-solid fa-faucet"></i> ${STATE.valves}</span>
     ${STATE.batteriesUnlocked ? `<span class="text-sky-300 font-black"><i class="fa-solid fa-battery-half"></i> ${STATE.batteries}</span>` : ''}
+    ${STATE.fusesUnlocked ? `<span class="text-yellow-300 font-black"><i class="fa-solid fa-bolt"></i> ${STATE.fuses}</span>` : ''}
   `;
   const mBar = document.getElementById('merchantResourceBar');
   const tBar = document.getElementById('traperoResourceBar');

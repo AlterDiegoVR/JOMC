@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — graficos.js — VERSIÓN 0.202
+// JUST ONE MORE CHEST — graficos.js — VERSIÓN 0.203
 // canvas, sala, cerradura, decoración, efectos de cofre
 // ==========================================================================
 
@@ -223,6 +223,48 @@ function neonGeo() {
   NEON_GEO = { paths, ring: ring.map(r => [r[1], r[2]]), lamps: [[26, 19, '#ff5246'], [32, 25, '#46eb82'], [26, 31, '#ffcd3c'], [20, 25, '#5aaaff']] };   // [0.202] lámparas de 4x4
   return NEON_GEO;
 }
+// [0.203] Cuadro Eléctrico: rayos finos (efecto DeLorean) que rodean el cofre, bombilla que se enciende y fusible apagado que parpadea
+function elecRng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+function elecLine(a, b) { const n = Math.max(Math.abs(b[0] - a[0]), Math.abs(b[1] - a[1]), 1), out = []; for (let t = 0; t <= n; t++) out.push([Math.round(a[0] + (b[0] - a[0]) * t / n), Math.round(a[1] + (b[1] - a[1]) * t / n)]); return out; }
+function elecBolt(rnd, x, y, ang, length, fork, depth) {
+  const pts = [[x, y]]; let cx = x, cy = y, a = ang; const steps = Math.max(2, length >> 1), K = [-1, -.6, -.3, .3, .6, 1];
+  for (let i = 0; i < steps; i++) { a += K[Math.floor(rnd() * K.length)] * 0.9; cx += Math.cos(a) * 2.2; cy += Math.sin(a) * 2.2; pts.push([Math.round(cx), Math.round(cy)]); }
+  let cells = []; for (let i = 0; i < pts.length - 1; i++) cells = cells.concat(elecLine(pts[i], pts[i + 1]));
+  const out = [cells];
+  if (fork && depth === 0 && pts.length > 4 && rnd() < 0.55) { const k = 2 + Math.floor(rnd() * (pts.length - 4)), f = pts[k]; out.push(...elecBolt(rnd, f[0], f[1], ang + (rnd() < .5 ? -1 : 1) * (0.6 + rnd() * 0.5), length >> 1, false, 1)); }
+  return out;
+}
+function elecSurfacePoint(rnd) {   // punto sobre el contorno del cofre (hasta 4 px por dentro y 3 por fuera)
+  const X0 = 4, X1 = 51, Y0 = 11, Y1 = 43, side = ['t', 'b', 'l', 'r', 't', 'b'][Math.floor(rnd() * 6)], ri = (a, b) => a + Math.floor(rnd() * (b - a + 1));
+  if (side === 't') return [ri(X0, X1), Y0 + ri(-3, 4), rnd() < .5 ? 0 : Math.PI];
+  if (side === 'b') return [ri(X0, X1), Y1 + ri(-4, 3), rnd() < .5 ? 0 : Math.PI];
+  if (side === 'l') return [X0 + ri(-3, 4), ri(Y0, Y1), rnd() < .5 ? Math.PI / 2 : -Math.PI / 2];
+  return [X1 + ri(-4, 3), ri(Y0, Y1), rnd() < .5 ? Math.PI / 2 : -Math.PI / 2];
+}
+function drawElectricAnim(R, E, ctx, ox, oy, px) {
+  const f = Math.floor(Date.now() / E.PASO_MS), n = E.BOMBILLA.length;
+  const bst = E.BOMBILLA[f % n], nb = E.RAYOS[f % E.RAYOS.length];
+  // fusible apagado (tercero) parpadeando
+  if (f % 3 !== 0) { for (let dy = 2; dy < 8; dy++) R(30, 29 + dy, 1, 1, '#fbbf24'); R(31, 32, 1, 1, '#fbbf24'); R(31, 34, 1, 1, '#fbbf24'); }
+  // bombilla encendida (1 = luz, 2 = destello)
+  if (bst > 0) {
+    const gl = bst === 1 ? '#ffe06e' : '#ffeea0', edge = bst === 1 ? '#3c2c0e' : '#5a4010', rows = [[41, 47], [40, 48], [39, 49], [39, 49], [39, 49], [40, 48], [41, 47], [42, 46]];
+    rows.forEach(([a, b], k) => { const y = 7 - k; R(a, y, b - a + 1, 1, gl); R(a - 1, y, 1, 1, edge); R(b + 1, y, 1, 1, edge); });
+    R(41, 4, 1, 2, '#fffadc'); R(42, 2, 1, 1, '#fffadc');
+    [[43, 6], [43, 5], [44, 4], [45, 5], [45, 6], [44, 7]].forEach(([x, y]) => R(x, y, 1, 1, '#ffffff'));
+    const rad = (bst === 1 ? 8 : 11) * px, cx = ox + 44.5 * px, cy = oy + 4.5 * px, g = ctx.createRadialGradient(cx, cy, 0, cx, cy, rad);
+    g.addColorStop(0, bst === 1 ? 'rgba(255,225,110,.55)' : 'rgba(255,238,160,.75)'); g.addColorStop(1, 'rgba(255,225,110,0)');
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, rad, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+  }
+  // destello azul del cofre
+  if (nb >= E.DESTELLO_DESDE) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = E.TINTE_ALFA; R(4, 11, 48, 33, '#28aaff'); ctx.restore(); }
+  // rayos finos alrededor y sobre el cofre
+  const rnd = elecRng(f * 7919 + 13), bolts = [];
+  for (let k = 0; k < nb; k++) { const [sx, sy, a0] = elecSurfacePoint(rnd); bolts.push(...elecBolt(rnd, sx, sy, a0 + (rnd() - .5) * 1.4, 8 + Math.floor(rnd() * 9), true, 0)); }
+  ctx.save(); ctx.globalAlpha = 0.47; bolts.forEach(c => c.forEach(([x, y]) => { [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([dx, dy]) => R(x + dx, y + dy, 1, 1, '#4696ff')); })); ctx.restore();
+  bolts.forEach(c => c.forEach(([x, y]) => R(x, y, 1, 1, '#82e1ff')));
+  bolts.forEach(c => c.forEach(([x, y], i) => { if (i % 2 === 0 || c.length < 6) R(x, y, 1, 1, '#ffffff'); }));
+}
 function drawChestAnim(typeId, R, aco, ctx, ox, oy, px) {
   const t = Date.now() / 1000;
   if (typeId === 'piston' && aco.PISTONES && aco.PISTONES.ACTIVAR) {
@@ -278,6 +320,8 @@ function drawChestAnim(typeId, R, aco, ctx, ox, oy, px) {
     R(L[0] + 1, L[1], 2, 4, L[2]); R(L[0], L[1] + 1, 4, 2, L[2]); R(L[0] + 1, L[1] + 1, 2, 2, '#ffffff');
     ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.5; ctx.fillStyle = L[2];
     ctx.beginPath(); ctx.arc(ox + (L[0] + 2) * px, oy + (L[1] + 2) * px, px * 5.6, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+  } else if (typeId === 'electric' && aco.ELECTRICO && aco.ELECTRICO.ACTIVAR) {
+    drawElectricAnim(R, aco.ELECTRICO, ctx, ox, oy, px);   // [0.203]
   } else if (typeId === 'hydraulic' && aco.AGUJA && aco.AGUJA.ACTIVAR) {
     const A = aco.AGUJA, tt = t % A.CICLO_S;
     let ang;
@@ -310,7 +354,7 @@ function decorY(d) {
   return (d.y === 210 || d.y === 270) ? decorRowY('top') : d.y;   // adornos guardados con la fila antigua
 }
 
-const TOOL_COLORS = { picks: '#fbbf24', proPicks: '#cbd5e1', usb: '#22d3ee', valves: '#fb923c', batteries: '#7dd3fc' };
+const TOOL_COLORS = { picks: '#fbbf24', proPicks: '#cbd5e1', usb: '#22d3ee', valves: '#fb923c', batteries: '#7dd3fc', fuses: '#fde047' };
 
 // [0.086] Indicador pegado a la cerradura: coste en herramientas (color de la herramienta) o "faltan N" en rojo
 function drawLockOverlay(lx, ly, lr, chest) {

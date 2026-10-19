@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — juego.js — VERSIÓN 0.202
+// JUST ONE MORE CHEST — juego.js — VERSIÓN 0.203
 // arte del cofre abierto, subida de nivel, abrir cofre
 // ==========================================================================
 
@@ -280,7 +280,7 @@ function openActiveChest() {
     const co = STATE.chestsOpened;
 
     if (co >= 95 && co < DATOS_JUEGO.PROGRESIÓN.SECUENCIA_HISTORIA.COFRE_COLAPSO_FINAL && STATE.climaxPhase) {
-      const containers = ['lockpickContainer', 'tumblerContainer', 'hackContainer', 'pipeContainer', 'sequenceContainer'];
+      const containers = ['lockpickContainer', 'tumblerContainer', 'hackContainer', 'pipeContainer', 'sequenceContainer', 'fuseContainer'];
       containers.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.classList.add('hidden');
@@ -305,7 +305,7 @@ function openActiveChest() {
       return;
     }
 
-    const containers = ['lockpickContainer', 'tumblerContainer', 'hackContainer', 'pipeContainer', 'sequenceContainer'];
+    const containers = ['lockpickContainer', 'tumblerContainer', 'hackContainer', 'pipeContainer', 'sequenceContainer', 'fuseContainer'];
     containers.forEach(id => {
       const el = document.getElementById(id);
       if (el) el.classList.add('hidden');
@@ -322,6 +322,7 @@ function openActiveChest() {
     else if (active.type.juego === 'hack') startHackGame();
     else if (active.type.juego === 'pipe') startPipeGame();
     else if (active.type.juego === 'sequence') startSequenceGame();
+    else if (active.type.juego === 'fuses') startFuseGame();   // [0.203]
     minigameInProgress = true;
     humHoldChest = active;   // [0.091] el zumbido se calla con este cofre hasta fallar o hasta que salga otro
 
@@ -417,8 +418,8 @@ function pzScale(m) {
   const cfg = DATOS_JUEGO.GRAFICOS.ESCALA_PUZLES || {};
   const frame = document.getElementById('pzFrame'), card = document.getElementById('pzCard'), timer = document.getElementById('bigTimer'), foot = document.getElementById('pzFoot');
   if (!frame || m.classList.contains('hidden')) return;
-  const sel = { lockpick: '#lockpickContainer .pz-body', tumbler: '#tumblerContainer .pz-body', pipe: '#pipeContainer .pz-body', sequence: '#sequenceContainer .pz-body', hack: '#hackContainer' };
-  const idOf = { lockpick: 'lockpickContainer', tumbler: 'tumblerContainer', pipe: 'pipeContainer', sequence: 'sequenceContainer', hack: 'hackContainer' };
+  const sel = { lockpick: '#lockpickContainer .pz-body', tumbler: '#tumblerContainer .pz-body', pipe: '#pipeContainer .pz-body', sequence: '#sequenceContainer .pz-body', fuses: '#fuseContainer .pz-body', hack: '#hackContainer' };
+  const idOf = { lockpick: 'lockpickContainer', tumbler: 'tumblerContainer', pipe: 'pipeContainer', sequence: 'sequenceContainer', fuses: 'fuseContainer', hack: 'hackContainer' };
   Object.keys(sel).forEach(k => { const e = document.querySelector(sel[k]); if (e) e.style.zoom = ''; });
   frame.style.removeProperty('--pzw');
   let which = null;

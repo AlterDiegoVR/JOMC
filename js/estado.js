@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — estado.js — VERSIÓN 0.202
+// JUST ONE MORE CHEST — estado.js — VERSIÓN 0.203
 // estado, wildcards, guardado, logros, estadísticas, reinicio
 // ==========================================================================
 
@@ -38,6 +38,8 @@ const STATE = {
   usb: DATOS_JUEGO.CONFIG_INICIAL.USB,
   valves: DATOS_JUEGO.CONFIG_INICIAL.VALVULAS,
   batteries: DATOS_JUEGO.CONFIG_INICIAL.PILAS || 0,   // [0.201] pilas de la linterna (puzle SECUENCIA)
+  fuses: DATOS_JUEGO.CONFIG_INICIAL.FUSIBLES || 0,   // [0.203] fusibles del Cuadro Eléctrico (puzle FUSIBLES)
+  fusesUnlocked: false,   // [0.203] true cuando el Duende da el primer fusible (bucle 3, nivel 5)
   batteriesUnlocked: false,   // [0.201] true cuando el Duende da la primera pila (bucle 2+, nivel 5); antes no pueden salir en ningún sitio
   pendingTraperoLantern: false,
   pendingTraperoTome: false,   // [0.202] el Trapero comenta el cuaderno justo después del botín
@@ -138,6 +140,12 @@ function getMasteryTorpezaPct(level) {
   return base + ((level - 1) * inc);
 }
 
+// [0.203] Lista narrativa del bucle actual: si existe NARRATIVA.BUCLE_<n>[clave] se usa esa; si no, la general (bucles 1 y 2)
+function narr(key) {
+  const N = DATOS_JUEGO.NARRATIVA, L = STATE.currentLoop || 1, o = N['BUCLE_' + L];
+  return (o && o[key] !== undefined) ? o[key] : N[key];
+}
+
 function getNarrativeTier() {
   const co = STATE.chestsOpened;
   const umbrales = DATOS_JUEGO.NARRATIVA.UMBRALES_TIERS;
@@ -220,9 +228,10 @@ function hideAllMinigameUI() {
     tumblerAnimationFrameId = null;
   }
   if (typeof sqStop === 'function') sqStop();   // [0.201] corta los temporizadores de la secuencia
+  if (typeof fzStop === 'function') fzStop();   // [0.203] ídem los fusibles
   const minigameModal = document.getElementById('minigameModal');
   if (minigameModal) minigameModal.classList.add('hidden');
-  ['lockpickContainer', 'tumblerContainer', 'hackContainer', 'pipeContainer', 'sequenceContainer'].forEach(id => {
+  ['lockpickContainer', 'tumblerContainer', 'hackContainer', 'pipeContainer', 'sequenceContainer', 'fuseContainer'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.add('hidden');
   });
@@ -264,9 +273,13 @@ function getWildcardBadChance() {
 }
 
 // [0.201] Niveles de desbloqueo de los cofres por BUCLE. El bucle 1 no cambia: las tuberías (cofre de vapor) salen en el nivel 5 y no existe el Arca de Neón.
-// Bucle 2 y 3: las tuberías salen en el nivel 3 (junto al hackeo) y el Arca de Neón (secuencia, con pilas) en el nivel 5.
+// Bucle 2: las tuberías salen en el nivel 3 (junto al hackeo) y el Arca de Neón (secuencia, con pilas) en el nivel 5.
+// [0.203] Bucle 3: tuberías en el nivel 2, Arca Digital en el 3, Arca de Neón en el 4 y Cuadro Eléctrico (fusibles) en el 5. TABLA EDITABLE:
+const NIVELES_COFRE_BUCLE3 = { hydraulic: 2, cyber: 3, neon: 4, electric: 5 };
 function chestMinLevel(t) {
   const L = STATE.currentLoop || 1;
+  if (L >= 3 && NIVELES_COFRE_BUCLE3[t.id] != null) return NIVELES_COFRE_BUCLE3[t.id];
+  if (t.id === 'electric') return Infinity;   // el Cuadro Eléctrico solo existe en el bucle 3
   if (t.id === 'hydraulic') return L >= 2 ? 3 : t.minNivel;
   if (t.id === 'neon') return L >= 2 ? t.minNivel : Infinity;
   return t.minNivel;
@@ -275,6 +288,7 @@ function chestMinLevel(t) {
 function toolUnlocked(prop) {
   if (prop === 'picks') return true;
   if (prop === 'batteries') return !!STATE.batteriesUnlocked;
+  if (prop === 'fuses') return !!STATE.fusesUnlocked && (STATE.currentLoop || 1) >= 3;   // [0.203] solo bucle 3
   const t = DATOS_JUEGO.COFRES.ESTANDAR.find(x => x.consumible === prop);
   return !!t && STATE.level >= chestMinLevel(t);
 }
@@ -291,7 +305,7 @@ function shopBasePrice(id) {
 
 function getUnlockedConsumables() {
   const list = [{ prop: 'picks', name: 'Ganzúa' }];
-  DATOS_JUEGO.COFRES.ESTANDAR.forEach(t => { if (t.consumible !== 'picks' && toolUnlocked(t.consumible)) list.push({ prop: t.consumible, name: ({ proPicks: 'Pin de Acero', usb: 'Llave USB', valves: 'Válvula', batteries: 'Pila' })[t.consumible] || 'Herramienta' }); });
+  DATOS_JUEGO.COFRES.ESTANDAR.forEach(t => { if (t.consumible !== 'picks' && toolUnlocked(t.consumible)) list.push({ prop: t.consumible, name: ({ proPicks: 'Pin de Acero', usb: 'Llave USB', valves: 'Válvula', batteries: 'Pila', fuses: 'Fusible' })[t.consumible] || 'Herramienta' }); });
   return list;
 }
 
@@ -490,7 +504,7 @@ const SAVE_VERSION = 1;
 const SAVE_KEYS = [
   'currentLoop', 'level', 'xp', 'gold', 'chestsOpened', 'chestsAtLevelUp', 'chestCounterUnlocked',
   'cleanStreak', 'paranoiaStage', 'traperoVisits', 'lastTraperoChest', 'salvageDealsCount', 'salvageCurseActive',
-  'picks', 'proPicks', 'usb', 'valves', 'batteries', 'batteriesUnlocked', 'lanternFound', 'noXpChestsLeft', 'picksBrokenOnUse', 'tanteoExplainedLoop', 'xpBoostChestsLeft', 'torpezas',
+  'picks', 'proPicks', 'usb', 'valves', 'batteries', 'batteriesUnlocked', 'fuses', 'fusesUnlocked', 'lanternFound', 'noXpChestsLeft', 'picksBrokenOnUse', 'tanteoExplainedLoop', 'xpBoostChestsLeft', 'torpezas',
   'seqStage', 'traperoStrikes', 'seqLastBuyCo', 'seqLastChance', 'climaxPhase', 'sequenceBroken', 'perks', 'abilities',
   'active2XMultiplier', 'activeShield', 'riskModeActive', 'riskPot', 'perdedorActive', 'perdedorLootPending', 'fallosConsecutivos',
   'heavyChestsLeft', 'greedCurseLeft', 'harderPuzzlesLeft', 'oxidadoLeft', 'recharge', 'harderSrc', 'extremePuzzlesLeft', 'extremeSrc', 'mods', 'blankNotes', 'passWords', 'pendingNotes', 'traperoBuffs', 'cursedChestsLeft',
@@ -536,7 +550,7 @@ function setTomeUnlocked() { try { storageSet(TOME_KEY, '1'); } catch (err) {} }
 const LIFESTATS_KEY = 'justOneMoreChest_stats_v1';
 function blankStats() {
   return { chests: 0, goldEarned: 0, goldSpent: 0, picksBroken: 0, bestStreak: 0, maxLevel: 1, maxLoop: 1,
-    puz: { lockpick: { ok: 0, fail: 0 }, tumbler: { ok: 0, fail: 0 }, hack: { ok: 0, fail: 0 }, pipe: { ok: 0, fail: 0 }, sequence: { ok: 0, fail: 0 } } };
+    puz: { lockpick: { ok: 0, fail: 0 }, tumbler: { ok: 0, fail: 0 }, hack: { ok: 0, fail: 0 }, pipe: { ok: 0, fail: 0 }, sequence: { ok: 0, fail: 0 }, fuses: { ok: 0, fail: 0 } } };
 }
 function normStats(o) {
   const b = blankStats();
@@ -812,7 +826,7 @@ function resetGame(keepLoop) {
   STATE.proPicks = DATOS_JUEGO.CONFIG_INICIAL.PINES;
   STATE.usb = DATOS_JUEGO.CONFIG_INICIAL.USB;
   STATE.valves = DATOS_JUEGO.CONFIG_INICIAL.VALVULAS;
-  STATE.batteries = DATOS_JUEGO.CONFIG_INICIAL.PILAS || 0; STATE.batteriesUnlocked = false; if (keepLoop !== true) STATE.lanternFound = false;   // [0.201] la linterna es un objeto de historia: se conserva entre bucles
+  STATE.batteries = DATOS_JUEGO.CONFIG_INICIAL.PILAS || 0; STATE.batteriesUnlocked = false; STATE.fuses = DATOS_JUEGO.CONFIG_INICIAL.FUSIBLES || 0; STATE.fusesUnlocked = false; if (keepLoop !== true) STATE.lanternFound = false;   // [0.201] la linterna es un objeto de historia: se conserva entre bucles
 
   STATE.noXpChestsLeft = 0;
   STATE.picksBrokenOnUse = false;
@@ -897,6 +911,7 @@ window.goToChest = function(targetChestNumber) {
   STATE.usb = Math.max(5, STATE.usb);
   STATE.valves = Math.max(5, STATE.valves);
   if (STATE.batteriesUnlocked) STATE.batteries = Math.max(5, STATE.batteries);
+  if (STATE.fusesUnlocked) STATE.fuses = Math.max(5, STATE.fuses);
 
   if (targetChestNumber >= 79 && targetChestNumber <= 90) {
     STATE.seqStage = 1;
