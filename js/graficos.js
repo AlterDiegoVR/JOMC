@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — graficos.js — VERSIÓN 0.201
+// JUST ONE MORE CHEST — graficos.js — VERSIÓN 0.202
 // canvas, sala, cerradura, decoración, efectos de cofre
 // ==========================================================================
 
@@ -31,6 +31,8 @@ if (ART_ON) {
   Object.keys(ASSETS.decoraciones || {}).forEach(k => loadArt('deco_' + k, ASSETS.decoraciones[k]));
   ['celdaParpadeo1', 'celdaParpadeo2', 'celdaApagada'].forEach(k => { if (ASSETS[k]) loadArt(k, ASSETS[k]); });
 }
+// [0.202] Niebla Espesa: la rareza que se VE es siempre la normal (sprite, halo, marco, color del brazo); la real solo se descubre en el botín
+function chestVisRarity(c) { return (c && c.fog) ? CHEST_RARITIES[0] : (c && c.rarity); }
 // [0.086] Sprite de cofre según tipo y rareza (la normal usa el sprite base)
 function chestSpriteSrc(type, rarity) {
   if (!ART_ON || !type) return null;
@@ -38,6 +40,12 @@ function chestSpriteSrc(type, rarity) {
   const byRar = ASSETS.cofresRareza && ASSETS.cofresRareza[type.id];
   if (r && r !== 'normal' && byRar && byRar[r]) return byRar[r];
   return ASSETS.cofres[type.id] || null;
+}
+// [0.202] Pantalla de botín: el Arca de Neón sale con sus 4 luces encendidas a la vez
+function chestLootSpriteSrc(type, rarity) {
+  const b = type && ASSETS.cofresBotin && ASSETS.cofresBotin[type.id];
+  if (ART_ON && b) return b[(rarity && rarity.id) || 'normal'] || chestSpriteSrc(type, rarity);
+  return chestSpriteSrc(type, rarity);
 }
 function chestSpriteKey(type, rarity) {
   const r = rarity && rarity.id;
@@ -212,7 +220,7 @@ function neonGeo() {
   const CX = 28, CY = 27, RR = 10, ring = [];
   for (let y = CY - RR - 2; y < CY + RR + 3; y++) for (let x = CX - RR - 2; x < CX + RR + 3; x++) { const dd = Math.hypot(x - CX, y - CY); if (dd > RR - 1.4 && dd <= RR - 0.6) ring.push([Math.atan2(y - CY, x - CX), x, y]); }
   ring.sort((a, b) => a[0] - b[0]);   // de la izquierda por arriba (sentido del reloj)
-  NEON_GEO = { paths, ring: ring.map(r => [r[1], r[2]]), lamps: [[CX - 1, CY - 6, '#ff5246'], [CX + 4, CY - 1, '#46eb82'], [CX - 1, CY + 4, '#ffcd3c'], [CX - 6, CY - 1, '#5aaaff']] };
+  NEON_GEO = { paths, ring: ring.map(r => [r[1], r[2]]), lamps: [[26, 19, '#ff5246'], [32, 25, '#46eb82'], [26, 31, '#ffcd3c'], [20, 25, '#5aaaff']] };   // [0.202] lámparas de 4x4
   return NEON_GEO;
 }
 function drawChestAnim(typeId, R, aco, ctx, ox, oy, px) {
@@ -266,9 +274,10 @@ function drawChestAnim(typeId, R, aco, ctx, ox, oy, px) {
       [[0, '#b8fbff'], [1, '#6aeaff'], [2, '#3ec8ee'], [3, '#2296be']].forEach(([back, col]) => { const q = G.ring[(head - back + rl) % rl]; if (q[1] < 39) R(q[0], q[1], 1, 1, col); });
     });
     const L = G.lamps[lit];
-    R(L[0], L[1], 2, 2, L[2]);
-    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.35; ctx.fillStyle = L[2];
-    ctx.beginPath(); ctx.arc(ox + (L[0] + 1) * px, oy + (L[1] + 1) * px, px * 3.4, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+    // [0.202] lámpara encendida de 4x4 (esquinas recortadas, núcleo claro) y halo mayor
+    R(L[0] + 1, L[1], 2, 4, L[2]); R(L[0], L[1] + 1, 4, 2, L[2]); R(L[0] + 1, L[1] + 1, 2, 2, '#ffffff');
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.5; ctx.fillStyle = L[2];
+    ctx.beginPath(); ctx.arc(ox + (L[0] + 2) * px, oy + (L[1] + 2) * px, px * 5.6, 0, Math.PI * 2); ctx.fill(); ctx.restore();
   } else if (typeId === 'hydraulic' && aco.AGUJA && aco.AGUJA.ACTIVAR) {
     const A = aco.AGUJA, tt = t % A.CICLO_S;
     let ang;
@@ -412,7 +421,7 @@ function syncOpenButtonArmed() {
   if (armed && !armedBtnShown) {
     armedBtnShown = true;
     btn.classList.add('btn-armed');
-    btn.style.setProperty('--armc', (active.rarity && active.rarity.color) || '#ffffff');
+    btn.style.setProperty('--armc', (chestVisRarity(active) && chestVisRarity(active).color) || '#ffffff');
     if (t) { armedBtnPrevText = t.textContent; armedBtnTextSet = DATOS_JUEGO.GRAFICOS.BOTON_ARMADO_TEXTO || 'PULSA DE NUEVO'; t.textContent = armedBtnTextSet; }
   } else if (!armed && armedBtnShown) {
     armedBtnShown = false;
@@ -581,7 +590,7 @@ function renderRoom() {
   }
 
   const activeChest = STATE.screenChests && STATE.screenChests[STATE.activeChestIdx];
-  const chestImgKey = activeChest && activeChest.type ? chestSpriteKey(activeChest.type, activeChest.rarity) : null;
+  const chestImgKey = activeChest && activeChest.type ? chestSpriteKey(activeChest.type, chestVisRarity(activeChest)) : null;
   CHEST_LOCK = null;
   // [0.087b] El cofre (y su tarjeta) se ocultan mientras entra el Duende o el Trapero y vuelven con un fundido
   const npcOn = false;   // [0.088] ya no se oculta el cofre: lo tapa el telón de transición
@@ -602,11 +611,11 @@ function renderRoom() {
     const mobileMulti = !isWideLayout() && (STATE.screenChests.length > 1 || chestHoldLift);   // [0.106] chestHoldLift: tras la Cofradía se conserva la altura
     const ccx = canvas.width / 2, ccy = canvas.height * (g.COFRE_Y_PCT - (mobileMulti ? (g.COFRE_SUBE_MOVIL_MULTI || 0) : 0));
     const bob = Math.sin(Date.now() * 0.002) * 2;
-    const halo = (g.HALO_RAREZA || {})[activeChest.rarity.id] || { a: '88', r: 0.85, anillo: false };
+    const halo = (g.HALO_RAREZA || {})[chestVisRarity(activeChest).id] || { a: '88', r: 0.85, anillo: false };
     const glowR = dw * halo.r + Math.sin(Date.now() * 0.003) * 6;
-    const rcol = activeChest.rarity.color || '#f59e0b';
+    const rcol = chestVisRarity(activeChest).color || '#f59e0b';
     ctx.save();
-    if (activeChest.rarity.id !== 'normal') ctx.globalCompositeOperation = 'lighter';
+    if (chestVisRarity(activeChest).id !== 'normal') ctx.globalCompositeOperation = 'lighter';
     const glow = ctx.createRadialGradient(ccx, ccy, 8, ccx, ccy, glowR);
     glow.addColorStop(0, rcol + halo.a);
     glow.addColorStop(1, 'transparent');
@@ -625,7 +634,7 @@ function renderRoom() {
     if (chestSwapFx) drawChestSwapOverlay(ctx, im, ccx, ccy + bob, dw, dh);   // [0.103] destello blanco + cruz de luz del cambio de cofre
     // [0.097] PRUEBA: chispas doradas subiendo sobre el cofre legendario (como las de la pantalla de subida de nivel). Se apaga con GRAFICOS.CHISPAS_LEGENDARIO.ACTIVAR:false
     const chs = g.CHISPAS_LEGENDARIO;
-    if (chs && chs.ACTIVAR && activeChest.rarity.id === 'legendario') {
+    if (chs && chs.ACTIVAR && chestVisRarity(activeChest).id === 'legendario') {
       const tn = Date.now();
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
@@ -690,7 +699,7 @@ function renderRoom() {
 
     const glowRadius = 55 + Math.sin(Date.now() * 0.003) * 8;
     const glow = ctx.createRadialGradient(0, -10, 10, 0, -10, glowRadius);
-    const colorHex = activeChest.rarity.color || '#f59e0b';
+    const colorHex = chestVisRarity(activeChest).color || '#f59e0b';
     glow.addColorStop(0, colorHex + 'aa');
     glow.addColorStop(1, 'transparent');
     ctx.fillStyle = glow;
@@ -863,7 +872,7 @@ function triggerSecretDecorationReward(decor) {
   } else if (roll >= 35 && roll < 45) {
     const active = STATE.screenChests[STATE.activeChestIdx];
     if (active && active.rarity.id !== 'legendario') {
-      chestMutateFx(() => { active.rarity = CHEST_RARITIES[3]; updateChestSelectionUI(); });   // [0.097b] el cambio real también tras el banner
+      chestMutateFx(() => { active.rarity = active.fog ? Object.assign({}, CHEST_RARITIES[3], { fogOne: true }) : CHEST_RARITIES[3]; updateChestSelectionUI(); });   // [0.097b] el cambio real también tras el banner
       msg += " (¡Un rayo de sombra eleva el cofre a LEGENDARIO!)";
       audio.playUnlockFanfare('legendario');
     } else {

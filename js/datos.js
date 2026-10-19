@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — datos.js — VERSIÓN 0.201
+// JUST ONE MORE CHEST — datos.js — VERSIÓN 0.202
 // DATOS_JUEGO: configuración y balance
 // ==========================================================================
 
@@ -9,7 +9,7 @@
 
 const DATOS_JUEGO = {
   // [0.088] Versión visible en pantalla (esquina inferior central) para que las capturas la incluyan
-  VERSION: '0.201',
+  VERSION: '0.202',
   // [0.104] Efectos de la apertura automática de la secuencia final (cofres 101-110); la intensidad sube del primero al último (k = 0..1)
   SECUENCIA_FINAL_FX: { ACTIVAR: true, ESTALLIDOS_BASE: 2, ESTALLIDOS_EXTRA: 4, PARTICULAS_POR_ESTALLIDO: 40, HACIA_CENTRO_BASE: 30, HACIA_CENTRO_EXTRA: 60,
     SACUDIDA_PX: 6, SACUDIDA_EXTRA_PX: 10, SACUDIDA_MS: 520, PULSO_ZOOM: 0.02, DESTELLO: 0.10 },
@@ -54,6 +54,17 @@ const DATOS_JUEGO = {
   // [0.095] Post-its en blanco donde escribe el jugador. COFRES = cofres tras los que aparece el post-it vacío; en el bucle siguiente
   // el texto sale en el cofre anterior (COFRE-1). MAX_CARACTERES = límite al escribir.
   NOTAS_JUGADOR: { COFRES: [13, 37], MAX_CARACTERES: 60, ANCHO_PX: 210 },
+  // [0.202] POST-IT DE LA CONTRASEÑA: en el cofre COFRE de cada bucle sale un post-it con una frase incompleta; hay que elegir una de las 10 palabras (no se puede saltar).
+  // La palabra elegida se guarda por bucle y pasa de un bucle a otro. Frases y palabras PROVISIONALES: edítalas aquí (cada bucle: frase + exactamente 10 palabras).
+  CONTRASENA: {
+    COFRE: 53,
+    HUECO: '_ _ _ _ _',
+    BUCLES: {
+      1: { frase: 'Los cofres son como', palabras: ['espejos', 'jaulas', 'relojes', 'puertas', 'sueños', 'deudas', 'vicios', 'regalos', 'promesas', 'bucles'] },
+      2: { frase: 'El ORO es genial pero', palabras: ['pesa', 'quema', 'miente', 'cansa', 'ciega', 'engaña', 'acaba', 'envenena', 'pasa', 'duele'] },
+      3: { frase: 'Ahora sé que la salida es', palabras: ['parar', 'soltar', 'dormir', 'creer', 'romper', 'olvidar', 'recordar', 'esperar', 'escribir', 'mirar'] }
+    }
+  },
   AYUDAS: { GANZUA_TACTIL: { VECES: 3, ANILLO: 'AGARRA LA GANZÚA Y ARRÁSTRALA', CENTRO: 'MANTÉN EL CENTRO' }, PISTONES_TOQUE: { VECES: 3, TEXTO: 'También puedes tocar cualquier punto de la pantalla para fijar el pistón.' },
     // [0.103] Texto de la tarjeta de instrucciones de cada puzle (HTML permitido)
     PUZLES: {
@@ -61,7 +72,7 @@ const DATOS_JUEGO = {
       tumbler: 'Pulsa el botón o toca la pantalla para fijar el <span class="text-amber-400 font-bold">pistón activo</span> con la <span class="text-amber-400 font-bold">unión latón/acero</span> sobre la <span class="text-emerald-400 font-bold">línea verde</span>.',
       hack: 'Elige la palabra de la lista. Cada intento te dice cuántas letras coinciden.',
       pipe: 'Gira las tuberías para llevar el agua de la válvula a la salida.',
-      sequence: 'Memoriza la <span class="text-amber-400 font-bold">secuencia de luces</span> y repítela con las mismas notas. Tres secuencias seguidas: <span class="text-emerald-400 font-bold">una sola pifia y se acaba</span>.'   // [0.201]
+      sequence: 'Memoriza la <span class="text-amber-400 font-bold">secuencia de luces</span> y repítela con las mismas notas. <span class="text-emerald-400 font-bold">Una sola pifia y se acaba</span>.'   // [0.201]
     } },
   // [0.103] Pitido de cuenta atrás de los puzles (Variante D, Latido): uno por segundo en los últimos SEGUNDOS s, cada vez más agudo
   CUENTA_ATRAS: { ACTIVAR: true, SEGUNDOS: 5 },
@@ -406,14 +417,15 @@ const DATOS_JUEGO = {
 
   // 🟢 CONFIGURACIÓN DE MINIJUEGOS (ADAPTADO A RAREZA DE COFRE - BUCLE 1/2)
   MINIJUEGOS: {
-    // [0.201] SECUENCIA (Simón dice) del ARCA DE NEÓN: 4 luces con una nota cada una; 3 secuencias seguidas y nuevas; un fallo corta el puzle. Sin reloj.
+    // [0.201] SECUENCIA (Simón dice) del ARCA DE NEÓN: 4 luces con una nota cada una; UNA sola secuencia por cofre [0.202]; un fallo corta el puzle. Sin reloj.
     SECUENCIA: {
       NOTAS_HZ: [261.63, 329.63, 392.00, 523.25],      // Do, Mi, Sol, Do agudo (arriba, derecha, abajo, izquierda)
-      POR_RAREZA: {                                    // largos de las 3 secuencias y milisegundos entre luces
-        normal:     { largos: [3, 4, 5], paso_ms: 800 },
-        raro:       { largos: [4, 5, 6], paso_ms: 700 },
-        epico:      { largos: [5, 6, 7], paso_ms: 600 },
-        legendario: { largos: [6, 7, 8], paso_ms: 480 }
+      FASES: 1,                                        // [0.202] una sola secuencia por cofre (antes 3); cada rareza usa la más larga de las tres de la 0.201
+      POR_RAREZA: {                                    // largo (nº de luces) y milisegundos entre luces
+        normal:     { largo: 5, paso_ms: 800 },
+        raro:       { largo: 6, paso_ms: 700 },
+        epico:      { largo: 7, paso_ms: 600 },
+        legendario: { largo: 8, paso_ms: 480 }
       },
       ENCENDIDO_PCT: 0.62,                             // parte del paso que la luz está encendida
       PAUSA_INICIAL_MS: 650,
@@ -882,6 +894,15 @@ const DATOS_JUEGO = {
       nivel_3: "¡Oigo chispas y silbidos de vapor al fondo! Arcas Digitales y Cofres de Vapor, los dos a la vez. Toma una Llave USB y una Válvula, a ver si descifras lo que esconden. {sorpresa}",
       nivel_5: "Luces que cantan en la oscuridad... Son las Arcas de Neón. Esa linterna que llevas necesita esto: tu primera Pila, a la primera invita la casa. Memoriza las luces y repítelas. {alegre}"
     },
+    // [0.202] El Tomo (cuaderno antiguo): se encuentra en el bucle 1, desde el nivel 5, en un hueco libre; el Trapero lo comenta justo después
+    TOMO: {
+      NIVEL_MIN: 5, COFRE_MAX: 70,
+      BANNER: "📖 Has encontrado un viejo cuaderno de tapas gastadas.",
+      TRAPERO: "Veo que has encontrado ese viejo cuaderno. Lleva tiempo dando vueltas por ahí... quédatelo, si quieres. {sonrisa}",
+      BANNER_OPCIONES: "📖 Cuaderno añadido al menú de opciones.",
+      MOCK_TITULO: "CUADERNO",
+      MOCK_TEXTO: "Este cuaderno es muy extraño... Parece que se va escribiendo solo a medida que descubres cosas del mundo."
+    },
     // [0.201] La linterna (solo bucle 2): aviso al encontrarla (cofre 2 del nivel 2) y frase del Trapero justo después
     LINTERNA: {
       BANNER: "🔦 Has encontrado una linterna. Pero no funciona, quizás te valga más adelante.",
@@ -996,7 +1017,8 @@ const DATOS_JUEGO = {
       { id: "clasico", titulo: "CLÁSICO", tipo: "PERK", icono: "fa-box", desc: "Maestría en Madera: Bonus de botín y EXP." },
       { id: "mecanico", titulo: "MECÁNICO", tipo: "PERK", icono: "fa-cogs", desc: "Maestría en Acero: Bonus de botín y EXP." },
       { id: "informatico", titulo: "INFORMÁTICO", tipo: "PERK", icono: "fa-microchip", desc: "Maestría en Digital: Bonus de botín y EXP." },
-      { id: "fontanero", titulo: "FONTANERO", tipo: "PERK", icono: "fa-faucet", desc: "Maestría en Vapor: Bonus de botín y EXP." }
+      { id: "fontanero", titulo: "FONTANERO", tipo: "PERK", icono: "fa-faucet", desc: "Maestría en Vapor: Bonus de botín y EXP." },
+      { id: "electricista", titulo: "ELECTRICISTA", tipo: "PERK", icono: "fa-lightbulb", desc: "Maestría en Neón: Bonus de botín y EXP.", minBucle: 2 }   // [0.202] solo aparece desde el bucle 2
     ],
 
     TACTICAS: [
@@ -1031,7 +1053,7 @@ const DATOS_JUEGO = {
   },
   // [0.106] Icono (Font Awesome) de cada wildcard para su carta; las que no estén usan el de su tipo
   WILDCARD_ICONOS: {
-    cofres_pesados: 'fa-weight-hanging', impuesto_trapero: 'fa-coins', maldicion_codicia: 'fa-skull-crossbones', dedos_torpes: 'fa-bandage',
+    cofres_pesados: 'fa-weight-hanging', impuesto_trapero: 'fa-coins', maldicion_codicia: 'fa-skull-crossbones', dedos_torpes: 'fa-fingerprint',
     hallazgo_sombra: 'fa-key', bono_experiencia: 'fa-star', sombra_favorable: 'fa-wand-magic-sparkles', regalo_tactico: 'fa-scroll',
     suministros_inesperados: 'fa-box-open', bolsa_olvidada: 'fa-sack-dollar', ganzuas_cortesia: 'fa-key', chispa_genio: 'fa-lightbulb',
     fortuna_doble: 'fa-dice', escudo_prestado: 'fa-shield-halved', cofradia_cofre: 'fa-boxes-stacked', recado_duende: 'fa-hat-wizard',
@@ -1065,7 +1087,7 @@ const DATOS_JUEGO = {
     { id: "fiebre_oro", nombre: "Fiebre del Oro", tipo: "BENEFICIOSO", desc: "Durante 8 cofres ganas el DOBLE de GP... pero cada cofre tiene un 50% de exigir una herramienta extra.", efecto: "MODIFICADOR", valor: { id: "fiebre", cofres: 8 }, minNivel: 2 },
     { id: "manos_seda", nombre: "Manos de Seda", tipo: "BENEFICIOSO", desc: "Los próximos 5 fallos en un puzle NO te cuestan ninguna herramienta.", efecto: "MODIFICADOR", valor: { id: "seda", usos: 5 } },
     { id: "cofres_solitarios", nombre: "Cofres Solitarios", tipo: "BENEFICIOSO", desc: "Durante 8 cofres solo aparece 1 cofre por pantalla, pero da +50% XP.", efecto: "MODIFICADOR", valor: { id: "solitario", cofres: 8 } },
-    { id: "niebla_botin", nombre: "Niebla Espesa", tipo: "BENEFICIOSO", desc: "Durante 6 cofres no ves su rareza, pero su botín es un 40% mayor.", efecto: "MODIFICADOR", valor: { id: "niebla", cofres: 6 }, minNivel: 2 },
+    { id: "niebla_botin", nombre: "Niebla Espesa", tipo: "BENEFICIOSO", desc: "Durante 6 cofres no ves su rareza y todos te cuestan 1 sola herramienta, pero su botín es un 40% mayor.", efecto: "MODIFICADOR", valor: { id: "niebla", cofres: 6 }, minNivel: 2 },
     { id: "racha_congelada", nombre: "Racha Congelada", tipo: "BENEFICIOSO", desc: "Tus próximos 2 fallos en un puzle NO rompen tu racha.", efecto: "MODIFICADOR", valor: { id: "congelada", usos: 2 } },
     { id: "reloj_lento", nombre: "Reloj Lento", tipo: "BENEFICIOSO", desc: "Durante 6 cofres tienes un 50% más de tiempo en los puzles.", efecto: "MODIFICADOR", valor: { id: "relojBueno", cofres: 6 } },
     { id: "hambre_xp", nombre: "Hambre de XP", tipo: "BENEFICIOSO", desc: "Durante 5 cofres tu XP se DUPLICA... pero no ganas nada de GP.", efecto: "MODIFICADOR", valor: { id: "hambre", cofres: 5 }, minNivel: 2 },

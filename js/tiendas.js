@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — tiendas.js — VERSIÓN 0.201
+// JUST ONE MORE CHEST — tiendas.js — VERSIÓN 0.202
 // tienda del Duende y del Trapero
 // ==========================================================================
 
@@ -741,6 +741,7 @@ function openTraperoShop() {
           if (STATE.perks.bonusAcero > 0) activePerksList.push('bonusAcero');
           if (STATE.perks.bonusDigital > 0) activePerksList.push('bonusDigital');
           if (STATE.perks.bonusVapor > 0) activePerksList.push('bonusVapor');
+          if (STATE.perks.bonusNeon > 0) activePerksList.push('bonusNeon');
 
           if (activePerksList.length === 0) {
             if (traperoModal) traperoModal.classList.add('hidden');
@@ -760,7 +761,7 @@ function openTraperoShop() {
 
           const chosenPerk = activePerksList[Math.floor(Math.random() * activePerksList.length)];
           // [0.089] Nombre de lo que se pierde, para decirlo en la frase del Trapero
-          const PERK_NOMBRES = { sweetSpot: 'Mano Firme', rarityBonus: 'Ojo de Cazador', discount: 'Regateador', slowerPistons: 'Pistones Lentos', goldStreak: 'Fondo de Bolsillo', extraTime: 'Hombre Tranquilo (-2 s de margen)', oidoClinico: 'Oído Clínico', shopStealFree: 'Ladrón', luckyLootChance: 'Tipo con Suerte', bonusMadera: 'Clásico (maestría de Madera)', bonusAcero: 'Mecánico (maestría de Acero)', bonusDigital: 'Informático (maestría Digital)', bonusVapor: 'Fontanero (maestría de Vapor)' };
+          const PERK_NOMBRES = { sweetSpot: 'Mano Firme', rarityBonus: 'Ojo de Cazador', discount: 'Regateador', slowerPistons: 'Pistones Lentos', goldStreak: 'Fondo de Bolsillo', extraTime: 'Hombre Tranquilo (-2 s de margen)', oidoClinico: 'Oído Clínico', shopStealFree: 'Ladrón', luckyLootChance: 'Tipo con Suerte', bonusMadera: 'Clásico (maestría de Madera)', bonusAcero: 'Mecánico (maestría de Acero)', bonusDigital: 'Informático (maestría Digital)', bonusVapor: 'Fontanero (maestría de Vapor)', bonusNeon: 'Electricista (maestría de Neón)' };
           const lostLevelled = !['shopStealFree', 'luckyLootChance', 'oidoClinico', 'extraTime'].includes(chosenPerk) && (STATE.perks[chosenPerk] || 0) > 1;
           lostPerkText = (lostLevelled ? '1 nivel de ' : '') + (PERK_NOMBRES[chosenPerk] || chosenPerk);
           if (chosenPerk === 'shopStealFree') STATE.perks.shopStealFree = false;
@@ -776,7 +777,7 @@ function openTraperoShop() {
           updateUI();
           showTraperoDealFeedback("Cambio de Trabajo", `Has perdido: ${lostPerkText}. Recibes +35 GP y +25% XP extra durante 10 cofres.`);
         } else if (deal.id === 'maestria_doble_filo') {
-          const chestTypes = ['madera', 'acero', 'digital', 'vapor'];
+          const chestTypes = ['madera', 'acero', 'digital', 'vapor'].concat((STATE.currentLoop || 1) >= 2 ? ['neon'] : []);   // [0.202] neón solo desde el bucle 2
           const maestriaType = chestTypes[Math.floor(Math.random() * chestTypes.length)];
           const remainingTypes = chestTypes.filter(t => t !== maestriaType);
           const torpezaType = remainingTypes[Math.floor(Math.random() * remainingTypes.length)];

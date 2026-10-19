@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — puzles.js — VERSIÓN 0.201
+// JUST ONE MORE CHEST — puzles.js — VERSIÓN 0.202
 // minijuegos: ganzúa, pistones, hackeo, tuberías
 // ==========================================================================
 
@@ -326,7 +326,7 @@ window.addEventListener('resize', () => { try { layoutTumblerLines(); } catch (e
 
 // [0.084] Anulación 1 a 1 entre Maestría (perks.bonusX) y Torpeza (torpezas.x)
 function reconcileMasteryTorpeza() {
-  const names = { madera: 'Madera', acero: 'Acero', digital: 'Digital', vapor: 'Vapor' };
+  const names = { madera: 'Madera', acero: 'Acero', digital: 'Digital', vapor: 'Vapor', neon: 'Neon' };
   const msgs = [];
   Object.keys(names).forEach(t => {
     const key = 'bonus' + names[t];
@@ -1432,7 +1432,7 @@ function evaluatePipeFlow() {
    [0.201] MINIJUEGO 5: SECUENCIA (Arca de Neón). Cuatro luces con nota propia; 3 secuencias seguidas que hay que repetir.
    Sin reloj. Un fallo acaba el puzle (cuesta la pila, como el resto de herramientas avanzadas).
    ========================================================================== */
-let sqState = { phase: 'idle', round: 0, seq: [], pos: 0, timers: [], len: [3, 4, 5], step: 800 };
+let sqState = { phase: 'idle', round: 0, seq: [], pos: 0, timers: [], len: [5], rounds: 1, step: 800 };
 
 function sqLater(fn, ms) { sqState.timers.push(setTimeout(fn, ms)); }
 function sqStop() { sqState.timers.forEach(clearTimeout); sqState.timers = []; sqState.phase = 'idle'; }
@@ -1446,7 +1446,8 @@ function sqStatus(t) { const e = document.getElementById('minigameStatus'); if (
 function sqPips(failIdx) {
   const el = document.getElementById('sqPips'); if (!el) return;
   let h = '';
-  for (let i = 0; i < 3; i++) {
+  const nR = sqState.rounds || 1; el.style.display = nR > 1 ? '' : 'none';   // [0.202] con una sola fase no hay marcadores
+  for (let i = 0; i < nR; i++) {
     const c = (failIdx === i) ? 'fail' : (i < sqState.round ? 'done' : (i === sqState.round && sqState.phase !== 'won' ? 'cur' : ''));
     h += `<i class="pip ${c}"></i>`;
   }
@@ -1454,8 +1455,9 @@ function sqPips(failIdx) {
 }
 function sqHead() {
   const r = document.getElementById('sqRound'), l = document.getElementById('sqLen');
-  if (r) r.textContent = Math.min(sqState.round + 1, 3);
-  if (l) l.textContent = sqState.len[Math.min(sqState.round, 2)];
+  const nR = sqState.rounds || 1;
+  if (r) { r.textContent = Math.min(sqState.round + 1, nR); const rs = r.closest('.sq-rd'); if (rs) rs.style.display = nR > 1 ? '' : 'none'; }
+  if (l) l.textContent = sqState.len[Math.min(sqState.round, nR - 1)];
 }
 function sqHub(big, small) {
   const b = document.getElementById('sqHubBig'), s = document.getElementById('sqHubSmall');
@@ -1488,7 +1490,7 @@ function sqPress(i) {
   sqHub(sqState.pos + '/' + sqState.seq.length, 'TU TURNO'); sqStatus(`Tu turno: ${sqState.pos} / ${sqState.seq.length}`);
   if (sqState.pos === sqState.seq.length) {
     sqState.phase = 'between'; sqSetDisabled(true); sqState.round++;
-    if (sqState.round >= 3) sqWin();
+    if (sqState.round >= (sqState.rounds || 1)) sqWin();
     else { sqPips(); sqHub('✓', 'BIEN'); sqStatus(`¡Secuencia ${sqState.round} superada!`); sqLater(sqListen, DATOS_JUEGO.MINIJUEGOS.SECUENCIA.PAUSA_ENTRE_SECUENCIAS_MS); }
   }
 }
@@ -1526,7 +1528,7 @@ function startSequenceGame() {
   const cfg = C.POR_RAREZA[active ? active.rarity.id : 'normal'] || C.POR_RAREZA.normal;
   const mult = pzHardLevel() === 2 ? C.TEMPO_MULT_EXTREMO : (pzHardLevel() === 1 ? C.TEMPO_MULT_DIFICIL : 1);
   sqStop();
-  sqState.len = cfg.largos; sqState.step = Math.round(cfg.paso_ms * mult); sqState.round = 0; sqState.seq = []; sqState.pos = 0;
+  sqState.rounds = C.FASES || 1; sqState.len = Array(sqState.rounds).fill(cfg.largo); sqState.step = Math.round(cfg.paso_ms * mult); sqState.round = 0; sqState.seq = []; sqState.pos = 0;
   startMinigameTimer(null, 'batteries');   // sin reloj
   const sc = document.getElementById('sequenceContainer'); if (sc) sc.classList.remove('hidden');
   const mm = document.getElementById('minigameModal'); if (mm) mm.classList.add('pz-seq');

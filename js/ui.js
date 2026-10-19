@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — ui.js — VERSIÓN 0.201
+// JUST ONE MORE CHEST — ui.js — VERSIÓN 0.202
 // actualización de la interfaz (HUD)
 // ==========================================================================
 
@@ -134,6 +134,7 @@ function updateUI() {
       { active: STATE.perks.bonusAcero > 0, text: `⚙️ Mecánico Lv.${STATE.perks.bonusAcero} (+${Math.round(getMasteryTorpezaPct(STATE.perks.bonusAcero) * 100)}%)`, shortText: `⚙️ Lv.${STATE.perks.bonusAcero}`, desc: `Mecánico: +${Math.round(getMasteryTorpezaPct(STATE.perks.bonusAcero) * 100)}% botín y EXP en cofres de Acero.`, kind: 'mastery', isTorpeza: false },
       { active: STATE.perks.bonusDigital > 0, text: `💻 Informático Lv.${STATE.perks.bonusDigital} (+${Math.round(getMasteryTorpezaPct(STATE.perks.bonusDigital) * 100)}%)`, shortText: `💻 Lv.${STATE.perks.bonusDigital}`, desc: `Informático: +${Math.round(getMasteryTorpezaPct(STATE.perks.bonusDigital) * 100)}% botín y EXP en cofres Digitales (USB).`, kind: 'mastery', isTorpeza: false },
       { active: STATE.perks.bonusVapor > 0, text: `🚰 Fontanero Lv.${STATE.perks.bonusVapor} (+${Math.round(getMasteryTorpezaPct(STATE.perks.bonusVapor) * 100)}%)`, shortText: `🚰 Lv.${STATE.perks.bonusVapor}`, desc: `Fontanero: +${Math.round(getMasteryTorpezaPct(STATE.perks.bonusVapor) * 100)}% botín y EXP en cofres de Vapor.`, kind: 'mastery', isTorpeza: false },
+      { active: STATE.perks.bonusNeon > 0, text: `💡 Electricista Lv.${STATE.perks.bonusNeon} (+${Math.round(getMasteryTorpezaPct(STATE.perks.bonusNeon) * 100)}%)`, shortText: `💡 Lv.${STATE.perks.bonusNeon}`, desc: `Electricista: +${Math.round(getMasteryTorpezaPct(STATE.perks.bonusNeon) * 100)}% botín y EXP en cofres de Neón.`, kind: 'mastery', isTorpeza: false },
       { active: STATE.perks.shopStealFree, text: `🎭 Ladrón`, shortText: `🎭`, desc: "Ladrón: El primer ítem de la tienda del Duende es gratis.", isTorpeza: false },
       { active: STATE.perks.luckyLootChance > 0, text: `🍀 Suerte 15%`, shortText: `🍀 15%`, desc: "Tipo con Suerte: 15% de probabilidad de duplicar botín.", isTorpeza: false },
       
@@ -141,7 +142,8 @@ function updateUI() {
       { active: STATE.torpezas.madera > 0, text: `📦 Torpeza Madera Lv.${STATE.torpezas.madera} (-${Math.round(getMasteryTorpezaPct(STATE.torpezas.madera) * 100)}%)`, shortText: `📦 Lv.${STATE.torpezas.madera}`, desc: `Torpeza en Madera: -${Math.round(getMasteryTorpezaPct(STATE.torpezas.madera) * 100)}% botín y EXP en cofres de Madera.`, kind: 'torpeza', isTorpeza: true },
       { active: STATE.torpezas.acero > 0, text: `⚙️ Torpeza Acero Lv.${STATE.torpezas.acero} (-${Math.round(getMasteryTorpezaPct(STATE.torpezas.acero) * 100)}%)`, shortText: `⚙️ Lv.${STATE.torpezas.acero}`, desc: `Torpeza en Acero: -${Math.round(getMasteryTorpezaPct(STATE.torpezas.acero) * 100)}% botín y EXP en cofres de Acero.`, kind: 'torpeza', isTorpeza: true },
       { active: STATE.torpezas.digital > 0, text: `💻 Torpeza Digital Lv.${STATE.torpezas.digital} (-${Math.round(getMasteryTorpezaPct(STATE.torpezas.digital) * 100)}%)`, shortText: `💻 Lv.${STATE.torpezas.digital}`, desc: `Torpeza en Digital: -${Math.round(getMasteryTorpezaPct(STATE.torpezas.digital) * 100)}% botín y EXP en cofres Digitales (USB).`, kind: 'torpeza', isTorpeza: true },
-      { active: STATE.torpezas.vapor > 0, text: `🚰 Torpeza Vapor Lv.${STATE.torpezas.vapor} (-${Math.round(getMasteryTorpezaPct(STATE.torpezas.vapor) * 100)}%)`, shortText: `🚰 Lv.${STATE.torpezas.vapor}`, desc: `Torpeza en Vapor: -${Math.round(getMasteryTorpezaPct(STATE.torpezas.vapor) * 100)}% botín y EXP en cofres de Vapor.`, kind: 'torpeza', isTorpeza: true }
+      { active: STATE.torpezas.vapor > 0, text: `🚰 Torpeza Vapor Lv.${STATE.torpezas.vapor} (-${Math.round(getMasteryTorpezaPct(STATE.torpezas.vapor) * 100)}%)`, shortText: `🚰 Lv.${STATE.torpezas.vapor}`, desc: `Torpeza en Vapor: -${Math.round(getMasteryTorpezaPct(STATE.torpezas.vapor) * 100)}% botín y EXP en cofres de Vapor.`, kind: 'torpeza', isTorpeza: true },
+      { active: STATE.torpezas.neon > 0, text: `💡 Torpeza Neón Lv.${STATE.torpezas.neon} (-${Math.round(getMasteryTorpezaPct(STATE.torpezas.neon) * 100)}%)`, shortText: `💡 Lv.${STATE.torpezas.neon}`, desc: `Torpeza en Neón: -${Math.round(getMasteryTorpezaPct(STATE.torpezas.neon) * 100)}% botín y EXP en cofres de Neón.`, kind: 'torpeza', isTorpeza: true }
     ];
 
     // [0.089b] Efectos temporales / penalizaciones de los tratos del Trapero, en la misma barra
@@ -155,7 +157,7 @@ function updateUI() {
       { active: modOn('fiebre'), text: `🔥 Fiebre x${(STATE.mods||{}).fiebre}`, shortText: `🔥 x${(STATE.mods||{}).fiebre}`, desc: `Fiebre del Oro: GP x2 durante ${(STATE.mods||{}).fiebre} cofres más, pero cada cofre tiene un 50% de pedir +1 herramienta.`, isBoost: true },
       { active: modOn('seda'), text: `🧤 Seda x${(STATE.mods||{}).seda}`, shortText: `🧤 x${(STATE.mods||{}).seda}`, desc: `Manos de Seda: los próximos ${(STATE.mods||{}).seda} fallos no gastan herramientas.`, isBoost: true },
       { active: modOn('solitario'), text: `🕯️ Solitarios x${(STATE.mods||{}).solitario}`, shortText: `🕯️ x${(STATE.mods||{}).solitario}`, desc: `Cofres Solitarios: 1 cofre por pantalla y +50% XP durante ${(STATE.mods||{}).solitario} cofres más.`, isBoost: true },
-      { active: modOn('niebla'), text: `🌫️ Niebla x${(STATE.mods||{}).niebla}`, shortText: `🌫️ x${(STATE.mods||{}).niebla}`, desc: `Niebla Espesa: rareza oculta pero botín +40% durante ${(STATE.mods||{}).niebla} cofres más.`, isBoost: true },
+      { active: modOn('niebla'), text: `🌫️ Niebla x${(STATE.mods||{}).niebla}`, shortText: `🌫️ x${(STATE.mods||{}).niebla}`, desc: `Niebla Espesa: rareza oculta, todos los cofres cuestan 1 herramienta y botín +40% durante ${(STATE.mods||{}).niebla} cofres más.`, isBoost: true },
       { active: modOn('congelada'), text: `🧊 Racha x${(STATE.mods||{}).congelada}`, shortText: `🧊 x${(STATE.mods||{}).congelada}`, desc: `Racha Congelada: tus próximos ${(STATE.mods||{}).congelada} fallos no rompen tu racha.`, isBoost: true },
       { active: modOn('relojBueno'), text: `⏳ Tiempo +50% x${(STATE.mods||{}).relojBueno}`, shortText: `⏳ x${(STATE.mods||{}).relojBueno}`, desc: `Reloj Lento: +50% de tiempo en los puzles durante ${(STATE.mods||{}).relojBueno} cofres más.`, isBoost: true },
       { active: modOn('hambre'), text: `🍽️ Hambre x${(STATE.mods||{}).hambre}`, shortText: `🍽️ x${(STATE.mods||{}).hambre}`, desc: `Hambre de XP: XP x2 pero sin GP durante ${(STATE.mods||{}).hambre} cofres más.`, kind: 'bad' },

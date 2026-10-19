@@ -803,3 +803,23 @@ html:not(.narrow-layout) #pzHardBadge { font-size: 13px; }
 .sq-dial.shake { animation: sqShake .35s; }
 @keyframes sqShake { 20% { transform: translateX(-6px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(4px); } }
 @media (prefers-reduced-motion: reduce) { .sq-dial.shake { animation: none; } }
+
+/* [0.202] Objeto de historia (linterna / tomo) en grande junto al Trapero */
+#dialogueModal .dlg-item { display: none; }
+#dialogueModal.dlg-shop .dlg-item:not(.hidden) { display: block; position: absolute; z-index: 4; right: 5%; bottom: 15%; width: 40%; max-width: 280px; height: auto; image-rendering: pixelated; pointer-events: none; transform: rotate(-6deg); filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .75)) drop-shadow(0 0 16px rgba(251, 191, 36, .35)); animation: dlgItemFloat 3.2s ease-in-out infinite; }
+@keyframes dlgItemFloat { 0%, 100% { transform: rotate(-6deg) translateY(0); } 50% { transform: rotate(-4deg) translateY(-7px); } }
+
+/* [0.202] POST-IT DE LA CONTRASEÑA: bloqueo del juego, post-it mayor con brillo y hueco parpadeante, papel grande con lista de palabras */
+#passBlock { position: absolute; inset: 0; z-index: 35; background: rgba(0, 0, 0, .55); pointer-events: auto; }
+#gameFrame.pass-lock #notesContainer { z-index: 36; }
+#gameFrame.pass-lock .sticky-note:not(.pass-note) { pointer-events: none !important; }
+.pass-note.pass-pending { width: 250px !important; font-size: 14px; line-height: 1.35; padding: 14px 14px !important; animation: passPulse 1.6s ease-in-out infinite; }
+@keyframes passPulse { 0%, 100% { box-shadow: 4px 6px 15px rgba(0,0,0,.7), 0 0 0 0 rgba(251, 191, 36, .0); } 50% { box-shadow: 4px 6px 15px rgba(0,0,0,.7), 0 0 22px 4px rgba(251, 191, 36, .75); } }
+.pass-gap { display: inline-block; font: inherit; font-weight: 900; letter-spacing: .12em; color: #b45309; background: transparent; border: 0; border-bottom: 2px dashed #b45309; padding: 0 4px; cursor: pointer; animation: noteBlink 1s steps(1) infinite; }
+.pass-gap.chosen { animation: none; letter-spacing: 0; color: #1e293b; border-bottom: 2px solid #1e293b; font-style: italic; }
+.pass-paper { width: min(88%, 360px); padding: 34px 18px 20px; transform: rotate(-2deg); }
+.pass-phrase { font: 800 21px/1.5 ui-monospace, Menlo, Consolas, monospace; text-align: center; padding: 6px 2px 10px; }
+.pass-list { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; max-height: 0; overflow: hidden; opacity: 0; transform-origin: top; transform: scaleY(.6); transition: max-height .3s ease, opacity .25s ease, transform .3s ease; }
+.pass-paper.open .pass-list { max-height: 340px; opacity: 1; transform: scaleY(1); padding-top: 6px; border-top: 1px dashed rgba(30, 41, 59, .4); }
+.pass-opt { font: 800 16px/1.2 ui-monospace, Menlo, Consolas, monospace; color: #1e293b; background: rgba(30, 41, 59, .08); border: 1px solid rgba(30, 41, 59, .25); border-radius: 8px; padding: 9px 6px; cursor: pointer; }
+.pass-opt:active, .pass-opt.sel { background: #1e293b; color: #fef08a; }

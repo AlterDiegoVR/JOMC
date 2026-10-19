@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — estado.js — VERSIÓN 0.201
+// JUST ONE MORE CHEST — estado.js — VERSIÓN 0.202
 // estado, wildcards, guardado, logros, estadísticas, reinicio
 // ==========================================================================
 
@@ -40,6 +40,7 @@ const STATE = {
   batteries: DATOS_JUEGO.CONFIG_INICIAL.PILAS || 0,   // [0.201] pilas de la linterna (puzle SECUENCIA)
   batteriesUnlocked: false,   // [0.201] true cuando el Duende da la primera pila (bucle 2+, nivel 5); antes no pueden salir en ningún sitio
   pendingTraperoLantern: false,
+  pendingTraperoTome: false,   // [0.202] el Trapero comenta el cuaderno justo después del botín
   lanternFound: false,        // [0.201] la linterna se encuentra en el cofre 2 del nivel 2 del bucle 2
 
   noXpChestsLeft: 0,
@@ -51,7 +52,8 @@ const STATE = {
     madera: 0,
     acero: 0,
     digital: 0,
-    vapor: 0
+    vapor: 0,
+    neon: 0   // [0.202] Arca de Neón
   },
 
   seqStage: 0,
@@ -78,7 +80,8 @@ const STATE = {
     bonusMadera: 0,
     bonusAcero: 0,
     bonusDigital: 0,
-    bonusVapor: 0
+    bonusVapor: 0,
+    bonusNeon: 0   // [0.202] maestría ELECTRICISTA (Arca de Neón)
   },
 
   abilities: { auto: 0, double: 0, shield: 0, reveal: 0, riskPot: 0, perdedor: 0, summonDuende: 0, cofradia: 0 },
@@ -100,6 +103,7 @@ const STATE = {
   extremeSrc: '',
   oxidadoLeft: 0,          // [0.105] Cerrojos Oxidados: cofres restantes con 1-3 herramientas al azar
   recharge: {},            // [0.105] cartas que vuelven (Fortuna Doble, Escudo Prestado): { prop: { armed, cd, n } }
+  passWords: {},       // [0.202] palabra de la contraseña elegida en cada bucle: {bucle: palabra}
   blankNotes: {},      // [0.095] textos del jugador por bucle: {bucle: {cofre: texto}}
   pendingNotes: [],    // [0.095] post-its de jugador visibles ahora (se guardan para poder continuar)
   mods: {},   // [0.093] modificadores de wildcard con duración: {id: cofres_restantes}
@@ -489,7 +493,7 @@ const SAVE_KEYS = [
   'picks', 'proPicks', 'usb', 'valves', 'batteries', 'batteriesUnlocked', 'lanternFound', 'noXpChestsLeft', 'picksBrokenOnUse', 'tanteoExplainedLoop', 'xpBoostChestsLeft', 'torpezas',
   'seqStage', 'traperoStrikes', 'seqLastBuyCo', 'seqLastChance', 'climaxPhase', 'sequenceBroken', 'perks', 'abilities',
   'active2XMultiplier', 'activeShield', 'riskModeActive', 'riskPot', 'perdedorActive', 'perdedorLootPending', 'fallosConsecutivos',
-  'heavyChestsLeft', 'greedCurseLeft', 'harderPuzzlesLeft', 'oxidadoLeft', 'recharge', 'harderSrc', 'extremePuzzlesLeft', 'extremeSrc', 'mods', 'blankNotes', 'pendingNotes', 'traperoBuffs', 'cursedChestsLeft',
+  'heavyChestsLeft', 'greedCurseLeft', 'harderPuzzlesLeft', 'oxidadoLeft', 'recharge', 'harderSrc', 'extremePuzzlesLeft', 'extremeSrc', 'mods', 'blankNotes', 'passWords', 'pendingNotes', 'traperoBuffs', 'cursedChestsLeft',
   'roomDecorations', 'roomThemeFilter', 'roomDarkUntil', 'opensByType', 'acceptDelayUses', 'hintUses', 'stats'
 ];
 
@@ -525,6 +529,10 @@ function clearAchievements() { achievementsUnlocked = {}; storageRemove(ACHIEVEM
 
 
 /* ---------- [0.090] Estadísticas: PARTIDA ACTUAL (se guardan con la partida) y ACUMULADO (permanentes por navegador) ---------- */
+// [0.202] El Tomo (cuaderno): se guarda aparte de la partida, como los logros (sobrevive a "Empezar de nuevo")
+const TOME_KEY = 'justOneMoreChest_tomo_v1';
+function tomeUnlocked() { try { return storageGet(TOME_KEY) === '1'; } catch (err) { return false; } }
+function setTomeUnlocked() { try { storageSet(TOME_KEY, '1'); } catch (err) {} }
 const LIFESTATS_KEY = 'justOneMoreChest_stats_v1';
 function blankStats() {
   return { chests: 0, goldEarned: 0, goldSpent: 0, picksBroken: 0, bestStreak: 0, maxLevel: 1, maxLoop: 1,
@@ -810,7 +818,7 @@ function resetGame(keepLoop) {
   STATE.picksBrokenOnUse = false;
   STATE.pendingTanteoPhrase = null;
   STATE.xpBoostChestsLeft = 0;
-  STATE.torpezas = { madera: 0, acero: 0, digital: 0, vapor: 0 };
+  STATE.torpezas = { madera: 0, acero: 0, digital: 0, vapor: 0, neon: 0 };
 
   STATE.seqStage = 0;
   STATE.traperoStrikes = 0; STATE.seqLastBuyCo = 0; STATE.seqLastChance = false;
@@ -823,7 +831,7 @@ function resetGame(keepLoop) {
   STATE.perks = {
     sweetSpot: 0, rarityBonus: 0, discount: 0, slowerPistons: 0, goldStreak: 0, extraTime: 0,
     oidoClinico: 0, shopStealFree: false, luckyLootChance: 0, bonusMadera: 0, bonusAcero: 0,
-    bonusDigital: 0, bonusVapor: 0
+    bonusDigital: 0, bonusVapor: 0, bonusNeon: 0
   };
 
   STATE.abilities = { auto: 0, double: 0, shield: 0, reveal: 0, riskPot: 0, perdedor: 0, summonDuende: 0, cofradia: 0 };
@@ -840,7 +848,7 @@ function resetGame(keepLoop) {
   STATE.harderPuzzlesLeft = 0; STATE.harderSrc = ''; STATE.extremePuzzlesLeft = 0; STATE.extremeSrc = ''; STATE.oxidadoLeft = 0; STATE.recharge = {};
   STATE.mods = {};
   STATE.pendingNotes = [];
-  if (keepLoop !== true) STATE.blankNotes = {};   // [0.095] partida nueva = post-its nuevos; el cambio de bucle los conserva
+  if (keepLoop !== true) { STATE.blankNotes = {}; STATE.passWords = {}; }   // [0.202] la contraseña también va ligada a la partida   // [0.095] partida nueva = post-its nuevos; el cambio de bucle los conserva
   STATE.traperoBuffs = { bonusXp: false, harderMinigames: false, shortPipeTimer: false, doubleGold: false };
   STATE.cursedChestsLeft = 0;
   curseHold = false; STATE.curseEndPending = false;   // [0.096]
@@ -858,6 +866,7 @@ function resetGame(keepLoop) {
 
   const notesContainer = document.getElementById('notesContainer');
   if (notesContainer) notesContainer.innerHTML = '';
+  if (typeof syncPassLock === 'function') syncPassLock();   // [0.202] sin post-it de contraseña pendiente se quita el bloqueo
 
   const modals = [
     'gameOverModal', 'unfairDealModal', 'minigameModal', 

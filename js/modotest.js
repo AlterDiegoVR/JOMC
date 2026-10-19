@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — modotest.js — VERSIÓN 0.201
+// JUST ONE MORE CHEST — modotest.js — VERSIÓN 0.202
 // Modo test
 // ==========================================================================
 
@@ -113,13 +113,29 @@ function testKeyHash(seq, salt) {
         <h3 class="text-center text-2xl font-black text-amber-300 font-retro tracking-wide mb-1"><i class="fa-solid fa-gear"></i> OPCIONES</h3>
         ${b('optStats', 'fa-chart-simple', 'ESTADÍSTICAS', 'bg-gradient-to-r from-emerald-800 to-emerald-700 text-white')}
         ${b('optList', 'fa-trophy', 'LOGROS', 'bg-gradient-to-r from-amber-800 to-amber-700 text-white')}
+        ${(typeof tomeUnlocked === 'function' && tomeUnlocked()) ? b('optTome', 'fa-book', 'CUADERNO', 'bg-gradient-to-r from-stone-700 to-amber-900 text-amber-100') : ''}
         ${b('optAch', 'fa-trophy', 'RESETEAR LOGROS')}
         ${b('optCnt', 'fa-eraser', 'RESETEAR CONTADORES')}
         ${b('optNew', 'fa-rotate-left', 'EMPEZAR DE NUEVO', 'bg-rose-950/80 active:bg-rose-900 text-rose-200')}
         ${b('optTest', 'fa-flask', 'MODO TEST', 'bg-slate-950 text-slate-400')}
         <button id="optClose" class="mt-1 w-full py-2.5 bg-slate-800 active:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl cursor-pointer">Cerrar</button>
+        <div id="optVersion" class="text-center text-[10px] font-mono text-slate-500 tracking-widest">v${DATOS_JUEGO.VERSION}</div>
       </div>`;
     const q = id => o.querySelector('#' + id);
+    // [0.202] CUADERNO (solo si ya se ha encontrado): de momento solo muestra un mensaje de prueba
+    if (q('optTome')) q('optTome').addEventListener('click', () => {
+      close('optionsModal');
+      const T = DATOS_JUEGO.NARRATIVA.TOMO, t = overlay('tomeModal', 10030);
+      t.className += ' bg-slate-950/90 backdrop-blur-md';
+      t.innerHTML = `
+        <div class="bg-stone-900 border-2 border-amber-700/70 rounded-3xl p-6 w-full max-w-xs shadow-2xl text-center flex flex-col items-center gap-3">
+          <div class="w-14 h-14 rounded-full bg-amber-950/80 border border-amber-600 flex items-center justify-center text-2xl text-amber-400"><i class="fa-solid fa-book"></i></div>
+          <h3 class="text-xl font-black text-amber-300 font-retro">${T.MOCK_TITULO}</h3>
+          <p class="text-sm font-mono italic text-amber-100/90 leading-relaxed">${T.MOCK_TEXTO}</p>
+          <button id="tomeClose" class="w-full py-2.5 bg-slate-800 active:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl cursor-pointer">Cerrar</button>
+        </div>`;
+      t.querySelector('#tomeClose').addEventListener('click', () => close('tomeModal'));
+    });
     q('optClose').addEventListener('click', () => close('optionsModal'));
     q('optStats').addEventListener('click', () => { close('optionsModal'); openStatsBoard(); });
     q('optList').addEventListener('click', () => { close('optionsModal'); openAchievementsList(); });
@@ -326,10 +342,12 @@ function testKeyHash(seq, salt) {
       { id: 'ps_bonusAcero', label: 'MAESTRÍA MECÁNICO (LV)', kind: 'num', min: 1, max: 5, def: 1 },
       { id: 'ps_bonusDigital', label: 'MAESTRÍA INFORMÁTICO (LV)', kind: 'num', min: 1, max: 5, def: 1 },
       { id: 'ps_bonusVapor', label: 'MAESTRÍA FONTANERO (LV)', kind: 'num', min: 1, max: 5, def: 1 },
+      { id: 'ps_bonusNeon', label: 'MAESTRÍA ELECTRICISTA (LV)', kind: 'num', min: 1, max: 5, def: 1 },
       { id: 'ps_tor_madera', label: 'TORPEZA MADERA (LV)', kind: 'num', min: 1, max: 5, def: 1 },
       { id: 'ps_tor_acero', label: 'TORPEZA ACERO (LV)', kind: 'num', min: 1, max: 5, def: 1 },
       { id: 'ps_tor_digital', label: 'TORPEZA DIGITAL (LV)', kind: 'num', min: 1, max: 5, def: 1 },
       { id: 'ps_tor_vapor', label: 'TORPEZA VAPOR (LV)', kind: 'num', min: 1, max: 5, def: 1 },
+      { id: 'ps_tor_neon', label: 'TORPEZA NEÓN (LV)', kind: 'num', min: 1, max: 5, def: 1 },
       { id: 'ps_picksBrokenOnUse', label: 'DEDOS ROTOS', kind: 'bool' },
       { id: 'ps_tb_harderMinigames', label: 'PUZLES DUROS (PERMANENTE)', kind: 'bool' },
       { id: 'ps_tb_shortPipeTimer', label: 'TIEMPO CORTO EN VAPOR', kind: 'bool' },
@@ -377,8 +395,8 @@ function testKeyHash(seq, salt) {
     ['auto', 'double', 'shield', 'riskPot', 'perdedor', 'summonDuende', 'cofradia'].forEach(k => set(v['ab_' + k] != null, () => { STATE.abilities[k] = v['ab_' + k]; }));
     set(v.curse != null, () => { STATE.cursedChestsLeft = v.curse; });
     set(!!v.clearAch, () => { clearAchievements(); });
-    ['sweetSpot', 'rarityBonus', 'discount', 'slowerPistons', 'goldStreak', 'extraTime', 'bonusMadera', 'bonusAcero', 'bonusDigital', 'bonusVapor'].forEach(k => set(v['ps_' + k] != null, () => { STATE.perks[k] = v['ps_' + k]; }));   // [0.097b]
-    ['madera', 'acero', 'digital', 'vapor'].forEach(k => set(v['ps_tor_' + k] != null, () => { STATE.torpezas[k] = v['ps_tor_' + k]; }));
+    ['sweetSpot', 'rarityBonus', 'discount', 'slowerPistons', 'goldStreak', 'extraTime', 'bonusMadera', 'bonusAcero', 'bonusDigital', 'bonusVapor', 'bonusNeon'].forEach(k => set(v['ps_' + k] != null, () => { STATE.perks[k] = v['ps_' + k]; }));   // [0.097b]
+    ['madera', 'acero', 'digital', 'vapor', 'neon'].forEach(k => set(v['ps_tor_' + k] != null, () => { STATE.torpezas[k] = v['ps_tor_' + k]; }));
     set(!!v.ps_oidoClinico, () => { STATE.perks.oidoClinico = 1; });
     set(!!v.ps_luckyLootChance, () => { STATE.perks.luckyLootChance = 0.15; });
     set(!!v.ps_shopStealFree, () => { STATE.perks.shopStealFree = true; });

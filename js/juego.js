@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — juego.js — VERSIÓN 0.201
+// JUST ONE MORE CHEST — juego.js — VERSIÓN 0.202
 // arte del cofre abierto, subida de nivel, abrir cofre
 // ==========================================================================
 
@@ -176,7 +176,7 @@ function triggerLevelUpChoice() {
     nextBtn.onclick = () => { try { audio.playUiClick(); } catch (e) {} revealChoices(); };
   }), 1300));
 
-  const pool = [...DATOS_JUEGO.CARTAS_NIVEL.PASIVAS, ...DATOS_JUEGO.CARTAS_NIVEL.TACTICAS].sort(() => 0.5 - Math.random()).slice(0, 3);
+  const pool = [...DATOS_JUEGO.CARTAS_NIVEL.PASIVAS, ...DATOS_JUEGO.CARTAS_NIVEL.TACTICAS].filter(c => !c.minBucle || (STATE.currentLoop || 1) >= c.minBucle).sort(() => 0.5 - Math.random()).slice(0, 3);
 
   pool.forEach(cardData => {
     let currentLvl = 0;
@@ -184,6 +184,7 @@ function triggerLevelUpChoice() {
     if (cardData.id === 'mecanico') currentLvl = STATE.perks.bonusAcero || 0;
     if (cardData.id === 'informatico') currentLvl = STATE.perks.bonusDigital || 0;
     if (cardData.id === 'fontanero') currentLvl = STATE.perks.bonusVapor || 0;
+    if (cardData.id === 'electricista') currentLvl = STATE.perks.bonusNeon || 0;
 
     let descText = cardData.desc;
     let titleText = cardData.titulo;
@@ -193,7 +194,7 @@ function triggerLevelUpChoice() {
       const nextPct = Math.round(getMasteryTorpezaPct(nextLvl) * 100);
       descText = `Sube a Nivel ${nextLvl} (+${nextPct}% botín y EXP).`;
       titleText = `${cardData.titulo} (Lv.${currentLvl} ➔ ${nextLvl})`;
-    } else if (['clasico', 'mecanico', 'informatico', 'fontanero'].includes(cardData.id)) {
+    } else if (['clasico', 'mecanico', 'informatico', 'fontanero', 'electricista'].includes(cardData.id)) {
       const basePct = Math.round(DATOS_JUEGO.ECONOMIA.PORCENTAJE_MAESTRIA_TORPEZA_BASE * 100);
       descText = `Nivel 1: +${basePct}% de botín y EXP en sus cofres.`;
     }
@@ -237,6 +238,7 @@ function triggerLevelUpChoice() {
         if (cardData.id === 'mecanico') STATE.perks.bonusAcero = (STATE.perks.bonusAcero || 0) + 1;
         if (cardData.id === 'informatico') STATE.perks.bonusDigital = (STATE.perks.bonusDigital || 0) + 1;
         if (cardData.id === 'fontanero') STATE.perks.bonusVapor = (STATE.perks.bonusVapor || 0) + 1;
+        if (cardData.id === 'electricista') STATE.perks.bonusNeon = (STATE.perks.bonusNeon || 0) + 1;
       } else {
         if (cardData.id === 'auto_open') STATE.abilities.auto++;
         if (cardData.id === 'doble_2x') STATE.abilities.double++;

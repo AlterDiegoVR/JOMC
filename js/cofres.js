@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — cofres.js — VERSIÓN 0.201
+// JUST ONE MORE CHEST — cofres.js — VERSIÓN 0.202
 // selección de cofres, banner, diálogos, post-its, botín y subida de nivel
 // ==========================================================================
 
@@ -68,7 +68,8 @@ function generateScreenChests() {
       else rarity = CHEST_RARITIES[0];
     }
 
-    STATE.screenChests.push({ type: randomType, rarity: chestToolMods(rarity), fog: modOn('niebla') }); chestHoldLift = false;   // [0.093] fog = rareza oculta
+    { const fogOn = modOn('niebla'); let rr = chestToolMods(rarity); if (fogOn) rr = Object.assign({}, rr, { fogOne: true });   // [0.202] con niebla TODO cofre cuesta 1 herramienta
+      STATE.screenChests.push({ type: randomType, rarity: rr, fog: fogOn }); } chestHoldLift = false;   // [0.093] fog = rareza oculta
   }
 
   // [0.104] BALANCE: en el cofre 4 de cada nivel que desbloquea un tipo de puzle (3 cofres bloqueados + este), al menos un cofre en pantalla es del tipo recién desbloqueado.
@@ -110,6 +111,7 @@ function chestToolMods(rarity) {
 
 function getRequiredToolCount(rarity) {
   if (isClimaxActive()) return 0;
+  if (rarity.fogOne) return 1;   // [0.202] Niebla Espesa: todos los cofres cuestan 1 herramienta
 
   let base = rarity.toolFixed != null ? rarity.toolFixed : (rarity.id === 'legendario' ? 2 : 1);   // [0.105] Cerrojos Oxidados fija 1-3
   if (STATE.heavyChestsLeft > 0 && rarity.id !== 'normal') {
@@ -133,7 +135,7 @@ function updateChestSelectionUI() {
         const btn = document.createElement('button');
         const isSelected = idx === STATE.activeChestIdx;
         const quadMk = STATE.screenChests.length === 4 && !quadPicked && quadMarked === idx;   // [0.106b]
-        btn.className = `${quadMk ? 'quad-mark ' : ''}p-2 rounded-xl text-xs font-bold border flex flex-col items-center gap-1 transition-all ${c.rarity.border} ${isSelected ? 'bg-slate-800 scale-105 ring-2 ring-amber-400' : 'bg-slate-900/80 opacity-70'}`;
+        btn.className = `${quadMk ? 'quad-mark ' : ''}p-2 rounded-xl text-xs font-bold border flex flex-col items-center gap-1 transition-all ${chestVisRarity(c).border} ${isSelected ? 'bg-slate-800 scale-105 ring-2 ring-amber-400' : 'bg-slate-900/80 opacity-70'}`;
         btn.innerHTML = `
           <span class="text-[9px] font-extrabold font-mono" style="color: ${c.fog ? '#94a3b8' : c.rarity.color}">${c.fog ? '???' : c.rarity.name}</span>
           ${ART_ON && ASSETS.cofres[c.type.id] ? `<img src="${chestSpriteSrc(c.type, c.fog ? CHEST_RARITIES[0] : c.rarity)}" alt="" style="image-rendering:pixelated;width:44px;height:auto">` : '<i class="fa-solid fa-box text-sm"></i>'}
@@ -298,7 +300,17 @@ if (dismissBtn) {
   });
 }
 
-function triggerSequentialDialogue(speaker, speechText, iconClass, subtitleText, titleColorClass, giftObj = null, onComplete = null) {
+// [0.202] ¿Este cofre es un hueco libre para encontrar el Tomo? Bucle 1, nivel mínimo, ni visita del Duende o del Trapero ni subida de nivel en este cofre ni en el siguiente
+function tomeSlotFree(co) {
+  const T = DATOS_JUEGO.NARRATIVA.TOMO;
+  if ((STATE.currentLoop || 1) !== 1 || STATE.level < T.NIVEL_MIN || tomeUnlocked() || STATE.pendingTraperoTome || co > T.COFRE_MAX) return false;
+  if (STATE.xp >= STATE.xpNext || STATE.pendingTraperoLantern) return false;
+  const V = DATOS_JUEGO.PROGRESIÓN.INTERVALOS_VISITAS, f = V.DUENDE_INTERVALO, lt = STATE.lastTraperoChest;
+  const traperoAt = n => n === V.TRAPERO_PRIMER_COFRE || (lt > 0 && n - lt >= V.TRAPERO_INTERVALO);
+  for (const n of [co, co + 1]) if (n % f === 0 || traperoAt(n)) return false;
+  return true;
+}
+function triggerSequentialDialogue(speaker, speechText, iconClass, subtitleText, titleColorClass, giftObj = null, onComplete = null, itemSrc = null) {
   // [0.086] Las frases llevan su mood al final: "texto {alegre}". Se separa aquí y manda sobre el subtítulo.
   let taggedMood = null;
   if (typeof speechText === 'string') {
@@ -384,6 +396,10 @@ function triggerSequentialDialogue(speaker, speechText, iconClass, subtitleText,
     }
   }
 
+  // [0.202] Objeto de historia en grande (linterna, tomo) junto al personaje
+  const dlgItem = document.getElementById('dlgItem');
+  if (dlgItem) { if (itemSrc) { dlgItem.src = itemSrc; dlgItem.classList.remove('hidden'); } else dlgItem.classList.add('hidden'); }
+
   const giftContainer = document.getElementById('npcGiftContainer');
   if (giftContainer) {
     if (giftObj) {
@@ -404,6 +420,7 @@ function triggerSequentialDialogue(speaker, speechText, iconClass, subtitleText,
 
     newBtn.addEventListener('click', () => {
       if (modal) modal.classList.add('hidden');
+      if (dlgItem) dlgItem.classList.add('hidden');
       if (giftContainer) giftContainer.classList.add('hidden');
       if (typeof onComplete === 'function') {
         onComplete();
@@ -462,6 +479,9 @@ function playerNotesFor(co) {
     }
     if (co === slot) out.push({ kind: 'write', id: 'w' + slot, slot, written: false, text: '' });
   });
+  // [0.202] Post-it de la contraseña: una vez por bucle, hasta que se elige la palabra
+  const pw = DATOS_JUEGO.CONTRASENA, lp = Math.min(STATE.currentLoop || 1, 3);
+  if (pw && co === pw.COFRE && pw.BUCLES[lp] && !(STATE.passWords || {})[lp]) out.push({ kind: 'pass', id: 'pw' + lp, loop: lp, written: false, text: '' });
   return out;
 }
 
@@ -485,12 +505,15 @@ function buildSceneNote(p) {
   el.style.width = (cfg.ANCHO_PX || 210) + 'px';
   el.style.minHeight = '38px';
   el.style.visibility = 'hidden';
+  if (p.kind === 'pass') el.classList.add('pass-note');   // [0.202] algo mayor, con brillo y parpadeo
   const fill = () => {
+    if (p.kind === 'pass') { const B = DATOS_JUEGO.CONTRASENA.BUCLES[p.loop]; el.innerHTML = p.written ? '' : `${B.frase} <span class="pass-gap">${DATOS_JUEGO.CONTRASENA.HUECO}</span>`; if (p.written) { el.textContent = `"${B.frase} ${p.text}"`; el.classList.add('player-text'); el.classList.remove('pass-pending'); } else el.classList.add('pass-pending'); return; }
     if (p.kind === 'read' || p.written) { el.textContent = p.text ? `"${p.text}"` : ''; el.classList.add('player-text'); }   // [0.096] cursiva
     else el.innerHTML = '<span class="note-caret">|</span>';
   };
   fill();
   el.addEventListener('click', () => {
+    if (p.kind === 'pass' && !p.written) { openPassEditor(el, p, fill); return; }   // [0.202]
     if (p.kind === 'write' && !p.written) { openNoteEditor(el, p, fill); return; }
     audio.playPaperRustle();
     el.classList.add('crumple-anim');
@@ -548,11 +571,81 @@ function renderPlayerNotes() {
   if (document.getElementById('noteEditor')) return;   // editando: no tocar
   container.querySelectorAll('.scene-note').forEach(n => n.remove());
   const list = STATE.pendingNotes || [];
+  syncPassLock();   // [0.202]
   if (!list.length || STATE.climaxPhase) return;
   list.forEach(p => container.appendChild(buildSceneNote(p)));
   positionSceneNotes();
 }
 window.addEventListener('resize', () => { try { positionSceneNotes(); } catch (e) {} });
+
+// [0.202] Bloqueo del juego mientras hay un post-it de contraseña sin resolver: solo se puede pulsar ese post-it y el botón de opciones
+function passPending() { return (STATE.pendingNotes || []).some(p => p.kind === 'pass' && !p.written); }
+function syncPassLock() {
+  const host = uiHost(); if (!host) return;
+  let bl = document.getElementById('passBlock');
+  if (!passPending()) { if (bl) bl.remove(); host.classList.remove('pass-lock'); return; }
+  host.classList.add('pass-lock');
+  if (!bl) { bl = document.createElement('div'); bl.id = 'passBlock'; host.appendChild(bl); }
+  // agujero (sin bloqueo) justo sobre el botón de opciones
+  const ob = document.getElementById('optionsBtn'), hr = host.getBoundingClientRect();
+  if (ob) {
+    const r = ob.getBoundingClientRect(), x1 = Math.round(r.left - hr.left) - 2, y1 = Math.round(r.top - hr.top) - 2, x2 = Math.round(r.right - hr.left) + 2, y2 = Math.round(r.bottom - hr.top) + 2;
+    bl.style.clipPath = `polygon(evenodd, 0 0, 100% 0, 100% 100%, 0 100%, 0 0, ${x1}px ${y1}px, ${x1}px ${y2}px, ${x2}px ${y2}px, ${x2}px ${y1}px, ${x1}px ${y1}px)`;
+  }
+}
+window.addEventListener('resize', () => { try { syncPassLock(); } catch (e) {} });
+
+// [0.202] El post-it de la contraseña crece al centro; el hueco parpadea y al pulsarlo se despliega la lista de palabras. Hasta elegir una no hay X
+function openPassEditor(noteEl, p, refill) {
+  if (document.getElementById('noteEditor')) return;
+  const CP = DATOS_JUEGO.CONTRASENA, B = CP.BUCLES[p.loop];
+  const host = uiHost();
+  audio.init(); audio.playPaperRustle();
+  const ov = document.createElement('div');
+  ov.id = 'noteEditor';
+  ov.style.cssText = 'position:absolute;inset:0;z-index:10040;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0);transition:background .28s ease';
+  const paper = document.createElement('div');
+  paper.className = 'note-paper pass-paper';
+  paper.innerHTML = `<button type="button" class="note-x" aria-label="Cerrar" style="display:none">✕</button>
+    <div class="pass-phrase">${B.frase} <button type="button" class="pass-gap" aria-label="Elegir palabra">${CP.HUECO}</button></div>
+    <div class="pass-list" aria-hidden="true">${B.palabras.map((w, i) => `<button type="button" class="pass-opt" data-i="${i}">${w}</button>`).join('')}</div>`;
+  ov.appendChild(paper); host.appendChild(ov);
+  const gap = paper.querySelector('.pass-gap'), list = paper.querySelector('.pass-list'), xBtn = paper.querySelector('.note-x');
+  let chosen = null, open = false;
+  const setOpen = on => { open = on; paper.classList.toggle('open', on); list.setAttribute('aria-hidden', on ? 'false' : 'true'); if (on) audio.playPaperRustle(); };
+  gap.addEventListener('click', e => { e.stopPropagation(); setOpen(!open); });
+  list.querySelectorAll('.pass-opt').forEach(b => b.addEventListener('click', e => {
+    e.stopPropagation();
+    chosen = B.palabras[+b.dataset.i];
+    gap.textContent = chosen; gap.classList.add('chosen');
+    list.querySelectorAll('.pass-opt').forEach(o => o.classList.toggle('sel', o === b));
+    STATE.passWords = STATE.passWords || {}; STATE.passWords[p.loop] = chosen; saveDirty = true;   // se graba al elegir (se puede cambiar hasta cerrar)
+    try { audio.playClick(0.6); } catch (err) {}
+    xBtn.style.display = '';
+    setOpen(false);
+  }));
+  // animación: del post-it pequeño al papel grande
+  const fromR = noteEl.getBoundingClientRect(), toR = paper.getBoundingClientRect();
+  const tf = (a, b) => `translate(${Math.round(a.left + a.width / 2 - (b.left + b.width / 2))}px, ${Math.round(a.top + a.height / 2 - (b.top + b.height / 2))}px) scale(${(a.width / b.width).toFixed(3)}, ${(a.height / b.height).toFixed(3)})`;
+  paper.style.transition = 'none'; paper.style.transform = tf(fromR, toR); paper.style.opacity = '0.9';
+  noteEl.style.visibility = 'hidden';
+  void paper.offsetWidth;
+  paper.style.transition = 'transform .32s cubic-bezier(.2,1.2,.4,1), opacity .2s'; paper.style.transform = ''; paper.style.opacity = '1';
+  ov.style.background = 'rgba(0,0,0,.6)';
+  let closing = false;
+  xBtn.addEventListener('click', () => {
+    if (closing || !chosen) return; closing = true;
+    p.text = chosen; p.written = true; saveDirty = true;
+    refill(); noteEl.style.height = ''; noteEl.style.visibility = 'hidden';
+    syncPassLock(); positionSceneNotes(); noteEl.style.visibility = 'hidden';
+    const back = noteEl.getBoundingClientRect(), cur = paper.getBoundingClientRect();
+    paper.style.transition = 'transform .28s ease-in, opacity .25s ease-in';
+    paper.style.transform = tf(back, cur); paper.style.opacity = '0.9';
+    ov.style.background = 'rgba(0,0,0,0)';
+    audio.playPaperRustle();
+    setTimeout(() => { ov.remove(); noteEl.style.visibility = ''; }, 300);
+  });
+}
 
 function openNoteEditor(noteEl, p, refill) {
   if (document.getElementById('noteEditor')) return;
@@ -745,6 +838,9 @@ function triggerLootExplosion() {
     } else if (active.type.id === 'hydraulic') {
       masteryLevel = STATE.perks.bonusVapor || 0;
       torpezaLevel = STATE.torpezas.vapor || 0;
+    } else if (active.type.id === 'neon') {   // [0.202]
+      masteryLevel = STATE.perks.bonusNeon || 0;
+      torpezaLevel = STATE.torpezas.neon || 0;
     }
 
     if (masteryLevel > 0) {
@@ -900,6 +996,11 @@ function triggerLootExplosion() {
 
     if (inGracePeriod) toolDropChance *= DATOS_JUEGO.PROBABILIDADES.MULTIPLICADOR_DROP_PERIODO_GRACIA;
 
+    // [0.202] El Tomo: bucle 1, desde el nivel 5, en un hueco de cofres sin visitas ni subida de nivel; el Trapero lo comenta justo después
+    if (tomeSlotFree(STATE.chestsOpened)) {
+      STATE.pendingTraperoTome = true;
+      extraLootHTML += `<div class="lt-extra text-amber-300"><span>${DATOS_JUEGO.NARRATIVA.TOMO.BANNER}</span></div>`;
+    }
     // [0.201] Bucle 2, nivel 2, cofre 2: aparece la linterna (no funciona todavía) y, justo al cerrar el botín, el Trapero comenta el "cacharro"
     if ((STATE.currentLoop || 1) === 2 && STATE.level === 2 && !STATE.lanternFound && chestsSinceLevelUp === 2) {
       STATE.lanternFound = true; STATE.pendingTraperoLantern = true;
@@ -988,7 +1089,7 @@ function triggerLootExplosion() {
       const lc = document.getElementById('lootCard');
       if (lc) { lc.style.setProperty('--ac', LR[0]); lc.style.setProperty('--ac2', LR[1]); lc.style.setProperty('--glow', LR[2]); }
       const ls = document.getElementById('lootSeal'); if (ls) ls.textContent = active.rarity.name;
-      const li = document.getElementById('lootChestImg'), cs = chestSpriteSrc(active.type, active.rarity);
+      const li = document.getElementById('lootChestImg'), cs = chestLootSpriteSrc(active.type, active.rarity);   // [0.202]
       if (li) { if (cs) { li.src = cs; li.parentElement.style.display = ''; } else li.parentElement.style.display = 'none'; }
     }
 
@@ -1092,7 +1193,14 @@ if (claimLootBtn) {
 
     if (STATE.pendingTraperoLantern) {   // [0.201]
       STATE.pendingTraperoLantern = false;
-      STATE.eventQueue.push(() => triggerSequentialDialogue("EL TRAPERO", DATOS_JUEGO.NARRATIVA.LINTERNA.TRAPERO, "fa-mask", "Un cacharro", "text-rose-400"));
+      STATE.eventQueue.push(() => triggerSequentialDialogue("EL TRAPERO", DATOS_JUEGO.NARRATIVA.LINTERNA.TRAPERO, "fa-mask", "Un cacharro", "text-rose-400", null, null, ASSETS.objetos.linterna));   // [0.202] con la linterna en grande
+    }
+    if (STATE.pendingTraperoTome) {   // [0.202]
+      STATE.pendingTraperoTome = false; setTomeUnlocked();
+      STATE.eventQueue.push(() => triggerSequentialDialogue("EL TRAPERO", DATOS_JUEGO.NARRATIVA.TOMO.TRAPERO, "fa-mask", "Un viejo cuaderno", "text-rose-400", null, () => {
+        if (typeof showPersistentFeedback === 'function') showPersistentFeedback(DATOS_JUEGO.NARRATIVA.TOMO.BANNER_OPCIONES);
+        processNextQueuedEvent();
+      }, ASSETS.objetos.tomo));
     }
 
     const isLevelUpPending = (STATE.xp >= STATE.xpNext);
