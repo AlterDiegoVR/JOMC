@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — eventos.js — VERSIÓN 0.206
+// JUST ONE MORE CHEST — eventos.js — VERSIÓN 0.207
 // tiendas especiales, visitas, habilidades, temporizador, fallo y Game Over
 // ==========================================================================
 
@@ -142,18 +142,30 @@ function starfieldStart(r) {
   const stars = Array.from({ length: Math.round(W * H / 2400) }, () => ({ x: Math.random() * W, y: Math.random() * H, s: Math.random() < .12 ? 2 : 1, p: Math.random() * 6.28, v: .8 + Math.random() * 2.2 }));
   const GX = W * .5, GY = H * .45, R = Math.min(W, H) * .5, TILT = .5;
   const pts = [];
-  for (let i = 0; i < 1500; i++) {
+  const NPTS = (typeof PERF !== 'undefined' && PERF.lagging()) ? 900 : 1500;   // [0.207] en un móvil que va justo, menos puntos de galaxia
+  for (let i = 0; i < NPTS; i++) {
     const arm = i % 2, t = Math.pow(Math.random(), .75) * 3.6, a = t * 2.1 + arm * Math.PI + (Math.random() - .5) * .55, rr = R * (t / 3.6) * (.9 + Math.random() * .2);
-    pts.push({ a, r: rr, s: Math.random() < .08 ? 2 : 1, h: 200 + Math.random() * 90 });
+    const h = 200 + Math.random() * 90;
+    pts.push({ a, r: rr, s: Math.random() < .08 ? 2 : 1, h, col: `hsl(${h},45%,86%)` });   // [0.207] el color se calcula una vez, no en cada fotograma
   }
   const t0 = performance.now();
   const AMP = Math.max(3, Math.min(W, H) * .012);
   const warp = (x, y, t) => [x + Math.sin(y * .018 + t * 1.6) * AMP + Math.sin(y * .045 - t * 2.3) * AMP * .35, y + Math.cos(x * .016 + t * 1.3) * AMP * .8];
-  const dot = (x, y, sz, t, ab, hue, alpha) => {
-    const w = warp(x, y, t), px = w[0], py = w[1];
-    g.globalAlpha = alpha * .8; g.fillStyle = 'rgb(40,110,255)'; g.fillRect(px - ab, py - ab * .5, sz, sz);          // fleco azul
-    g.fillStyle = 'rgb(40,255,120)'; g.fillRect(px + ab, py + ab * .5, sz, sz);                                    // fleco verde
-    g.globalAlpha = alpha; g.fillStyle = hue ? `hsl(${hue},45%,86%)` : '#ffffff'; g.fillRect(px, py, sz, sz);     // punto
+  // [0.207] Cada punto se calcula una vez por fotograma y se pinta en tres pasadas (azul, verde, punto): el resultado es idéntico (mezcla aditiva) pero cambia mucho menos de color de relleno
+  const DOTS = stars.length + pts.length;
+  const bx = new Float32Array(DOTS), by = new Float32Array(DOTS), bs = new Float32Array(DOTS), ba = new Float32Array(DOTS), bb = new Float32Array(DOTS), bc = new Array(DOTS);
+  let nd = 0;
+  const dot = (x, y, sz, t, ab, col, alpha) => {
+    const w = warp(x, y, t);
+    bx[nd] = w[0]; by[nd] = w[1]; bs[nd] = sz; ba[nd] = alpha; bb[nd] = ab; bc[nd] = col; nd++;
+  };
+  const flushDots = () => {
+    g.fillStyle = 'rgb(40,110,255)';   // fleco azul
+    for (let i = 0; i < nd; i++) { g.globalAlpha = ba[i] * .8; g.fillRect(bx[i] - bb[i], by[i] - bb[i] * .5, bs[i], bs[i]); }
+    g.fillStyle = 'rgb(40,255,120)';   // fleco verde
+    for (let i = 0; i < nd; i++) { g.globalAlpha = ba[i] * .8; g.fillRect(bx[i] + bb[i], by[i] + bb[i] * .5, bs[i], bs[i]); }
+    for (let i = 0; i < nd; i++) { g.globalAlpha = ba[i]; g.fillStyle = bc[i]; g.fillRect(bx[i], by[i], bs[i], bs[i]); }   // punto
+    nd = 0;
   };
   const frame = now => {
     if (!document.getElementById('starfieldBg')) return;
@@ -163,14 +175,16 @@ function starfieldStart(r) {
     const neb = g.createRadialGradient(GX, GY, 0, GX, GY, Math.max(W, H) * .65); neb.addColorStop(0, 'rgba(70,40,120,.34)'); neb.addColorStop(1, 'rgba(2,3,10,0)');
     g.fillStyle = neb; g.fillRect(0, 0, W, H);
     g.globalCompositeOperation = 'lighter';
-    stars.forEach(s => dot(s.x, s.y, s.s, t, 1.3, 0, .3 + .6 * Math.abs(Math.sin(s.p + t * s.v))));
+    stars.forEach(s => dot(s.x, s.y, s.s, t, 1.3, '#ffffff', .3 + .6 * Math.abs(Math.sin(s.p + t * s.v))));
+    flushDots();
     const core = g.createRadialGradient(GX, GY, 0, GX, GY, R * .24); core.addColorStop(0, 'rgba(255,240,215,.95)'); core.addColorStop(1, 'rgba(255,200,160,0)');
     g.globalAlpha = 1; g.fillStyle = core; g.fillRect(GX - R * .26, GY - R * .26, R * .52, R * .52);
     const rot = t * .09;
     pts.forEach(p => {
       const a = p.a + rot, x = GX + Math.cos(a) * p.r, y = GY + Math.sin(a) * p.r * TILT * 1.5 + Math.cos(a) * p.r * .12;
-      dot(x, y, p.s, t, 1 + p.r / R * 2.2, p.h, .45 + .45 * (1 - p.r / R));
+      dot(x, y, p.s, t, 1 + p.r / R * 2.2, p.col, .45 + .45 * (1 - p.r / R));
     });
+    flushDots();
     g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
     starfieldRaf = requestAnimationFrame(frame);
   };
@@ -206,19 +220,40 @@ function glassShatterFx() {
   root.appendChild(svg);
   // 3) un clon del marco por trozo
   const srcCanv = fr.querySelectorAll('canvas');
-  const clone = () => {
-    const c = fr.cloneNode(true);
-    c.setAttribute('aria-hidden', 'true'); c.setAttribute('inert', '');
-    c.style.cssText = `position:absolute;left:0;top:0;width:${W}px;height:${H}px;margin:0;visibility:visible;pointer-events:none`;
-    const dst = c.querySelectorAll('canvas');
-    srcCanv.forEach((sc, i) => { const d = dst[i]; if (!d) return; try { d.width = sc.width; d.height = sc.height; d.getContext('2d').drawImage(sc, 0, 0); } catch (e) {} });
+  const srcRects = Array.from(srcCanv).map(sc => { const q = sc.getBoundingClientRect(); return { l: q.left - r.left, t: q.top - r.top, w: q.width, h: q.height }; });   // [0.207]
+  // [0.207] Un único molde del marco SIN las partes ocultas (ventanas y puzles con display:none, que no se ven) y de él salen los trozos: menos nodos que estilar 22 veces
+  srcCanv.forEach((sc, i) => sc.setAttribute('data-shi', i));
+  const hid = [];
+  fr.querySelectorAll('.hidden').forEach(e => { try { if (getComputedStyle(e).display === 'none') { e.setAttribute('data-shh', '1'); hid.push(e); } } catch (x) {} });
+  const base = fr.cloneNode(true);
+  srcCanv.forEach(sc => sc.removeAttribute('data-shi'));
+  hid.forEach(e => e.removeAttribute('data-shh'));
+  base.querySelectorAll('[data-shh]').forEach(e => { if (e.isConnected) e.remove(); });
+  base.setAttribute('aria-hidden', 'true'); base.setAttribute('inert', '');
+  base.style.cssText = `position:absolute;left:0;top:0;width:${W}px;height:${H}px;margin:0;visibility:visible;pointer-events:none`;
+  const clone = (bb) => {
+    const c = base.cloneNode(true);
+    c.querySelectorAll('canvas[data-shi]').forEach(d => {
+      const i = +d.getAttribute('data-shi'), sc = srcCanv[i]; d.removeAttribute('data-shi');
+      if (!sc) return;
+      try {
+        d.width = sc.width; d.height = sc.height;
+        const dg = d.getContext('2d'), q = srcRects[i];
+        if (!bb || !q || !q.w || !q.h) { dg.drawImage(sc, 0, 0); return; }
+        // [0.207] solo se copia el rectángulo del lienzo que enseña este trozo (el resto queda tapado por el recorte)
+        const kx = sc.width / q.w, ky = sc.height / q.h;
+        const x0 = Math.max(0, Math.floor((bb[0] - q.l) * kx) - 2), y0 = Math.max(0, Math.floor((bb[1] - q.t) * ky) - 2);
+        const x1 = Math.min(sc.width, Math.ceil((bb[2] - q.l) * kx) + 2), y1 = Math.min(sc.height, Math.ceil((bb[3] - q.t) * ky) + 2);
+        if (x1 > x0 && y1 > y0) dg.drawImage(sc, x0, y0, x1 - x0, y1 - y0, x0, y0, x1 - x0, y1 - y0);
+      } catch (e) {}
+    });
     return c;
   };
   const pieces = shards.map(sh => {
     const w = document.createElement('div');
     const mx = sh.reduce((a, p) => a + p[0], 0) / sh.length, my = sh.reduce((a, p) => a + p[1], 0) / sh.length;
     w.style.cssText = `position:absolute;left:0;top:0;width:${W}px;height:${H}px;transform-origin:${mx}px ${my}px;clip-path:polygon(${sh.map(p => p[0].toFixed(1) + 'px ' + p[1].toFixed(1) + 'px').join(',')});will-change:transform`;
-    w.appendChild(clone());
+    w.appendChild(clone([Math.min(...sh.map(q => q[0])), Math.min(...sh.map(q => q[1])), Math.max(...sh.map(q => q[0])), Math.max(...sh.map(q => q[1]))]));
     root.appendChild(w);
     return { w, mx, my };
   });
@@ -258,12 +293,13 @@ function triggerSensoryOverloadCollapse() {
   let bursts = 0;
   const overloadInterval = setInterval(() => {
     bursts++;
-    if (typeof audio !== 'undefined' && audio.playUnlockFanfare) audio.playUnlockFanfare('legendario');
+    const slow = typeof PERF !== 'undefined' && PERF.lagging();   // [0.207] solo si el móvil va justo: la mitad de partículas y un fanfare de cada dos
+    if (typeof audio !== 'undefined' && audio.playUnlockFanfare && !(slow && bursts % 2)) audio.playUnlockFanfare('legendario');
     
     if (typeof spawnParticles === 'function') {
       const cx = Math.random() * window.innerWidth;
       const cy = Math.random() * window.innerHeight;
-      spawnParticles(cx, cy, bursts % 2 === 0 ? '#c084fc' : '#f43f5e', 50, true);
+      spawnParticles(cx, cy, bursts % 2 === 0 ? '#c084fc' : '#f43f5e', slow ? 24 : 50, true);
     }
 
     if (bursts === 13) { try { glassShatterFx(); } catch (e) { glassShatterRestore(); } }   // [0.103] a mitad del colapso, la pantalla se rompe como un cristal
@@ -283,7 +319,14 @@ function executeDiffuseEchoTransition() {
     overlay = document.createElement('div');
     overlay.id = 'diffuseEchoOverlay';
     overlay.className = 'fixed inset-0 bg-black z-[10000] flex flex-col items-center justify-center p-8 transition-opacity duration-1000 opacity-0 pointer-events-none text-center';
-    uiHost().appendChild(overlay);
+    // [0.207] El marco del juego es una capa propia (transform) y la galaxia/cristal viven FUERA de él con z-index 19999/20000: un aviso dentro del marco quedaba por debajo.
+    // Ahora va al nivel de la página, con la misma posición que el marco y por encima de todo.
+    const fr0 = document.getElementById('gameFrame');
+    if (fr0) {
+      const q = fr0.getBoundingClientRect();
+      overlay.style.cssText = `inset:auto;left:${q.left}px;top:${q.top}px;width:${q.width}px;height:${q.height}px;z-index:30000`;
+    } else overlay.style.zIndex = '30000';
+    document.body.appendChild(overlay);
   }
   overlay.style.visibility = 'visible';   // [0.103] el marco puede estar oculto por el cristal roto; el aviso final sí se ve
 
@@ -294,6 +337,8 @@ function executeDiffuseEchoTransition() {
     overlay.classList.add('opacity-100');
     const sf = document.getElementById('starfieldBg');   // [0.104] las estrellas se funden a negro a la vez que entra el fundido con las dos frases
     if (sf) { sf.style.transition = 'opacity 1s ease'; sf.style.opacity = '0'; }
+    // [0.207] Cuando el negro ya las tapa, la galaxia y los trozos de cristal se retiran: dejan de dibujarse durante los 11 s de las dos frases
+    setTimeout(() => { starfieldStop(); const sr = document.getElementById('shatterRoot'); if (sr) sr.remove(); }, 1250);
   }, 100);
 
   // [0.203] Dos voces en la oscuridad: cada frase entra con un fundido muy lento y se cruza con la siguiente

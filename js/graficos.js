@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — graficos.js — VERSIÓN 0.206
+// JUST ONE MORE CHEST — graficos.js — VERSIÓN 0.207
 // canvas, sala, cerradura, decoración, efectos de cofre
 // ==========================================================================
 
@@ -492,8 +492,19 @@ function updateCurseLevel() {
   curseLevel = want ? Math.min(1, curseLevel + step) : Math.max(0, curseLevel - step);
   return curseLevel;
 }
+let roomPauseEl = null, roomLastTs = 0;
+// [0.207] Medidor de rendimiento: media móvil de ms por fotograma. Solo se usa para recortar efectos pesados (partículas, estrellas) en móviles que van justos.
+const PERF = { frameMs: 16.7, lagging() { return this.frameMs > 28; } };
 function renderRoom() {
   if (!canvas || !ctx) return;
+  // [0.207] Con un puzle abierto la sala queda totalmente tapada por su ventana: no se dibuja (el puzle tiene todo el procesador)
+  if (!roomPauseEl) roomPauseEl = document.getElementById('minigameModal');
+  if (roomPauseEl && !roomPauseEl.classList.contains('hidden')) { roomLastTs = 0; requestAnimationFrame(renderRoom); return; }
+  const roomNow = performance.now();
+  const roomDt = roomLastTs ? Math.min(100, roomNow - roomLastTs) : 16.7;
+  roomLastTs = roomNow;
+  PERF.frameMs = PERF.frameMs * 0.92 + roomDt * 0.08;
+  const pk = Math.max(0.5, Math.min(3, roomDt / 16.667));   // [0.207] las partículas avanzan por tiempo real (a 60 fps vale 1): si el móvil va lento ya no viven más tiempo y se acumulan
   syncOpenButtonArmed();
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -776,24 +787,23 @@ function renderRoom() {
   }   // fin de "if (chestFade > 0)"
   ctx.restore();
 
-  for (let i = particles.length - 1; i >= 0; i--) {
-    const p = particles[i];
-    p.x += p.vx;
-    p.y += p.vy;
-    p.alpha -= p.decay;
-
-    if (p.alpha <= 0) {
-      particles.splice(i, 1);
-      continue;
+  if (particles.length) {
+    let keep = 0;
+    for (let i = 0; i < particles.length; i++) {
+      const p = particles[i];
+      p.x += p.vx * pk;
+      p.y += p.vy * pk;
+      p.alpha -= p.decay * pk;
+      if (p.alpha <= 0) continue;
+      particles[keep++] = p;   // [0.207] se compacta en el mismo recorrido (antes: splice por partícula)
+      ctx.globalAlpha = p.alpha;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+      ctx.fill();
     }
-
-    ctx.save();
-    ctx.globalAlpha = p.alpha;
-    ctx.fillStyle = p.color;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
+    particles.length = keep;
+    ctx.globalAlpha = 1;
   }
 
   requestAnimationFrame(renderRoom);

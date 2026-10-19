@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — cofres.js — VERSIÓN 0.206
+// JUST ONE MORE CHEST — cofres.js — VERSIÓN 0.207
 // selección de cofres, banner, diálogos, post-its, botín y subida de nivel
 // ==========================================================================
 

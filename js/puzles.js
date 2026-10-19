@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — puzles.js — VERSIÓN 0.206
+// JUST ONE MORE CHEST — puzles.js — VERSIÓN 0.207
 // minijuegos: ganzúa, pistones, hackeo, tuberías
 // ==========================================================================
 
@@ -290,6 +290,20 @@ function resetTumblerSealUI() {
 // Los pistones se mueven en % de su carril (más corto que la caja por la luz superior),
 // así que las líneas se colocan en píxeles a partir del carril medido.
 let tumblerShearTol = 6;
+// [0.207] Los pistones se mueven con transform (compositor) en vez de top (layout + repintado de toda la caja en cada fotograma).
+// La posición sigue siendo un % del carril: se convierte a píxeles con la altura medida del carril.
+let tumblerNotchEls = [], tumblerTrackH = 0;
+function tumblerSetNotch(i, pct) {
+  const el = tumblerNotchEls[i]; if (!el) return;
+  el.style.transform = `translate3d(0,${Math.floor(pct * tumblerTrackH / 100)}px,0)`;   // píxeles enteros: nada de bordes difuminados al componer
+}
+function tumblerRepaintNotches() { tumblerPinsData.forEach((p, i) => tumblerSetNotch(i, p.posY)); }
+function tumblerCacheNotches() {
+  tumblerNotchEls = tumblerPinsData.map((_, i) => document.getElementById(`pinNotch-${i}`));
+  const t = tumblerNotchEls[0] && tumblerNotchEls[0].parentElement;
+  tumblerTrackH = t ? t.clientHeight : 0;
+  tumblerRepaintNotches();
+}
 // [0.106c] Posición local (sin zoom) de un elemento respecto al borde interior de `ancestor`, sumando solo offsetTop/clientTop.
 // Se evita getBoundingClientRect: con el zoom del puzle en PC devuelve píxeles ampliados y cada navegador los trata a su manera.
 function tumblerLocalY(el, ancestor) {
@@ -311,13 +325,15 @@ function layoutTumblerLines() {
   const ty = tumblerLocalY(track, box);
   const trH = track.clientHeight;
   if (ty === null || !trH) return;
+  if (trH !== tumblerTrackH && tumblerNotchEls.length) { tumblerTrackH = trH; tumblerRepaintNotches(); }   // [0.207] el carril cambió de tamaño: los pistones se recolocan
   const notchH = notch.offsetHeight || 16;
   const place = (el, pct, tol, minH) => {
     if (!el) return;
     const h = Math.max(minH, 2 * tol * trH / 100);
     const centre = ty + track.clientTop + (pct / 100) * trH + notchH / 2;
-    el.style.top = `${centre - h / 2}px`;
-    el.style.height = `${h}px`;
+    const vt = `${centre - h / 2}px`, vh = `${h}px`;
+    if (el.style.top !== vt) el.style.top = vt;   // [0.207] sin escrituras idénticas
+    if (el.style.height !== vh) el.style.height = vh;
   };
   place(shear, targetShearPosY, tumblerShearTol, 10);
   if (tumblerSeal) place(document.getElementById('sealLine'), tumblerSeal.blueY, tumblerSeal.tol, 10);
@@ -407,13 +423,14 @@ function startTumblerGame() {
     pinCol.innerHTML = `
       <div id="pinLight-${i}" class="w-2.5 h-2.5 rounded-full my-1 bg-slate-800 border border-slate-700"></div>
       <div class="w-3 flex-1 bg-slate-900 rounded relative overflow-hidden">
-        <div id="pinNotch-${i}" class="w-full h-4 bg-amber-400 rounded border border-yellow-200 shadow-md absolute inset-x-0" style="top: 10%;"></div>
+        <div id="pinNotch-${i}" class="w-full h-4 bg-amber-400 rounded border border-yellow-200 shadow-md absolute inset-x-0" style="top: 0;"></div>
       </div>
     `;
     pinsContainer.appendChild(pinCol);
   });
 
   updateSequentialPinLights();
+  tumblerCacheNotches();   // [0.207]
   layoutTumblerLines();
   requestAnimationFrame(layoutTumblerLines);
   setTimeout(layoutTumblerLines, 120);
@@ -451,7 +468,7 @@ function animateSequentialTumblerPins(ts) {
   if (typeof ts !== 'number') ts = performance.now();
   const dtPins = tumblerPinsLastTs === null ? 0 : Math.max(0, Math.min(0.05, (ts - tumblerPinsLastTs) / 1000));   // [0.091] tiempo real ([0.092b] nunca negativo)
   tumblerPinsLastTs = ts;
-  if ((tumblerLayoutTick = (tumblerLayoutTick + 1) % 20) === 0) { try { layoutTumblerLines(); } catch (e) {} }   // [0.106c] la línea verde se reajusta sola cada ~0,3 s (cualquier cambio de tamaño tardío)
+  if ((tumblerLayoutTick = (tumblerLayoutTick + 1) % 45) === 0) { try { layoutTumblerLines(); } catch (e) {} }   // [0.106c] la línea verde se reajusta sola cada ~0,3 s (cualquier cambio de tamaño tardío)
   const fpsRef = DATOS_JUEGO.MINIJUEGOS.TUMBLER.VELOCIDAD_FPS_REFERENCIA || 90;
   tumblerPinsData.forEach((pin, i) => {
     if (!pin.locked) {
@@ -459,8 +476,7 @@ function animateSequentialTumblerPins(ts) {
       // [0.092b] El rebote fija la dirección (no la invierte): con pasos pequeños por tiempo real, invertir en cada fotograma dejaba el pistón pegado al borde
       if (pin.posY >= 82) { pin.posY = 82; pin.speed = -Math.abs(pin.speed); }
       else if (pin.posY <= 8) { pin.posY = 8; pin.speed = Math.abs(pin.speed); }
-      const notch = document.getElementById(`pinNotch-${i}`);
-      if (notch) notch.style.top = `${pin.posY}%`;
+      tumblerSetNotch(i, pin.posY);   // [0.207]
     }
   });
 
@@ -503,8 +519,8 @@ function startTumblerSealPhase() {
   tumblerPinsData.forEach((pin, i) => {
     pin.posY = targetShearPosY;
     const notch = document.getElementById(`pinNotch-${i}`);
+    tumblerSetNotch(i, targetShearPosY);   // [0.207]
     if (notch) {
-      notch.style.top = `${targetShearPosY}%`;
       notch.className = "w-full h-4 bg-sky-400 rounded border border-sky-200 shadow-md absolute inset-x-0";
     }
   });
@@ -545,8 +561,7 @@ function animateTumblerSeal(ts) {
 
   tumblerPinsData.forEach((pin, i) => {
     pin.posY = tumblerSeal.y;
-    const notch = document.getElementById(`pinNotch-${i}`);
-    if (notch) notch.style.top = `${tumblerSeal.y}%`;
+    tumblerSetNotch(i, pin.posY);   // [0.207]
   });
 
   // Si los pistones superan la zona azul sin que el jugador pulse, se ha fallado el sellado
@@ -592,8 +607,8 @@ function triggerFixActivePin() {
     currentPin.posY = targetShearPosY;
     
     const notch = document.getElementById(`pinNotch-${activePinIdx}`);
+    tumblerSetNotch(activePinIdx, targetShearPosY);   // [0.207]
     if (notch) {
-      notch.style.top = `${targetShearPosY}%`;
       notch.className = "w-full h-4 bg-emerald-400 rounded border border-emerald-200 shadow-md absolute inset-x-0";
     }
 

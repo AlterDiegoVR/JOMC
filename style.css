@@ -462,7 +462,7 @@ html.narrow-layout .npc-big { margin-bottom: -22px; }
 #tumblerPins > div { background: transparent; border: 0; border-radius: 0; opacity: 1; overflow: visible; }
 #tumblerPins > div[class*="border-amber"] { outline: 3px solid #e8a53a; outline-offset: -3px; }
 #tumblerPins > div > div.flex-1 { background: #05070b; width: 34px; border-radius: 0; border: 2px solid #000; overflow: hidden; margin-top: 2px; }
-[id^=pinNotch] { height: 10px; border: 0; border-radius: 0; background: #05070b; box-shadow: none; overflow: visible; left: -4px; right: -4px; }
+[id^=pinNotch] { height: 10px; border: 0; border-radius: 0; background: #05070b; box-shadow: none; overflow: visible; left: -4px; right: -4px; will-change: transform; }   /* [0.207] el pistón se anima con transform */
 [id^=pinNotch]::before { content: ''; position: absolute; left: 0; right: 0; bottom: 5px; height: 420px;
   background: linear-gradient(#fff3c4, #c99a3a 45%, #6e4a12) 50% 100%/100% 7px no-repeat, linear-gradient(90deg, #fbe39a, #c99a3a 50%, #7a5416) 50% calc(100% - 7px)/70% 50px no-repeat, repeating-linear-gradient(0deg, #aab4c4 0 3px, transparent 3px 7px) 50% 0/50% 100% no-repeat; }
 [id^=pinNotch]::after { content: ''; position: absolute; left: 0; right: 0; top: 5px; height: 46px;
