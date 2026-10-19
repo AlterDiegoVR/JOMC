@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — audio.js — VERSIÓN 0.204
+// JUST ONE MORE CHEST — audio.js — VERSIÓN 0.205
 // motor de audio
 // ==========================================================================
 
@@ -160,6 +160,15 @@ class AudioEngine {
     if (!this.ctx || this.muted) return;
     const hz = DATOS_JUEGO.MINIJUEGOS.SECUENCIA.NOTAS_HZ[i] || 261.63;
     this._tone(hz, hz, dur, 'square', vol);
+  }
+  // [0.205] Fusibles resueltos: chisporroteo y zumbido eléctrico de ~1,3 s que sube de tono
+  playFuseBuzz() {
+    if (!this.ctx || this.muted) return;
+    this._noise(0.12, 0.1, 0, 5200);
+    this._tone(100, 140, 1.3, 'sawtooth', 0.05);
+    this._tone(200, 280, 1.2, 'square', 0.025, 0.05);
+    [0.15, 0.4, 0.62, 0.9].forEach(t => this._noise(0.05, 0.08, t, 4500));
+    this._tone(880, 1760, 0.35, 'triangle', 0.04, 0.9);
   }
   playSeqFail() { if (!this.ctx || this.muted) return; this._tone(110, 90, 0.6, 'sawtooth', 0.1); }
   playSeqWin() {

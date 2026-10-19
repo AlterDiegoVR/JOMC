@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — datos.js — VERSIÓN 0.204
+// JUST ONE MORE CHEST — datos.js — VERSIÓN 0.205
 // DATOS_JUEGO: configuración y balance
 // ==========================================================================
 
@@ -9,7 +9,7 @@
 
 const DATOS_JUEGO = {
   // [0.088] Versión visible en pantalla (esquina inferior central) para que las capturas la incluyan
-  VERSION: '0.204',
+  VERSION: '0.205',
   // [0.104] Efectos de la apertura automática de la secuencia final (cofres 101-110); la intensidad sube del primero al último (k = 0..1)
   SECUENCIA_FINAL_FX: { ACTIVAR: true, ESTALLIDOS_BASE: 2, ESTALLIDOS_EXTRA: 4, PARTICULAS_POR_ESTALLIDO: 40, HACIA_CENTRO_BASE: 30, HACIA_CENTRO_EXTRA: 60,
     SACUDIDA_PX: 6, SACUDIDA_EXTRA_PX: 10, SACUDIDA_MS: 520, PULSO_ZOOM: 0.02, DESTELLO: 0.10 },
@@ -427,12 +427,13 @@ const DATOS_JUEGO = {
     // El tablero SIEMPRE tiene solución: se parte del tablero resuelto y se aplican tocamientos al azar permitidos (JUGADAS_EXTRA se suma al mínimo real). Sin reloj.
     FUSIBLES: {
       TAMANO: 4,                                       // rejilla N x N
-      POR_RAREZA: {                                    // [0.204] mezcla = tocamientos de mezcla (dificultad); extra = jugadas de margen sobre la solución mínima (null = sin límite); variantes (una al azar si hay varias)
+      POR_RAREZA: {                                    // [0.205] mezcla = tocamientos de mezcla (dificultad); extra = jugadas de margen sobre la solución mínima (null = sin límite); tamano = rejilla (si falta, TAMANO); variantes (una al azar si hay varias)
         normal:     { mezcla: 2, extra: null, variantes: [] },
         raro:       { mezcla: 3, extra: 6, variantes: ['fundidos'] },
-        epico:      { mezcla: 4, extra: 6, variantes: ['cortocircuito'] },
-        legendario: { mezcla: 5, extra: 6, variantes: ['tres_estados'] }
+        epico:      { mezcla: 5, extra: 6, variantes: ['tres_estados'] },
+        legendario: { mezcla: 8, extra: 10, tamano: 5, variantes: ['tres_estados'] }   // 5x5 con tres estados
       },
+      // (la variante 'cortocircuito' sigue programada pero no se usa en ninguna rareza: añádela a 'variantes' para volver a probarla)
       FUNDIDOS: { MIN: 2, MAX: 3 },                    // fusibles fundidos (✖: no se pueden tocar, pero siguen cambiando con sus vecinos)
       CORTOCIRCUITOS: { MIN: 1, MAX: 2 },              // fusibles ⚡: al tocarlos invierten TODA su fila en vez de la cruz
       MENOS_JUGADAS_POR_NIVEL_DURO: 1,                 // jugadas de margen que se quitan por cada nivel de dureza (puzle endurecido = 1, extremo = 2); nunca baja de 0

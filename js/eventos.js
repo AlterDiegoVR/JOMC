@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — eventos.js — VERSIÓN 0.204
+// JUST ONE MORE CHEST — eventos.js — VERSIÓN 0.205
 // tiendas especiales, visitas, habilidades, temporizador, fallo y Game Over
 // ==========================================================================
 

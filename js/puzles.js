@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — puzles.js — VERSIÓN 0.204
+// JUST ONE MORE CHEST — puzles.js — VERSIÓN 0.205
 // minijuegos: ganzúa, pistones, hackeo, tuberías
 // ==========================================================================
 
@@ -1565,7 +1565,7 @@ function fzApply(st, r, c, dir) {
 function fzSolved(st) { return st.cells.every(v => v === st.M - 1); }
 // Genera un tablero resoluble: parte del tablero resuelto y aplica "mezcla" toques permitidos al azar. El mínimo de jugadas de esa solución se conoce de antemano.
 function fzGenerate(rarityId) {
-  const C = DATOS_JUEGO.MINIJUEGOS.FUSIBLES, cfg = C.POR_RAREZA[rarityId] || C.POR_RAREZA.normal, n = C.TAMANO || 4, total = n * n;
+  const C = DATOS_JUEGO.MINIJUEGOS.FUSIBLES, cfg = C.POR_RAREZA[rarityId] || C.POR_RAREZA.normal, n = cfg.tamano || C.TAMANO || 4, total = n * n;
   const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
   const variant = (cfg.variantes && cfg.variantes.length) ? cfg.variantes[Math.floor(Math.random() * cfg.variantes.length)] : 'clasico';
   const M = variant === 'tres_estados' ? 3 : 2;
@@ -1638,7 +1638,7 @@ function fzPress(i) {
 function fzStatus(t) { const e = document.getElementById('minigameStatus'); if (e) e.textContent = t; }
 function fzWin() {
   fzState.phase = 'won'; fzStatus('¡CUADRO ENCENDIDO!');
-  audio.playSeqWin();
+  audio.playSeqWin(); audio.playFuseBuzz();   // [0.205] zumbido eléctrico
   const g = document.getElementById('fzGrid'); if (g) g.classList.add('won');
   minigameInProgress = false;
   fzLater(() => {
