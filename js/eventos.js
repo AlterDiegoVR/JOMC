@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — eventos.js — VERSIÓN 0.106
+// JUST ONE MORE CHEST — eventos.js — VERSIÓN 0.201
 // tiendas especiales, visitas, habilidades, temporizador, fallo y Game Over
 // ==========================================================================
 
@@ -69,15 +69,16 @@ function openSpecialShopModal() {
 
   const discountMult = getDiscountMultiplier();
   let catalog = [
-    { id: 'pack_ganzuas', name: '+3 Ganzúas Básicas', cost: Math.round(DATOS_JUEGO.ECONOMIA.TIENDA_DUENDE.pack_ganzuas * discountMult), icon: 'fa-key', prop: 'picks', qty: 3 },
-    { id: 'pack_pines', name: '+2 Pines de Acero', cost: Math.round(DATOS_JUEGO.ECONOMIA.TIENDA_DUENDE.pack_pines * discountMult), icon: 'fa-screwdriver', prop: 'proPicks', qty: 2, minLvl: 2 },
-    { id: 'pack_usb', name: '+2 Llaves USB', cost: Math.round(DATOS_JUEGO.ECONOMIA.TIENDA_DUENDE.pack_usb * discountMult), icon: 'fa-microchip', prop: 'usb', qty: 2, minLvl: 3 },
-    { id: 'pack_valvulas', name: '+2 Válvulas Hidráulicas', cost: Math.round(DATOS_JUEGO.ECONOMIA.TIENDA_DUENDE.pack_valvulas * discountMult), icon: 'fa-faucet', prop: 'valves', qty: 2, minLvl: 5 },
-    { id: 'carta_auto_open', name: 'Carta Auto-Open', cost: Math.round(DATOS_JUEGO.ECONOMIA.TIENDA_DUENDE.carta_auto_open * discountMult), icon: 'fa-wand-magic-sparkles', abilityProp: 'auto' },
-    { id: 'carta_escudo', name: 'Carta Escudo Protector', cost: Math.round(DATOS_JUEGO.ECONOMIA.TIENDA_DUENDE.carta_escudo * discountMult), icon: 'fa-shield-halved', abilityProp: 'shield' }
+    { id: 'pack_ganzuas', name: '+3 Ganzúas Básicas', cost: Math.round(shopBasePrice('pack_ganzuas') * discountMult), icon: 'fa-key', prop: 'picks', qty: 3 },
+    { id: 'pack_pines', name: '+2 Pines de Acero', cost: Math.round(shopBasePrice('pack_pines') * discountMult), icon: 'fa-screwdriver', prop: 'proPicks', qty: 2, minLvl: 2 },
+    { id: 'pack_usb', name: '+2 Llaves USB', cost: Math.round(shopBasePrice('pack_usb') * discountMult), icon: 'fa-microchip', prop: 'usb', qty: 2, minLvl: 3 },
+    { id: 'pack_valvulas', name: '+2 Válvulas Hidráulicas', cost: Math.round(shopBasePrice('pack_valvulas') * discountMult), icon: 'fa-faucet', prop: 'valves', qty: 2, minLvl: valvesShopLevel() },
+    { id: 'pack_pilas', name: '+2 Pilas', cost: Math.round(shopBasePrice('pack_pilas') * discountMult), icon: 'fa-battery-half', prop: 'batteries', qty: 2, needUnlocked: 'batteries' },   // [0.201]
+    { id: 'carta_auto_open', name: 'Carta Auto-Open', cost: Math.round(shopBasePrice('carta_auto_open') * discountMult), icon: 'fa-wand-magic-sparkles', abilityProp: 'auto' },
+    { id: 'carta_escudo', name: 'Carta Escudo Protector', cost: Math.round(shopBasePrice('carta_escudo') * discountMult), icon: 'fa-shield-halved', abilityProp: 'shield' }
   ];
 
-  const availableCatalog = catalog.filter(item => !item.minLvl || STATE.level >= item.minLvl);
+  const availableCatalog = catalog.filter(item => (!item.minLvl || STATE.level >= item.minLvl) && (!item.needUnlocked || toolUnlocked(item.needUnlocked)));
   const offeredItems = [...availableCatalog].sort(() => 0.5 - Math.random()).slice(0, 2);
 
   const cfgS = shopCfg();
@@ -348,6 +349,7 @@ function triggerDuendeNarrativeVisit() {
     { prop: 'usb', name: '+1 Llave USB', icon: 'fa-microchip' },
     { prop: 'valves', name: '+1 Válvula Hidráulica', icon: 'fa-faucet' }
   ];
+  if (STATE.batteriesUnlocked) smallGifts.push({ prop: 'batteries', name: '+1 Pila', icon: 'fa-battery-half' });   // [0.201]
 
   const gift = smallGifts[Math.floor(Math.random() * smallGifts.length)];
   STATE[gift.prop]++;
@@ -501,7 +503,7 @@ if (btnSummon) {
    El cofre elegido aparece en la sala con el destello del reroll y NO se abre solo. Consumible de un solo uso; no disponible en la secuencia final.
    ========================================================================== */
 function cofradiaRoll() {
-  const types = DATOS_JUEGO.COFRES.ESTANDAR.filter(t => STATE.level >= t.minNivel);
+  const types = DATOS_JUEGO.COFRES.ESTANDAR.filter(t => STATE.level >= chestMinLevel(t));
   const tier = DATOS_JUEGO.PROBABILIDADES.RAREZAS_COFRES_POR_NIVEL[4];
   const out = [];
   for (let i = 0; i < 10; i++) {
@@ -579,7 +581,7 @@ function cofradiaStart() {
     prevCard.innerHTML = `<div class="cf-big">${cardHtml(picks[i]).replace('cf-face cf-front', 'cf-face cf-front show').replace('<div class="cf-face cf-back"><i class="fa-solid fa-boxes-stacked"></i></div>', '')}</div>`;
     {   // [0.106] aviso si no tienes herramientas para ese cofre
       const c = picks[i], need = getRequiredToolCount(c.rarity), have = STATE[c.type.consumible] || 0;
-      const NM = { picks: ['Ganzúa', 'Ganzúas'], proPicks: ['Pin de Acero', 'Pines de Acero'], usb: ['Llave USB', 'Llaves USB'], valves: ['Válvula', 'Válvulas'] }[c.type.consumible] || ['herramienta', 'herramientas'];
+      const NM = { picks: ['Ganzúa', 'Ganzúas'], proPicks: ['Pin de Acero', 'Pines de Acero'], usb: ['Llave USB', 'Llaves USB'], valves: ['Válvula', 'Válvulas'], batteries: ['Pila', 'Pilas'] }[c.type.consumible] || ['herramienta', 'herramientas'];
       const pickBtn = m.querySelector('#cfPick');
       pickBtn.classList.toggle('nohave', have < need);
       const old = prevCard.querySelector('.cf-warn'); if (old) old.remove();
@@ -953,6 +955,7 @@ function openUnfairDeal() {
   if (active.type.consumible === 'proPicks') toolTitle = 'Pin de Acero';
   if (active.type.consumible === 'usb') toolTitle = 'Llave USB';
   if (active.type.consumible === 'valves') toolTitle = 'Válvula Hidráulica';
+  if (active.type.consumible === 'batteries') toolTitle = 'Pila';
 
   const curseBase = DATOS_JUEGO.ECONOMIA.MALDICION_SALVAMENTO.DURACION_BASE;
   const curseInc = DATOS_JUEGO.ECONOMIA.MALDICION_SALVAMENTO.INCREMENTO_POR_TRATO;

@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — graficos.js — VERSIÓN 0.106
+// JUST ONE MORE CHEST — graficos.js — VERSIÓN 0.201
 // canvas, sala, cerradura, decoración, efectos de cofre
 // ==========================================================================
 
@@ -201,6 +201,20 @@ const HEX_FONT = {
 };
 const HEX_CHARS = '0123456789ABCDEF';
 function seededHex(seed, n) { let h = (seed * 2654435761) >>> 0, out = ''; for (let i = 0; i < n; i++) { h = (Math.imul(h ^ (h >>> 15), 2246822519) + 374761393) >>> 0; out += HEX_CHARS[h % 16]; } return out; }
+// [0.201] Arca de Neón: geometría de los neones (mismas líneas que el sprite) y del aro de la cerradura
+let NEON_GEO = null;
+function neonGeo() {
+  if (NEON_GEO) return NEON_GEO;
+  const seg = pts => { const out = [pts[0]]; for (let i = 0; i < pts.length - 1; i++) { let [x, y] = pts[i]; const [x1, y1] = pts[i + 1]; const dx = Math.sign(x1 - x), dy = Math.sign(y1 - y); while (x !== x1 || y !== y1) { x += dx; y += dy; out.push([x, y]); } } return out; };
+  const P = [[[[7,15],[17,15],[17,19],[22,19]],0], [[[7,21],[13,21],[13,18]],1], [[[9,13],[19,13]],1], [[[8,28],[8,40],[15,40]],0], [[[12,28],[12,35],[17,35]],1], [[[7,28],[7,34]],1], [[[8,30],[17,30]],1], [[[5,24],[18,24]],0]];
+  const paths = [];
+  P.forEach(([pts, k]) => { paths.push(seg(pts)); paths.push(seg(pts.map(([x, y]) => [55 - x, y]))); });
+  const CX = 28, CY = 27, RR = 10, ring = [];
+  for (let y = CY - RR - 2; y < CY + RR + 3; y++) for (let x = CX - RR - 2; x < CX + RR + 3; x++) { const dd = Math.hypot(x - CX, y - CY); if (dd > RR - 1.4 && dd <= RR - 0.6) ring.push([Math.atan2(y - CY, x - CX), x, y]); }
+  ring.sort((a, b) => a[0] - b[0]);   // de la izquierda por arriba (sentido del reloj)
+  NEON_GEO = { paths, ring: ring.map(r => [r[1], r[2]]), lamps: [[CX - 1, CY - 6, '#ff5246'], [CX + 4, CY - 1, '#46eb82'], [CX - 1, CY + 4, '#ffcd3c'], [CX - 6, CY - 1, '#5aaaff']] };
+  return NEON_GEO;
+}
 function drawChestAnim(typeId, R, aco, ctx, ox, oy, px) {
   const t = Date.now() / 1000;
   if (typeId === 'piston' && aco.PISTONES && aco.PISTONES.ACTIVAR) {
@@ -234,6 +248,27 @@ function drawChestAnim(typeId, R, aco, ctx, ox, oy, px) {
         ctx.beginPath(); ctx.arc(ox + (X + 0.5) * px, oy + 30.5 * px, px * 2.2, 0, Math.PI * 2); ctx.fill(); ctx.restore();
       }
     });
+  } else if (typeId === 'neon' && aco.NEON && aco.NEON.ACTIVAR) {
+    // [0.201] Las 4 luces de la cerradura se encienden de una en una (sentido del reloj) y los neones corren por las líneas y el aro
+    const G = neonGeo(), N = aco.NEON, ms = Date.now();
+    const lit = Math.floor(ms / (N.CICLO_MS / 4)) % 4;
+    G.paths.forEach((path, i) => {
+      const len = path.length, gap = 7, sp = 8 + (i % 4) * 1.5;
+      const head = ((ms / 1000) * sp + i * 3.1) % (len + gap);
+      [[0, '#9af6ff'], [1, '#3ec8ee'], [2, '#2296be']].forEach(([back, col]) => {
+        const k = Math.floor(head) - back; if (k < 0 || k >= len) return;
+        const [x, y] = path[k]; if (y < 39) R(x, y, 1, 1, col);
+      });
+    });
+    const rl = G.ring.length;
+    [0, 0.5].forEach(off => {
+      const head = Math.floor(((ms / 2200) + off) % 1 * rl);
+      [[0, '#b8fbff'], [1, '#6aeaff'], [2, '#3ec8ee'], [3, '#2296be']].forEach(([back, col]) => { const q = G.ring[(head - back + rl) % rl]; if (q[1] < 39) R(q[0], q[1], 1, 1, col); });
+    });
+    const L = G.lamps[lit];
+    R(L[0], L[1], 2, 2, L[2]);
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.35; ctx.fillStyle = L[2];
+    ctx.beginPath(); ctx.arc(ox + (L[0] + 1) * px, oy + (L[1] + 1) * px, px * 3.4, 0, Math.PI * 2); ctx.fill(); ctx.restore();
   } else if (typeId === 'hydraulic' && aco.AGUJA && aco.AGUJA.ACTIVAR) {
     const A = aco.AGUJA, tt = t % A.CICLO_S;
     let ang;
@@ -266,7 +301,7 @@ function decorY(d) {
   return (d.y === 210 || d.y === 270) ? decorRowY('top') : d.y;   // adornos guardados con la fila antigua
 }
 
-const TOOL_COLORS = { picks: '#fbbf24', proPicks: '#cbd5e1', usb: '#22d3ee', valves: '#fb923c' };
+const TOOL_COLORS = { picks: '#fbbf24', proPicks: '#cbd5e1', usb: '#22d3ee', valves: '#fb923c', batteries: '#7dd3fc' };
 
 // [0.086] Indicador pegado a la cerradura: coste en herramientas (color de la herramienta) o "faltan N" en rojo
 function drawLockOverlay(lx, ly, lr, chest) {
@@ -839,7 +874,7 @@ function triggerSecretDecorationReward(decor) {
   else if (roll >= 65 && roll < 80) { STATE.picks += 1; msg += " (+1 Ganzúa hallada)"; }
   else if (roll >= 80 && roll < 90) { STATE.usb += 1; msg += " (+1 USB hallado)"; }
   else if (roll >= 90 && roll < 97) {
-    if (STATE.level >= (DATOS_JUEGO.VALVULAS_NIVEL_MIN_BOTIN || 4)) { STATE.valves += 1; msg += " (+1 Válvula hallada)"; }
+    if (STATE.level >= valvesDropLevel()) { STATE.valves += 1; msg += " (+1 Válvula hallada)"; }
     else { STATE.gold += 2; msg += " (+2 GP secretos)"; }   // [0.089] sin válvulas antes del nivel mínimo
   }
   else {

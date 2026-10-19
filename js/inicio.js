@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — inicio.js — VERSIÓN 0.106
+// JUST ONE MORE CHEST — inicio.js — VERSIÓN 0.201
 // portada, arranque, avisos, pantalla completa
 // ==========================================================================
 
@@ -130,7 +130,8 @@ const KEY_TOAST_STYLE = {
   picks:    { icon: 'fa-key',         color: '#fbbf24' },
   proPicks: { icon: 'fa-screwdriver', color: '#34d399' },
   usb:      { icon: 'fa-microchip',   color: '#22d3ee' },
-  valves:   { icon: 'fa-faucet',      color: '#fb7185' }
+  valves:   { icon: 'fa-faucet',      color: '#fb7185' },
+  batteries: { icon: 'fa-battery-half', color: '#7dd3fc' }   // [0.201]
 };
 // [0.090] Efectos de pantalla compartidos: sacudida del marco y destello de color
 function screenShake(px = 6, ms = 400) {
@@ -152,7 +153,7 @@ function modalVisible(id) { const e = document.getElementById(id); return !!(e &
 // [0.089] Compara las llaves con la última lectura y apunta ganancias (+N) y gastos (-N). Solo la tienda del Duende queda excluida.
 function trackKeyGains() {
   if (TEST_SERIES.active) { keysBaseline = null; keyToastQueue.length = 0; return; }   // [0.091] el Modo test no genera avisos de llaves
-  const cur = { picks: STATE.picks, proPicks: STATE.proPicks, usb: STATE.usb, valves: STATE.valves };
+  const cur = { picks: STATE.picks, proPicks: STATE.proPicks, usb: STATE.usb, valves: STATE.valves, batteries: STATE.batteries };
   if (!keysBaseline) { keysBaseline = cur; return; }
   const inDuendeShop = modalVisible('merchantModal') || specialShopOpen;
   Object.keys(cur).forEach(k => {

@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — juego.js — VERSIÓN 0.106
+// JUST ONE MORE CHEST — juego.js — VERSIÓN 0.201
 // arte del cofre abierto, subida de nivel, abrir cofre
 // ==========================================================================
 
@@ -278,7 +278,7 @@ function openActiveChest() {
     const co = STATE.chestsOpened;
 
     if (co >= 95 && co < DATOS_JUEGO.PROGRESIÓN.SECUENCIA_HISTORIA.COFRE_COLAPSO_FINAL && STATE.climaxPhase) {
-      const containers = ['lockpickContainer', 'tumblerContainer', 'hackContainer', 'pipeContainer'];
+      const containers = ['lockpickContainer', 'tumblerContainer', 'hackContainer', 'pipeContainer', 'sequenceContainer'];
       containers.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.classList.add('hidden');
@@ -303,7 +303,7 @@ function openActiveChest() {
       return;
     }
 
-    const containers = ['lockpickContainer', 'tumblerContainer', 'hackContainer', 'pipeContainer'];
+    const containers = ['lockpickContainer', 'tumblerContainer', 'hackContainer', 'pipeContainer', 'sequenceContainer'];
     containers.forEach(id => {
       const el = document.getElementById(id);
       if (el) el.classList.add('hidden');
@@ -312,12 +312,14 @@ function openActiveChest() {
     const minigameTitle = document.getElementById('minigameTitle');
     if (minigameTitle) minigameTitle.textContent = active.type.nombre;
     pzHardBadgeUpdate();   // [0.105] aviso de puzle endurecido/extremo
+    { const mm0 = document.getElementById('minigameModal'); if (mm0) mm0.classList.remove('pz-seq'); }   // [0.201] startSequenceGame lo vuelve a poner
     setPuzzleBackground(active.type.juego);   // [0.101] imagen de ambiente detrás del puzle
 
     if (active.type.juego === 'lockpick') startLockpickGame();
     else if (active.type.juego === 'tumbler') startTumblerGame();
     else if (active.type.juego === 'hack') startHackGame();
     else if (active.type.juego === 'pipe') startPipeGame();
+    else if (active.type.juego === 'sequence') startSequenceGame();
     minigameInProgress = true;
     humHoldChest = active;   // [0.091] el zumbido se calla con este cofre hasta fallar o hasta que salga otro
 
@@ -413,8 +415,8 @@ function pzScale(m) {
   const cfg = DATOS_JUEGO.GRAFICOS.ESCALA_PUZLES || {};
   const frame = document.getElementById('pzFrame'), card = document.getElementById('pzCard'), timer = document.getElementById('bigTimer'), foot = document.getElementById('pzFoot');
   if (!frame || m.classList.contains('hidden')) return;
-  const sel = { lockpick: '#lockpickContainer .pz-body', tumbler: '#tumblerContainer .pz-body', pipe: '#pipeContainer .pz-body', hack: '#hackContainer' };
-  const idOf = { lockpick: 'lockpickContainer', tumbler: 'tumblerContainer', pipe: 'pipeContainer', hack: 'hackContainer' };
+  const sel = { lockpick: '#lockpickContainer .pz-body', tumbler: '#tumblerContainer .pz-body', pipe: '#pipeContainer .pz-body', sequence: '#sequenceContainer .pz-body', hack: '#hackContainer' };
+  const idOf = { lockpick: 'lockpickContainer', tumbler: 'tumblerContainer', pipe: 'pipeContainer', sequence: 'sequenceContainer', hack: 'hackContainer' };
   Object.keys(sel).forEach(k => { const e = document.querySelector(sel[k]); if (e) e.style.zoom = ''; });
   frame.style.removeProperty('--pzw');
   let which = null;

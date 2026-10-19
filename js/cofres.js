@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — cofres.js — VERSIÓN 0.106
+// JUST ONE MORE CHEST — cofres.js — VERSIÓN 0.201
 // selección de cofres, banner, diálogos, post-its, botín y subida de nivel
 // ==========================================================================
 
@@ -15,13 +15,19 @@ function generateScreenChests() {
     const r0 = Math.random(); chestCount = r0 < dc[2] ? 2 : (r0 < dc[2] + dc[3] ? 3 : 4);
   }
 
+  // [0.201] En el cofre 4 del nivel, cada tipo recién desbloqueado debe tener su cofre en pantalla (bucle 2+: nivel 3 = hackeo + tuberías)
+  { const sinceF = STATE.chestsOpened - (STATE.chestsAtLevelUp || 0);
+    const nF = DATOS_JUEGO.COFRES.ESTANDAR.filter(t => chestMinLevel(t) > 1 && STATE.level === chestMinLevel(t) && sinceF === 3).length;
+    if (nF > chestCount && !modOn('solitario')) chestCount = nF; }
+
   for (let i = 0; i < chestCount; i++) {
     const availableTypes = DATOS_JUEGO.COFRES.ESTANDAR.filter(t => {
-      if (t.minNivel === 1) return true;
-      if (STATE.level < t.minNivel) return false;
+      const minLv = chestMinLevel(t);   // [0.201] depende del bucle (tuberías en el 3 y Arca de Neón en el 5 desde el bucle 2)
+      if (minLv === 1) return true;
+      if (STATE.level < minLv) return false;
       
       const chestsSinceLevelUp = STATE.chestsOpened - (STATE.chestsAtLevelUp || 0);
-      if (STATE.level === t.minNivel && chestsSinceLevelUp < 3) {
+      if (STATE.level === minLv && chestsSinceLevelUp < 3) {
         return false;
       }
       return true;
@@ -69,10 +75,11 @@ function generateScreenChests() {
   // La garantía se repite si la pantalla se regenera (reroll, luz misteriosa...) mientras sea ese mismo cofre.
   {
     const since = STATE.chestsOpened - (STATE.chestsAtLevelUp || 0);
-    const forced = DATOS_JUEGO.COFRES.ESTANDAR.filter(t => t.minNivel > 1 && STATE.level === t.minNivel && since === 3);
+    const forced = DATOS_JUEGO.COFRES.ESTANDAR.filter(t => chestMinLevel(t) > 1 && STATE.level === chestMinLevel(t) && since === 3);
     let used = [];
     forced.forEach(t => {
-      if (STATE.screenChests.some(c => c.type.id === t.id)) return;
+      const have = STATE.screenChests.findIndex((c, k) => c.type.id === t.id && !used.includes(k));   // [0.201] con dos tipos forzados, el que ya está en pantalla se reserva para no pisarlo
+      if (have >= 0) { used.push(have); return; }
       const free = STATE.screenChests.map((c, k) => k).filter(k => !used.includes(k));
       if (!free.length) return;
       const k = free[Math.floor(Math.random() * free.length)];
@@ -170,6 +177,7 @@ function updateChestSelectionUI() {
     if (active.type.consumible === 'proPicks') toolTitle = reqCount === 1 ? "PIN DE ACERO" : "PINES DE ACERO";
     if (active.type.consumible === 'usb') toolTitle = reqCount === 1 ? "LLAVE USB" : "LLAVES USB";
     if (active.type.consumible === 'valves') toolTitle = reqCount === 1 ? "VÁLVULA" : "VÁLVULAS";
+    if (active.type.consumible === 'batteries') toolTitle = reqCount === 1 ? "PILA" : "PILAS";
 
     const reqEl = document.getElementById('chestCostRequirement');
     if (reqEl) {
@@ -892,18 +900,25 @@ function triggerLootExplosion() {
 
     if (inGracePeriod) toolDropChance *= DATOS_JUEGO.PROBABILIDADES.MULTIPLICADOR_DROP_PERIODO_GRACIA;
 
+    // [0.201] Bucle 2, nivel 2, cofre 2: aparece la linterna (no funciona todavía) y, justo al cerrar el botín, el Trapero comenta el "cacharro"
+    if ((STATE.currentLoop || 1) === 2 && STATE.level === 2 && !STATE.lanternFound && chestsSinceLevelUp === 2) {
+      STATE.lanternFound = true; STATE.pendingTraperoLantern = true;
+      extraLootHTML += `<div class="lt-extra text-sky-300"><span>${DATOS_JUEGO.NARRATIVA.LINTERNA.BANNER}</span></div>`;
+    }
+
     // [0.082] Dedos Rotos activo: en un cofre NORMAL de madera la ganzúa extra baja a un % fijo (silencioso).
     // No se duplica en periodo de gracia; la herramienta nueva del periodo de gracia conserva su probabilidad original.
     const dedosRotosDrop = STATE.picksBrokenOnUse && active.rarity.id === 'normal' && active.type.id === 'wooden';
     let forcedDrop = null;      // si no es null, sustituye a la tirada normal
     let dropHappens;
     const GANZUA_DROP = { name: 'Ganzúa Básica', prop: 'picks', icon: 'fa-key', color: 'text-amber-400' };
+    // [0.201] Herramientas nuevas del periodo de gracia según bucle: bucle 1 igual que siempre; bucle 2+: nivel 3 = USB y válvulas, nivel 5 = pilas
+    const DROP_T = { proPicks: { name: 'Pin de Acero', prop: 'proPicks', icon: 'fa-screwdriver', color: 'text-emerald-400' }, usb: { name: 'Llave USB', prop: 'usb', icon: 'fa-microchip', color: 'text-cyan-400' },
+      valves: { name: 'Válvula Hidráulica', prop: 'valves', icon: 'fa-faucet', color: 'text-rose-400' }, batteries: { name: 'Pila', prop: 'batteries', icon: 'fa-battery-half', color: 'text-sky-300' } };
+    const graceProps = ((STATE.currentLoop || 1) >= 2 ? { 2: ['proPicks'], 3: ['usb', 'valves'], 5: ['batteries'] } : { 2: ['proPicks'], 3: ['usb'], 5: ['valves'] })[STATE.level] || [];
+    const graceList = graceProps.map(k => DROP_T[k]).filter(t => t.prop !== 'batteries' || STATE.batteriesUnlocked);
     if (dedosRotosDrop) {
-      const graceTool = inGracePeriod ? (
-        STATE.level === 2 ? { name: 'Pin de Acero', prop: 'proPicks', icon: 'fa-screwdriver', color: 'text-emerald-400' } :
-        STATE.level === 3 ? { name: 'Llave USB', prop: 'usb', icon: 'fa-microchip', color: 'text-cyan-400' } :
-        { name: 'Válvula Hidráulica', prop: 'valves', icon: 'fa-faucet', color: 'text-rose-400' }
-      ) : null;
+      const graceTool = (inGracePeriod && graceList.length) ? graceList[Math.floor(Math.random() * graceList.length)] : null;
       // Probabilidad original de la herramienta nueva en gracia: (25% x2) repartido entre 2 opciones = 25%
       const graceToolChance = graceTool ? toolDropChance / 2 : 0;
       // Una sola tirada: [0, graceToolChance) = herramienta nueva; el tramo siguiente = Ganzúa (así ambas conservan su % exacto)
@@ -926,16 +941,13 @@ function triggerLootExplosion() {
           { name: 'Llave USB', prop: 'usb', icon: 'fa-microchip', color: 'text-cyan-400' },
           { name: 'Válvula Hidráulica', prop: 'valves', icon: 'fa-faucet', color: 'text-rose-400' }
         ];
+        if (STATE.batteriesUnlocked) availableDrops.push(DROP_T.batteries);   // [0.201] las pilas no existen hasta que el Duende da la primera
       }
 
-      // [0.089] Sin válvulas en el botín hasta el nivel mínimo
-      availableDrops = availableDrops.filter(d => d.prop !== 'valves' || STATE.level >= (DATOS_JUEGO.VALVULAS_NIVEL_MIN_BOTIN || 4));
+      // [0.089] Sin válvulas en el botín hasta el nivel mínimo (bucle 2+: desde el nivel 3, con las tuberías)
+      availableDrops = availableDrops.filter(d => d.prop !== 'valves' || STATE.level >= valvesDropLevel());
 
-      if (inGracePeriod) {
-        if (STATE.level === 2) availableDrops.push({ name: 'Pin de Acero', prop: 'proPicks', icon: 'fa-screwdriver', color: 'text-emerald-400' });
-        if (STATE.level === 3) availableDrops.push({ name: 'Llave USB', prop: 'usb', icon: 'fa-microchip', color: 'text-cyan-400' });
-        if (STATE.level === 5) availableDrops.push({ name: 'Válvula Hidráulica', prop: 'valves', icon: 'fa-faucet', color: 'text-rose-400' });
-      }
+      if (inGracePeriod) graceList.forEach(t => availableDrops.push(t));
 
       const chosenDrop = forcedDrop || availableDrops[Math.floor(Math.random() * availableDrops.length)];
       STATE[chosenDrop.prop]++;
@@ -1033,13 +1045,17 @@ function processLevelUp(fromDeal) {
   }
 
   const unlockKey = `nivel_${STATE.level}`;
-  if (DATOS_JUEGO.NARRATIVA.DUENDE_DESBLOQUEOS[unlockKey]) {
+  // [0.201] Bucle 2 en adelante: nivel 3 = USB + válvula (hackeo y tuberías a la vez); nivel 5 = primera pila (Arca de Neón). El bucle 1 no cambia.
+  const loopB2 = (STATE.currentLoop || 1) >= 2 && DATOS_JUEGO.NARRATIVA.DUENDE_DESBLOQUEOS_BUCLE2[unlockKey];
+  if (DATOS_JUEGO.NARRATIVA.DUENDE_DESBLOQUEOS[unlockKey] || loopB2) {
     let giftObj = null;
     if (STATE.level === 2) { STATE.proPicks += 1; giftObj = { name: "Pin de Acero", icon: "fa-screwdriver" }; }
+    else if (STATE.level === 3 && loopB2) { STATE.usb += 1; STATE.valves += 1; giftObj = { name: "Llave USB + Válvula Hidráulica", icon: "fa-microchip" }; }
     else if (STATE.level === 3) { STATE.usb += 1; giftObj = { name: "Llave USB", icon: "fa-microchip" }; }
+    else if (STATE.level === 5 && loopB2) { STATE.batteriesUnlocked = true; STATE.batteries += 1; giftObj = { name: "Pila", icon: "fa-battery-half" }; }
     else if (STATE.level === 5) { STATE.valves += 1; giftObj = { name: "Válvula Hidráulica", icon: "fa-faucet" }; }
 
-    const speechText = DATOS_JUEGO.NARRATIVA.DUENDE_DESBLOQUEOS[unlockKey];
+    const speechText = loopB2 ? DATOS_JUEGO.NARRATIVA.DUENDE_DESBLOQUEOS_BUCLE2[unlockKey] : DATOS_JUEGO.NARRATIVA.DUENDE_DESBLOQUEOS[unlockKey];
     triggerSequentialDialogue(
       "EL DUENDE",
       speechText,
@@ -1072,6 +1088,11 @@ if (claimLootBtn) {
       const tanteoPhrase = STATE.pendingTanteoPhrase;
       STATE.pendingTanteoPhrase = null;
       STATE.eventQueue.push(() => triggerSequentialDialogue("EL TRAPERO", tanteoPhrase, "fa-mask", "Sobre tu pulso", "text-rose-400"));
+    }
+
+    if (STATE.pendingTraperoLantern) {   // [0.201]
+      STATE.pendingTraperoLantern = false;
+      STATE.eventQueue.push(() => triggerSequentialDialogue("EL TRAPERO", DATOS_JUEGO.NARRATIVA.LINTERNA.TRAPERO, "fa-mask", "Un cacharro", "text-rose-400"));
     }
 
     const isLevelUpPending = (STATE.xp >= STATE.xpNext);

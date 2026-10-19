@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — ui.js — VERSIÓN 0.106
+// JUST ONE MORE CHEST — ui.js — VERSIÓN 0.201
 // actualización de la interfaz (HUD)
 // ==========================================================================
 
@@ -26,6 +26,7 @@ function updateUI() {
   const proPickEl = document.getElementById('proPickText'); if (proPickEl) proPickEl.textContent = STATE.proPicks;
   const usbEl = document.getElementById('usbText'); if (usbEl) usbEl.textContent = STATE.usb;
   const valveEl = document.getElementById('valveText'); if (valveEl) valveEl.textContent = STATE.valves;
+  const batEl = document.getElementById('batteryText'); if (batEl) batEl.textContent = STATE.batteries;   // [0.201]
 
   let chestCounterEl = document.getElementById('loopCounterDisplay');
   const abilitiesBar = document.getElementById('abilitiesBar') || document.getElementById('tacticalCardsContainer') || document.getElementById('abilityAutoBtn')?.parentElement;
@@ -96,7 +97,7 @@ function updateUI() {
   }
 
   // [0.087] Etiquetas y banners de las llaves consumibles
-  [['pickText', 'ganzuas'], ['proPickChip', 'pines'], ['usbChip', 'usb'], ['valveChip', 'valvulas']].forEach(([id, key]) => {
+  [['pickText', 'ganzuas'], ['proPickChip', 'pines'], ['usbChip', 'usb'], ['valveChip', 'valvulas'], ['batteryChip', 'pilas']].forEach(([id, key]) => {
     let el = document.getElementById(id);
     if (el && id === 'pickText') el = el.parentElement;
     if (el) setHelp(el, helpText(key));
@@ -109,7 +110,8 @@ function updateUI() {
 
   const proChip = document.getElementById('proPickChip'); if (proChip && STATE.level >= 2) proChip.classList.remove('hidden');
   const usbChip = document.getElementById('usbChip'); if (usbChip && STATE.level >= 3) usbChip.classList.remove('hidden');
-  const valveChip = document.getElementById('valveChip'); if (valveChip && STATE.level >= 4) valveChip.classList.remove('hidden');
+  const valveChip = document.getElementById('valveChip'); if (valveChip && STATE.level >= valvesDropLevel()) valveChip.classList.remove('hidden');
+  const batChip = document.getElementById('batteryChip'); if (batChip && STATE.batteriesUnlocked) batChip.classList.remove('hidden');   // [0.201] solo tras la primera pila del Duende
 
   
   // ACTUALIZACIÓN DE PERKS Y PASIVAS
@@ -260,6 +262,7 @@ function updateShopResourcesUI() {
     <span class="text-emerald-400 font-black"><i class="fa-solid fa-screwdriver"></i> ${STATE.proPicks}</span>
     <span class="text-cyan-400 font-black"><i class="fa-solid fa-microchip"></i> ${STATE.usb}</span>
     <span class="text-rose-400 font-black"><i class="fa-solid fa-faucet"></i> ${STATE.valves}</span>
+    ${STATE.batteriesUnlocked ? `<span class="text-sky-300 font-black"><i class="fa-solid fa-battery-half"></i> ${STATE.batteries}</span>` : ''}
   `;
   const mBar = document.getElementById('merchantResourceBar');
   const tBar = document.getElementById('traperoResourceBar');

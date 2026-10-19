@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — datos.js — VERSIÓN 0.106
+// JUST ONE MORE CHEST — datos.js — VERSIÓN 0.201
 // DATOS_JUEGO: configuración y balance
 // ==========================================================================
 
@@ -9,14 +9,14 @@
 
 const DATOS_JUEGO = {
   // [0.088] Versión visible en pantalla (esquina inferior central) para que las capturas la incluyan
-  VERSION: '0.2',
+  VERSION: '0.201',
   // [0.104] Efectos de la apertura automática de la secuencia final (cofres 101-110); la intensidad sube del primero al último (k = 0..1)
   SECUENCIA_FINAL_FX: { ACTIVAR: true, ESTALLIDOS_BASE: 2, ESTALLIDOS_EXTRA: 4, PARTICULAS_POR_ESTALLIDO: 40, HACIA_CENTRO_BASE: 30, HACIA_CENTRO_EXTRA: 60,
     SACUDIDA_PX: 6, SACUDIDA_EXTRA_PX: 10, SACUDIDA_MS: 520, PULSO_ZOOM: 0.02, DESTELLO: 0.10 },
   // [0.104] Palabras clave resaltadas en banners y diálogos (MALAS en rojo, BUENAS y cifras en ámbar). Se escriben como parte de una expresión regular.
   PALABRAS_CLAVE: { ACTIVAR: true,
     MALAS: ['maldici[oó]n', 'maldit[oa]s?', 'robo', 'robad[oa]s?', 'pierdes', 'perdido', 'p[eé]rdida', 'fallo', 'fallaste', 'se rompe', 'rot[oa]s?', 'oscuridad', 'trampa', 'castigo', 'trato injusto'],
-    BUENAS: ['oro', 'GP', 'XP', 'nivel', 'escudo', 'racha', 'bote de riesgo', 'apuesta', 'regalo', 'gratis', 'descuento', 'doble', 'ganz[uú]as?', 'llaves?', 'v[aá]lvulas?'] },
+    BUENAS: ['oro', 'GP', 'XP', 'nivel', 'escudo', 'racha', 'bote de riesgo', 'apuesta', 'regalo', 'gratis', 'descuento', 'doble', 'ganz[uú]as?', 'llaves?', 'v[aá]lvulas?', 'pilas?', 'linterna'] },
 
   // [0.089] Avisos "+N" / "-N" de herramientas. ESPERAR_PANTALLA_LIBRE:true = recupera la idea anterior (esperar a que no haya
   // banners, tiendas ni diálogos encima). Con false salen siempre, por encima de todo.
@@ -60,7 +60,8 @@ const DATOS_JUEGO = {
       lockpick: 'Ajusta la posición de la ganzúa. Las zonas falsas hacen vibrar tu herramienta.',
       tumbler: 'Pulsa el botón o toca la pantalla para fijar el <span class="text-amber-400 font-bold">pistón activo</span> con la <span class="text-amber-400 font-bold">unión latón/acero</span> sobre la <span class="text-emerald-400 font-bold">línea verde</span>.',
       hack: 'Elige la palabra de la lista. Cada intento te dice cuántas letras coinciden.',
-      pipe: 'Gira las tuberías para llevar el agua de la válvula a la salida.'
+      pipe: 'Gira las tuberías para llevar el agua de la válvula a la salida.',
+      sequence: 'Memoriza la <span class="text-amber-400 font-bold">secuencia de luces</span> y repítela con las mismas notas. Tres secuencias seguidas: <span class="text-emerald-400 font-bold">una sola pifia y se acaba</span>.'   // [0.201]
     } },
   // [0.103] Pitido de cuenta atrás de los puzles (Variante D, Latido): uno por segundo en los últimos SEGUNDOS s, cada vez más agudo
   CUENTA_ATRAS: { ACTIVAR: true, SEGUNDOS: 5 },
@@ -109,6 +110,7 @@ const DATOS_JUEGO = {
     PINES: 0,
     USB: 0,
     VALVULAS: 0,
+    PILAS: 0,   // [0.201] no existen hasta que el Duende da la primera (bucle 2+, nivel 5)
     ORO: 0
   },
 
@@ -158,6 +160,7 @@ const DATOS_JUEGO = {
         pack_pines: 'Dos pines de acero para las cajas de acero.',
         pack_usb: 'Dos llaves USB para las arcas digitales.',
         pack_valvulas: 'Dos válvulas para los cofres de vapor.',
+        pack_pilas: 'Dos pilas para la linterna de las arcas de neón.',   // [0.201]
         carta_auto_open: 'Abre al instante el cofre activo, sin puzle.',
         carta_escudo: 'Si fallas el siguiente puzle, no pierdes la herramienta.',
         carta_cofradia: 'Cambia los cofres de la pantalla por 10 al azar, de cualquier rareza. Tú eliges uno.',
@@ -165,7 +168,8 @@ const DATOS_JUEGO = {
         contador_cofres: 'Un contador que muestra cuántos cofres llevas abiertos.',
         reciclaje_proPicks: 'Funde tus ganzúas y fórjalas en dos pines de acero.',
         reciclaje_usb: 'Convierte tus ganzúas en una llave USB.',
-        reciclaje_valves: 'Convierte tus ganzúas en una válvula hidráulica.'
+        reciclaje_valves: 'Convierte tus ganzúas en una válvula hidráulica.',
+        reciclaje_batteries: 'Convierte tus ganzúas en una pila para la linterna.'   // [0.201]
       },
       BOTONES: { COMPRAR: 'COMPRAR', ROBAR: 'ROBAR', CANJEAR: 'CANJEAR' },
       // [0.102] Tratos del Trapero: fundido a negro, texto del Trapero y tratos en cascada
@@ -215,7 +219,7 @@ const DATOS_JUEGO = {
     ESCALA_VENTANAS: { ACTIVAR: true, ANCHO_BASE: 390, MAX: 1.7 },
 
     // [0.104] Escalado de los puzles ganzúa / tuberías / terminal al espacio libre en PC (zoom máximo y margen vertical en px). En móvil no se agranda (salvo las tuberías, que llenan el ancho).
-    ESCALA_PUZLES: { ACTIVAR: true, MAX: { lockpick: 1.7, tumbler: 1.7, pipe: 2.1, hack: 1.6 }, MARGEN_PX: 26, PIPE_TOPE_CASILLA_PX: 72 },
+    ESCALA_PUZLES: { ACTIVAR: true, MAX: { lockpick: 1.7, tumbler: 1.7, pipe: 2.1, hack: 1.6, sequence: 1.5 }, MARGEN_PX: 26, PIPE_TOPE_CASILLA_PX: 72 },
     // [0.104] Terminal: 'SCANLINES' = opacidad de las líneas de barrido (0 = sin líneas, 0.38 = como la 0.103). 'BRILLO' multiplica el halo verde de las letras.
     TERMINAL_CRT: { SCANLINES: 0.06, BRILLO: 1.5 },
 
@@ -236,7 +240,8 @@ const DATOS_JUEGO = {
       ACTIVAR: true,
       PISTONES: { ACTIVAR: true, X: [13, 21, 29, 37], PERIODOS_S: [2.6, 3.4, 2.1, 3.0], FASES: [0, 1.3, 2.2, 0.7], Y_MIN: 29, Y_MAX: 38 },
       DIGITAL: { ACTIVAR: true, CAMBIO_MS: 1900, BARAJA_MS: 420, LEDS_PERIODOS_S: [1.1, 1.7, 2.3] },
-      AGUJA: { ACTIVAR: true, CICLO_S: 10, SUBIDA_S: 1.4, ANGULO_REPOSO: -45, ANGULO_PRESION: 46, TEMBLOR_GRADOS: 6 }
+      AGUJA: { ACTIVAR: true, CICLO_S: 10, SUBIDA_S: 1.4, ANGULO_REPOSO: -45, ANGULO_PRESION: 46, TEMBLOR_GRADOS: 6 },
+      NEON: { ACTIVAR: true, CICLO_MS: 1760 }   // [0.201] las 4 luces se encienden de una en una; los neones corren por las líneas y el aro
     },
 
     // Zona de la cerradura por tipo de cofre, como fracción del sprite (x, y desde la esquina sup. izq.; r = radio × ancho)
@@ -244,7 +249,8 @@ const DATOS_JUEGO = {
       wooden:    { x: 0.50, y: 0.55, r: 0.20 },
       piston:    { x: 0.50, y: 0.69, r: 0.22 },
       cyber:     { x: 0.50, y: 0.75, r: 0.20 },
-      hydraulic: { x: 0.46, y: 0.74, r: 0.18 }
+      hydraulic: { x: 0.46, y: 0.74, r: 0.18 },
+      neon:      { x: 0.50, y: 0.56, r: 0.19 }   // [0.201]
     }
   },
 
@@ -256,6 +262,7 @@ const DATOS_JUEGO = {
     pines: "Pines de Acero: abren las Cajas de Acero. Los cofres legendarios piden más de uno.",
     usb: "Llaves USB: abren las Arcas Digitales. Los cofres legendarios piden más de una.",
     valvulas: "Válvulas: abren los Cofres de Vapor. Los cofres legendarios piden más de una.",
+    pilas: "Pilas: encienden la linterna para abrir las Arcas de Neón. Los cofres legendarios piden más de una.",   // [0.201]
     sinXp: "Por Amor al Arte: no ganas experiencia durante los próximos {n} cofres.",
     xpExtra: "Impulso de Trabajo: +25% de experiencia durante los próximos {n} cofres.",
     xpPermanente: "Pacto de la Sombra: +25% de experiencia permanente.",
@@ -311,6 +318,7 @@ const DATOS_JUEGO = {
       pack_pines: 25,   // [0.105]
       pack_usb: 30,   // [0.105]
       pack_valvulas: 35,
+      pack_pilas: 35,   // [0.201] = la herramienta avanzada más cara
       carta_auto_open: 90,
       carta_escudo: 40,
       carta_apuesta: 50,
@@ -318,10 +326,16 @@ const DATOS_JUEGO = {
       carta_cofradia: 100,   // [0.104]
       aumento_precio_por_compra: 5
     },
+    // [0.201] Precios de la tienda del Duende POR BUCLE (1, 2 y 3). De momento los tres bucles tienen los mismos valores que el bucle 1; se editan aquí.
+    PRECIOS_POR_BUCLE: {
+      1: { pack_ganzuas: 20, pack_pines: 25, pack_usb: 30, pack_valvulas: 35, pack_pilas: 35, carta_auto_open: 90, carta_escudo: 40, carta_apuesta: 50, contador_cofres: 100, carta_cofradia: 100, aumento_precio_por_compra: 5 },
+      2: { pack_ganzuas: 20, pack_pines: 25, pack_usb: 30, pack_valvulas: 35, pack_pilas: 35, carta_auto_open: 90, carta_escudo: 40, carta_apuesta: 50, contador_cofres: 100, carta_cofradia: 100, aumento_precio_por_compra: 5 },
+      3: { pack_ganzuas: 20, pack_pines: 25, pack_usb: 30, pack_valvulas: 35, pack_pilas: 35, carta_auto_open: 90, carta_escudo: 40, carta_apuesta: 50, contador_cofres: 100, carta_cofradia: 100, aumento_precio_por_compra: 5 }
+    },
     RECICLAJE: {
       ganzuas_requeridas: 3,
       herramientas_otorgadas: 1,
-      otorgadas: { proPicks: 2, usb: 1, valves: 1 }   // [0.105] por herramienta canjeada
+      otorgadas: { proPicks: 2, usb: 1, valves: 1, batteries: 1 }   // [0.105] por herramienta canjeada; [0.201] pilas
     },
     TRAPERO: {
       gp_por_dos_ganzuas: 15,
@@ -392,6 +406,21 @@ const DATOS_JUEGO = {
 
   // 🟢 CONFIGURACIÓN DE MINIJUEGOS (ADAPTADO A RAREZA DE COFRE - BUCLE 1/2)
   MINIJUEGOS: {
+    // [0.201] SECUENCIA (Simón dice) del ARCA DE NEÓN: 4 luces con una nota cada una; 3 secuencias seguidas y nuevas; un fallo corta el puzle. Sin reloj.
+    SECUENCIA: {
+      NOTAS_HZ: [261.63, 329.63, 392.00, 523.25],      // Do, Mi, Sol, Do agudo (arriba, derecha, abajo, izquierda)
+      POR_RAREZA: {                                    // largos de las 3 secuencias y milisegundos entre luces
+        normal:     { largos: [3, 4, 5], paso_ms: 800 },
+        raro:       { largos: [4, 5, 6], paso_ms: 700 },
+        epico:      { largos: [5, 6, 7], paso_ms: 600 },
+        legendario: { largos: [6, 7, 8], paso_ms: 480 }
+      },
+      ENCENDIDO_PCT: 0.62,                             // parte del paso que la luz está encendida
+      PAUSA_INICIAL_MS: 650,
+      PAUSA_ENTRE_SECUENCIAS_MS: 1300,
+      TEMPO_MULT_DIFICIL: 0.8,                         // puzles endurecidos (Dedos Torpes, Pacto de la Sombra): menos ms entre luces
+      TEMPO_MULT_EXTREMO: 0.65                         // puzles extremos (Pulso Tembloroso)
+    },
     LOCKPICK: {
       TIEMPO_BASE_SEGUNDOS: 8,
       SALUD_INICIAL: 100,
@@ -562,7 +591,8 @@ const DATOS_JUEGO = {
       { id: "wooden", nombre: "COFRE DE MADERA", juego: "lockpick", consumible: "picks", minNivel: 1, desc: "Cerradura Básica • Solo se gasta al romper" },
       { id: "piston", nombre: "CAJA DE ACERO", juego: "tumbler", consumible: "proPicks", minNivel: 2, desc: "Mecanismo Pistonado • Requiere Pin de Acero" },
       { id: "cyber", nombre: "ARCA DIGITAL", juego: "hack", consumible: "usb", minNivel: 3, desc: "Terminal Encriptada • Requiere Llave USB" },
-      { id: "hydraulic", nombre: "COFRE DE VAPOR", juego: "pipe", consumible: "valves", minNivel: 5, desc: "Red Hidráulica • Requiere Válvula" }
+      { id: "hydraulic", nombre: "COFRE DE VAPOR", juego: "pipe", consumible: "valves", minNivel: 5, desc: "Red Hidráulica • Requiere Válvula" },   // [0.201] bucle 2+: nivel 3 (ver chestMinLevel en estado.js)
+      { id: "neon", nombre: "ARCA DE NEÓN", juego: "sequence", consumible: "batteries", minNivel: 5, desc: "Secuencia de Luces • Requiere Pila" }   // [0.201] solo bucle 2+, nivel 5
     ],
     INQUIETANTES: [
       { id: "organico", nombre: "COFRE PULSANTE", tipo: "sacrificio", desc: "Palpita suavemente. Abrirlo cuesta 5 GP o 2 turnos de maldición." },
@@ -846,6 +876,16 @@ const DATOS_JUEGO = {
       nivel_2: "¡Eh, chico! A partir de ahora verás Cajas de Acero. Toma este Pin de muestra... a la primera invita la casa. {alegre}",
       nivel_3: "¡Oigo chispas al fondo! Son Arcas Digitales. Prueba esta Llave USB, a ver si logras descifrar lo que ocultan. {sorpresa}",
       nivel_5: "Huele a humo y aceite... Tuberías de vapor. Quédate con esta Válvula, presiento que la vas a necesitar muy pronto. {sospechoso}"
+    },
+    // [0.201] Bucle 2 en adelante: las tuberías llegan con el hackeo (nivel 3) y el nivel 5 trae la linterna y la primera pila
+    DUENDE_DESBLOQUEOS_BUCLE2: {
+      nivel_3: "¡Oigo chispas y silbidos de vapor al fondo! Arcas Digitales y Cofres de Vapor, los dos a la vez. Toma una Llave USB y una Válvula, a ver si descifras lo que esconden. {sorpresa}",
+      nivel_5: "Luces que cantan en la oscuridad... Son las Arcas de Neón. Esa linterna que llevas necesita esto: tu primera Pila, a la primera invita la casa. Memoriza las luces y repítelas. {alegre}"
+    },
+    // [0.201] La linterna (solo bucle 2): aviso al encontrarla (cofre 2 del nivel 2) y frase del Trapero justo después
+    LINTERNA: {
+      BANNER: "🔦 Has encontrado una linterna. Pero no funciona, quizás te valga más adelante.",
+      TRAPERO: "Vaya, vaya... veo que has encontrado ese cacharro. Sin pilas no es más que un adorno, y las pilas no crecen en los cofres. Te harán falta, ya lo verás. {sonrisa}"
     },
 
     FRASES_CULPA_ROBO: [

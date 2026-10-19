@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — estado.js — VERSIÓN 0.106
+// JUST ONE MORE CHEST — estado.js — VERSIÓN 0.201
 // estado, wildcards, guardado, logros, estadísticas, reinicio
 // ==========================================================================
 
@@ -37,6 +37,10 @@ const STATE = {
   proPicks: DATOS_JUEGO.CONFIG_INICIAL.PINES,
   usb: DATOS_JUEGO.CONFIG_INICIAL.USB,
   valves: DATOS_JUEGO.CONFIG_INICIAL.VALVULAS,
+  batteries: DATOS_JUEGO.CONFIG_INICIAL.PILAS || 0,   // [0.201] pilas de la linterna (puzle SECUENCIA)
+  batteriesUnlocked: false,   // [0.201] true cuando el Duende da la primera pila (bucle 2+, nivel 5); antes no pueden salir en ningún sitio
+  pendingTraperoLantern: false,
+  lanternFound: false,        // [0.201] la linterna se encuentra en el cofre 2 del nivel 2 del bucle 2
 
   noXpChestsLeft: 0,
   picksBrokenOnUse: false,
@@ -211,9 +215,10 @@ function hideAllMinigameUI() {
     cancelAnimationFrame(tumblerAnimationFrameId);
     tumblerAnimationFrameId = null;
   }
+  if (typeof sqStop === 'function') sqStop();   // [0.201] corta los temporizadores de la secuencia
   const minigameModal = document.getElementById('minigameModal');
   if (minigameModal) minigameModal.classList.add('hidden');
-  ['lockpickContainer', 'tumblerContainer', 'hackContainer', 'pipeContainer'].forEach(id => {
+  ['lockpickContainer', 'tumblerContainer', 'hackContainer', 'pipeContainer', 'sequenceContainer'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.add('hidden');
   });
@@ -254,11 +259,35 @@ function getWildcardBadChance() {
   return table[loop] !== undefined ? table[loop] : table[1];
 }
 
+// [0.201] Niveles de desbloqueo de los cofres por BUCLE. El bucle 1 no cambia: las tuberías (cofre de vapor) salen en el nivel 5 y no existe el Arca de Neón.
+// Bucle 2 y 3: las tuberías salen en el nivel 3 (junto al hackeo) y el Arca de Neón (secuencia, con pilas) en el nivel 5.
+function chestMinLevel(t) {
+  const L = STATE.currentLoop || 1;
+  if (t.id === 'hydraulic') return L >= 2 ? 3 : t.minNivel;
+  if (t.id === 'neon') return L >= 2 ? t.minNivel : Infinity;
+  return t.minNivel;
+}
+// ¿La herramienta ya está desbloqueada? Las pilas no existen hasta que el Duende da la primera.
+function toolUnlocked(prop) {
+  if (prop === 'picks') return true;
+  if (prop === 'batteries') return !!STATE.batteriesUnlocked;
+  const t = DATOS_JUEGO.COFRES.ESTANDAR.find(x => x.consumible === prop);
+  return !!t && STATE.level >= chestMinLevel(t);
+}
+// Nivel desde el que se enseña el icono de las válvulas y pueden caer como botín (antes: 4 en el bucle 1; en el bucle 2+ se adelanta con las tuberías)
+function valvesDropLevel() { const t = DATOS_JUEGO.COFRES.ESTANDAR.find(x => x.id === 'hydraulic'); return Math.min(DATOS_JUEGO.VALVULAS_NIVEL_MIN_BOTIN || 4, chestMinLevel(t)); }
+// Nivel desde el que el Duende vende válvulas: bucle 1 = 5 (como siempre); bucle 2+ = con las tuberías
+function valvesShopLevel() { const t = DATOS_JUEGO.COFRES.ESTANDAR.find(x => x.id === 'hydraulic'); return chestMinLevel(t); }
+// Precio base de la tienda del Duende según el bucle (tabla ECONOMIA.PRECIOS_POR_BUCLE; si falta, TIENDA_DUENDE)
+function shopBasePrice(id) {
+  const L = Math.min(STATE.currentLoop || 1, 3), E = DATOS_JUEGO.ECONOMIA;
+  const t = E.PRECIOS_POR_BUCLE && E.PRECIOS_POR_BUCLE[L];
+  return (t && t[id] != null) ? t[id] : E.TIENDA_DUENDE[id];
+}
+
 function getUnlockedConsumables() {
   const list = [{ prop: 'picks', name: 'Ganzúa' }];
-  if (STATE.level >= 2) list.push({ prop: 'proPicks', name: 'Pin de Acero' });
-  if (STATE.level >= 3) list.push({ prop: 'usb', name: 'Llave USB' });
-  if (STATE.level >= 5) list.push({ prop: 'valves', name: 'Válvula' });
+  DATOS_JUEGO.COFRES.ESTANDAR.forEach(t => { if (t.consumible !== 'picks' && toolUnlocked(t.consumible)) list.push({ prop: t.consumible, name: ({ proPicks: 'Pin de Acero', usb: 'Llave USB', valves: 'Válvula', batteries: 'Pila' })[t.consumible] || 'Herramienta' }); });
   return list;
 }
 
@@ -457,7 +486,7 @@ const SAVE_VERSION = 1;
 const SAVE_KEYS = [
   'currentLoop', 'level', 'xp', 'gold', 'chestsOpened', 'chestsAtLevelUp', 'chestCounterUnlocked',
   'cleanStreak', 'paranoiaStage', 'traperoVisits', 'lastTraperoChest', 'salvageDealsCount', 'salvageCurseActive',
-  'picks', 'proPicks', 'usb', 'valves', 'noXpChestsLeft', 'picksBrokenOnUse', 'tanteoExplainedLoop', 'xpBoostChestsLeft', 'torpezas',
+  'picks', 'proPicks', 'usb', 'valves', 'batteries', 'batteriesUnlocked', 'lanternFound', 'noXpChestsLeft', 'picksBrokenOnUse', 'tanteoExplainedLoop', 'xpBoostChestsLeft', 'torpezas',
   'seqStage', 'traperoStrikes', 'seqLastBuyCo', 'seqLastChance', 'climaxPhase', 'sequenceBroken', 'perks', 'abilities',
   'active2XMultiplier', 'activeShield', 'riskModeActive', 'riskPot', 'perdedorActive', 'perdedorLootPending', 'fallosConsecutivos',
   'heavyChestsLeft', 'greedCurseLeft', 'harderPuzzlesLeft', 'oxidadoLeft', 'recharge', 'harderSrc', 'extremePuzzlesLeft', 'extremeSrc', 'mods', 'blankNotes', 'pendingNotes', 'traperoBuffs', 'cursedChestsLeft',
@@ -499,7 +528,7 @@ function clearAchievements() { achievementsUnlocked = {}; storageRemove(ACHIEVEM
 const LIFESTATS_KEY = 'justOneMoreChest_stats_v1';
 function blankStats() {
   return { chests: 0, goldEarned: 0, goldSpent: 0, picksBroken: 0, bestStreak: 0, maxLevel: 1, maxLoop: 1,
-    puz: { lockpick: { ok: 0, fail: 0 }, tumbler: { ok: 0, fail: 0 }, hack: { ok: 0, fail: 0 }, pipe: { ok: 0, fail: 0 } } };
+    puz: { lockpick: { ok: 0, fail: 0 }, tumbler: { ok: 0, fail: 0 }, hack: { ok: 0, fail: 0 }, pipe: { ok: 0, fail: 0 }, sequence: { ok: 0, fail: 0 } } };
 }
 function normStats(o) {
   const b = blankStats();
@@ -775,6 +804,7 @@ function resetGame(keepLoop) {
   STATE.proPicks = DATOS_JUEGO.CONFIG_INICIAL.PINES;
   STATE.usb = DATOS_JUEGO.CONFIG_INICIAL.USB;
   STATE.valves = DATOS_JUEGO.CONFIG_INICIAL.VALVULAS;
+  STATE.batteries = DATOS_JUEGO.CONFIG_INICIAL.PILAS || 0; STATE.batteriesUnlocked = false; if (keepLoop !== true) STATE.lanternFound = false;   // [0.201] la linterna es un objeto de historia: se conserva entre bucles
 
   STATE.noXpChestsLeft = 0;
   STATE.picksBrokenOnUse = false;
@@ -857,6 +887,7 @@ window.goToChest = function(targetChestNumber) {
   STATE.proPicks = Math.max(5, STATE.proPicks);
   STATE.usb = Math.max(5, STATE.usb);
   STATE.valves = Math.max(5, STATE.valves);
+  if (STATE.batteriesUnlocked) STATE.batteries = Math.max(5, STATE.batteries);
 
   if (targetChestNumber >= 79 && targetChestNumber <= 90) {
     STATE.seqStage = 1;

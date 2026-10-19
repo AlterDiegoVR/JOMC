@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — puzles.js — VERSIÓN 0.106
+// JUST ONE MORE CHEST — puzles.js — VERSIÓN 0.201
 // minijuegos: ganzúa, pistones, hackeo, tuberías
 // ==========================================================================
 
@@ -1426,3 +1426,118 @@ function evaluatePipeFlow() {
     }
   }
 }
+
+
+/* ==========================================================================
+   [0.201] MINIJUEGO 5: SECUENCIA (Arca de Neón). Cuatro luces con nota propia; 3 secuencias seguidas que hay que repetir.
+   Sin reloj. Un fallo acaba el puzle (cuesta la pila, como el resto de herramientas avanzadas).
+   ========================================================================== */
+let sqState = { phase: 'idle', round: 0, seq: [], pos: 0, timers: [], len: [3, 4, 5], step: 800 };
+
+function sqLater(fn, ms) { sqState.timers.push(setTimeout(fn, ms)); }
+function sqStop() { sqState.timers.forEach(clearTimeout); sqState.timers = []; sqState.phase = 'idle'; }
+function sqLamp(i, on, bad) {
+  const l = document.querySelectorAll('#sqDial .sq-lamp')[i]; if (!l) return;
+  l.classList.toggle('lit', !!on); l.classList.toggle('bad', !!bad && !!on);
+}
+function sqAllOff() { for (let i = 0; i < 4; i++) sqLamp(i, false); }
+function sqSetDisabled(d) { document.querySelectorAll('#sqDial .sq-lamp').forEach(l => { l.disabled = d; }); }
+function sqStatus(t) { const e = document.getElementById('minigameStatus'); if (e) e.textContent = t; }
+function sqPips(failIdx) {
+  const el = document.getElementById('sqPips'); if (!el) return;
+  let h = '';
+  for (let i = 0; i < 3; i++) {
+    const c = (failIdx === i) ? 'fail' : (i < sqState.round ? 'done' : (i === sqState.round && sqState.phase !== 'won' ? 'cur' : ''));
+    h += `<i class="pip ${c}"></i>`;
+  }
+  el.innerHTML = h;
+}
+function sqHead() {
+  const r = document.getElementById('sqRound'), l = document.getElementById('sqLen');
+  if (r) r.textContent = Math.min(sqState.round + 1, 3);
+  if (l) l.textContent = sqState.len[Math.min(sqState.round, 2)];
+}
+function sqHub(big, small) {
+  const b = document.getElementById('sqHubBig'), s = document.getElementById('sqHubSmall');
+  if (b) b.textContent = big; if (s) s.textContent = small;
+}
+function sqNewSeq() {
+  const n = sqState.len[sqState.round], s = [];
+  for (let i = 0; i < n; i++) { let v; do { v = Math.floor(Math.random() * 4); } while (i > 1 && s[i - 1] === v && s[i - 2] === v); s.push(v); }
+  return s;
+}
+function sqListen() {
+  const C = DATOS_JUEGO.MINIJUEGOS.SECUENCIA;
+  sqState.phase = 'listen'; sqState.seq = sqNewSeq(); sqState.pos = 0;
+  sqSetDisabled(true); sqHead(); sqPips();
+  const btn = document.getElementById('sqActBtn'); if (btn) { btn.disabled = true; btn.textContent = 'ESCUCHANDO…'; }
+  sqHub(sqState.seq.length, 'NOTAS'); sqStatus('Escucha la secuencia…');
+  const step = sqState.step, on = Math.round(step * C.ENCENDIDO_PCT), t0 = C.PAUSA_INICIAL_MS;
+  sqState.seq.forEach((v, k) => sqLater(() => { sqLamp(v, true); audio.playSeqNote(v, on / 1000); setTimeout(() => sqLamp(v, false), on); }, t0 + k * step));
+  sqLater(() => {
+    sqState.phase = 'input'; sqState.pos = 0; sqSetDisabled(false);
+    if (btn) btn.textContent = 'TU TURNO';
+    sqHub('0/' + sqState.seq.length, 'TU TURNO'); sqStatus('Tu turno: repite la secuencia');
+  }, t0 + sqState.seq.length * step + 150);
+}
+function sqPress(i) {
+  if (sqState.phase !== 'input' || !minigameInProgress) return;
+  audio.init(); sqLamp(i, true); audio.playSeqNote(i, 0.22); setTimeout(() => sqLamp(i, false), 220);
+  if (sqState.seq[sqState.pos] !== i) { sqFail(i); return; }
+  sqState.pos++;
+  sqHub(sqState.pos + '/' + sqState.seq.length, 'TU TURNO'); sqStatus(`Tu turno: ${sqState.pos} / ${sqState.seq.length}`);
+  if (sqState.pos === sqState.seq.length) {
+    sqState.phase = 'between'; sqSetDisabled(true); sqState.round++;
+    if (sqState.round >= 3) sqWin();
+    else { sqPips(); sqHub('✓', 'BIEN'); sqStatus(`¡Secuencia ${sqState.round} superada!`); sqLater(sqListen, DATOS_JUEGO.MINIJUEGOS.SECUENCIA.PAUSA_ENTRE_SECUENCIAS_MS); }
+  }
+}
+function sqWin() {
+  sqState.phase = 'won'; sqPips(); sqHub('✓', 'ABIERTO'); sqStatus('¡CERRADURA ABIERTA!');
+  const btn = document.getElementById('sqActBtn'); if (btn) { btn.textContent = 'ABRIR COFRE'; btn.disabled = true; }
+  audio.playSeqWin();
+  [0, 1, 2, 3, 3].forEach((v, k) => sqLater(() => { sqLamp(v, true); setTimeout(() => sqLamp(v, false), 260); }, 300 + k * 170));
+  sqLater(() => { for (let i = 0; i < 4; i++) sqLamp(i, true); }, 1250);
+  sqLater(() => { sqAllOff(); }, 2100);
+  minigameInProgress = false;
+  sqLater(() => {
+    const mm = document.getElementById('minigameModal'); if (mm) mm.classList.add('hidden');
+    const sc = document.getElementById('sequenceContainer'); if (sc) sc.classList.add('hidden');
+    puzzleToolPaid = null;   // ya pagada al entrar
+    triggerLootExplosion();
+  }, 2300);
+}
+function sqFail(i) {
+  sqState.phase = 'lost'; sqSetDisabled(true); sqPips(sqState.round);
+  sqLamp(i, true, true); audio.playSeqFail(); setTimeout(() => sqLamp(i, false), 500);
+  sqHub('✗', 'FALLO'); sqStatus('Fallo. Se acabó la secuencia');
+  const d = document.getElementById('sqDial'); if (d) { d.classList.remove('shake'); void d.offsetWidth; d.classList.add('shake'); }
+  sqLater(() => {
+    const mm = document.getElementById('minigameModal'); if (mm) mm.classList.add('hidden');
+    const sc = document.getElementById('sequenceContainer'); if (sc) sc.classList.add('hidden');
+    showPersistentFeedback("⚠️ Te has equivocado de luz. La linterna se queda sin pila.");
+    handleFailure('batteries');
+  }, 1100);
+}
+function startSequenceGame() {
+  setPuzzleHelp('sequence');
+  const C = DATOS_JUEGO.MINIJUEGOS.SECUENCIA;
+  const active = STATE.screenChests[STATE.activeChestIdx];
+  const cfg = C.POR_RAREZA[active ? active.rarity.id : 'normal'] || C.POR_RAREZA.normal;
+  const mult = pzHardLevel() === 2 ? C.TEMPO_MULT_EXTREMO : (pzHardLevel() === 1 ? C.TEMPO_MULT_DIFICIL : 1);
+  sqStop();
+  sqState.len = cfg.largos; sqState.step = Math.round(cfg.paso_ms * mult); sqState.round = 0; sqState.seq = []; sqState.pos = 0;
+  startMinigameTimer(null, 'batteries');   // sin reloj
+  const sc = document.getElementById('sequenceContainer'); if (sc) sc.classList.remove('hidden');
+  const mm = document.getElementById('minigameModal'); if (mm) mm.classList.add('pz-seq');
+  sqSetDisabled(true); sqAllOff(); sqHead(); sqPips(); sqHub('—', 'LISTO'); sqStatus('Listo');
+  const btn = document.getElementById('sqActBtn'); if (btn) { btn.disabled = false; btn.textContent = '▶ EMPEZAR'; }
+}
+(function () {
+  const btn = document.getElementById('sqActBtn');
+  if (btn) btn.addEventListener('click', () => { audio.init(); if (sqState.phase === 'idle' && minigameInProgress) sqListen(); });
+  document.querySelectorAll('#sqDial .sq-lamp').forEach(l => {
+    l.addEventListener('pointerdown', e => { e.preventDefault(); sqPress(+l.dataset.i); });
+    l.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sqPress(+l.dataset.i); } });
+  });
+})();

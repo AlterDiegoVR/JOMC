@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — tiendas.js — VERSIÓN 0.106
+// JUST ONE MORE CHEST — tiendas.js — VERSIÓN 0.201
 // tienda del Duende y del Trapero
 // ==========================================================================
 
@@ -16,6 +16,7 @@ const SHOP_VIS = {
   pack_pines:      { n: 'PINES +2',        ic: 'ic_pin' },
   pack_usb:        { n: 'LLAVES USB +2',   ic: 'ic_usb' },
   pack_valvulas:   { n: 'VÁLVULAS +2',      ic: 'ic_valvula' },
+  pack_pilas:      { n: 'PILAS +2',        ic: 'ic_pila' },   // [0.201]
   carta_auto_open: { n: 'CARTA AUTO-OPEN', ic: 'ic_auto' },
   carta_escudo:    { n: 'CARTA ESCUDO',    ic: 'ic_escudo' },
   carta_apuesta:   { n: 'CARTA APUESTA',   ic: 'ic_apuesta' },
@@ -25,7 +26,8 @@ const SHOP_VIS = {
 const SHOP_VIS_RECICLAJE = {
   proPicks: { n: 'PIN DE ACERO +2',    ic: 'ic_pin' },
   usb:      { n: 'LLAVE USB +1',       ic: 'ic_usb' },
-  valves:   { n: 'VÁLVULA +1',         ic: 'ic_valvula' }
+  valves:   { n: 'VÁLVULA +1',         ic: 'ic_valvula' },
+  batteries: { n: 'PILA +1',           ic: 'ic_pila' }   // [0.201]
 };
 
 function shopCfg() { return (DATOS_JUEGO.GRAFICOS && DATOS_JUEGO.GRAFICOS.TIENDAS) || {}; }
@@ -296,31 +298,32 @@ function openMerchantShop() {
 
   if (!STATE.currentShopOffer) {
     let catalog = [
-      { id: 'pack_ganzuas', name: '+3 Ganzúas Básicas', baseCost: Math.round(DATOS_JUEGO.ECONOMIA.TIENDA_DUENDE.pack_ganzuas * discountMult), icon: 'fa-key', prop: 'picks', qty: 3 },
-      { id: 'pack_pines', name: '+2 Pines de Acero', baseCost: Math.round(DATOS_JUEGO.ECONOMIA.TIENDA_DUENDE.pack_pines * discountMult), icon: 'fa-screwdriver', prop: 'proPicks', qty: 2, minLvl: 2 },
-      { id: 'pack_usb', name: '+2 Llaves USB', baseCost: Math.round(DATOS_JUEGO.ECONOMIA.TIENDA_DUENDE.pack_usb * discountMult), icon: 'fa-microchip', prop: 'usb', qty: 2, minLvl: 3 },
-      { id: 'pack_valvulas', name: '+2 Válvulas Hidráulicas', baseCost: Math.round(DATOS_JUEGO.ECONOMIA.TIENDA_DUENDE.pack_valvulas * discountMult), icon: 'fa-faucet', prop: 'valves', qty: 2, minLvl: 5 },
-      { id: 'carta_auto_open', name: 'Carta Auto-Open', baseCost: Math.round(DATOS_JUEGO.ECONOMIA.TIENDA_DUENDE.carta_auto_open * discountMult), icon: 'fa-wand-magic-sparkles', abilityProp: 'auto' },
-      { id: 'carta_escudo', name: 'Carta Escudo Protector', baseCost: Math.round(DATOS_JUEGO.ECONOMIA.TIENDA_DUENDE.carta_escudo * discountMult), icon: 'fa-shield-halved', abilityProp: 'shield' },
-      { id: 'carta_apuesta', name: 'Carta Doble o Nada', baseCost: Math.round(DATOS_JUEGO.ECONOMIA.TIENDA_DUENDE.carta_apuesta * discountMult), icon: 'fa-dice', abilityProp: 'riskPot' }
+      { id: 'pack_ganzuas', name: '+3 Ganzúas Básicas', baseCost: Math.round(shopBasePrice('pack_ganzuas') * discountMult), icon: 'fa-key', prop: 'picks', qty: 3 },
+      { id: 'pack_pines', name: '+2 Pines de Acero', baseCost: Math.round(shopBasePrice('pack_pines') * discountMult), icon: 'fa-screwdriver', prop: 'proPicks', qty: 2, minLvl: 2 },
+      { id: 'pack_usb', name: '+2 Llaves USB', baseCost: Math.round(shopBasePrice('pack_usb') * discountMult), icon: 'fa-microchip', prop: 'usb', qty: 2, minLvl: 3 },
+      { id: 'pack_valvulas', name: '+2 Válvulas Hidráulicas', baseCost: Math.round(shopBasePrice('pack_valvulas') * discountMult), icon: 'fa-faucet', prop: 'valves', qty: 2, minLvl: valvesShopLevel() },
+      { id: 'pack_pilas', name: '+2 Pilas', baseCost: Math.round(shopBasePrice('pack_pilas') * discountMult), icon: 'fa-battery-half', prop: 'batteries', qty: 2, needUnlocked: 'batteries' },   // [0.201]
+      { id: 'carta_auto_open', name: 'Carta Auto-Open', baseCost: Math.round(shopBasePrice('carta_auto_open') * discountMult), icon: 'fa-wand-magic-sparkles', abilityProp: 'auto' },
+      { id: 'carta_escudo', name: 'Carta Escudo Protector', baseCost: Math.round(shopBasePrice('carta_escudo') * discountMult), icon: 'fa-shield-halved', abilityProp: 'shield' },
+      { id: 'carta_apuesta', name: 'Carta Doble o Nada', baseCost: Math.round(shopBasePrice('carta_apuesta') * discountMult), icon: 'fa-dice', abilityProp: 'riskPot' }
     ];
 
     // [0.104] Carta COFRADÍA: de vez en cuando aparece en la tienda (100 GP). Fuera de la secuencia final.
     if (STATE.level >= 2 && !isClimaxActive() && Math.random() < ((DATOS_JUEGO.GRAFICOS.TIENDAS || {}).COFRADIA_PROB_TIENDA != null ? DATOS_JUEGO.GRAFICOS.TIENDAS.COFRADIA_PROB_TIENDA : 0.30)) {
-      catalog.push({ id: 'carta_cofradia', name: 'Carta Cofradía del Cofre', baseCost: Math.round(DATOS_JUEGO.ECONOMIA.TIENDA_DUENDE.carta_cofradia * discountMult), icon: 'fa-boxes-stacked', abilityProp: 'cofradia' });
+      catalog.push({ id: 'carta_cofradia', name: 'Carta Cofradía del Cofre', baseCost: Math.round(shopBasePrice('carta_cofradia') * discountMult), icon: 'fa-boxes-stacked', abilityProp: 'cofradia' });
     }
 
     if (!STATE.chestCounterUnlocked) {
       catalog.push({
         id: 'contador_cofres',
         name: 'Contador de Cofres',
-        baseCost: Math.round(DATOS_JUEGO.ECONOMIA.TIENDA_DUENDE.contador_cofres * discountMult),
+        baseCost: Math.round(shopBasePrice('contador_cofres') * discountMult),
         icon: 'fa-stopwatch',
         isChestCounter: true
       });
     }
 
-    const availableCatalog = catalog.filter(item => !item.minLvl || STATE.level >= item.minLvl);
+    const availableCatalog = catalog.filter(item => (!item.minLvl || STATE.level >= item.minLvl) && (!item.needUnlocked || toolUnlocked(item.needUnlocked)));
     STATE.currentShopOffer = [...availableCatalog].sort(() => 0.5 - Math.random()).slice(0, 3).map(item => ({
       ...item,
       purchaseCount: 0
@@ -348,7 +351,7 @@ function renderMerchantShopGrid() {
     }
   }
 
-  const aumentoPrecio = DATOS_JUEGO.ECONOMIA.TIENDA_DUENDE.aumento_precio_por_compra;
+  const aumentoPrecio = shopBasePrice('aumento_precio_por_compra');
   const cfg = shopCfg();
   const desc = cfg.DESCRIPCIONES || {};
   const B = cfg.BOTONES || {};
@@ -412,8 +415,9 @@ function renderMerchantShopGrid() {
     let recycleTargets = [
       { name: "Pin de Acero", prop: "proPicks", icon: "fa-screwdriver", minLvl: 2 },
       { name: "Llave USB", prop: "usb", icon: "fa-microchip", minLvl: 3 },
-      { name: "Válvula Hidráulica", prop: "valves", icon: "fa-faucet", minLvl: 5 }
-    ].filter(t => STATE.level >= t.minLvl);
+      { name: "Válvula Hidráulica", prop: "valves", icon: "fa-faucet", minLvl: valvesShopLevel() },
+      { name: "Pila", prop: "batteries", icon: "fa-battery-half", minLvl: 1, needUnlocked: 'batteries' }   // [0.201]
+    ].filter(t => STATE.level >= t.minLvl && (!t.needUnlocked || toolUnlocked(t.needUnlocked)));
 
     if (recycleTargets.length === 0) {
       recycleTargets = [{ name: "Pin de Acero", prop: "proPicks", icon: "fa-screwdriver", minLvl: 1 }];
@@ -553,7 +557,7 @@ function showTraperoDealFeedback(dealTitle, summaryText, onClose) {
 
 // [0.089] Herramientas avanzadas "descubiertas" = las de los cofres cuyo puzle ya está desbloqueado por nivel
 function unlockedAdvancedTools() {
-  return DATOS_JUEGO.COFRES.ESTANDAR.filter(t => t.consumible !== 'picks' && STATE.level >= t.minNivel).map(t => t.consumible);
+  return DATOS_JUEGO.COFRES.ESTANDAR.filter(t => t.consumible !== 'picks' && toolUnlocked(t.consumible)).map(t => t.consumible);
 }
 
 // [0.105] Contrato Leonino: 50 GP en el nivel 1, +10 por nivel, tope 100 (nivel 6)
@@ -632,6 +636,7 @@ function openTraperoShop() {
           if (STATE.proPicks >= 1) disponibles.push({ prop: 'proPicks', name: 'Pin de Acero' });
           if (STATE.usb >= 1) disponibles.push({ prop: 'usb', name: 'Llave USB' });
           if (STATE.valves >= 1) disponibles.push({ prop: 'valves', name: 'Válvula Hidráulica' });
+          if (STATE.batteries >= 1) disponibles.push({ prop: 'batteries', name: 'Pila' });   // [0.201]
           if (disponibles.length > 0) {
             const vendida = disponibles[Math.floor(Math.random() * disponibles.length)];
             const gpVenta = DATOS_JUEGO.ECONOMIA.TRAPERO.gp_por_herramienta_avanzada;
@@ -656,11 +661,12 @@ function openTraperoShop() {
             showPersistentFeedback("⚠️ Necesitas al menos 2 Ganzúas.");
           }
         } else if (deal.id === 'purga_maldicion') {
-          const hasAdvancedTool = (STATE.proPicks >= 1 || STATE.usb >= 1 || STATE.valves >= 1);
+          const hasAdvancedTool = (STATE.proPicks >= 1 || STATE.usb >= 1 || STATE.valves >= 1 || STATE.batteries >= 1);
           if (hasAdvancedTool && STATE.cursedChestsLeft > 0) {
             if (STATE.proPicks >= 1) STATE.proPicks--;
             else if (STATE.usb >= 1) STATE.usb--;
             else if (STATE.valves >= 1) STATE.valves--;
+            else if (STATE.batteries >= 1) STATE.batteries--;
 
             STATE.cursedChestsLeft = Math.max(0, STATE.cursedChestsLeft - 4);
             if (STATE.cursedChestsLeft === 0) { STATE.salvageCurseActive = false; curseHold = true; queueCurseEndMessage(); }

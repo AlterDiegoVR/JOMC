@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — audio.js — VERSIÓN 0.106
+// JUST ONE MORE CHEST — audio.js — VERSIÓN 0.201
 // motor de audio
 // ==========================================================================
 
@@ -139,6 +139,7 @@ class AudioEngine {
     if (typeId === 'piston') { this._tone(520, 980, 0.12, 'square', 0.07); this._tone(1400, 1400, 0.05, 'triangle', 0.05, 0.08); }
     else if (typeId === 'cyber') { this._tone(880, 880, 0.06, 'triangle', 0.3); this._tone(1320, 1320, 0.08, 'triangle', 0.3, 0.07); }
     else if (typeId === 'hydraulic') { this._noise(0.16, 0.08, 0, 1800); this._tone(110, 190, 0.16, 'sawtooth', 0.05); }
+    else if (typeId === 'neon') { this._tone(1046, 1046, 0.05, 'square', 0.05); this._tone(1568, 1568, 0.07, 'square', 0.05, 0.06); }   // [0.201]
     else { this._tone(170, 270, 0.1, 'triangle', 0.14); this._noise(0.03, 0.08, 0, 2500); }
   }
   // Abrir (segundo toque / único cofre / botón): sonido más grave y "resolutivo"
@@ -147,9 +148,23 @@ class AudioEngine {
     if (typeId === 'piston') { this._tone(320, 110, 0.16, 'square', 0.1); this._tone(1250, 900, 0.22, 'triangle', 0.06, 0.03); this._noise(0.04, 0.08, 0, 2000); }
     else if (typeId === 'cyber') { [660, 880, 1320].forEach((f, i) => this._tone(f, f * 1.01, 0.11, 'triangle', 0.3, i * 0.06)); }
     else if (typeId === 'hydraulic') { this._noise(0.3, 0.1, 0, 900); this._tone(95, 55, 0.28, 'sawtooth', 0.08); }
+    else if (typeId === 'neon') { [523, 784, 1046].forEach((f, i) => this._tone(f, f, 0.1, 'square', 0.05, i * 0.05)); this._tone(2093, 2093, 0.18, 'sine', 0.03, 0.12); }   // [0.201] Arca de Neón: arpegio eléctrico
     else {   // [0.090] madera: vuelve el "barril" de la 0.089 (el ajuste de la 0.089b se descartó)
       this._tone(150, 62, 0.14, 'sine', 0.2); this._noise(0.05, 0.1, 0, 1500); this._tone(300, 180, 0.06, 'triangle', 0.08, 0.04);
     }
+  }
+  // [0.201] Puzle SECUENCIA: nota de cada luz (cuadrada, suave), fallo grave y acorde de victoria
+  playSeqNote(i, dur = 0.22, vol = 0.09) {
+    if (!this.ctx || this.muted) return;
+    const hz = DATOS_JUEGO.MINIJUEGOS.SECUENCIA.NOTAS_HZ[i] || 261.63;
+    this._tone(hz, hz, dur, 'square', vol);
+  }
+  playSeqFail() { if (!this.ctx || this.muted) return; this._tone(110, 90, 0.6, 'sawtooth', 0.1); }
+  playSeqWin() {
+    if (!this.ctx || this.muted) return;
+    const N = DATOS_JUEGO.MINIJUEGOS.SECUENCIA.NOTAS_HZ;
+    [0, 1, 2, 3, 3].forEach((v, k) => this._tone(N[v], N[v], 0.26, 'square', 0.08, 0.3 + k * 0.17));
+    this._tone(N[0], N[0], 0.9, 'triangle', 0.07, 1.25); this._tone(N[2], N[2], 0.9, 'triangle', 0.06, 1.25);
   }
   // [0.089b] Maldición: melodía lúgubre al empezar, y de cierre con nota final aguda al terminar
   playCurseStart() {
@@ -459,7 +474,7 @@ class AudioEngine {
 }
 const audio = new AudioEngine();
 // [0.087] Registro del último sonido para que el clic de interfaz no se solape con sonidos propios
-['playClick', 'playPaperRustle', 'playDecoyBuzz', 'playBreak', 'playUnlockFanfare', 'playLockCharge', 'playLockOpen', 'playGameOver', 'playDarkOut', 'playLightOn', 'playDecorTap', 'playKeyPickup', 'playKeySpend', 'playCardBeep', 'playCashRegister', 'playCurseStart', 'playCurseEnd', 'playDialogueMelody', 'playIntro', 'playDuendeAngry', 'playSwoosh', 'playGameOverStrike', 'playLevelUpFanfare', 'playLevelUpQuick', 'playRouletteTick', 'playCardRise', 'playChestMutate'].forEach(n => {
+['playClick', 'playSeqNote', 'playSeqFail', 'playSeqWin', 'playPaperRustle', 'playDecoyBuzz', 'playBreak', 'playUnlockFanfare', 'playLockCharge', 'playLockOpen', 'playGameOver', 'playDarkOut', 'playLightOn', 'playDecorTap', 'playKeyPickup', 'playKeySpend', 'playCardBeep', 'playCashRegister', 'playCurseStart', 'playCurseEnd', 'playDialogueMelody', 'playIntro', 'playDuendeAngry', 'playSwoosh', 'playGameOverStrike', 'playLevelUpFanfare', 'playLevelUpQuick', 'playRouletteTick', 'playCardRise', 'playChestMutate'].forEach(n => {
   const f = AudioEngine.prototype[n];
   AudioEngine.prototype[n] = function (...a) { this.lastSound = performance.now(); return f.apply(this, a); };
 });
