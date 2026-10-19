@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — graficos.js — VERSIÓN 0.203
+// JUST ONE MORE CHEST — graficos.js — VERSIÓN 0.204
 // canvas, sala, cerradura, decoración, efectos de cofre
 // ==========================================================================
 
@@ -242,10 +242,10 @@ function elecSurfacePoint(rnd) {   // punto sobre el contorno del cofre (hasta 4
   return [X1 + ri(-4, 3), ri(Y0, Y1), rnd() < .5 ? Math.PI / 2 : -Math.PI / 2];
 }
 function drawElectricAnim(R, E, ctx, ox, oy, px) {
-  const f = Math.floor(Date.now() / E.PASO_MS), n = E.BOMBILLA.length;
-  const bst = E.BOMBILLA[f % n], nb = E.RAYOS[f % E.RAYOS.length];
+  const now = Date.now(), fb = Math.floor(now / E.BOMBILLA_MS), f = Math.floor(now / E.RAYOS_MS);   // [0.204] bombilla y rayos a ritmos distintos y lentos
+  const bst = E.BOMBILLA[fb % E.BOMBILLA.length], nb = E.RAYOS[f % E.RAYOS.length];
   // fusible apagado (tercero) parpadeando
-  if (f % 3 !== 0) { for (let dy = 2; dy < 8; dy++) R(30, 29 + dy, 1, 1, '#fbbf24'); R(31, 32, 1, 1, '#fbbf24'); R(31, 34, 1, 1, '#fbbf24'); }
+  if (fb % 2 === 0) { for (let dy = 2; dy < 8; dy++) R(30, 29 + dy, 1, 1, '#fbbf24'); R(31, 32, 1, 1, '#fbbf24'); R(31, 34, 1, 1, '#fbbf24'); }
   // bombilla encendida (1 = luz, 2 = destello)
   if (bst > 0) {
     const gl = bst === 1 ? '#ffe06e' : '#ffeea0', edge = bst === 1 ? '#3c2c0e' : '#5a4010', rows = [[41, 47], [40, 48], [39, 49], [39, 49], [39, 49], [40, 48], [41, 47], [42, 46]];

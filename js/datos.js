@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — datos.js — VERSIÓN 0.203
+// JUST ONE MORE CHEST — datos.js — VERSIÓN 0.204
 // DATOS_JUEGO: configuración y balance
 // ==========================================================================
 
@@ -9,7 +9,7 @@
 
 const DATOS_JUEGO = {
   // [0.088] Versión visible en pantalla (esquina inferior central) para que las capturas la incluyan
-  VERSION: '0.203',
+  VERSION: '0.204',
   // [0.104] Efectos de la apertura automática de la secuencia final (cofres 101-110); la intensidad sube del primero al último (k = 0..1)
   SECUENCIA_FINAL_FX: { ACTIVAR: true, ESTALLIDOS_BASE: 2, ESTALLIDOS_EXTRA: 4, PARTICULAS_POR_ESTALLIDO: 40, HACIA_CENTRO_BASE: 30, HACIA_CENTRO_EXTRA: 60,
     SACUDIDA_PX: 6, SACUDIDA_EXTRA_PX: 10, SACUDIDA_MS: 520, PULSO_ZOOM: 0.02, DESTELLO: 0.10 },
@@ -257,7 +257,7 @@ const DATOS_JUEGO = {
       AGUJA: { ACTIVAR: true, CICLO_S: 10, SUBIDA_S: 1.4, ANGULO_REPOSO: -45, ANGULO_PRESION: 46, TEMBLOR_GRADOS: 6 },
       NEON: { ACTIVAR: true, CICLO_MS: 1760 },   // [0.201]
       // [0.203] Cuadro Eléctrico: la bombilla se enciende y se apaga, el fusible apagado parpadea y rayos finos rodean el cofre (efecto DeLorean)
-      ELECTRICO: { ACTIVAR: true, PASO_MS: 100, BOMBILLA: [0,1,1,2,1,0,2,2,1,0,1,2,1,1,0,2], RAYOS: [4,6,3,7,5,2,7,4,6,3,5,7,3,6,2,5], DESTELLO_DESDE: 6, TINTE_ALFA: 0.16 }   // RAYOS = nº de rayos por fotograma; DESTELLO_DESDE = nº de rayos a partir del cual el cofre se tiñe de azul las 4 luces se encienden de una en una; los neones corren por las líneas y el aro
+      ELECTRICO: { ACTIVAR: true, BOMBILLA_MS: 650, RAYOS_MS: 380, BOMBILLA: [0,1,1,0,2,1,0,1,1,0], RAYOS: [2,3,2,2,3,2,3,2,2,2], DESTELLO_DESDE: 3, TINTE_ALFA: 0.12 }   // [0.204] mucho más lento. BOMBILLA_MS/RAYOS_MS = ms por cambio; RAYOS = nº de rayos en cada cambio; DESTELLO_DESDE = nº de rayos a partir del cual el cofre se tiñe de azul las 4 luces se encienden de una en una; los neones corren por las líneas y el aro
     },
 
     // Zona de la cerradura por tipo de cofre, como fracción del sprite (x, y desde la esquina sup. izq.; r = radio × ancho)
@@ -427,17 +427,17 @@ const DATOS_JUEGO = {
     // El tablero SIEMPRE tiene solución: se parte del tablero resuelto y se aplican tocamientos al azar permitidos (JUGADAS_EXTRA se suma al mínimo real). Sin reloj.
     FUSIBLES: {
       TAMANO: 4,                                       // rejilla N x N
-      POR_RAREZA: {                                    // tocamientos de mezcla (dificultad), jugadas de margen y variantes posibles (una al azar si hay varias)
-        normal:     { mezcla: 4, extra: 4, variantes: [] },
-        raro:       { mezcla: 5, extra: 3, variantes: ['fundidos'] },
-        epico:      { mezcla: 6, extra: 3, variantes: ['cortocircuito'] },
-        legendario: { mezcla: 7, extra: 2, variantes: ['fundidos', 'tres_estados', 'cortocircuito'] }
+      POR_RAREZA: {                                    // [0.204] mezcla = tocamientos de mezcla (dificultad); extra = jugadas de margen sobre la solución mínima (null = sin límite); variantes (una al azar si hay varias)
+        normal:     { mezcla: 2, extra: null, variantes: [] },
+        raro:       { mezcla: 3, extra: 6, variantes: ['fundidos'] },
+        epico:      { mezcla: 4, extra: 6, variantes: ['cortocircuito'] },
+        legendario: { mezcla: 5, extra: 6, variantes: ['tres_estados'] }
       },
       FUNDIDOS: { MIN: 2, MAX: 3 },                    // fusibles fundidos (✖: no se pueden tocar, pero siguen cambiando con sus vecinos)
       CORTOCIRCUITOS: { MIN: 1, MAX: 2 },              // fusibles ⚡: al tocarlos invierten TODA su fila en vez de la cruz
       MENOS_JUGADAS_POR_NIVEL_DURO: 1,                 // jugadas de margen que se quitan por cada nivel de dureza (puzle endurecido = 1, extremo = 2); nunca baja de 0
-      TEXTOS: { clasico: 'CLÁSICO', fundidos: 'FUNDIDOS ✖', tres_estados: 'TRES ESTADOS', cortocircuito: 'CORTOCIRCUITO ⚡' },
-      PISTAS: { clasico: 'Cada toque invierte el fusible y sus 4 vecinos.', fundidos: 'Los fusibles ✖ no se pueden tocar, pero siguen cambiando con sus vecinos.', tres_estados: 'Cada fusible tiene 3 estados: apagado → ámbar → verde. Hay que dejarlos todos en verde.', cortocircuito: 'Los fusibles ⚡ invierten toda su fila en vez de la cruz.' }
+      TEXTOS: { clasico: 'CLÁSICO', fundidos: 'FUSIBLES FUNDIDOS ✖', tres_estados: 'TRES ESTADOS', cortocircuito: 'CORTOCIRCUITO ⚡' },
+      PISTAS: { clasico: 'Al tocar un fusible se invierten él y los 4 de su alrededor.', fundidos: '✖ = fundido: NO se puede tocar, pero cambia cuando tocas a sus vecinos. Enciéndelo igual.', tres_estados: 'Cada toque sube un escalón: apagado → ámbar → VERDE. Hay que dejarlos todos en verde.', cortocircuito: '⚡ = cortocircuito: al tocarlo se invierte TODA su fila (marcada en amarillo), no la cruz.' }
     },
     // [0.201] SECUENCIA (Simón dice) del ARCA DE NEÓN: 4 luces con una nota cada una; UNA sola secuencia por cofre [0.202]; un fallo corta el puzle. Sin reloj.
     SECUENCIA: {

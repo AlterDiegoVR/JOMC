@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — puzles.js — VERSIÓN 0.203
+// JUST ONE MORE CHEST — puzles.js — VERSIÓN 0.204
 // minijuegos: ganzúa, pistones, hackeo, tuberías
 // ==========================================================================
 
@@ -1594,7 +1594,7 @@ function fzGenerate(rarityId) {
     fzApply(st, 1, 1, 1); fzApply(st, 2, 2, 1); solveMoves = 2;
   }
   const hard = (typeof pzHardLevel === 'function') ? pzHardLevel() : 0;
-  st.max = solveMoves + Math.max(0, (cfg.extra || 0) - hard * (C.MENOS_JUGADAS_POR_NIVEL_DURO || 0));
+  st.max = (cfg.extra == null) ? Infinity : solveMoves + Math.max(0, cfg.extra - hard * (C.MENOS_JUGADAS_POR_NIVEL_DURO || 0));   // [0.204] null = sin límite
   st.variant = variant; st.moves = 0; st.solveMoves = solveMoves; st.timers = []; st.phase = 'play';
   return st;
 }
@@ -1613,11 +1613,14 @@ function fzRender(flashIdx) {
   }
   for (let i = 0; i < n * n; i++) {
     const b = grid.children[i], v = st.cells[i];
-    b.className = 'fz-cell s' + v + (st.M === 3 ? ' m3' : '') + (st.dead[i] ? ' dead' : '') + (st.short[i] ? ' short' : '') + (flashIdx && flashIdx.indexOf(i) >= 0 ? ' pop' : '');
+    b.className = 'fz-cell s' + v + (st.M === 3 ? ' m3' : '') + (st.dead[i] ? ' dead' : '') + (st.short[i] ? ' short' : '') + (flashIdx && flashIdx.indexOf(i) >= 0 ? ' pop hit' : '');
     b.querySelector('.fz-badge').textContent = st.dead[i] ? '✖' : (st.short[i] ? '⚡' : '');
   }
   const m = document.getElementById('fzMoves'); if (m) { m.textContent = st.moves; m.classList.toggle('low', st.max - st.moves <= 1); }
-  const x = document.getElementById('fzMax'); if (x) x.textContent = st.max;
+  const x = document.getElementById('fzMax'); if (x) x.textContent = isFinite(st.max) ? st.max : '∞';
+  // [0.204] la fila de un cortocircuito se marca para ver qué invertirá
+  const shortRows = {}; for (let i = 0; i < n * n; i++) if (st.short[i]) shortRows[Math.floor(i / n)] = true;
+  for (let i = 0; i < n * n; i++) grid.children[i].classList.toggle('rowmark', !!shortRows[Math.floor(i / n)]);
 }
 function fzTone(hz, dur, type, vol, delay) { try { if (audio.ctx && !audio.muted) audio._tone(hz, hz, dur, type || 'square', vol || 0.06, delay || 0); } catch (e) {} }
 function fzPress(i) {
@@ -1630,7 +1633,7 @@ function fzPress(i) {
   fzRender(hit);
   if (fzSolved(st)) { fzWin(); return; }
   if (st.moves >= st.max) fzOut();
-  else fzStatus(`Quedan ${st.max - st.moves} jugadas`);
+  else fzStatus(isFinite(st.max) ? `Quedan ${st.max - st.moves} jugadas` : 'Sin límite de jugadas');
 }
 function fzStatus(t) { const e = document.getElementById('minigameStatus'); if (e) e.textContent = t; }
 function fzWin() {
@@ -1671,5 +1674,5 @@ function startFuseGame() {
   const F = DATOS_JUEGO.MINIJUEGOS.FUSIBLES;
   const v = document.getElementById('fzVar'); if (v) v.textContent = F.TEXTOS[st.variant] || '';
   const h = document.getElementById('fzHint'); if (h) h.textContent = F.PISTAS[st.variant] || '';
-  fzRender(); fzStatus(`Quedan ${st.max} jugadas`);
+  fzRender(); fzStatus(isFinite(st.max) ? `Quedan ${st.max} jugadas` : 'Sin límite de jugadas');
 }
