@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — eventos.js — VERSIÓN 0.207
+// JUST ONE MORE CHEST — eventos.js — VERSIÓN 0.208
 // tiendas especiales, visitas, habilidades, temporizador, fallo y Game Over
 // ==========================================================================
 
@@ -249,18 +249,15 @@ function glassShatterFx() {
     });
     return c;
   };
-  const pieces = shards.map(sh => {
-    const w = document.createElement('div');
-    const mx = sh.reduce((a, p) => a + p[0], 0) / sh.length, my = sh.reduce((a, p) => a + p[1], 0) / sh.length;
-    w.style.cssText = `position:absolute;left:0;top:0;width:${W}px;height:${H}px;transform-origin:${mx}px ${my}px;clip-path:polygon(${sh.map(p => p[0].toFixed(1) + 'px ' + p[1].toFixed(1) + 'px').join(',')});will-change:transform`;
-    w.appendChild(clone([Math.min(...sh.map(q => q[0])), Math.min(...sh.map(q => q[1])), Math.max(...sh.map(q => q[0])), Math.max(...sh.map(q => q[1]))]));
-    root.appendChild(w);
-    return { w, mx, my };
-  });
+  // [0.208] Cada trozo es una capa del tamaño de su propio recorte (antes: 22 capas del tamaño del marco entero, que el móvil tenía que pintar una a una al caer). El resultado visual es el mismo.
+  // Los trozos se construyen de 4 en 4 mientras se ven las grietas (antes: los 22 de golpe, un tirón al romperse). La caída empieza cuando pasa el tiempo de grietas Y están todos.
+  const pieces = [];
   document.body.appendChild(root);
   try { audio.playGlassIrreal(); } catch (e) {}   // [0.105]
-  // 4) tiempo de grietas y caída
-  setTimeout(() => {
+  let idx = 0, built = false, timeUp = false, fell = false;
+  const fall = () => {
+    if (fell || !built || !timeUp || !root.isConnected) return;
+    fell = true;
     svg.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 500, fill: 'forwards' });
     fr.style.visibility = 'hidden';   // [0.104] detrás de los trozos quedan estrellas y galaxias
     starfieldStart(r);
@@ -271,7 +268,30 @@ function glassShatterFx() {
         { duration: 1100 + Math.random() * 700, delay: Math.random() * 260, easing: 'cubic-bezier(.5,0,.9,.55)', fill: 'forwards' }); } catch (e) {}
     });
     setTimeout(() => root.remove(), 2400);
-  }, 380);
+  };
+  const buildChunk = () => {
+    if (!root.isConnected) return;
+    try {
+      for (let k = 0; k < 4 && idx < shards.length; k++, idx++) {
+        const sh = shards[idx];
+        const mx = sh.reduce((a, p) => a + p[0], 0) / sh.length, my = sh.reduce((a, p) => a + p[1], 0) / sh.length;
+        const bb = [Math.min(...sh.map(q => q[0])), Math.min(...sh.map(q => q[1])), Math.max(...sh.map(q => q[0])), Math.max(...sh.map(q => q[1]))];
+        const x0 = Math.max(0, Math.floor(bb[0])), y0 = Math.max(0, Math.floor(bb[1])), x1 = Math.min(W, Math.ceil(bb[2])), y1 = Math.min(H, Math.ceil(bb[3]));
+        if (x1 - x0 < 1 || y1 - y0 < 1) continue;   // el trozo cae fuera del marco: no se ve
+        const w = document.createElement('div');
+        w.style.cssText = `position:absolute;left:${x0}px;top:${y0}px;width:${x1 - x0}px;height:${y1 - y0}px;overflow:hidden;transform-origin:${(mx - x0).toFixed(1)}px ${(my - y0).toFixed(1)}px;clip-path:polygon(${sh.map(p => (p[0] - x0).toFixed(1) + 'px ' + (p[1] - y0).toFixed(1) + 'px').join(',')});will-change:transform`;
+        const c = clone(bb);
+        c.style.left = `${-x0}px`; c.style.top = `${-y0}px`;
+        w.appendChild(c);
+        root.appendChild(w);
+        pieces.push({ w, mx, my });
+      }
+      if (idx < shards.length) setTimeout(buildChunk, 0); else { built = true; fall(); }
+    } catch (e) { glassShatterRestore(); }
+  };
+  setTimeout(buildChunk, 0);
+  // 4) tiempo de grietas y caída
+  setTimeout(() => { timeUp = true; fall(); }, 380);
 }
 function glassShatterRestore() { const fr = document.getElementById('gameFrame'); if (fr) fr.style.visibility = ''; const r = document.getElementById('shatterRoot'); if (r) r.remove(); starfieldStop(); }
 
@@ -312,7 +332,9 @@ function triggerSensoryOverloadCollapse() {
 }
 
 function executeDiffuseEchoTransition() {
-  if (typeof audio !== 'undefined' && audio.ctx) audio.ctx.suspend();
+  // [0.208] Antes se congelaba el reloj de audio (suspend) y se reanudaba al terminar: lo que sonaba en ese momento (la nota larga del cristal con su eco) se quedaba a medias y se oía al empezar el bucle siguiente.
+  // Ahora el volumen general baja con un fundido corto y se restaura al terminar; lo que sonaba se apaga solo en silencio.
+  try { audio.fadeOutAll(0.12); } catch (e) {}
 
   let overlay = document.getElementById('diffuseEchoOverlay');
   if (!overlay) {
@@ -351,18 +373,17 @@ function executeDiffuseEchoTransition() {
       </div>
     `;
     const msg1 = document.getElementById('echoMsg1'), msg2 = document.getElementById('echoMsg2');
+    const OUT = 2500, HOLD1 = 1500, GAP = 900, HOLD2 = 1500;   // [0.208] cada frase entra desde el negro (FADE), se sostiene y se apaga a negro (OUT); entre las dos, un instante de negro total
+    const fadeOut = el => { if (!el) return; el.style.transition = `opacity ${OUT}ms ease-in-out`; el.style.opacity = '0'; };
     setTimeout(() => { if (msg1) msg1.style.opacity = '1'; }, 50);
-    // la primera voz se apaga mientras la segunda empieza a oírse
+    setTimeout(() => fadeOut(msg1), 50 + FADE + HOLD1);
+    setTimeout(() => { if (msg2) msg2.style.opacity = '1'; }, 50 + FADE + HOLD1 + OUT + GAP);
+    setTimeout(() => fadeOut(msg2), 50 + FADE + HOLD1 + OUT + GAP + FADE + HOLD2);
     setTimeout(() => {
-      if (msg1) msg1.style.opacity = '0';
-      if (msg2) msg2.style.opacity = '1';
-    }, 50 + FADE + 1500);
-    setTimeout(() => {
-      if (msg2) msg2.style.opacity = '0';
       overlay.classList.add('opacity-0');
       setTimeout(() => {
         overlay.remove();
-        if (typeof audio !== 'undefined' && audio.ctx) audio.ctx.resume();
+        try { audio.restoreAll(); } catch (e) {}   // [0.208]
 
         // 🟢 TRANSICIÓN AL SIGUIENTE BUCLE (1→2, 2→3; el 3 es el último por ahora y se repite con el mismo final)
         STATE.currentLoop = Math.min((STATE.currentLoop || 1) + 1, 3);   // [0.203]
@@ -370,7 +391,7 @@ function executeDiffuseEchoTransition() {
         resetGame(true);
         // [0.084] Sin ningún aviso sobre el bucle: el jugador lo deduce por lo que ve y por las pistas de tenderos y post-its
       }, 1000);
-    }, 50 + FADE + 1500 + FADE + 2500);
+    }, 50 + FADE + HOLD1 + OUT + GAP + FADE + HOLD2 + OUT);
   }, 1000);
 }
 

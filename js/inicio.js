@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — inicio.js — VERSIÓN 0.207
+// JUST ONE MORE CHEST — inicio.js — VERSIÓN 0.208
 // portada, arranque, avisos, pantalla completa
 // ==========================================================================
 

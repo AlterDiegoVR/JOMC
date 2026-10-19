@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — audio.js — VERSIÓN 0.207
+// JUST ONE MORE CHEST — audio.js — VERSIÓN 0.208
 // motor de audio
 // ==========================================================================
 
@@ -25,9 +25,16 @@ function _T(c, out, t, f, dur, vol, o){
   os.connect(g); g.connect(out); os.start(t); os.stop(t + dur + 0.05);
 }
 function _ring(c, out, t, f, dur, vol){ [1, 2.76, 5.4].forEach((k, i) => _T(c, out, t, f * k, dur / (1 + i * 0.6), vol / (1 + i * 1.5))); }
-function _reverb(c, out, sec, wet){
+// [0.208] La respuesta del eco se genera UNA vez por contexto y duración (antes se recalculaba entera, 250.000 muestras con pow, cada vez que sonaba el cristal o el pad: un tirón justo al romperse)
+function _irGet(c, sec){
+  c._ir = c._ir || {};
+  if (c._ir[sec]) return c._ir[sec];
   const n = Math.floor(c.sampleRate * sec), b = c.createBuffer(2, n, c.sampleRate);
   for (let ch = 0; ch < 2; ch++){ const d = b.getChannelData(ch); let lp = 0; for (let i = 0; i < n; i++){ lp += ((Math.random() * 2 - 1) * Math.pow(1 - i / n, 2.4) - lp) * 0.4; d[i] = lp; } }
+  return (c._ir[sec] = b);
+}
+function _reverb(c, out, sec, wet){
+  const b = _irGet(c, sec);
   const cv = c.createConvolver(), w = c.createGain(); cv.buffer = b; w.gain.value = wet; cv.connect(w); w.connect(out); return cv;
 }
 function _tinkles(c, out, t, count, spread, fLo, fHi, dMin, dVar, vol){
@@ -52,11 +59,15 @@ class AudioEngine {
       this.busLoot = this.ctx.createGain(); this.busLoot.connect(this.master);
       this._startKeepAlive();
       this.applyProfile();
+      setTimeout(() => { try { _nbuf(this.ctx); _irGet(this.ctx, 2.6); } catch (e) {} }, 4000);   // [0.208] se preparan en un momento tranquilo, no justo cuando suena el cristal
     }
     if (this.ctx.state === 'suspended') {
       this.ctx.resume();
     }
   }
+  // [0.208] Silencio general con fundido (sin congelar el reloj de audio) y vuelta al volumen del perfil
+  fadeOutAll(tc = 0.12) { if (!this.ctx || !this.master) return; const t = this.ctx.currentTime; this.master.gain.cancelScheduledValues(t); this.master.gain.setTargetAtTime(0, t, tc); }
+  restoreAll() { if (!this.ctx || !this.master) return; this.master.gain.cancelScheduledValues(this.ctx.currentTime); this.applyProfile(); }
   // Salida activa: la categoría en curso (pequeños / botín) o el master
   dest() { return this._bus || this.master || this.ctx.destination; }
   isMobileProfile() {

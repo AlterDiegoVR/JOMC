@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — assets.js — VERSIÓN 0.207
+// JUST ONE MORE CHEST — assets.js — VERSIÓN 0.208
 // imágenes pixel art incrustadas
 // ==========================================================================
 
