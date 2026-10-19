@@ -523,12 +523,17 @@ html.narrow-layout .npc-big { margin-bottom: -22px; }
 /* [0.103] Subida de nivel rápida de la secuencia final: cartel con zoom + latigazo que se va enseguida, y destello en la barra de XP */
 .lvl-quick { position: absolute; left: 0; right: 0; top: 27%; z-index: 10100; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 4px; animation: lvlQuickOut .35s ease-in 1.45s both; }
 .lvl-quick .lq-row { display: flex; justify-content: center; flex-wrap: nowrap; white-space: nowrap; }
-.lvl-quick .lq-l { display: inline-block; font-family: 'Outfit', sans-serif; font-weight: 900; color: #fff3b0; letter-spacing: .04em; opacity: 0; animation: lvlLetter .55s cubic-bezier(.2, 1.4, .3, 1) both, lvlGlow .5s ease-in-out .6s 3 alternate;
-  text-shadow: 0 0 10px #fbbf24, 0 0 26px #f59e0b, 0 0 54px rgba(245, 158, 11, .8), 3px 3px 0 #3b1d04, -1px -1px 0 #3b1d04; }
+.lvl-quick .lq-l { display: inline-block; font-family: 'Outfit', sans-serif; font-weight: 900; color: #fff3b0; letter-spacing: .04em; opacity: 0; animation: lvlLetter .55s cubic-bezier(.2, 1.4, .3, 1) both;
+  text-shadow: 0 0 12px #fbbf24, 3px 3px 0 #3b1d04, -1px -1px 0 #3b1d04; }   /* [0.209] halo ligero por letra: el resplandor grande va en .lvl-quick::before (una sola capa) */
+/* [0.209] El resplandor grande ya no se repinta letra a letra (27 sombras de 26 y 54 px en movimiento): es una mancha dorada detrás del cartel, que solo cambia de opacidad */
+.lvl-quick::before { content: ''; position: absolute; left: -12%; right: -12%; top: -34px; bottom: -34px; z-index: -1; pointer-events: none;
+  background: radial-gradient(ellipse 58% 56% at 50% 50%, rgba(251, 191, 36, .55), rgba(245, 158, 11, .26) 42%, rgba(245, 158, 11, 0) 74%); opacity: 0; animation: lvlHalo .4s ease-out both, lvlHaloPulse .5s ease-in-out .6s 3 alternate; }
+@keyframes lvlHalo { to { opacity: .8; } }
+@keyframes lvlHaloPulse { 0% { opacity: .8; } 100% { opacity: 1; } }
 .lvl-quick .lq-t .lq-l { font-size: 34px; }
 .lvl-quick .lq-n .lq-l { font-size: 74px; color: #ffffff; }
 .lvl-quick .lq-sp { display: inline-block; width: .5em; }
-@keyframes lvlLetter { 0% { transform: translateY(-60px) scale(3.4) rotate(-14deg); opacity: 0; filter: blur(7px); } 60% { transform: translateY(6px) scale(.92) rotate(2deg); opacity: 1; filter: blur(0); } 100% { transform: translateY(0) scale(1) rotate(0); opacity: 1; } }
+@keyframes lvlLetter { 0% { transform: translateY(-60px) scale(3.4) rotate(-14deg); opacity: 0; } 60% { transform: translateY(6px) scale(.92) rotate(2deg); opacity: 1; } 100% { transform: translateY(0) scale(1) rotate(0); opacity: 1; } }   /* [0.209] sin filtro de desenfoque animado */
 @keyframes lvlGlow { 0% { filter: brightness(1); } 100% { filter: brightness(1.6) drop-shadow(0 0 10px #fde68a); } }
 @keyframes lvlQuickOut { to { opacity: 0; transform: translateY(-34px) scale(1.12); } }
 .xp-flash { animation: xpFlash .9s ease-out; }

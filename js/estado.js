@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — estado.js — VERSIÓN 0.208
+// JUST ONE MORE CHEST — estado.js — VERSIÓN 0.209
 // estado, wildcards, guardado, logros, estadísticas, reinicio
 // ==========================================================================
 
@@ -769,6 +769,16 @@ function showResumePrompt(data) {
 }
 
 /* ---------- Confirmación del botón Reiniciar ---------- */
+// [0.209] BORRAR TODOS LOS DATOS: partida, logros, contadores acumulados, cuaderno y cualquier desbloqueo futuro (todas las claves del juego). Deja el juego como recién instalado.
+function wipeAllGameData() {
+  autosaveEnabled = false; saveDirty = false; lifeStatsDirty = false;   // que ningún guardado al cerrar la página vuelva a escribir lo borrado
+  try {
+    const ks = [];
+    for (let i = 0; i < window.localStorage.length; i++) { const k = window.localStorage.key(i); if (k && k.indexOf('justOneMoreChest_') === 0) ks.push(k); }
+    ks.forEach(k => window.localStorage.removeItem(k));
+  } catch (e) { /* sin almacenamiento */ }
+  window.location.reload();
+}
 function showResetConfirm() {
   if (document.getElementById('resetConfirmModal')) return;
   const modal = document.createElement('div');

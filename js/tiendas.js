@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — tiendas.js — VERSIÓN 0.208
+// JUST ONE MORE CHEST — tiendas.js — VERSIÓN 0.209
 // tienda del Duende y del Trapero
 // ==========================================================================
 
@@ -222,7 +222,7 @@ function showShopReceipt(onCloseCallback) {
   const originalCallback = onCloseCallback;
   onCloseCallback = () => {
     if (originalCallback) originalCallback();
-    if (guiltText) showPersistentFeedback(`🎭 "${guiltText}"`);
+    if (guiltText) { try { spawnStickyNote(guiltText); } catch (e) {} }   // [0.209] ya no es un banner (la voz del protagonista): aparece como un post-it más en la sala
   };
 
   if (!session || validItems.length === 0) {

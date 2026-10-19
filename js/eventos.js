@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — eventos.js — VERSIÓN 0.208
+// JUST ONE MORE CHEST — eventos.js — VERSIÓN 0.209
 // tiendas especiales, visitas, habilidades, temporizador, fallo y Game Over
 // ==========================================================================
 
@@ -249,7 +249,7 @@ function glassShatterFx() {
     });
     return c;
   };
-  // [0.208] Cada trozo es una capa del tamaño de su propio recorte (antes: 22 capas del tamaño del marco entero, que el móvil tenía que pintar una a una al caer). El resultado visual es el mismo.
+  // [0.209] Cada trozo es una capa del tamaño de su propio recorte (antes: 22 capas del tamaño del marco entero, que el móvil tenía que pintar una a una al caer). El resultado visual es el mismo.
   // Los trozos se construyen de 4 en 4 mientras se ven las grietas (antes: los 22 de golpe, un tirón al romperse). La caída empieza cuando pasa el tiempo de grietas Y están todos.
   const pieces = [];
   document.body.appendChild(root);
@@ -332,7 +332,7 @@ function triggerSensoryOverloadCollapse() {
 }
 
 function executeDiffuseEchoTransition() {
-  // [0.208] Antes se congelaba el reloj de audio (suspend) y se reanudaba al terminar: lo que sonaba en ese momento (la nota larga del cristal con su eco) se quedaba a medias y se oía al empezar el bucle siguiente.
+  // [0.209] Antes se congelaba el reloj de audio (suspend) y se reanudaba al terminar: lo que sonaba en ese momento (la nota larga del cristal con su eco) se quedaba a medias y se oía al empezar el bucle siguiente.
   // Ahora el volumen general baja con un fundido corto y se restaura al terminar; lo que sonaba se apaga solo en silencio.
   try { audio.fadeOutAll(0.12); } catch (e) {}
 
@@ -364,7 +364,7 @@ function executeDiffuseEchoTransition() {
   }, 100);
 
   // [0.203] Dos voces en la oscuridad: cada frase entra con un fundido muy lento y se cruza con la siguiente
-  const FADE = 3500;   // ms de cada fundido (entrada y salida)
+  const FADE = 2200;   // ms de cada fundido de entrada ([0.209] acortado: antes 3500)
   setTimeout(() => {
     overlay.innerHTML = `
       <div class="relative w-full" style="min-height:4rem">
@@ -373,17 +373,19 @@ function executeDiffuseEchoTransition() {
       </div>
     `;
     const msg1 = document.getElementById('echoMsg1'), msg2 = document.getElementById('echoMsg2');
-    const OUT = 2500, HOLD1 = 1500, GAP = 900, HOLD2 = 1500;   // [0.208] cada frase entra desde el negro (FADE), se sostiene y se apaga a negro (OUT); entre las dos, un instante de negro total
+    const OUT = 1600, HOLD1 = 900, GAP = 400, HOLD2 = 900;   // [0.209] secuencia acortada (de ~17 s a ~11 s)   // [0.209] cada frase entra desde el negro (FADE), se sostiene y se apaga a negro (OUT); entre las dos, un instante de negro total
     const fadeOut = el => { if (!el) return; el.style.transition = `opacity ${OUT}ms ease-in-out`; el.style.opacity = '0'; };
-    setTimeout(() => { if (msg1) msg1.style.opacity = '1'; }, 50);
+    // [0.209] Cada frase llega con la melodía de su voz: violeta = Duende, granate = Trapero (las mismas de sus diálogos). El volumen general vuelve justo antes de la primera.
+    const voice = who => { try { audio.init(); audio.playDialogueMelody(who); } catch (e) {} };
+    setTimeout(() => { try { audio.restoreAll(); } catch (e) {} if (msg1) msg1.style.opacity = '1'; voice('EL DUENDE'); }, 50);
     setTimeout(() => fadeOut(msg1), 50 + FADE + HOLD1);
-    setTimeout(() => { if (msg2) msg2.style.opacity = '1'; }, 50 + FADE + HOLD1 + OUT + GAP);
+    setTimeout(() => { if (msg2) msg2.style.opacity = '1'; voice('EL TRAPERO'); }, 50 + FADE + HOLD1 + OUT + GAP);
     setTimeout(() => fadeOut(msg2), 50 + FADE + HOLD1 + OUT + GAP + FADE + HOLD2);
     setTimeout(() => {
       overlay.classList.add('opacity-0');
       setTimeout(() => {
         overlay.remove();
-        try { audio.restoreAll(); } catch (e) {}   // [0.208]
+        try { audio.restoreAll(); } catch (e) {}   // [0.209]
 
         // 🟢 TRANSICIÓN AL SIGUIENTE BUCLE (1→2, 2→3; el 3 es el último por ahora y se repite con el mismo final)
         STATE.currentLoop = Math.min((STATE.currentLoop || 1) + 1, 3);   // [0.203]

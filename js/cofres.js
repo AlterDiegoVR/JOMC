@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — cofres.js — VERSIÓN 0.208
+// JUST ONE MORE CHEST — cofres.js — VERSIÓN 0.209
 // selección de cofres, banner, diálogos, post-its, botín y subida de nivel
 // ==========================================================================
 
@@ -707,8 +707,8 @@ function openNoteEditor(noteEl, p, refill) {
   paper.querySelector('.note-x').addEventListener('click', close);
 }
 
-function spawnStickyNote() {
-  if (STATE.climaxPhase || document.querySelectorAll('.sticky-note').length >= 5) return;
+function spawnStickyNote(forcedText) {   // [0.209] forcedText: post-it de culpa tras robar al Duende (no cuenta para el tope de 5 y no sale en el clímax, como todos)
+  if (STATE.climaxPhase || (!forcedText && document.querySelectorAll('.sticky-note').length >= 5)) return;
 
   const container = document.getElementById('notesContainer');
   if (!container) return;
@@ -719,7 +719,7 @@ function spawnStickyNote() {
   const tier = getNarrativeTier();
   const loopKey = 'BUCLE_' + Math.min(Math.max(STATE.currentLoop || 1, 1), 3);   // [0.203] bucle 3 con su propia lista
   const list = DATOS_JUEGO.NARRATIVA.POST_ITS[loopKey][tier];
-  const randomText = list[Math.floor(Math.random() * list.length)];
+  const randomText = forcedText || list[Math.floor(Math.random() * list.length)];
   note.textContent = `"${randomText}"`;
 
   note.style.visibility = 'hidden';

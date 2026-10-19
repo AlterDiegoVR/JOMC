@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — audio.js — VERSIÓN 0.208
+// JUST ONE MORE CHEST — audio.js — VERSIÓN 0.209
 // motor de audio
 // ==========================================================================
 
@@ -25,7 +25,7 @@ function _T(c, out, t, f, dur, vol, o){
   os.connect(g); g.connect(out); os.start(t); os.stop(t + dur + 0.05);
 }
 function _ring(c, out, t, f, dur, vol){ [1, 2.76, 5.4].forEach((k, i) => _T(c, out, t, f * k, dur / (1 + i * 0.6), vol / (1 + i * 1.5))); }
-// [0.208] La respuesta del eco se genera UNA vez por contexto y duración (antes se recalculaba entera, 250.000 muestras con pow, cada vez que sonaba el cristal o el pad: un tirón justo al romperse)
+// [0.209] La respuesta del eco se genera UNA vez por contexto y duración (antes se recalculaba entera, 250.000 muestras con pow, cada vez que sonaba el cristal o el pad: un tirón justo al romperse)
 function _irGet(c, sec){
   c._ir = c._ir || {};
   if (c._ir[sec]) return c._ir[sec];
@@ -59,13 +59,13 @@ class AudioEngine {
       this.busLoot = this.ctx.createGain(); this.busLoot.connect(this.master);
       this._startKeepAlive();
       this.applyProfile();
-      setTimeout(() => { try { _nbuf(this.ctx); _irGet(this.ctx, 2.6); } catch (e) {} }, 4000);   // [0.208] se preparan en un momento tranquilo, no justo cuando suena el cristal
+      setTimeout(() => { try { _nbuf(this.ctx); _irGet(this.ctx, 2.6); } catch (e) {} }, 4000);   // [0.209] se preparan en un momento tranquilo, no justo cuando suena el cristal
     }
     if (this.ctx.state === 'suspended') {
       this.ctx.resume();
     }
   }
-  // [0.208] Silencio general con fundido (sin congelar el reloj de audio) y vuelta al volumen del perfil
+  // [0.209] Silencio general con fundido (sin congelar el reloj de audio) y vuelta al volumen del perfil
   fadeOutAll(tc = 0.12) { if (!this.ctx || !this.master) return; const t = this.ctx.currentTime; this.master.gain.cancelScheduledValues(t); this.master.gain.setTargetAtTime(0, t, tc); }
   restoreAll() { if (!this.ctx || !this.master) return; this.master.gain.cancelScheduledValues(this.ctx.currentTime); this.applyProfile(); }
   // Salida activa: la categoría en curso (pequeños / botín) o el master

@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — modotest.js — VERSIÓN 0.208
+// JUST ONE MORE CHEST — modotest.js — VERSIÓN 0.209
 // Modo test
 // ==========================================================================
 
@@ -115,7 +115,7 @@ function testKeyHash(seq, salt) {
         ${b('optList', 'fa-trophy', 'LOGROS', 'bg-gradient-to-r from-amber-800 to-amber-700 text-white')}
         ${(typeof tomeUnlocked === 'function' && tomeUnlocked()) ? b('optTome', 'fa-book', 'CUADERNO', 'bg-gradient-to-r from-stone-700 to-amber-900 text-amber-100') : ''}
         ${b('optAch', 'fa-trophy', 'RESETEAR LOGROS')}
-        ${b('optCnt', 'fa-eraser', 'RESETEAR CONTADORES')}
+        ${b('optWipe', 'fa-trash', 'BORRAR TODOS LOS DATOS', 'bg-rose-950/80 active:bg-rose-900 text-rose-200')}
         ${b('optNew', 'fa-rotate-left', 'EMPEZAR DE NUEVO', 'bg-rose-950/80 active:bg-rose-900 text-rose-200')}
         ${b('optTest', 'fa-flask', 'MODO TEST', 'bg-slate-950 text-slate-400')}
         <button id="optClose" class="mt-1 w-full py-2.5 bg-slate-800 active:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl cursor-pointer">Cerrar</button>
@@ -141,7 +141,7 @@ function testKeyHash(seq, salt) {
     q('optList').addEventListener('click', () => { close('optionsModal'); openAchievementsList(); });
     q('optNew').addEventListener('click', () => { close('optionsModal'); showResetConfirm(); });
     q('optAch').addEventListener('click', () => { close('optionsModal'); confirmBox('¿RESETEAR LOGROS?', 'Se borrarán los logros desbloqueados en este navegador. La partida no se toca.', 'SÍ, BORRAR LOGROS', () => { clearAchievements(); showPersistentFeedback('🏆 Logros reseteados.'); }); });
-    q('optCnt').addEventListener('click', () => { close('optionsModal'); confirmBox('¿RESETEAR CONTADORES?', 'Se pondrá a cero el apartado ACUMULADO de las estadísticas. La partida no se toca.', 'SÍ, PONER A CERO', () => { lifeStats = blankStats(); lifeStatsDirty = true; saveLifeStats(); showPersistentFeedback('🧮 Contadores acumulados a cero.'); }); });
+    q('optWipe').addEventListener('click', () => { close('optionsModal'); confirmBox('¿BORRAR TODOS LOS DATOS?', 'Se borrará TODO lo guardado en este navegador: la partida, los logros, las estadísticas acumuladas y el cuaderno con sus desbloqueos. No se puede deshacer.', 'SÍ, BORRAR TODO', () => wipeAllGameData()); });   // [0.209] sustituye a RESETEAR CONTADORES
     q('optTest').addEventListener('click', () => { close('optionsModal'); openTestKeyGate(); });
   };
   (function () {
