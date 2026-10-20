@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — modotest.js — VERSIÓN 0.209
+// JUST ONE MORE CHEST — modotest.js — VERSIÓN 0.210
 // Modo test
 // ==========================================================================
 
@@ -325,6 +325,9 @@ function testKeyHash(seq, salt) {
       { id: 'ab_perdedor', label: 'CARTA PERDEDOR', kind: 'num', min: 0, max: 9, def: 3 },
       { id: 'ab_summonDuende', label: 'CARTA DUENDE', kind: 'num', min: 0, max: 9, def: 3 },
       { id: 'ab_cofradia', label: 'CARTA COFRADÍA DEL COFRE', kind: 'num', min: 0, max: 9, def: 0 },
+      { id: 'ab_reroll', label: 'CARTA RE-ROLL', kind: 'num', min: 0, max: 9, def: 3 },
+      { id: 'ab_pulsera', label: 'CARTA PULSERA VIP', kind: 'num', min: 0, max: 9, def: 3 },
+      { id: 'ab_ruleta', label: 'CARTA RULETA', kind: 'num', min: 0, max: 9, def: 3 },
       { id: 'curse', label: 'MALDICIÓN (COFRES)', kind: 'num', min: 1, max: 30, def: 10 },
       { id: 'clearAch', label: 'BORRAR LOGROS', kind: 'bool' }
     ] },
@@ -336,6 +339,10 @@ function testKeyHash(seq, salt) {
       { id: 'ps_slowerPistons', label: 'PISTONES LENTOS (NIVEL)', kind: 'num', min: 1, max: 5, def: 1 },
       { id: 'ps_goldStreak', label: 'FONDO DE BOLSILLO (NIVEL)', kind: 'num', min: 1, max: 5, def: 1 },
       { id: 'ps_extraTime', label: 'HOMBRE TRANQUILO (+S)', kind: 'num', min: 1, max: 30, def: 5 },
+      { id: 'ps_clienteVip', label: 'CLIENTE VIP', kind: 'bool' },
+      { id: 'ps_exorcismo', label: 'EXORCISMO', kind: 'bool' },
+      { id: 'ps_inconformista', label: 'INCONFORMISTA', kind: 'bool' },
+      { id: 'ps_herrero', label: 'HERRERO (NIVEL)', kind: 'num', min: 1, max: 3, def: 1 },
       { id: 'ps_oidoClinico', label: 'OÍDO CLÍNICO', kind: 'bool' },
       { id: 'ps_luckyLootChance', label: 'TIPO CON SUERTE', kind: 'bool' },
       { id: 'ps_shopStealFree', label: 'FORZAR ROBO (LADRÓN)', kind: 'bool' },
@@ -393,11 +400,15 @@ function testKeyHash(seq, salt) {
     set(v.level != null, () => { STATE.level = v.level; STATE.xp = 0; STATE.xpNext = getXpForLevel(v.level); STATE.chestsAtLevelUp = Math.max(0, STATE.chestsOpened - 3); STATE.chestsOpened = Math.max(STATE.chestsOpened, 3); });
     set(v.gold != null, () => { STATE.gold = v.gold; });
     ['picks', 'proPicks', 'usb', 'valves', 'batteries', 'fuses'].forEach(k => set(v[k] != null, () => { STATE[k] = v[k]; if (k === 'batteries') STATE.batteriesUnlocked = true; if (k === 'fuses') STATE.fusesUnlocked = true; }));
-    ['auto', 'double', 'shield', 'riskPot', 'perdedor', 'summonDuende', 'cofradia'].forEach(k => set(v['ab_' + k] != null, () => { STATE.abilities[k] = v['ab_' + k]; }));
+    ['auto', 'double', 'shield', 'riskPot', 'perdedor', 'summonDuende', 'cofradia', 'reroll', 'pulsera', 'ruleta'].forEach(k => set(v['ab_' + k] != null, () => { STATE.abilities[k] = v['ab_' + k]; }));
     set(v.curse != null, () => { STATE.cursedChestsLeft = v.curse; });
     set(!!v.clearAch, () => { clearAchievements(); });
     ['sweetSpot', 'rarityBonus', 'discount', 'slowerPistons', 'goldStreak', 'extraTime', 'bonusMadera', 'bonusAcero', 'bonusDigital', 'bonusVapor', 'bonusNeon'].forEach(k => set(v['ps_' + k] != null, () => { STATE.perks[k] = v['ps_' + k]; }));   // [0.097b]
     ['madera', 'acero', 'digital', 'vapor', 'neon'].forEach(k => set(v['ps_tor_' + k] != null, () => { STATE.torpezas[k] = v['ps_tor_' + k]; }));
+    set(!!v.ps_clienteVip, () => { STATE.perks.clienteVip = 1; });
+    set(!!v.ps_exorcismo, () => { STATE.perks.exorcismo = 1; });
+    set(!!v.ps_inconformista, () => { STATE.perks.inconformista = 1; });
+    set(v.ps_herrero != null, () => { STATE.perks.herrero = v.ps_herrero; });
     set(!!v.ps_oidoClinico, () => { STATE.perks.oidoClinico = 1; });
     set(!!v.ps_luckyLootChance, () => { STATE.perks.luckyLootChance = 0.15; });
     set(!!v.ps_shopStealFree, () => { STATE.perks.shopStealFree = true; });

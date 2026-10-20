@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — cofres.js — VERSIÓN 0.209
+// JUST ONE MORE CHEST — cofres.js — VERSIÓN 0.210
 // selección de cofres, banner, diálogos, post-its, botín y subida de nivel
 // ==========================================================================
 
@@ -68,6 +68,8 @@ function generateScreenChests() {
       else rarity = CHEST_RARITIES[0];
     }
 
+    // [0.210] Pulsera VIP: mientras dura, todos los cofres son épicos o legendarios (no en la secuencia final)
+    if ((STATE.pulseraLeft || 0) > 0 && !isClimaxActive()) rarity = Math.random() < DATOS_JUEGO.CARTAS_210.PULSERA_VIP.PROB_LEGENDARIO ? CHEST_RARITIES[3] : CHEST_RARITIES[2];
     { const fogOn = modOn('niebla'); let rr = chestToolMods(rarity); if (fogOn) rr = Object.assign({}, rr, { fogOne: true });   // [0.202] con niebla TODO cofre cuesta 1 herramienta
       STATE.screenChests.push({ type: randomType, rarity: rr, fog: fogOn }); } chestHoldLift = false;   // [0.093] fog = rareza oculta
   }
@@ -93,12 +95,21 @@ function generateScreenChests() {
   if (typeof renderPlayerNotes === 'function') requestAnimationFrame(() => requestAnimationFrame(() => renderPlayerNotes()));   // [0.095]
 }
 
+// [0.210] Cuánto quita la maldición actual (Purga de Maldición+ la deja a la mitad)
+function cursePenalty() { const b = DATOS_JUEGO.ECONOMIA.MALDICION_SALVAMENTO.PENALIZACION_MULTIPLICADOR; return STATE.curseHalf ? b * DATOS_JUEGO.TRATOS_210.PURGA_PLUS.PCT_MALDICION : b; }
+let mentiraPuzzle = false;   // [0.210] Cofres Mentirosos: el puzle en curso no es el del cofre
 function isClimaxActive() {
   const co = STATE.chestsOpened;
   const seqConfig = DATOS_JUEGO.PROGRESIÓN.SECUENCIA_HISTORIA;
   return STATE.climaxPhase || (!STATE.sequenceBroken && co >= (seqConfig.COFRE_CLIMAX_INICIO - 1));
 }
 
+// [0.210] Llave Maestra: ¿puedo abrir este cofre pagando ganzúas porque me faltan sus herramientas?
+function canUseMasterKey(chest) {
+  if (!modOn('llaveMaestra') || isClimaxActive() || (STATE.pulseraLeft || 0) > 0) return false;
+  if ((STATE[chest.type.consumible] || 0) >= getRequiredToolCount(chest.rarity)) return false;
+  return STATE.picks >= DATOS_JUEGO.MODS_WILDCARD.LLAVE_MAESTRA.GANZUAS;
+}
 // [0.105] Efectos que cambian las herramientas que pide CADA cofre: se tiran al generar la pantalla y se guardan en una copia de la rareza
 function chestToolMods(rarity) {
   const oxi = STATE.oxidadoLeft > 0, fie = modOn('fiebre') && !isClimaxActive();
@@ -109,8 +120,10 @@ function chestToolMods(rarity) {
   return r;
 }
 
+let masterKeyActive = false;   // [0.210] Llave Maestra: el cofre en curso se abrió pagando 5 ganzúas
 function getRequiredToolCount(rarity) {
   if (isClimaxActive()) return 0;
+  if ((STATE.pulseraLeft || 0) > 0 || masterKeyActive) return 0;   // [0.210] Pulsera VIP y Llave Maestra: el cofre no pide herramientas
   if (rarity.fogOne) return 1;   // [0.202] Niebla Espesa: todos los cofres cuestan 1 herramienta
 
   let base = rarity.toolFixed != null ? rarity.toolFixed : (rarity.id === 'legendario' ? 2 : 1);   // [0.105] Cerrojos Oxidados fija 1-3
@@ -187,6 +200,12 @@ function updateChestSelectionUI() {
       if (isClimaxActive()) {
         reqEl.className = "text-[10px] font-extrabold text-emerald-400 mb-3 bg-emerald-950/80 px-3 py-1 rounded-full border border-emerald-500 animate-pulse";
         reqEl.textContent = "REQUIERE: 0 (LIBRE)";
+      } else if ((STATE.pulseraLeft || 0) > 0) {
+        reqEl.className = "text-[10px] font-extrabold text-yellow-300 mb-3 bg-yellow-950/80 px-3 py-1 rounded-full border border-yellow-400 animate-pulse";
+        reqEl.textContent = `PULSERA VIP: GRATIS (${STATE.pulseraLeft})`;
+      } else if (canUseMasterKey(active)) {
+        reqEl.className = "text-[10px] font-extrabold text-sky-300 mb-3 bg-sky-950/80 px-3 py-1 rounded-full border border-sky-400";
+        reqEl.textContent = `LLAVE MAESTRA: ${DATOS_JUEGO.MODS_WILDCARD.LLAVE_MAESTRA.GANZUAS} GANZÚAS`;
       } else if (active.rarity.id === 'legendario' || reqCount > 1) {
         reqEl.className = "text-[10px] font-extrabold text-amber-300 mb-3 bg-amber-950/80 px-3 py-1 rounded-full border border-amber-400 animate-pulse";
         reqEl.textContent = `REQUIERE: ${reqCount} ${toolTitle}`;
@@ -783,7 +802,7 @@ function triggerLootExplosion() {
     if (STATE.cursedChestsLeft > 0) {
       STATE.cursedChestsLeft--;
       if (STATE.cursedChestsLeft === 0) {
-        STATE.salvageCurseActive = false;
+        STATE.salvageCurseActive = false; STATE.curseHalf = false;
         STATE.curseEndPending = true;   // [0.088] se encola al cobrar el botín
         curseHold = true;   // [0.096] el tinte aguanta hasta cerrar el mensaje
       }
@@ -799,6 +818,10 @@ function triggerLootExplosion() {
     if (STATE.extremePuzzlesLeft > 0) STATE.extremePuzzlesLeft--;   // [0.105]
     if (STATE.oxidadoLeft > 0) STATE.oxidadoLeft--;
     rechargeTick();
+    // [0.210] Pulsera VIP y Atajo: cada intento superado gasta uno; Llave Maestra y Mentirosos terminan con el cofre
+    masterKeyActive = false; mentiraPuzzle = false; sedaPuzzle = false;
+    if (STATE.pulseraLeft > 0) { STATE.pulseraLeft--; if (STATE.pulseraLeft === 0) setTimeout(() => showPersistentFeedback('🎟️ Se acabó la Pulsera VIP.'), 0); }
+    if (STATE.atajoLeft > 0) { STATE.atajoLeft--; if (STATE.atajoLeft === 0) setTimeout(() => showPersistentFeedback('⚡ Atajo superado: ya no hay peligro.'), 0); }
 
     let baseGpMin = DATOS_JUEGO.ECONOMIA.RECOMPENSAS_BASE.gp_min;
     let baseGpMax = DATOS_JUEGO.ECONOMIA.RECOMPENSAS_BASE.gp_max;
@@ -832,6 +855,11 @@ function triggerLootExplosion() {
         label: `<span class="flex items-center gap-1.5"><i class="fa-solid fa-fire text-amber-500"></i> Racha x${STATE.cleanStreak}</span>`, 
         val: `+${streakBonusGp} GP` 
       });
+      // [0.210] Enrachado: con racha > 10, el bonus de racha sube un 25% (hasta perder la racha)
+      if (modsAtOpen.enrachado > 0 && STATE.cleanStreak > DATOS_JUEGO.MODS_WILDCARD.ENRACHADO.RACHA_MIN) {
+        const exE = Math.floor(streakBonusGp * DATOS_JUEGO.MODS_WILDCARD.ENRACHADO.PCT);
+        if (exE > 0) { finalGp += exE; gpLines.push({ label: `🔥 Enrachado (+${Math.round(DATOS_JUEGO.MODS_WILDCARD.ENRACHADO.PCT * 100)}%)`, val: `+${exE} GP` }); }
+      }
     }
 
     let masteryLevel = 0;
@@ -884,9 +912,9 @@ function triggerLootExplosion() {
     }
 
     if (STATE.cursedChestsLeft > 0) {
-      let penaltyGp = Math.floor(finalGp * DATOS_JUEGO.ECONOMIA.MALDICION_SALVAMENTO.PENALIZACION_MULTIPLICADOR);
+      let penaltyGp = Math.floor(finalGp * cursePenalty());
       finalGp = Math.max(1, finalGp - penaltyGp);
-      gpLines.push({ label: "💀 Maldición (-50%)", val: `-${penaltyGp} GP` });
+      gpLines.push({ label: `💀 Maldición (-${Math.round(cursePenalty() * 100)}%)`, val: `-${penaltyGp} GP` });
     }
 
     // [CAMBIO] Wildcard Maldición de la Codicia
@@ -961,9 +989,9 @@ function triggerLootExplosion() {
     }
 
     if (STATE.cursedChestsLeft > 0) {
-      let penaltyXp = Math.floor(finalXp * DATOS_JUEGO.ECONOMIA.MALDICION_SALVAMENTO.PENALIZACION_MULTIPLICADOR);
+      let penaltyXp = Math.floor(finalXp * cursePenalty());
       finalXp = Math.max(0, finalXp - penaltyXp);
-      xpLines.push({ label: "💀 Maldición (-50%)", val: `-${penaltyXp} XP` });
+      xpLines.push({ label: `💀 Maldición (-${Math.round(cursePenalty() * 100)}%)`, val: `-${penaltyXp} XP` });
     }
 
     if (tanteoPenalty > 0) {
@@ -993,6 +1021,14 @@ function triggerLootExplosion() {
     STATE.active2XMultiplier = false;
     STATE.gold += finalGp;
     STATE.xp += finalXp;
+    // [0.210] Apagón Financiero: alguien te hurga los bolsillos en cada cofre mientras dura
+    if (mo('apagonFin') && STATE.gold > 0) {
+      const lostA = Math.min(STATE.gold, DATOS_JUEGO.MODS_WILDCARD.APAGON.GP_POR_TURNO);
+      STATE.gold -= lostA;
+      gpLines.push({ label: "💡 Apagón Financiero", val: `-${lostA} GP` });
+      const fa = DATOS_JUEGO.MODS_WILDCARD.APAGON.FRASES || [];
+      if (fa.length) setTimeout(() => showPersistentFeedback(fa[Math.floor(Math.random() * fa.length)]), 350);
+    }
 
     // [0.2] Desglose línea a línea (mismas etiquetas de siempre): positivas en verde, negativas en rojo, multiplicadores en amarillo
     const lootLineCls = v => /^\s*\+/.test(v) ? 'p' : /^\s*(-|sin)/i.test(v) ? 'n' : 'm';
@@ -1003,6 +1039,7 @@ function triggerLootExplosion() {
     let extraLootHTML = "";
     let tomeFindHTML = "";   // [0.203]
     let toolDropChance = DATOS_JUEGO.PROBABILIDADES.HERRAMIENTA_EXTRA_CHANCE;
+    if (STATE.perks.exorcismo && STATE.cursedChestsLeft > 0) toolDropChance += DATOS_JUEGO.CARTAS_210.EXORCISMO.BOTIN_HERRAMIENTA_EXTRA;   // [0.210] Exorcismo
     const chestsSinceLevelUp = STATE.chestsOpened - (STATE.chestsAtLevelUp || 0);
     const inGracePeriod = chestsSinceLevelUp < 3 && (STATE.level === 2 || STATE.level === 3 || STATE.level === 5);
 

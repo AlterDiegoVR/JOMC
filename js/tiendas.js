@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — tiendas.js — VERSIÓN 0.209
+// JUST ONE MORE CHEST — tiendas.js — VERSIÓN 0.210
 // tienda del Duende y del Trapero
 // ==========================================================================
 
@@ -159,6 +159,7 @@ function dshopShow(special) {
   if (sub) sub.textContent = special ? '(RECHAZAR)' : '';
   const hs = document.getElementById('dshopHdrShop'); if (hs) hs.textContent = special ? 'OFERTA' : 'TIENDA';
   const wasHidden = modal.classList.contains('hidden');
+  modal.classList.toggle('dshop-dark', isRoomDark());   // [0.210] luz apagada también dentro de la tienda
   modal.classList.remove('hidden');
   shopHudSync();
   if (wasHidden) {
@@ -327,14 +328,25 @@ function openMerchantShop() {
     }
 
     const availableCatalog = catalog.filter(item => (!item.minLvl || STATE.level >= item.minLvl) && (!item.needUnlocked || toolUnlocked(item.needUnlocked)));
-    STATE.currentShopOffer = [...availableCatalog].sort(() => 0.5 - Math.random()).slice(0, 3).map(item => ({
-      ...item,
-      purchaseCount: 0
-    }));
+    if (STATE.perks.clienteVip) {
+      // [0.210] Cliente VIP: 2 objetos al azar que NO son herramientas + 1 hueco para elegir cualquier herramienta ya desbloqueada
+      const noTools = availableCatalog.filter(i => !i.prop), tools = availableCatalog.filter(i => i.prop);
+      const two = [...noTools].sort(() => 0.5 - Math.random()).slice(0, 2);
+      STATE.currentShopOffer = two.map(item => ({ ...item, purchaseCount: 0 }));
+      if (tools.length) STATE.currentShopOffer.push({ vipTools: tools.map(t => ({ ...t })), vipSel: 0, purchaseCount: 0, id: 'vip_tool', name: 'Herramienta a elegir', icon: 'fa-toolbox' });
+    } else {
+      STATE.currentShopOffer = [...availableCatalog].sort(() => 0.5 - Math.random()).slice(0, 3).map(item => ({
+        ...item,
+        purchaseCount: 0
+      }));
+    }
   }
 
   renderMerchantShopGrid();
 }
+
+// [0.210] Nocturnidad y Alevosía: con la luz apagada y robos disponibles
+function nightStealActive() { return modOn('nocturnidad') && (STATE.nightStealsLeft || 0) > 0 && isRoomDark(); }
 
 function renderMerchantShopGrid() {
   const shopGrid = document.getElementById('shopItemsList') || document.getElementById('merchantItemsGrid'); 
@@ -360,15 +372,18 @@ function renderMerchantShopGrid() {
   const B = cfg.BOTONES || {};
   shopArtInit();
 
-  STATE.currentShopOffer.forEach(item => {
+  const nightOn = nightStealActive();   // [0.210] Nocturnidad y Alevosía
+  STATE.currentShopOffer.forEach(slot => {
+    // [0.210] Cliente VIP: el hueco de herramienta muestra la que hayas elegido (toca el icono para cambiar)
+    const item = slot.vipTools ? Object.assign({}, slot.vipTools[slot.vipSel], { purchaseCount: slot.purchaseCount, vipSlot: slot }) : slot;
     const currentPrice = item.baseCost + (item.purchaseCount * aumentoPrecio);
-    const isStealAvailable = STATE.perks.shopStealFree;
+    const isStealAvailable = STATE.perks.shopStealFree || nightOn;
     const vis = SHOP_VIS[item.id] || { n: item.name.toUpperCase(), ic: 'ic_ganzua' };
     const poor = !isStealAvailable && STATE.gold < currentPrice;
     const own = item.prop ? STATE[item.prop] : (item.abilityProp ? STATE.abilities[item.abilityProp] : 0);
 
     const row = dshopRowEl({
-      vis, desc: desc[item.id], own,
+      vis, desc: (item.vipSlot ? 'CLIENTE VIP · Toca el icono para cambiar de herramienta. ' : '') + (desc[item.id] || ''), own,
       label: isStealAvailable ? (B.ROBAR || 'ROBAR') : (B.COMPRAR || 'COMPRAR'),
       price: isStealAvailable ? '' : dshopGoldPrice(currentPrice),   // [0.2] con Ladrón solo «ROBAR»
       cls: isStealAvailable ? 'steal' : 'w',
@@ -377,8 +392,9 @@ function renderMerchantShopGrid() {
       onClick: () => {
         if (!STATE.shopSession) resetShopSession();
 
-        if (STATE.perks.shopStealFree) {
-          STATE.perks.shopStealFree = false;
+        if (isStealAvailable) {
+          // [0.210] Con la luz apagada (Nocturnidad) los robos salen del cupo del comodín y el Ladrón no se gasta hasta el tercero
+          if (nightOn) STATE.nightStealsLeft--; else STATE.perks.shopStealFree = false;
           grantItem(item);
 
           STATE.shopSession.items.push({ name: item.name, costText: 'GRATIS (ROBO)', icon: item.icon, ic: vis.ic, isStolen: true });
@@ -398,7 +414,7 @@ function renderMerchantShopGrid() {
           STATE.shopSession.items.push({ name: item.name, costText: `${currentPrice} GP`, icon: item.icon, ic: vis.ic, isStolen: false });
           STATE.shopSession.totalGold += currentPrice;
 
-          item.purchaseCount++;
+          if (item.vipSlot) item.vipSlot.purchaseCount++; else item.purchaseCount++;
 
           // [0.082] Sin mensaje frontal al comprar (el recibo del Duende se muestra al salir)
           audio.playUnlockFanfare('raro');
@@ -408,6 +424,11 @@ function renderMerchantShopGrid() {
         }
       }
     });
+    if (item.vipSlot) {
+      const icEl = row.querySelector('.ic');
+      if (icEl) { icEl.style.cursor = 'pointer'; icEl.addEventListener('click', () => { item.vipSlot.vipSel = (item.vipSlot.vipSel + 1) % item.vipSlot.vipTools.length; try { audio.playClick(0.7); } catch (e) {} renderMerchantShopGrid(); }); }
+      row.classList.add('vip-slot');
+    }
     shopGrid.appendChild(row);
   });
 
@@ -565,6 +586,8 @@ function unlockedAdvancedTools() {
 }
 
 // [0.105] Contrato Leonino: 50 GP en el nivel 1, +10 por nivel, tope 100 (nivel 6)
+// [0.210] Vender ganzúas / herramienta avanzada: 15 GP en el nivel 1, sube hasta 40 GP en el nivel 5
+function ventaGp() { const T = DATOS_JUEGO.TRATOS_210.VENTA_GP_NIVEL; return STATE.level >= 5 ? T[5] : (T[Math.max(1, STATE.level)] || T[1]); }
 function leoninoGp() { const T = DATOS_JUEGO.ECONOMIA.TRAPERO; return Math.min(T.LEONINO_MAX, T.gp_contrato_leonino + T.LEONINO_POR_NIVEL * Math.max(0, STATE.level - 1)); }
 
 function openTraperoShop() {
@@ -581,6 +604,10 @@ function openTraperoShop() {
     if (deal.id === 'dedos_rotos' && STATE.picksBrokenOnUse) return false;
     // [0.089] Los tratos que dan "+N de cada herramienta avanzada" no se ofrecen si aún no hay ninguna desbloqueada
     if ((deal.id === 'amor_arte' || deal.id === 'pacto_sangre') && unlockedAdvancedTools().length === 0) return false;
+    // [0.210] Tratos nuevos
+    if (deal.id === 'purga_maldicion_plus' && !(STATE.cursedChestsLeft > 0 && !STATE.curseHalf)) return false;
+    if (deal.id === 'otra_oportunidad' && unlockedAdvancedTools().length === 0) return false;
+    if (deal.id === 'atajo' && ((STATE.atajoLeft || 0) > 0 || isClimaxActive())) return false;
     return true;
   });
 
@@ -601,7 +628,7 @@ function openTraperoShop() {
     const tag = (shopCfg().ETIQUETAS_TRAPERO || {})[deal.id] || 'TRATO';
     card.innerHTML = `
       <div class="tcard-top"><span class="tcard-title">${deal.titulo}</span><span class="tcard-tag">${tag}</span></div>
-      <div class="tcard-desc">${String(deal.desc).replace('{LEONINO}', leoninoGp())}</div>
+      <div class="tcard-desc">${String(deal.desc).replace('{LEONINO}', leoninoGp()).replace('{VENTA}', ventaGp())}</div>
       <div class="tcard-hint">${shopCfg().TRAPERO_ARMADO_TEXTO || 'TOCA OTRA VEZ PARA ACEPTAR'}</div>
       <button class="tcard-btn" type="button" aria-label="${deal.titulo}"></button>
     `;
@@ -626,11 +653,11 @@ function openTraperoShop() {
         } else if (deal.id === 'vender_ganzuas') {
           if (STATE.picks >= 2) {
             STATE.picks -= 2;
-            STATE.gold += DATOS_JUEGO.ECONOMIA.TRAPERO.gp_por_dos_ganzuas;
+            STATE.gold += ventaGp();
             if (traperoModal) traperoModal.classList.add('hidden');
             audio.playClick(0.8);
             updateUI();
-            showTraperoDealFeedback("Vender 2 Ganzúas", `Entregaste 2 Ganzúas a cambio de +${DATOS_JUEGO.ECONOMIA.TRAPERO.gp_por_dos_ganzuas} GP inmediatos.`);
+            showTraperoDealFeedback("Vender 2 Ganzúas", `Entregaste 2 Ganzúas a cambio de +${ventaGp()} GP inmediatos.`);
           } else {
             showPersistentFeedback("⚠️ Necesitas al menos 2 Ganzúas.");
           }
@@ -644,7 +671,7 @@ function openTraperoShop() {
           if (STATE.fuses >= 1) disponibles.push({ prop: 'fuses', name: 'Fusible' });   // [0.203]
           if (disponibles.length > 0) {
             const vendida = disponibles[Math.floor(Math.random() * disponibles.length)];
-            const gpVenta = DATOS_JUEGO.ECONOMIA.TRAPERO.gp_por_herramienta_avanzada;
+            const gpVenta = ventaGp();   // [0.210] escala con el nivel
             STATE[vendida.prop] -= 1;
             STATE.gold += gpVenta;
             if (traperoModal) traperoModal.classList.add('hidden');
@@ -675,7 +702,7 @@ function openTraperoShop() {
             else if (STATE.fuses >= 1) STATE.fuses--;
 
             STATE.cursedChestsLeft = Math.max(0, STATE.cursedChestsLeft - 4);
-            if (STATE.cursedChestsLeft === 0) { STATE.salvageCurseActive = false; curseHold = true; queueCurseEndMessage(); }
+            if (STATE.cursedChestsLeft === 0) { STATE.salvageCurseActive = false; STATE.curseHalf = false; curseHold = true; queueCurseEndMessage(); }
             if (traperoModal) traperoModal.classList.add('hidden');
             audio.playClick(0.8);
             updateUI();
@@ -815,6 +842,47 @@ function openTraperoShop() {
           } else {
             showTraperoDealFeedback("Maestría de Doble Filo", `Has recibido +1 Nivel de Maestría en ${maestriaType.toUpperCase()}, pero sufres +1 Nivel de Torpeza en ${torpezaType.toUpperCase()}.`);
           }
+        } else if (deal.id === 'purga_maldicion_plus') {   // [0.210]
+          const P = DATOS_JUEGO.TRATOS_210.PURGA_PLUS;
+          if (STATE.picks >= P.GANZUAS && STATE.cursedChestsLeft > 0) {
+            STATE.picks -= P.GANZUAS;
+            STATE.cursedChestsLeft = Math.max(0, STATE.cursedChestsLeft - P.TURNOS);
+            if (STATE.cursedChestsLeft === 0) { STATE.salvageCurseActive = false; STATE.curseHalf = false; curseHold = true; queueCurseEndMessage(); }
+            else STATE.curseHalf = true;
+            if (traperoModal) traperoModal.classList.add('hidden');
+            audio.playClick(0.8);
+            updateUI();
+            showTraperoDealFeedback("Purga de Maldición+", `Entregaste ${P.GANZUAS} ganzúas. La maldición dura ${P.TURNOS} cofres menos y ahora quita la mitad.`);
+          } else {
+            showPersistentFeedback(`⚠️ Necesitas ${P.GANZUAS} ganzúas y estar maldecido.`);
+          }
+        } else if (deal.id === 'otra_oportunidad') {   // [0.210]
+          const O = DATOS_JUEGO.TRATOS_210.OTRA_OPORTUNIDAD;
+          STATE.perks = { sweetSpot: 0, rarityBonus: 0, discount: 0, slowerPistons: 0, goldStreak: 0, extraTime: 0, oidoClinico: 0, shopStealFree: false, luckyLootChance: 0, bonusMadera: 0, bonusAcero: 0, bonusDigital: 0, bonusVapor: 0, bonusNeon: 0, clienteVip: 0, exorcismo: 0, inconformista: 0, herrero: 0 };
+          STATE.torpezas = { madera: 0, acero: 0, digital: 0, vapor: 0, neon: 0 };
+          STATE.mods = {}; STATE.nightStealsLeft = 0; STATE.pulseraLeft = 0;
+          STATE.abilities = { auto: 0, double: 0, shield: 0, reveal: 0, riskPot: 0, perdedor: 0, summonDuende: 0, cofradia: 0, reroll: 0, pulsera: 0, ruleta: 0 };
+          STATE.active2XMultiplier = false; STATE.activeShield = false; STATE.riskModeActive = false; STATE.riskPot = 0; STATE.perdedorActive = false; STATE.perdedorLootPending = false; STATE.fallosConsecutivos = 0; STATE.recharge = {};
+          STATE.picks += O.GANZUAS;
+          const adv = unlockedAdvancedTools(), got = {};
+          for (let i = 0; i < O.AVANZADAS; i++) { const pr = adv[Math.floor(Math.random() * adv.length)]; STATE[pr] += 1; got[pr] = (got[pr] || 0) + 1; }
+          const NOM = { proPicks: 'Pin de Acero', usb: 'Llave USB', valves: 'Válvula', batteries: 'Pila', fuses: 'Fusible' };
+          const gotTxt = Object.keys(got).map(k => `+${got[k]} ${NOM[k] || k}`).join(', ');
+          if (traperoModal) traperoModal.classList.add('hidden');
+          audio.playUnlockFanfare('epico');
+          updateUI();
+          showTraperoDealFeedback("Otra Oportunidad", `Olvidas maestrías, torpezas, efectos y cartas tácticas. A cambio recibes +${O.GANZUAS} Ganzúas (${gotTxt}).`);
+        } else if (deal.id === 'atajo') {   // [0.210]
+          const A = DATOS_JUEGO.TRATOS_210.ATAJO;
+          STATE.xp += STATE.xpNext;   // se suma la XP completa del nivel: al subir se conserva lo que ya tenías
+          STATE.atajoLeft = A.COFRES;
+          if (traperoModal) traperoModal.classList.add('hidden');
+          audio.playUnlockFanfare('epico');
+          updateUI();
+          showTraperoDealFeedback("Atajo", `Subes un nivel de golpe. Pero si fallas un cofre en los próximos ${A.COFRES}, será el fin.`, () => {
+            ['traperoModal', 'traperoShopModal', 'dialogueModal'].forEach(mid => { const el = document.getElementById(mid); if (el) el.classList.add('hidden'); });
+            processLevelUp();
+          });
         } else {
           STATE.gold += 20;
           if (traperoModal) traperoModal.classList.add('hidden');

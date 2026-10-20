@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — juego.js — VERSIÓN 0.209
+// JUST ONE MORE CHEST — juego.js — VERSIÓN 0.210
 // arte del cofre abierto, subida de nivel, abrir cofre
 // ==========================================================================
 
@@ -129,6 +129,48 @@ function quickLevelUpFx() {
   setTimeout(() => b.remove(), 1900);
 }
 
+// [0.210] Cartas que pueden salir al subir de nivel (o en Hallazgo Táctico+): respeta el bucle mínimo y las que ya no se pueden repetir
+function levelCardPool(onlyTactics) {
+  const P = STATE.perks, loop = STATE.currentLoop || 1, max = (DATOS_JUEGO.CARTAS_210 || {}).HERRERO_MAX || 3;
+  const src = onlyTactics ? DATOS_JUEGO.CARTAS_NIVEL.TACTICAS : [...DATOS_JUEGO.CARTAS_NIVEL.PASIVAS, ...DATOS_JUEGO.CARTAS_NIVEL.TACTICAS];
+  return src.filter(c => (!c.minBucle || loop >= c.minBucle)
+    && !(c.id === 'cliente_vip' && P.clienteVip) && !(c.id === 'exorcismo' && P.exorcismo)
+    && !(c.id === 'inconformista' && P.inconformista) && !(c.id === 'herrero' && (P.herrero || 0) >= max));
+}
+// [0.210] Aplica el efecto de una carta de subida de nivel (antes dentro del clic)
+function applyLevelCard(cardData) {
+  if (cardData.tipo === 'PERK') {
+    if (cardData.id === 'mano_firme') STATE.perks.sweetSpot++;
+    if (cardData.id === 'ojo_cazador') STATE.perks.rarityBonus++;
+    if (cardData.id === 'regateador') STATE.perks.discount++;
+    if (cardData.id === 'pistones_lentos') STATE.perks.slowerPistons++;
+    if (cardData.id === 'fondo_bolsillo') STATE.perks.goldStreak++;
+    if (cardData.id === 'hombre_tranquilo') STATE.perks.extraTime += cardData.valor;
+    if (cardData.id === 'oido_clinico') STATE.perks.oidoClinico = 1;
+    if (cardData.id === 'ladron') STATE.perks.shopStealFree = true;
+    if (cardData.id === 'tipo_con_suerte') STATE.perks.luckyLootChance = cardData.valor;
+    if (cardData.id === 'clasico') STATE.perks.bonusMadera = (STATE.perks.bonusMadera || 0) + 1;
+    if (cardData.id === 'mecanico') STATE.perks.bonusAcero = (STATE.perks.bonusAcero || 0) + 1;
+    if (cardData.id === 'informatico') STATE.perks.bonusDigital = (STATE.perks.bonusDigital || 0) + 1;
+    if (cardData.id === 'fontanero') STATE.perks.bonusVapor = (STATE.perks.bonusVapor || 0) + 1;
+    if (cardData.id === 'electricista') STATE.perks.bonusNeon = (STATE.perks.bonusNeon || 0) + 1;
+    if (cardData.id === 'cliente_vip') STATE.perks.clienteVip = 1;       // [0.210]
+    if (cardData.id === 'exorcismo') STATE.perks.exorcismo = 1;
+    if (cardData.id === 'inconformista') STATE.perks.inconformista = 1;
+    if (cardData.id === 'herrero') STATE.perks.herrero = (STATE.perks.herrero || 0) + 1;
+  } else {
+    if (cardData.id === 'auto_open') STATE.abilities.auto++;
+    if (cardData.id === 'doble_2x') STATE.abilities.double++;
+    if (cardData.id === 'escudo') STATE.abilities.shield++;
+    if (cardData.id === 'apuesta_riesgo') STATE.abilities.riskPot++;
+    if (cardData.id === 'carta_perdedor') STATE.abilities.perdedor++;
+    if (cardData.id === 'invocar_duende') STATE.abilities.summonDuende++;
+    if (cardData.id === 'reroll') STATE.abilities.reroll++;           // [0.210]
+    if (cardData.id === 'pulsera_vip') STATE.abilities.pulsera++;
+    if (cardData.id === 'ruleta') STATE.abilities.ruleta++;
+  }
+}
+
 function triggerLevelUpChoice() {
   lvlClearTimers();
   const lvlNum = document.getElementById('levelUpNum'); 
@@ -176,7 +218,7 @@ function triggerLevelUpChoice() {
     nextBtn.onclick = () => { try { audio.playUiClick(); } catch (e) {} revealChoices(); };
   }), 1300));
 
-  const pool = [...DATOS_JUEGO.CARTAS_NIVEL.PASIVAS, ...DATOS_JUEGO.CARTAS_NIVEL.TACTICAS].filter(c => !c.minBucle || (STATE.currentLoop || 1) >= c.minBucle).sort(() => 0.5 - Math.random()).slice(0, 3);
+  const pool = levelCardPool().sort(() => 0.5 - Math.random()).slice(0, 3);   // [0.210] ver levelCardPool()
 
   pool.forEach(cardData => {
     let currentLvl = 0;
@@ -185,6 +227,7 @@ function triggerLevelUpChoice() {
     if (cardData.id === 'informatico') currentLvl = STATE.perks.bonusDigital || 0;
     if (cardData.id === 'fontanero') currentLvl = STATE.perks.bonusVapor || 0;
     if (cardData.id === 'electricista') currentLvl = STATE.perks.bonusNeon || 0;
+    const herreroLvl = cardData.id === 'herrero' ? (STATE.perks.herrero || 0) : 0;   // [0.210]
 
     let descText = cardData.desc;
     let titleText = cardData.titulo;
@@ -194,6 +237,9 @@ function triggerLevelUpChoice() {
       const nextPct = Math.round(getMasteryTorpezaPct(nextLvl) * 100);
       descText = `Sube a Nivel ${nextLvl} (+${nextPct}% botín y EXP).`;
       titleText = `${cardData.titulo} (Lv.${currentLvl} ➔ ${nextLvl})`;
+    } else if (herreroLvl > 0) {
+      descText = `Sube el Herrero a Nivel ${herreroLvl + 1}: reciclajes más baratos y generosos.`;
+      titleText = `${cardData.titulo} (Lv.${herreroLvl} ➔ ${herreroLvl + 1})`;
     } else if (['clasico', 'mecanico', 'informatico', 'fontanero', 'electricista'].includes(cardData.id)) {
       const basePct = Math.round(DATOS_JUEGO.ECONOMIA.PORCENTAJE_MAESTRIA_TORPEZA_BASE * 100);
       descText = `Nivel 1: +${basePct}% de botín y EXP en sus cofres.`;
@@ -224,29 +270,7 @@ function triggerLevelUpChoice() {
       lvlClearTimers();
       audio.playUnlockFanfare('raro');
       
-      if (cardData.tipo === 'PERK') {
-        if (cardData.id === 'mano_firme') STATE.perks.sweetSpot++;
-        if (cardData.id === 'ojo_cazador') STATE.perks.rarityBonus++;
-        if (cardData.id === 'regateador') STATE.perks.discount++;
-        if (cardData.id === 'pistones_lentos') STATE.perks.slowerPistons++;
-        if (cardData.id === 'fondo_bolsillo') STATE.perks.goldStreak++;
-        if (cardData.id === 'hombre_tranquilo') STATE.perks.extraTime += cardData.valor;
-        if (cardData.id === 'oido_clinico') STATE.perks.oidoClinico = 1;
-        if (cardData.id === 'ladron') STATE.perks.shopStealFree = true;
-        if (cardData.id === 'tipo_con_suerte') STATE.perks.luckyLootChance = cardData.valor;
-        if (cardData.id === 'clasico') STATE.perks.bonusMadera = (STATE.perks.bonusMadera || 0) + 1;
-        if (cardData.id === 'mecanico') STATE.perks.bonusAcero = (STATE.perks.bonusAcero || 0) + 1;
-        if (cardData.id === 'informatico') STATE.perks.bonusDigital = (STATE.perks.bonusDigital || 0) + 1;
-        if (cardData.id === 'fontanero') STATE.perks.bonusVapor = (STATE.perks.bonusVapor || 0) + 1;
-        if (cardData.id === 'electricista') STATE.perks.bonusNeon = (STATE.perks.bonusNeon || 0) + 1;
-      } else {
-        if (cardData.id === 'auto_open') STATE.abilities.auto++;
-        if (cardData.id === 'doble_2x') STATE.abilities.double++;
-        if (cardData.id === 'escudo') STATE.abilities.shield++;
-        if (cardData.id === 'apuesta_riesgo') STATE.abilities.riskPot++;
-        if (cardData.id === 'carta_perdedor') STATE.abilities.perdedor++;
-        if (cardData.id === 'invocar_duende') STATE.abilities.summonDuende++;
-      }
+      applyLevelCard(cardData);   // [0.210] extraído para que también lo use Hallazgo Táctico+
 
       const levelUpModal = document.getElementById('levelUpModal'); if (levelUpModal) levelUpModal.classList.add('hidden');
       updateUI();
@@ -297,6 +321,14 @@ function openActiveChest() {
     const toolProp = active.type.consumible;
 
     if (STATE[toolProp] < reqCount) {
+      // [0.210] Llave Maestra: si faltan herramientas, se ofrece abrir el cofre con 5 ganzúas (se gastan salga bien o mal)
+      if (canUseMasterKey(active)) {
+        const nMK = DATOS_JUEGO.MODS_WILDCARD.LLAVE_MAESTRA.GANZUAS;
+        askYesNo('LLAVE MAESTRA', `No tienes las herramientas de este cofre. ¿Abrirlo con ${nMK} ganzúas? Se gastan tanto si ganas como si fallas.`, `USAR ${nMK} GANZÚAS`, () => {
+          STATE.picks = Math.max(0, STATE.picks - nMK); masterKeyActive = true; updateUI(); openActiveChest();
+        });
+        return;
+      }
       if (checkCanOpenAnyChestOnScreen()) {
         showPersistentFeedback(`⚠️ No tienes suficientes herramientas para este cofre. Selecciona otro o usa una carta táctica.`);
       } else {
@@ -315,23 +347,34 @@ function openActiveChest() {
     if (minigameTitle) minigameTitle.textContent = active.type.nombre;
     pzHardBadgeUpdate();   // [0.105] aviso de puzle endurecido/extremo
     { const mm0 = document.getElementById('minigameModal'); if (mm0) mm0.classList.remove('pz-seq'); }   // [0.201] startSequenceGame lo vuelve a poner
-    setPuzzleBackground(active.type.juego);   // [0.101] imagen de ambiente detrás del puzle
+    // [0.210] Cofres Mentirosos: a veces el puzle que sale no es el del cofre (siempre uno ya desbloqueado)
+    let juegoShown = active.type.juego; mentiraPuzzle = false;
+    if (modOn('mentirosos') && !isClimaxActive() && Math.random() < DATOS_JUEGO.MODS_WILDCARD.MENTIROSOS.PROB) {
+      const alts = DATOS_JUEGO.COFRES.ESTANDAR.filter(t => t.juego !== active.type.juego && STATE.level >= chestMinLevel(t) && (t.consumible === 'picks' || toolUnlocked(t.consumible)));
+      if (alts.length) { juegoShown = alts[Math.floor(Math.random() * alts.length)].juego; mentiraPuzzle = true; }
+    }
+    setPuzzleBackground(juegoShown);   // [0.101] imagen de ambiente detrás del puzle
 
-    if (active.type.juego === 'lockpick') startLockpickGame();
-    else if (active.type.juego === 'tumbler') startTumblerGame();
-    else if (active.type.juego === 'hack') startHackGame();
-    else if (active.type.juego === 'pipe') startPipeGame();
-    else if (active.type.juego === 'sequence') startSequenceGame();
-    else if (active.type.juego === 'fuses') startFuseGame();   // [0.203]
+    if (juegoShown === 'lockpick') startLockpickGame();
+    else if (juegoShown === 'tumbler') startTumblerGame();
+    else if (juegoShown === 'hack') startHackGame();
+    else if (juegoShown === 'pipe') startPipeGame();
+    else if (juegoShown === 'sequence') startSequenceGame();
+    else if (juegoShown === 'fuses') startFuseGame();   // [0.203]
     minigameInProgress = true;
     humHoldChest = active;   // [0.091] el zumbido se calla con este cofre hasta fallar o hasta que salga otro
 
     // [0.090] Herramientas avanzadas (no madera): se pagan AL ENTRAR al puzle (se ve el "-N" al empezar). Ganar no vuelve a cobrar; fallar tampoco; el Escudo las devuelve.
     puzzleToolPaid = null; puzzleStat = active.type.juego;   // [0.090]
+    sedaPuzzle = false;
     if (toolProp !== 'picks') {
-      STATE[toolProp] = Math.max(0, STATE[toolProp] - reqCount);
-      puzzleToolPaid = { prop: toolProp, n: reqCount };
-      updateUI();
+      if (modOn('seda') && reqCount > 0) {   // [0.210] Manos de Seda: este puzle actúa como las ganzúas (solo gasta herramienta si fallas)
+        useMod('seda'); sedaPuzzle = true; updateUI();
+      } else {
+        STATE[toolProp] = Math.max(0, STATE[toolProp] - reqCount);
+        puzzleToolPaid = { prop: toolProp, n: reqCount };
+        updateUI();
+      }
     }
 
     const minigameModal = document.getElementById('minigameModal');

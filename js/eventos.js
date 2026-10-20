@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — eventos.js — VERSIÓN 0.209
+// JUST ONE MORE CHEST — eventos.js — VERSIÓN 0.210
 // tiendas especiales, visitas, habilidades, temporizador, fallo y Game Over
 // ==========================================================================
 
@@ -423,8 +423,8 @@ function triggerDuendeNarrativeVisit() {
 /* [0.089b] En pantallas táctiles, tocar una carta abre primero una pantalla con su descripción y los botones USAR / VOLVER
    (en PC se mantiene el clic directo + tooltip). Se intercepta en fase de captura, antes de los manejadores de cada carta. */
 (function () {
-  const ids = { abilityAutoBtn: 'auto', ability2xBtn: 'double', abilityShieldBtn: 'shield', abilityRiskBtn: 'riskPot', abilityPerdedorBtn: 'perdedor', abilitySummonDuendeBtn: 'summonDuende', abilityCofradiaBtn: 'cofradia' };
-  const NOMBRES = { auto: 'AUTO', double: '2X', shield: 'ESCUDO', riskPot: 'APUESTA', perdedor: 'PERDEDOR', summonDuende: 'DUENDE', cofradia: 'COFRADÍA DEL COFRE' };
+  const ids = { abilityAutoBtn: 'auto', ability2xBtn: 'double', abilityShieldBtn: 'shield', abilityRiskBtn: 'riskPot', abilityPerdedorBtn: 'perdedor', abilitySummonDuendeBtn: 'summonDuende', abilityCofradiaBtn: 'cofradia', abilityRerollBtn: 'reroll', abilityPulseraBtn: 'pulsera', abilityRuletaBtn: 'ruleta' };
+  const NOMBRES = { auto: 'AUTO', double: '2X', shield: 'ESCUDO', riskPot: 'APUESTA', perdedor: 'PERDEDOR', summonDuende: 'DUENDE', cofradia: 'COFRADÍA DEL COFRE', reroll: 'RE-ROLL', pulsera: 'PULSERA VIP', ruleta: 'RULETA' };
   let bypass = false;
   document.addEventListener('click', (e) => {
     const cfg = DATOS_JUEGO.CARTAS_PANTALLA_PREVIA || {};
@@ -457,6 +457,9 @@ const btnAuto = document.getElementById('abilityAutoBtn');
 if (btnAuto) {
   btnAuto.addEventListener('click', () => {
     if (STATE.abilities.auto > 0) {
+      { const R = (STATE.recharge || {}).auto;   // [0.210] Sombra Favorable: la carta de comodín se gasta la última y vuelve a los 10 cofres
+        const lvlCards = (STATE.abilities.auto || 0) - ((R && R.armed) ? 1 : 0);
+        if (lvlCards <= 0 && R && R.armed) rechargeUsed('auto'); }
       STATE.abilities.auto--;
       stopMinigameTimer();
       const minigameModal = document.getElementById('minigameModal');
@@ -465,7 +468,7 @@ if (btnAuto) {
       
       const active = STATE.screenChests[STATE.activeChestIdx];
       const reqCount = getRequiredToolCount(active.rarity);
-      if (active.type.consumible !== 'picks' && !puzzleToolPaid) {   // [0.090] si ya se pagó al entrar, no se cobra otra vez
+      if (active.type.consumible !== 'picks' && !puzzleToolPaid && !sedaPuzzle) {   // [0.090] si ya se pagó al entrar, no se cobra otra vez; [0.210] con Manos de Seda tampoco
         STATE[active.type.consumible] = Math.max(0, STATE[active.type.consumible] - reqCount);
       }
       puzzleToolPaid = null; puzzleStat = null;   // [0.090] la carta AUTO no cuenta como puzle superado
@@ -675,6 +678,7 @@ let globalPuzzleTimerInterval = null;
 let globalPuzzleTimeLeft = 10;
 let currentPuzzleConsumable = 'picks';
 let TEST_SERIES = { active: false };   // [0.090] Modo test: puzles en serie
+let sedaPuzzle = false;   // [0.210] el puzle en curso va con Manos de Seda (no se ha cobrado la herramienta al entrar)
 let puzzleToolPaid = null;   // [0.090] herramienta avanzada pagada al entrar al puzle en curso
 
 // [0.103] Reloj grande e independiente (#bigTimer). Rojo en los últimos 5 s; "SIN TIEMPO" en los puzles sin reloj
@@ -745,9 +749,23 @@ function handleFailure(toolName = 'picks', reasonText = "Fallo en el puzle.") {
   if (puzzleStat) { statsPuzzle(puzzleStat, false); puzzleStat = null; }   // [0.090]
   minigameInProgress = false;
   stopMinigameTimer();
-  if (modOn('congelada')) { const left = useMod('congelada'); showPersistentFeedback(`🧊 Racha Congelada: tu racha sobrevive al fallo.${left > 0 ? ' Te quedan ' + left + (left === 1 ? ' uso.' : ' usos.') : ' Era el último uso.'}`); } else STATE.cleanStreak = 0;   // [0.093][0.096] gasta un uso
+  if (modOn('congelada')) { const left = useMod('congelada'); showPersistentFeedback(`🧊 Racha Congelada: tu racha sobrevive al fallo.${left > 0 ? ' Te quedan ' + left + (left === 1 ? ' uso.' : ' usos.') : ' Era el último uso.'}`); } else breakStreak();   // [0.093][0.096] gasta un uso; [0.210] también apaga el Enrachado
   const active = STATE.screenChests[STATE.activeChestIdx];
   const reqCount = getRequiredToolCount(active.rarity);
+  // [0.210] Cofres Mentirosos: el puzle era de otro tipo, pero la herramienta que se gasta es la del cofre
+  if (mentiraPuzzle) toolName = active.type.consumible;
+  mentiraPuzzle = false; masterKeyActive = false;
+  sedaPuzzle = false;
+  // [0.210] Pulsera VIP: un fallo también gasta uno de sus intentos
+  if (STATE.pulseraLeft > 0) { STATE.pulseraLeft--; if (STATE.pulseraLeft === 0) showPersistentFeedback('🎟️ Se acabó la Pulsera VIP.'); }
+  // [0.210] Atajo: un fallo dentro de los cofres del trato = pantalla de Game Over (o trato injusto)
+  if (STATE.atajoLeft > 0) {
+    STATE.atajoLeft = 0;
+    updateUI();
+    showPersistentFeedback('⚡ ATAJO: has fallado. El Trapero cobra lo suyo...');
+    checkGameOver(true);
+    return;
+  }
 
   if (STATE.riskModeActive && !STATE.activeShield) {   // [0.087b] el escudo también protege el bote de la Apuesta
     STATE.riskPot = 0;
@@ -778,13 +796,7 @@ function handleFailure(toolName = 'picks', reasonText = "Fallo en el puzle.") {
     }
   }
 
-  if (modOn('seda')) {   // [0.093][0.096] Manos de Seda (antes que el Escudo, para no gastar la carta): el fallo no cuesta herramientas y gasta UN uso
-    const left = useMod('seda');
-    showPersistentFeedback(`🧤 Manos de Seda: el fallo no te ha costado ninguna herramienta.${left > 0 ? ' Te quedan ' + left + (left === 1 ? ' uso.' : ' usos.') : ' Era el último uso.'}`);
-    if (puzzleToolPaid) { STATE[puzzleToolPaid.prop] += puzzleToolPaid.n; puzzleToolPaid = null; }
-    updateUI();
-    return;
-  }
+  // [0.210] Manos de Seda ya no actúa aquí: los puzles que no son de madera no cobran la herramienta al entrar y solo la gastan si fallas (ver openActiveChest)
 
   if (STATE.activeShield) {
     STATE.activeShield = false;
@@ -808,6 +820,7 @@ function handleFailure(toolName = 'picks', reasonText = "Fallo en el puzle.") {
 
 function checkCanOpenAnyChestOnScreen() {
   if (STATE.abilities.auto > 0 || isClimaxActive()) return true;
+  if (STATE.screenChests.some(c => canUseMasterKey(c))) return true;   // [0.210] Llave Maestra
 
   return STATE.screenChests.some(chest => {
     const req = getRequiredToolCount(chest.rarity);
@@ -999,8 +1012,8 @@ function showFinalGameOver() {
   audio.init(); audio.playGameOver();
   clearSave();
 }
-function checkGameOver() {
-  if (checkCanOpenAnyChestOnScreen()) return;
+function checkGameOver(force) {   // [0.210] force: el Atajo lanza el Game Over aunque queden herramientas
+  if (!force && checkCanOpenAnyChestOnScreen()) return;
   if (gameOverSeq) return;
   gameOverSeq = true;
   whenBannerClosed(() => runGameOverStrike(() => {

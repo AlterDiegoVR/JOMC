@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — graficos.js — VERSIÓN 0.209
+// JUST ONE MORE CHEST — graficos.js — VERSIÓN 0.210
 // canvas, sala, cerradura, decoración, efectos de cofre
 // ==========================================================================
 
@@ -883,8 +883,23 @@ setInterval(() => {
   setTimeout(fn, 150);
 }, 200);
 function triggerSecretDecorationReward(decor) {
-  const roll = Math.random() * 100;
+  let roll = Math.random() * 100;
   let msg = `Inspeccionaste ${decor.name}. "${decor.descriptor.toUpperCase()}"`;
+  // [0.210] Spooky Things: tocar un objeto puede maldecirte unos cofres
+  if (modOn('spooky') && Math.random() < DATOS_JUEGO.MODS_WILDCARD.SPOOKY.PROB) {
+    const nC = DATOS_JUEGO.MODS_WILDCARD.SPOOKY.COFRES_MALDICION;
+    STATE.cursedChestsLeft += nC;
+    try { audio.init(); audio.playBreak(); } catch (e) {}
+    updateUI();
+    showPersistentFeedback(msg + ` (¡Algo se te pega a los dedos! Maldición durante ${nC} cofres.)`);
+    return;
+  }
+  // [0.210] Exorcismo: bajo maldición, se duplica la probabilidad de que el objeto dé una herramienta (65-97 = herramientas)
+  if (STATE.perks.exorcismo && STATE.cursedChestsLeft > 0 && !(roll >= 65 && roll < 97)) {
+    const pTool = 0.32, mult = DATOS_JUEGO.CARTAS_210.EXORCISMO.DECOR_MULT_HERRAMIENTAS;
+    const extra = (Math.min(1, pTool * mult) - pTool) / (1 - pTool);
+    if (Math.random() < extra) roll = 65 + Math.random() * 32;
+  }
 
   if (roll < 20) {
     const themes = DATOS_JUEGO.DECORACIONES_SALA.AMBIENTES_AZAR;

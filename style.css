@@ -894,3 +894,29 @@ html:not(.narrow-layout) #pzHardBadge { font-size: 13px; }
 .fz-cell.rowmark:first-child::before, .fz-cell.rowmark:nth-child(4n+1)::before { left: 0; }
 .fz-cell.rowmark:nth-child(4n)::before { right: 0; }
 @media (prefers-reduced-motion: reduce) { .fz-cell.hit { animation: none; } }
+
+/* ===== [0.210] botones de pasivas (distintos de las cartas) ===== */
+.perk-act { display: flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 10px; font: 800 11px/1 'Outfit', sans-serif; letter-spacing: .04em; cursor: pointer; border: 1px solid; }
+.perk-act.hidden { display: none; }
+.perk-act:disabled { opacity: .45; cursor: not-allowed; }
+.perk-act b { font-weight: 900; opacity: .9; }
+.pa-reroll { background: rgba(8, 47, 73, .85); border-color: rgba(14, 165, 233, .5); color: #7dd3fc; }
+.pa-smith { background: rgba(67, 20, 7, .85); border-color: rgba(249, 115, 22, .5); color: #fdba74; }
+
+/* ===== [0.210] Herrero ===== */
+.smith-card { width: 100%; max-width: 340px; max-height: 90vh; overflow-y: auto; background: #1c1410; border: 2px solid #c2410c; border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 10px; color: #fed7aa; }
+.smith-hdr { display: flex; align-items: center; gap: 8px; font-size: 16px; color: #fb923c; }
+.smith-hdr span { margin-left: auto; font-size: 12px; opacity: .8; }
+.smith-sub { font-size: 12px; margin: 0; color: #fdba74; }
+.smith-list { display: flex; flex-direction: column; gap: 6px; }
+.smith-row { display: flex; align-items: center; gap: 10px; background: rgba(0, 0, 0, .35); border: 1px solid rgba(251, 146, 60, .25); border-radius: 10px; padding: 6px 8px; }
+.smith-row img { width: 34px; height: 34px; image-rendering: pixelated; object-fit: contain; }
+.smith-tx { display: flex; flex-direction: column; flex: 1; font-size: 12px; }
+.smith-tx span { font-size: 10px; opacity: .7; }
+.smith-row button { padding: 7px 10px; border-radius: 8px; background: #ea580c; color: #fff; font-weight: 800; font-size: 11px; cursor: pointer; border: 0; }
+.smith-row button:disabled, .smith-row.poor button { background: #44403c; color: #a8a29e; cursor: not-allowed; }
+.smith-close { padding: 10px; border-radius: 10px; background: #292524; color: #d6d3d1; font-weight: 800; font-size: 12px; cursor: pointer; border: 0; }
+
+/* ===== [0.210] tienda del Duende a oscuras (luz apagada) ===== */
+.dshop.dshop-dark::before { content: ''; position: absolute; inset: 0; z-index: 4; pointer-events: none; background: radial-gradient(circle at 50% 38%, rgba(0, 0, 0, .15) 0, rgba(0, 0, 0, .72) 55%, rgba(0, 0, 0, .9) 100%); }
+.dshop-slot-vip, .dshop .vip-slot .ic { outline: 2px dashed rgba(250, 204, 21, .6); outline-offset: 2px; }

@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — estado.js — VERSIÓN 0.209
+// JUST ONE MORE CHEST — estado.js — VERSIÓN 0.210
 // estado, wildcards, guardado, logros, estadísticas, reinicio
 // ==========================================================================
 
@@ -83,10 +83,11 @@ const STATE = {
     bonusAcero: 0,
     bonusDigital: 0,
     bonusVapor: 0,
-    bonusNeon: 0   // [0.202] maestría ELECTRICISTA (Arca de Neón)
+    bonusNeon: 0,   // [0.202] maestría ELECTRICISTA (Arca de Neón)
+    clienteVip: 0, exorcismo: 0, inconformista: 0, herrero: 0   // [0.210]
   },
 
-  abilities: { auto: 0, double: 0, shield: 0, reveal: 0, riskPot: 0, perdedor: 0, summonDuende: 0, cofradia: 0 },
+  abilities: { auto: 0, double: 0, shield: 0, reveal: 0, riskPot: 0, perdedor: 0, summonDuende: 0, cofradia: 0, reroll: 0, pulsera: 0, ruleta: 0 },
   active2XMultiplier: false,
   activeShield: false,
   
@@ -120,7 +121,12 @@ const STATE = {
   hintUses: {},   // [0.090] veces que se ha mostrado cada ayuda de las primeras veces (por partida)
   acceptDelayUses: {},   // [0.089b] veces que se ha retardado el botón Aceptar, por tipo de mensaje (por partida)
   opensByType: {},   // [0.087] cofres abiertos con éxito por tipo (para la flecha del cerrojo)
-  roomDarkUntil: 0   // [0.086] la celda está a oscuras mientras chestsOpened < roomDarkUntil
+  roomDarkUntil: 0,   // [0.086] la celda está a oscuras mientras chestsOpened < roomDarkUntil
+  rerollCount: 0,     // [0.210] veces que has pagado el Inconformista en este bucle (sube el coste)
+  pulseraLeft: 0,     // [0.210] intentos que le quedan a la Pulsera VIP
+  atajoLeft: 0,       // [0.210] cofres que quedan del trato Atajo (un fallo = Game Over)
+  nightStealsLeft: 0, // [0.210] robos que quedan de Nocturnidad y Alevosía
+  curseHalf: false    // [0.210] Purga de Maldición+: la maldición actual quita la mitad
 };
 
 // 🟢 CANDADO GLOBAL ANTI-DUPLICACIÓN DE BOTÍN
@@ -263,7 +269,10 @@ const TACTICA_A_HABILIDAD = {
   escudo: 'shield',
   apuesta_riesgo: 'riskPot',
   carta_perdedor: 'perdedor',
-  invocar_duende: 'summonDuende'
+  invocar_duende: 'summonDuende',
+  reroll: 'reroll',          // [0.210]
+  pulsera_vip: 'pulsera',
+  ruleta: 'ruleta'
 };
 
 function getWildcardBadChance() {
@@ -313,13 +322,19 @@ function getUnlockedConsumables() {
 // [0.093] Oro fijo de los wildcards escalado por nivel; y descripción con {n} escalado
 function wcGold(n) { return Math.max(1, Math.round(n * (1 + ((DATOS_JUEGO.MODS_WILDCARD || {}).ESCALA_ORO_POR_NIVEL || 0) * Math.max(0, STATE.level - 1)))); }
 function wcDesc(wc) { return String(wc.desc).replace(/\{(\d+)\}/g, (m, n) => wcGold(+n)); }
-const MODS_POR_USOS = ['seda', 'congelada', 'destino'];   // [0.104] 'destino' dura toda la partida (hasta el reinicio del bucle)
+const MODS_POR_USOS = ['seda', 'congelada', 'destino', 'enrachado', 'mentirosos', 'spooky', 'llaveMaestra'];   // [0.104] 'destino' dura toda la partida (hasta el reinicio del bucle)
 // (comentario anterior:)   // [0.096] caducan por USOS (un fallo salvado = 1), no por cofres abiertos
 function useMod(id) { if (!STATE.mods || !(STATE.mods[id] > 0)) return 0; STATE.mods[id]--; const left = STATE.mods[id]; if (left <= 0) delete STATE.mods[id]; saveDirty = true; return Math.max(0, left); }
 function modOn(id) { return !!(STATE.mods && STATE.mods[id] > 0); }
+// [0.210] Perder la racha también apaga el comodín Enrachado
+function breakStreak() { STATE.cleanStreak = 0; if (STATE.mods && STATE.mods.enrachado) { delete STATE.mods.enrachado; showPersistentFeedback('🔥 Has perdido la racha: el Enrachado se acaba.'); } }
+// [0.210] Cartas tácticas que ya pueden salir (algunas solo desde el bucle 2)
+function tacticasDisponibles() { return DATOS_JUEGO.CARTAS_NIVEL.TACTICAS.filter(c => !c.minBucle || (STATE.currentLoop || 1) >= c.minBucle); }
+function isRoomDark() { return (STATE.roomDarkUntil || 0) > STATE.chestsOpened; }
+function darkenRoom(cofres) { STATE.roomDarkUntil = STATE.chestsOpened + cofres; try { darkFlickerT0 = Date.now(); } catch (e) {} try { audio.init(); audio.playDarkOut(); } catch (e) {} }
 
 // [0.105] Cartas que vuelven: Fortuna Doble (Doble o Nada) y Escudo Prestado. La cuenta empieza al USAR la carta y baja con cada cofre abierto.
-const RECHARGE_NOMBRES = { riskPot: 'Carta Doble o Nada', shield: 'Carta Escudo' };
+const RECHARGE_NOMBRES = { riskPot: 'Carta Doble o Nada', shield: 'Carta Escudo', auto: 'Carta Auto-Open' };
 function rechargeArm(prop, n) { STATE.recharge = STATE.recharge || {}; STATE.recharge[prop] = { armed: true, cd: 0, n: n || 10 }; }
 function rechargeUsed(prop) { const r = (STATE.recharge || {})[prop]; if (r && r.armed) { r.armed = false; r.cd = r.n; } }
 function rechargeTick() {
@@ -371,6 +386,30 @@ function applyWildcard(wc) {
       extra = lost.length ? lost.join(', ') + (wc.valor.picks ? ' Ganzúa' : '') : 'Por suerte, no tenías de sobra';
       break;
     }
+    case 'DAR_ORO_AZAR': {   // [0.210] Bolsa Olvidada: 30-80 GP en pasos de 5; a más nivel, más probable el premio alto (sin multiplicar por nivel)
+      const v = wc.valor, n = Math.floor((v.max - v.min) / v.paso) + 1;
+      const t = Math.min(1, Math.max(0, (STATE.level - 1) / Math.max(1, (v.nivelTope || 7) - 1)));
+      const w = []; for (let i = 0; i < n; i++) w.push((1 - t) * (n - i) + t * (i + 1) + 0.15);
+      let r = Math.random() * w.reduce((a, b) => a + b, 0), k = n - 1;
+      for (let i = 0; i < n; i++) { r -= w[i]; if (r <= 0) { k = i; break; } }
+      const g = v.min + k * v.paso; STATE.gold += g; extra = `+${g} GP`;
+      break;
+    }
+    case 'ELEGIR_TACTICAS':   // [0.210] Hallazgo Táctico+: al acabar la pantalla de nivel salen 3 cartas tácticas y eliges 2
+      STATE.eventQueue.push(() => openTacticPicker(wc.valor));
+      extra = `🃏 Elegirás ${wc.valor} cartas tácticas`;
+      break;
+    case 'APAGON_FINANCIERO':   // [0.210] se apaga la luz y mientras dure pierdes GP en cada cofre
+      STATE.mods = STATE.mods || {}; STATE.mods.apagonFin = wc.valor;
+      darkenRoom(wc.valor);
+      extra = `-${(DATOS_JUEGO.MODS_WILDCARD.APAGON || {}).GP_POR_TURNO} GP por cofre`;
+      break;
+    case 'NOCTURNIDAD':   // [0.210] se apaga la luz y puedes robar objetos de la tienda del Duende
+      STATE.mods = STATE.mods || {}; STATE.mods.nocturnidad = wc.valor;
+      STATE.nightStealsLeft = (DATOS_JUEGO.MODS_WILDCARD.NOCTURNIDAD || {}).ROBOS || 2;
+      darkenRoom(wc.valor);
+      extra = `🌑 ${STATE.nightStealsLeft} robos en la tienda del Duende`;
+      break;
     case 'COFRES_PESADOS':
       STATE.heavyChestsLeft += wc.valor;
       break;
@@ -393,7 +432,7 @@ function applyWildcard(wc) {
       break;
     }
     case 'OTORGAR_CARTA_TACTICA_AZAR': {
-      const tacticas = DATOS_JUEGO.CARTAS_NIVEL.TACTICAS;
+      const tacticas = tacticasDisponibles();
       const card = tacticas[Math.floor(Math.random() * tacticas.length)];
       const prop = TACTICA_A_HABILIDAD[card.id];
       if (prop) STATE.abilities[prop]++;
@@ -423,12 +462,13 @@ function pickWildcard() {
   const wcList = DATOS_JUEGO.WILDCARDS || [];
   if (wcList.length === 0) return null;
   const wantBad = Math.random() < getWildcardBadChance();
-  const okList = wcList.filter(w => !w.minNivel || STATE.level >= w.minNivel);
+  const okList = wcList.filter(w => (!w.minNivel || STATE.level >= w.minNivel) && (!w.minBucle || (STATE.currentLoop || 1) >= w.minBucle));   // [0.210] minBucle
   let pool = okList.filter(w => (w.tipo === 'PERJUDICIAL') === wantBad);
   if (pool.length === 0) pool = okList.length ? okList : wcList;
-  const tot = pool.reduce((a, w) => a + (w.peso != null ? w.peso : 1), 0);
+  const pw = w => ((STATE.currentLoop || 1) === 1 && w.pesoBucle1 != null) ? w.pesoBucle1 : (w.peso != null ? w.peso : 1);   // [0.210] peso propio en el bucle 1
+  const tot = pool.reduce((a, w) => a + pw(w), 0);
   let r = Math.random() * tot, wc = pool[pool.length - 1];
-  for (const w of pool) { r -= (w.peso != null ? w.peso : 1); if (r <= 0) { wc = w; break; } }
+  for (const w of pool) { r -= pw(w); if (r <= 0) { wc = w; break; } }
   const extra = applyWildcard(wc);
   return { wc, extra, isBad: wc.tipo === 'PERJUDICIAL' };
 }
@@ -508,7 +548,7 @@ const SAVE_KEYS = [
   'seqStage', 'traperoStrikes', 'seqLastBuyCo', 'seqLastChance', 'climaxPhase', 'sequenceBroken', 'perks', 'abilities',
   'active2XMultiplier', 'activeShield', 'riskModeActive', 'riskPot', 'perdedorActive', 'perdedorLootPending', 'fallosConsecutivos',
   'heavyChestsLeft', 'greedCurseLeft', 'harderPuzzlesLeft', 'oxidadoLeft', 'recharge', 'harderSrc', 'extremePuzzlesLeft', 'extremeSrc', 'mods', 'blankNotes', 'passWords', 'pendingNotes', 'traperoBuffs', 'cursedChestsLeft',
-  'roomDecorations', 'roomThemeFilter', 'roomDarkUntil', 'opensByType', 'acceptDelayUses', 'hintUses', 'stats'
+  'roomDecorations', 'roomThemeFilter', 'roomDarkUntil', 'rerollCount', 'pulseraLeft', 'atajoLeft', 'nightStealsLeft', 'curseHalf', 'opensByType', 'acceptDelayUses', 'hintUses', 'stats'
 ];
 
 let autosaveEnabled = false;
@@ -709,7 +749,7 @@ function isGameIdle() {
     const el = document.getElementById(id);
     if (el && !el.classList.contains('hidden')) return false;
   }
-  const overlays = ['duendeReceiptModal', 'diffuseEchoOverlay', 'resumeGameModal', 'resetConfirmModal', 'cardPreModal'];
+  const overlays = ['askYesNoModal', 'smithModal', 'duendeReceiptModal', 'diffuseEchoOverlay', 'resumeGameModal', 'resetConfirmModal', 'cardPreModal'];
   for (const id of overlays) {
     if (document.getElementById(id)) return false;
   }
@@ -855,10 +895,11 @@ function resetGame(keepLoop) {
   STATE.perks = {
     sweetSpot: 0, rarityBonus: 0, discount: 0, slowerPistons: 0, goldStreak: 0, extraTime: 0,
     oidoClinico: 0, shopStealFree: false, luckyLootChance: 0, bonusMadera: 0, bonusAcero: 0,
-    bonusDigital: 0, bonusVapor: 0, bonusNeon: 0
+    bonusDigital: 0, bonusVapor: 0, bonusNeon: 0, clienteVip: 0, exorcismo: 0, inconformista: 0, herrero: 0
   };
 
-  STATE.abilities = { auto: 0, double: 0, shield: 0, reveal: 0, riskPot: 0, perdedor: 0, summonDuende: 0, cofradia: 0 };
+  STATE.abilities = { auto: 0, double: 0, shield: 0, reveal: 0, riskPot: 0, perdedor: 0, summonDuende: 0, cofradia: 0, reroll: 0, pulsera: 0, ruleta: 0 };
+  STATE.rerollCount = 0; STATE.pulseraLeft = 0; STATE.atajoLeft = 0; STATE.nightStealsLeft = 0; STATE.curseHalf = false;   // [0.210]
   STATE.active2XMultiplier = false;
   STATE.activeShield = false;
   STATE.riskModeActive = false;

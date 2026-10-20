@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — ui.js — VERSIÓN 0.209
+// JUST ONE MORE CHEST — ui.js — VERSIÓN 0.210
 // actualización de la interfaz (HUD)
 // ==========================================================================
 
@@ -104,7 +104,7 @@ function updateUI() {
     if (el) setHelp(el, helpText(key));
   });
   // y de las cartas consumibles (tooltip; al pulsarlas ya muestran su propio aviso al activarse)
-  [['abilityAutoBtn', 'auto'], ['ability2xBtn', 'double'], ['abilityShieldBtn', 'shield'], ['abilityRiskBtn', 'riskPot'], ['abilityPerdedorBtn', 'perdedor'], ['abilitySummonDuendeBtn', 'summonDuende'], ['abilityCofradiaBtn', 'cofradia']].forEach(([id, key]) => {
+  [['abilityAutoBtn', 'auto'], ['ability2xBtn', 'double'], ['abilityShieldBtn', 'shield'], ['abilityRiskBtn', 'riskPot'], ['abilityPerdedorBtn', 'perdedor'], ['abilitySummonDuendeBtn', 'summonDuende'], ['abilityCofradiaBtn', 'cofradia'], ['abilityRerollBtn', 'reroll'], ['abilityPulseraBtn', 'pulsera'], ['abilityRuletaBtn', 'ruleta']].forEach(([id, key]) => {
     const el = document.getElementById(id);
     if (el) el.title = ((DATOS_JUEGO.TEXTOS_AYUDA.cartas || {})[key]) || '';
   });
@@ -157,7 +157,7 @@ function updateUI() {
       { active: !!(STATE.traperoBuffs && STATE.traperoBuffs.harderMinigames), text: `💀 Puzles duros ∞`, shortText: `💀 ∞`, desc: `Los puzles son más difíciles de forma permanente.`, isTorpeza: true },
       { active: !!STATE.picksBrokenOnUse, text: `🩹 Dedos Rotos`, shortText: `🩹`, desc: `Dedos Rotos: tus ganzúas se rompen al usarse (permanente).`, isTorpeza: true },
       { active: modOn('fiebre'), text: `🔥 Fiebre x${(STATE.mods||{}).fiebre}`, shortText: `🔥 x${(STATE.mods||{}).fiebre}`, desc: `Fiebre del Oro: GP x2 durante ${(STATE.mods||{}).fiebre} cofres más, pero cada cofre tiene un 50% de pedir +1 herramienta.`, isBoost: true },
-      { active: modOn('seda'), text: `🧤 Seda x${(STATE.mods||{}).seda}`, shortText: `🧤 x${(STATE.mods||{}).seda}`, desc: `Manos de Seda: los próximos ${(STATE.mods||{}).seda} fallos no gastan herramientas.`, isBoost: true },
+      { active: modOn('seda'), text: `🧤 Seda x${(STATE.mods||{}).seda}`, shortText: `🧤 x${(STATE.mods||{}).seda}`, desc: `Manos de Seda: los próximos ${(STATE.mods||{}).seda} puzles que no sean de madera solo gastan herramienta si fallas.`, isBoost: true },
       { active: modOn('solitario'), text: `🕯️ Solitarios x${(STATE.mods||{}).solitario}`, shortText: `🕯️ x${(STATE.mods||{}).solitario}`, desc: `Cofres Solitarios: 1 cofre por pantalla y +50% XP durante ${(STATE.mods||{}).solitario} cofres más.`, isBoost: true },
       { active: modOn('niebla'), text: `🌫️ Niebla x${(STATE.mods||{}).niebla}`, shortText: `🌫️ x${(STATE.mods||{}).niebla}`, desc: `Niebla Espesa: rareza oculta, todos los cofres cuestan 1 herramienta y botín +40% durante ${(STATE.mods||{}).niebla} cofres más.`, isBoost: true },
       { active: modOn('congelada'), text: `🧊 Racha x${(STATE.mods||{}).congelada}`, shortText: `🧊 x${(STATE.mods||{}).congelada}`, desc: `Racha Congelada: tus próximos ${(STATE.mods||{}).congelada} fallos no rompen tu racha.`, isBoost: true },
@@ -168,6 +168,22 @@ function updateUI() {
       { active: STATE.extremePuzzlesLeft > 0, text: `☠ Extremos x${STATE.extremePuzzlesLeft}`, shortText: `☠ x${STATE.extremePuzzlesLeft}`, desc: `${STATE.extremeSrc || 'Pulso Tembloroso'}: los próximos ${STATE.extremePuzzlesLeft} puzles son extremos.`, isTorpeza: true },
       { active: STATE.oxidadoLeft > 0, text: `🔒 Oxidados x${STATE.oxidadoLeft}`, shortText: `🔒 x${STATE.oxidadoLeft}`, desc: `Cerrojos Oxidados: los próximos ${STATE.oxidadoLeft} cofres piden entre 1 y 3 herramientas al azar.`, isTorpeza: true },
       { active: STATE.heavyChestsLeft > 0, text: `📜 Contrato x${STATE.heavyChestsLeft}`, shortText: `📜 x${STATE.heavyChestsLeft}`, desc: `Contrato Leonino: los próximos ${STATE.heavyChestsLeft} cofres Raros o superiores piden +1 herramienta.`, isTorpeza: true }
+    );
+    // [0.210] Insignias de lo nuevo (pasivas, comodines con duración y tratos)
+    const M = STATE.mods || {}, P = STATE.perks;
+    perkList.push(
+      { active: !!P.clienteVip, text: `👑 Cliente VIP`, shortText: `👑`, desc: "Cliente VIP: el Duende siempre tiene a la venta todas las herramientas.", isTorpeza: false },
+      { active: !!P.exorcismo, text: `✝️ Exorcismo`, shortText: `✝️`, desc: "Exorcismo: bajo maldición, más herramientas en los objetos de la sala y en el botín.", isTorpeza: false },
+      { active: !!P.inconformista, text: `🔄 Inconformista`, shortText: `🔄`, desc: helpPasiva('inconformista', { n: rerollCost() }), isTorpeza: false },
+      { active: (P.herrero || 0) > 0, text: `🔨 Herrero Lv.${P.herrero}`, shortText: `🔨 Lv.${P.herrero}`, desc: helpPasiva('herrero'), kind: 'mastery', isTorpeza: false },
+      { active: modOn('enrachado'), text: `🔥 Enrachado`, shortText: `🔥`, desc: `Enrachado: con racha de más de ${DATOS_JUEGO.MODS_WILDCARD.ENRACHADO.RACHA_MIN} cofres, el bonus de racha sube un ${Math.round(DATOS_JUEGO.MODS_WILDCARD.ENRACHADO.PCT * 100)}%. Se acaba al perder la racha.`, isBoost: true },
+      { active: modOn('llaveMaestra'), text: `🗝️ Llave Maestra`, shortText: `🗝️`, desc: `Llave Maestra: si no tienes las herramientas de un cofre, puedes abrirlo con ${DATOS_JUEGO.MODS_WILDCARD.LLAVE_MAESTRA.GANZUAS} ganzúas. Dura todo el bucle.`, isBoost: true },
+      { active: modOn('nocturnidad'), text: `🌑 Nocturnidad x${M.nocturnidad}`, shortText: `🌑 x${M.nocturnidad}`, desc: `Nocturnidad y Alevosía: con la luz apagada puedes robar ${STATE.nightStealsLeft} objeto(s) en la tienda del Duende.`, isBoost: true },
+      { active: (STATE.pulseraLeft || 0) > 0, text: `🎟️ Pulsera x${STATE.pulseraLeft}`, shortText: `🎟️ x${STATE.pulseraLeft}`, desc: `Pulsera VIP: los próximos ${STATE.pulseraLeft} intentos son de cofres épicos/legendarios y sin gastar herramientas.`, isBoost: true },
+      { active: modOn('mentirosos'), text: `🎭 Mentirosos`, shortText: `🎭`, desc: `Cofres Mentirosos: un ${Math.round(DATOS_JUEGO.MODS_WILDCARD.MENTIROSOS.PROB * 100)}% de las veces el puzle no es el del cofre. Dura todo el bucle.` },
+      { active: modOn('spooky'), text: `🕷️ Spooky`, shortText: `🕷️`, desc: `Spooky Things: tocar objetos de la sala tiene un ${Math.round(DATOS_JUEGO.MODS_WILDCARD.SPOOKY.PROB * 100)}% de maldecirte. Dura todo el bucle.` },
+      { active: modOn('apagonFin'), text: `💡 Apagón x${M.apagonFin}`, shortText: `💡 x${M.apagonFin}`, desc: `Apagón Financiero: pierdes ${DATOS_JUEGO.MODS_WILDCARD.APAGON.GP_POR_TURNO} GP en cada cofre mientras la luz esté apagada.` },
+      { active: (STATE.atajoLeft || 0) > 0, text: `⚡ Atajo x${STATE.atajoLeft}`, shortText: `⚡ x${STATE.atajoLeft}`, desc: `Atajo: si fallas un cofre durante los próximos ${STATE.atajoLeft}, es el fin.` }
     );
     const activePerks = perkList.filter(p => p.active);
     const activePerksCount = activePerks.length;
@@ -211,6 +227,13 @@ function updateUI() {
   const btnPerdedorEl = document.getElementById('abilityPerdedorBtn');
   const btnSummonEl = document.getElementById('abilitySummonDuendeBtn');
   const btnCofradiaEl = document.getElementById('abilityCofradiaBtn');
+  // [0.210] Tácticas nuevas: RE-ROLL, PULSERA VIP y RULETA (visibles mientras quede alguna; ninguna sirve en la secuencia final)
+  [['abilityRerollBtn', 'cntReroll', 'reroll', () => isClimaxActive()], ['abilityPulseraBtn', 'cntPulsera', 'pulsera', () => isClimaxActive() || STATE.pulseraLeft > 0], ['abilityRuletaBtn', 'cntRuleta', 'ruleta', () => isClimaxActive()]].forEach(([bid, cid, key, off]) => {
+    const b = document.getElementById(bid), c = document.getElementById(cid), n = STATE.abilities[key] || 0;
+    if (c) c.textContent = `x${n}`;
+    if (b) { b.classList.toggle('hidden', n <= 0); b.disabled = n <= 0 || off(); }
+  });
+  updatePerkActions();
 
   if (btnAutoEl) { if (STATE.abilities.auto <= 0) btnAutoEl.classList.add('hidden'); else btnAutoEl.classList.remove('hidden'); btnAutoEl.disabled = STATE.abilities.auto <= 0; }
   if (btn2xEl) { if (STATE.abilities.double <= 0) btn2xEl.classList.add('hidden'); else btn2xEl.classList.remove('hidden'); btn2xEl.disabled = STATE.abilities.double <= 0 || STATE.active2XMultiplier; }
