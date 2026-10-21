@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — tiendas.js — VERSIÓN 0.40
+// JUST ONE MORE CHEST — tiendas.js — VERSIÓN 0.41
 // tienda del Duende y del Trapero
 // ==========================================================================
 

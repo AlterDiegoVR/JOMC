@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — datos.js — VERSIÓN 0.40
+// JUST ONE MORE CHEST — datos.js — VERSIÓN 0.41
 // DATOS_JUEGO: configuración y balance
 // ==========================================================================
 
@@ -9,7 +9,7 @@
 
 const DATOS_JUEGO = {
   // [0.088] Versión visible en pantalla (esquina inferior central) para que las capturas la incluyan
-  VERSION: '0.40',
+  VERSION: '0.41',
   // [0.104] Efectos de la apertura automática de la secuencia final (cofres 101-110); la intensidad sube del primero al último (k = 0..1)
   SECUENCIA_FINAL_FX: { ACTIVAR: true, ESTALLIDOS_BASE: 2, ESTALLIDOS_EXTRA: 4, PARTICULAS_POR_ESTALLIDO: 40, HACIA_CENTRO_BASE: 30, HACIA_CENTRO_EXTRA: 60,
     SACUDIDA_PX: 6, SACUDIDA_EXTRA_PX: 10, SACUDIDA_MS: 520, PULSO_ZOOM: 0.02, DESTELLO: 0.10 },
@@ -293,7 +293,7 @@ const DATOS_JUEGO = {
       movil:      { GENERAL: 1, PEQUENOS: 2.0, BOTIN: 0.5 }
     },
     CANAL_VIVO: { ACTIVAR: true, NIVEL: 0.0015 },
-    MUSICA: { VOLUMEN: 0.7, BUCLE_COFRES: 5, NIVELES: { I: 0.45, A: 0.55, J: 0.5 }, FUNDIDO_SALIDA: 0.8, FUNDIDO_CAMBIO: 1, BAJA_EN_SIMON: 0.04 }   // [0.38] VOLUMEN: 0.7 es el del artefacto de pruebas (música en musica.js). NIVELES: volumen propio por pieza (1 = normal). FUNDIDO_*: segundos al apagar o cambiar de pieza. BAJA_EN_SIMON: nivel de la música con el Simón en pantalla. BUCLE_COFRES: cuántos cofres del bucle suena la pieza ambiental I al empezar
+    MUSICA: { VOLUMEN: 0.7, BUCLE_COFRES: 5, NIVELES: { I: 0.12, A: 0.25, J: 0.22 }, FUNDIDO_SALIDA: 0.8, FUNDIDO_CAMBIO: 1, BAJA_EN_SIMON: 0.04 }   // [0.38] VOLUMEN: 0.7 es el del artefacto de pruebas (música en musica.js). NIVELES: volumen propio por pieza (1 = normal). FUNDIDO_*: segundos al apagar o cambiar de pieza. BAJA_EN_SIMON: nivel de la música con el Simón en pantalla. BUCLE_COFRES: cuántos cofres del bucle suena la pieza ambiental I al empezar
   },
 
   // [0.089b] Zumbido grave que muta despacio, solo cuando el cofre seleccionado es legendario (se calla al empezar el puzle y con el botón de silencio)

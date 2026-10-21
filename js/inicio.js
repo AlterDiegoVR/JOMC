@@ -1,17 +1,20 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — inicio.js — VERSIÓN 0.40
+// JUST ONE MORE CHEST — inicio.js — VERSIÓN 0.41
 // portada, arranque, avisos, pantalla completa
 // ==========================================================================
 
 // [0.087b] Al tocar la portada: clic + melodía ascendente de dungeon synth
 let coverTemplate = null;
 function attachCoverClose(cover) {
+  // [0.41] Primera carga: el primer toque solo activa el sonido (el navegador no deja sonar antes) y arranca la música del menú; el segundo toque empieza la partida
   cover.addEventListener('click', () => {
+    if (!audio.ctx) { try { audio.init(); audio.playClick(0.8); requestGameFullscreen(); } catch (e) {} return; }
+    if (cover.dataset.closing) return; cover.dataset.closing = '1';
     cover.style.opacity = '0';
     setTimeout(() => cover.remove(), 450);
     try { audio.init(); audio.playClick(0.8); audio.playIntro(); } catch (e) {}
     try { requestGameFullscreen(); } catch (e) {}   // [0.088]
-  }, { once: true });
+  });
 }
 
 // [0.103] Filtro 2x fino (Scale2x/EPX) para los sprites del Trapero: duplica la resolución suavizando solo las diagonales, así se ve menos blocky

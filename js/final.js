@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — final.js — VERSIÓN 0.40
+// JUST ONE MORE CHEST — final.js — VERSIÓN 0.41
 // final del bucle 3: los dos cofres, el cerrojo de la tienda (6 puzles con voces), el cofre sellado (3 palabras) y los dos finales (puerta de dungeon / tapa del cofre y tienda del Duende)
 // Todos los textos y números están en DATOS_JUEGO.FINAL3 (datos.js). Este archivo solo tiene la lógica.
 // ==========================================================================

@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — cuaderno.js — VERSIÓN 0.40
+// JUST ONE MORE CHEST — cuaderno.js — VERSIÓN 0.41
 // El cuaderno (el Tomo): registro de lo que el juego ha visto y pantalla del cuaderno.
 // REGLA: solo se escribe lo REGISTRADO. Nada de lo no descubierto aparece (ni secciones, ni páginas, ni notas).
 // Todos los textos y la lista de secciones están en DATOS_JUEGO.CUADERNO (datos.js). Este archivo solo tiene la lógica.

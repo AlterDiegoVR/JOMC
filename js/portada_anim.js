@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — portada_anim.js — VERSIÓN 0.40
+// JUST ONE MORE CHEST — portada_anim.js — VERSIÓN 0.41
 // [0.40] Animación de la portada: los rayos de luz giran alrededor del cofre, la luz recorre al Duende, le brillan los ojos con "brillo de dinero",
 // destellan las monedas y titilan chispas. Se dibuja en un canvas a 2x sobre la imagen ASSETS.portada (108x192) y se alinea con background-size:cover.
 // Todos los números están en PORTADA_ANIM (abajo). Si algo falla, la portada se queda como imagen fija.

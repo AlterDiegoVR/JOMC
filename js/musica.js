@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — musica.js — VERSIÓN 0.40
+// JUST ONE MORE CHEST — musica.js — VERSIÓN 0.41
 // Música del juego: las piezas elegidas por el jugador (F menú, I inicio de bucle, A tienda de tratos, J tienda del Duende, K cerrojo final, G final bueno, H final malo).
 // Se generan con WebAudio (sin archivos). Un "director" mira cada medio segundo qué pantalla hay y cambia de pieza con fundido.
 // Volumen general: DATOS_JUEGO.SONIDO.MUSICA.VOLUMEN (0.7 = el del artefacto de pruebas). Cofres con música de bucle: MUSICA.BUCLE_COFRES.
