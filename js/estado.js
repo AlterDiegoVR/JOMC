@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — estado.js — VERSIÓN 0.210
+// JUST ONE MORE CHEST — estado.js — VERSIÓN 0.3
 // estado, wildcards, guardado, logros, estadísticas, reinicio
 // ==========================================================================
 
@@ -16,6 +16,7 @@ function getXpForLevel(lvl) {
 let curseHold = false;   // [0.096] el tinte de maldición se mantiene hasta que se cierra el mensaje de fin de maldición
 const STATE = {
   currentLoop: 1, // Control de Bucle (1 o 2)
+  finalPhase: null,   // [0.3] final del bucle 3: null | { stage, tries, tiendaLocked, selladoLocked, wedge } (ver final.js)
   level: DATOS_JUEGO.CONFIG_INICIAL.NIVEL,
   xp: 0,
   xpNext: getXpForLevel(DATOS_JUEGO.CONFIG_INICIAL.NIVEL),
@@ -322,7 +323,7 @@ function getUnlockedConsumables() {
 // [0.093] Oro fijo de los wildcards escalado por nivel; y descripción con {n} escalado
 function wcGold(n) { return Math.max(1, Math.round(n * (1 + ((DATOS_JUEGO.MODS_WILDCARD || {}).ESCALA_ORO_POR_NIVEL || 0) * Math.max(0, STATE.level - 1)))); }
 function wcDesc(wc) { return String(wc.desc).replace(/\{(\d+)\}/g, (m, n) => wcGold(+n)); }
-const MODS_POR_USOS = ['seda', 'congelada', 'destino', 'enrachado', 'mentirosos', 'spooky', 'llaveMaestra'];   // [0.104] 'destino' dura toda la partida (hasta el reinicio del bucle)
+const MODS_POR_USOS = ['seda', 'congelada', 'destino', 'enrachado', 'mentirosos', 'spooky', 'llaveMaestra', 'apagonFin', 'nocturnidad'];   // [0.3] Apagón Financiero y Nocturnidad también duran todo el bucle   // [0.104] 'destino' dura toda la partida (hasta el reinicio del bucle)
 // (comentario anterior:)   // [0.096] caducan por USOS (un fallo salvado = 1), no por cofres abiertos
 function useMod(id) { if (!STATE.mods || !(STATE.mods[id] > 0)) return 0; STATE.mods[id]--; const left = STATE.mods[id]; if (left <= 0) delete STATE.mods[id]; saveDirty = true; return Math.max(0, left); }
 function modOn(id) { return !!(STATE.mods && STATE.mods[id] > 0); }
@@ -331,7 +332,9 @@ function breakStreak() { STATE.cleanStreak = 0; if (STATE.mods && STATE.mods.enr
 // [0.210] Cartas tácticas que ya pueden salir (algunas solo desde el bucle 2)
 function tacticasDisponibles() { return DATOS_JUEGO.CARTAS_NIVEL.TACTICAS.filter(c => !c.minBucle || (STATE.currentLoop || 1) >= c.minBucle); }
 function isRoomDark() { return (STATE.roomDarkUntil || 0) > STATE.chestsOpened; }
-function darkenRoom(cofres) { STATE.roomDarkUntil = STATE.chestsOpened + cofres; try { darkFlickerT0 = Date.now(); } catch (e) {} try { audio.init(); audio.playDarkOut(); } catch (e) {} }
+// [0.3] Cada vez que la luz se apaga de nuevo en el bucle, Nocturnidad y Alevosía recupera sus robos
+function nightStealReset() { if (modOn('nocturnidad')) STATE.nightStealsLeft = (DATOS_JUEGO.MODS_WILDCARD.NOCTURNIDAD || {}).ROBOS || 2; }
+function darkenRoom(cofres) { nightStealReset(); STATE.roomDarkUntil = STATE.chestsOpened + cofres; try { darkFlickerT0 = Date.now(); } catch (e) {} try { audio.init(); audio.playDarkOut(); } catch (e) {} }
 
 // [0.105] Cartas que vuelven: Fortuna Doble (Doble o Nada) y Escudo Prestado. La cuenta empieza al USAR la carta y baja con cada cofre abierto.
 const RECHARGE_NOMBRES = { riskPot: 'Carta Doble o Nada', shield: 'Carta Escudo', auto: 'Carta Auto-Open' };
@@ -400,14 +403,14 @@ function applyWildcard(wc) {
       extra = `🃏 Elegirás ${wc.valor} cartas tácticas`;
       break;
     case 'APAGON_FINANCIERO':   // [0.210] se apaga la luz y mientras dure pierdes GP en cada cofre
-      STATE.mods = STATE.mods || {}; STATE.mods.apagonFin = wc.valor;
-      darkenRoom(wc.valor);
+      STATE.mods = STATE.mods || {}; STATE.mods.apagonFin = 1;   // [0.3] el efecto dura todo el bucle: se aplica cada vez que la luz esté apagada
+      STATE.eventQueue.push(() => { darkenRoom(wc.valor); processNextQueuedEvent(); });   // [0.3] la luz se apaga (efecto y música) al salir de la pantalla de nivel/tienda, no detrás de ella
       extra = `-${(DATOS_JUEGO.MODS_WILDCARD.APAGON || {}).GP_POR_TURNO} GP por cofre`;
       break;
     case 'NOCTURNIDAD':   // [0.210] se apaga la luz y puedes robar objetos de la tienda del Duende
-      STATE.mods = STATE.mods || {}; STATE.mods.nocturnidad = wc.valor;
+      STATE.mods = STATE.mods || {}; STATE.mods.nocturnidad = 1;   // [0.3] dura todo el bucle; los robos se recuperan cada vez que la luz se apaga
       STATE.nightStealsLeft = (DATOS_JUEGO.MODS_WILDCARD.NOCTURNIDAD || {}).ROBOS || 2;
-      darkenRoom(wc.valor);
+      STATE.eventQueue.push(() => { darkenRoom(wc.valor); processNextQueuedEvent(); });   // [0.3] ídem: tras la pantalla de nivel/tienda
       extra = `🌑 ${STATE.nightStealsLeft} robos en la tienda del Duende`;
       break;
     case 'COFRES_PESADOS':
@@ -542,7 +545,7 @@ function runWildcardRoulette(res, onDone) {
 const SAVE_KEY = 'justOneMoreChest_save_v1';
 const SAVE_VERSION = 1;
 const SAVE_KEYS = [
-  'currentLoop', 'level', 'xp', 'gold', 'chestsOpened', 'chestsAtLevelUp', 'chestCounterUnlocked',
+  'currentLoop', 'finalPhase', 'level', 'xp', 'gold', 'chestsOpened', 'chestsAtLevelUp', 'chestCounterUnlocked',
   'cleanStreak', 'paranoiaStage', 'traperoVisits', 'lastTraperoChest', 'salvageDealsCount', 'salvageCurseActive',
   'picks', 'proPicks', 'usb', 'valves', 'batteries', 'batteriesUnlocked', 'fuses', 'fusesUnlocked', 'lanternFound', 'noXpChestsLeft', 'picksBrokenOnUse', 'tanteoExplainedLoop', 'xpBoostChestsLeft', 'torpezas',
   'seqStage', 'traperoStrikes', 'seqLastBuyCo', 'seqLastChance', 'climaxPhase', 'sequenceBroken', 'perks', 'abilities',
@@ -795,6 +798,7 @@ function showResumePrompt(data) {
       if (typeof applyDevStart === 'function') applyDevStart();
       generateScreenChests();
       updateUI();
+      if (typeof finalResume === 'function') finalResume();   // [0.3] si se guardó en pleno final, vuelve a los dos cofres
       if (STATE.xp >= STATE.xpNext) processLevelUp();
     }
     autosaveEnabled = true;
@@ -869,6 +873,7 @@ function resetGame(keepLoop) {
   STATE.traperoVisits = 0;
   STATE.lastTraperoChest = 0;
   STATE.eventQueue = [];
+  STATE.finalPhase = null; if (typeof finalCleanup === 'function') finalCleanup();   // [0.3]
   STATE.salvageDealsCount = 0;
   STATE.salvageCurseActive = false;
 

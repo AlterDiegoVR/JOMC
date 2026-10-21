@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — puzles.js — VERSIÓN 0.210
+// JUST ONE MORE CHEST — puzles.js — VERSIÓN 0.3
 // minijuegos: ganzúa, pistones, hackeo, tuberías
 // ==========================================================================
 
@@ -24,8 +24,9 @@ function isAdvancedLoopFor(rarityId) {
 // [0.103] Texto de la tarjeta de instrucciones de cada puzle (DATOS_JUEGO.AYUDAS.PUZLES). Antes quedaba siempre el de la ganzúa.
 // [0.105] Nivel de dureza del puzle: 0 normal, 1 difícil (Pacto de la Sombra, Dedos Torpes, puzles duros), 2 extremo (Pulso Tembloroso)
 function pzHardLevel() {
+  const fin = finalPuzzleMode() ? (DATOS_JUEGO.FINAL3.DUREZA_PUZLES || 0) : 0;   // [0.3] los puzles del cerrojo final son difíciles
   if (STATE.extremePuzzlesLeft > 0) return 2;
-  return (STATE.traperoBuffs.harderMinigames || STATE.harderPuzzlesLeft > 0) ? 1 : 0;
+  return Math.max(fin, (STATE.traperoBuffs.harderMinigames || STATE.harderPuzzlesLeft > 0) ? 1 : 0);
 }
 function pzXtr() { return DATOS_JUEGO.MINIJUEGOS.EXTREMO; }
 function pzHardBadgeUpdate() {

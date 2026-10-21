@@ -1,9 +1,10 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — cofres.js — VERSIÓN 0.210
+// JUST ONE MORE CHEST — cofres.js — VERSIÓN 0.3
 // selección de cofres, banner, diálogos, post-its, botín y subida de nivel
 // ==========================================================================
 
 function generateScreenChests() {
+  if (finalLocked()) { STATE.screenChests = []; return; }   // [0.3] durante el final solo se ven los dos cofres especiales
   quadPicked = false; quadMarked = -1;
   STATE.screenChests = [];
   let chestCount = STATE.chestsOpened < 4 ? 1 : (Math.random() < 0.6 ? 2 : 3);
@@ -101,7 +102,7 @@ let mentiraPuzzle = false;   // [0.210] Cofres Mentirosos: el puzle en curso no 
 function isClimaxActive() {
   const co = STATE.chestsOpened;
   const seqConfig = DATOS_JUEGO.PROGRESIÓN.SECUENCIA_HISTORIA;
-  return STATE.climaxPhase || (!STATE.sequenceBroken && co >= (seqConfig.COFRE_CLIMAX_INICIO - 1));
+  return STATE.climaxPhase || finalLocked() || (!STATE.sequenceBroken && co >= (seqConfig.COFRE_CLIMAX_INICIO - 1));
 }
 
 // [0.210] Llave Maestra: ¿puedo abrir este cofre pagando ganzúas porque me faltan sus herramientas?
@@ -761,6 +762,7 @@ function spawnStickyNote(forcedText) {   // [0.209] forcedText: post-it de culpa
 // [0.2] Estrella pixel art de la experiencia (único dibujo nuevo del botín)
 const LOOT_STAR_SVG = '<svg class="star" viewBox="0 0 11 11"><g fill="#0c0f24"><rect x="4" y="0" width="3" height="11"/><rect x="0" y="4" width="11" height="3"/><rect x="1" y="1" width="9" height="9"/></g><g fill="#c7d2fe"><rect x="5" y="1" width="1" height="9"/><rect x="1" y="5" width="9" height="1"/><rect x="4" y="3" width="3" height="5"/><rect x="3" y="4" width="5" height="3"/></g><g fill="#818cf8"><rect x="5" y="4" width="1" height="3"/><rect x="4" y="5" width="3" height="1"/></g></svg>';
 function triggerLootExplosion() {
+  if (finalPuzzleMode()) { finalPuzzleWon(); return; }   // [0.3] puzles del cerrojo final: no hay botín
   if (TEST_SERIES.active) { testPuzzleResult(true); return; }   // [0.090] Modo test: sin botín, pasa al siguiente puzle
   // 🟢 CERROJO ANTI-DUPLICACIÓN
   if (isLootProcessing) return;
@@ -1022,7 +1024,7 @@ function triggerLootExplosion() {
     STATE.gold += finalGp;
     STATE.xp += finalXp;
     // [0.210] Apagón Financiero: alguien te hurga los bolsillos en cada cofre mientras dura
-    if (mo('apagonFin') && STATE.gold > 0) {
+    if (mo('apagonFin') && STATE.gold > 0 && (STATE.roomDarkUntil || 0) >= STATE.chestsOpened) {   // [0.3] solo mientras la luz esté apagada (el efecto dura todo el bucle)
       const lostA = Math.min(STATE.gold, DATOS_JUEGO.MODS_WILDCARD.APAGON.GP_POR_TURNO);
       STATE.gold -= lostA;
       gpLines.push({ label: "💡 Apagón Financiero", val: `-${lostA} GP` });
@@ -1161,7 +1163,10 @@ function triggerLootExplosion() {
       }, 450);
     }
 
-    if (!playerNotesFor(STATE.chestsOpened).length) spawnStickyNote();   // [0.096] el post-it del jugador SUSTITUYE al normal de ese turno
+    // [0.3] Bucle 3: post-its obligatorios sobre la segunda cerradura (FINAL3.POSTITS_OBLIGATORIOS); sustituyen al normal de ese turno
+    const finNote = finalLoop3() ? ((DATOS_JUEGO.FINAL3.POSTITS_OBLIGATORIOS || []).find(n => n.cofre === STATE.chestsOpened) || null) : null;
+    if (finNote) spawnStickyNote(finNote.texto);
+    else if (!playerNotesFor(STATE.chestsOpened).length) spawnStickyNote();   // [0.096] el post-it del jugador SUSTITUYE al normal de ese turno
     updateUI();
   } finally {
     setTimeout(() => {
@@ -1275,7 +1280,9 @@ if (claimLootBtn) {
     const seqHist = narr('HISTORIA_SECUENCIA');
     const seqConfig = DATOS_JUEGO.PROGRESIÓN.SECUENCIA_HISTORIA;
 
-    if (!STATE.sequenceBroken) {
+    if (finalLoop3()) {
+      finalHook(co);   // [0.3] bucle 3: revelación del Trapero en el 79 y los dos cofres en la siguiente aparición de la tienda
+    } else if (!STATE.sequenceBroken) {
       if (co === seqConfig.COFRE_INICIO_TRAPERO) {
         STATE.seqStage = 1;
         STATE.eventQueue.push(() => {

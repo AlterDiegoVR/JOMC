@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — datos.js — VERSIÓN 0.210
+// JUST ONE MORE CHEST — datos.js — VERSIÓN 0.3
 // DATOS_JUEGO: configuración y balance
 // ==========================================================================
 
@@ -9,7 +9,7 @@
 
 const DATOS_JUEGO = {
   // [0.088] Versión visible en pantalla (esquina inferior central) para que las capturas la incluyan
-  VERSION: '0.210',
+  VERSION: '0.3',
   // [0.104] Efectos de la apertura automática de la secuencia final (cofres 101-110); la intensidad sube del primero al último (k = 0..1)
   SECUENCIA_FINAL_FX: { ACTIVAR: true, ESTALLIDOS_BASE: 2, ESTALLIDOS_EXTRA: 4, PARTICULAS_POR_ESTALLIDO: 40, HACIA_CENTRO_BASE: 30, HACIA_CENTRO_EXTRA: 60,
     SACUDIDA_PX: 6, SACUDIDA_EXTRA_PX: 10, SACUDIDA_MS: 520, PULSO_ZOOM: 0.02, DESTELLO: 0.10 },
@@ -63,6 +63,71 @@ const DATOS_JUEGO = {
       1: { frase: 'Los cofres son como', palabras: ['espejos', 'jaulas', 'relojes', 'puertas', 'sueños', 'deudas', 'vicios', 'regalos', 'promesas', 'bucles'] },
       2: { frase: 'El ORO es genial pero', palabras: ['pesa', 'quema', 'miente', 'cansa', 'ciega', 'engaña', 'acaba', 'envenena', 'pasa', 'duele'] },
       3: { frase: 'Ahora sé que la salida es', palabras: ['parar', 'soltar', 'dormir', 'creer', 'romper', 'olvidar', 'recordar', 'esperar', 'escribir', 'mirar'] }
+    }
+  },
+  // [0.3] FINAL DEL BUCLE 3 (esqueleto). TODOS los textos y números del final están aquí. Los textos marcados "BORRADOR" los he inventado yo para que los edites.
+  // Secuencia: cofre 79 (el Trapero revela que el Duende vive en un cofre) -> en la siguiente aparición de la tienda (cofre 80, el siguiente múltiplo de DUENDE_INTERVALO) salen los dos cofres.
+  FINAL3: {
+    INTENTOS: 3,                       // intentos GLOBALES del Cofre-Tienda: un fallo reinicia desde el primer puzle; sin intentos, la tienda se atasca para siempre
+    RAREZA_PUZLES: 'epico',            // rareza con la que se generan los 6 puzles (cambia su dificultad base)
+    DUREZA_PUZLES: 1,                  // 0 normal, 1 difícil, 2 extremo (se suma a los efectos de dureza que ya tengas)
+    TIPOS_CUNAS: ['wooden', 'piston', 'hydraulic', 'cyber', 'neon', 'electric'],   // cuña 0..5 de la rueda: ganzúa, pistones, llave de paso, pantalla, luces, fusible
+    NOMBRES_CUNAS: ['GANZÚA', 'PISTONES', 'LLAVE DE PASO', 'PANTALLA', 'LUCES', 'FUSIBLE'],
+    RULETA: { ZOOM: 1.8, ZOOM_MS: 900, PASOS: 22, MS_INICIO: 55, MS_FINAL: 520, PARPADEOS: 8, PARPADEO_MS: 150 },
+    POSTITS_OBLIGATORIOS: [   // BORRADOR: post-its del bucle 3 sobre una segunda cerradura. Salen SIEMPRE (sustituyen al post-it normal de ese cofre). {cofre: nº de cofres abiertos, texto}
+      { cofre: 62, texto: "¿Y si el Duende también tiene su propia cerradura?" },
+      { cofre: 68, texto: "Todo cofre se abre... ¿por qué no puedo abrir el suyo?" },
+      { cofre: 73, texto: "Si el cofre del Duende tiene cerradura, tiene que haber una llave." },
+      { cofre: 77, texto: "Una segunda cerradura. Escondida. Lo sé." }
+    ],
+    REVELACION: [   // BORRADOR: lo dice el Trapero en el cofre 79 (una frase por ventana)
+      "El Duende vive en un cofre... y todo cofre tiene su cerradura. {conspira}",
+      "Esa tienda tan simpática no es más que otro cofre. Y toda cerradura puede abrirse. {alerta}"
+    ],
+    TEXTOS: {   // BORRADOR
+      ELIGE: ['ELIGE UN COFRE', 'Toca uno de los dos.'],
+      TIENDA: ['COFRE-TIENDA', 'La tienda del Duende. Toda cerradura puede abrirse.', 'ABRIR LA TIENDA'],
+      SELLADO: ['COFRE SELLADO', 'Cámara acorazada. Aquí no valen las ganzúas: solo lo que recuerdas.', 'ABRIR EL SELLADO'],
+      BLOQ_TIENDA: ['COFRE-TIENDA', 'La cerradura se atascó para siempre.'],
+      BLOQ_SELLADO: ['COFRE SELLADO', 'El mecanismo se bloqueó para siempre.'],
+      LOCK_TITULO: 'LA TIENDA ESTÁ CERRADA',
+      LOCK_SUB: 'Seis mecanismos. Seis sellos.',
+      LOCK_BTN: 'FORZAR CERRADURA',
+      LOCK_BTN_REINTENTO: 'VOLVER A EMPEZAR',
+      SELLO: 'SELLO {n} DE 6',
+      INTENTOS: 'INTENTOS',
+      FALLO: 'La cerradura se traba y todo vuelve a empezar. Te quedan {n} intentos.',
+      FALLO_UNO: 'La cerradura se traba y todo vuelve a empezar. Te queda 1 intento.',
+      ATASCADA: 'La cerradura se ha atascado para siempre. La tienda no volverá a abrirse.',
+      SEALED_TITULO: 'COFRE SELLADO',
+      SEALED_SUB: 'Una palabra de cada frase. Un solo intento.',
+      SEALED_BTN: 'PROBAR COMBINACIÓN',
+      SEALED_CONFIRMA_T: 'UN SOLO INTENTO',
+      SEALED_CONFIRMA: 'Si te equivocas, el cofre se bloqueará para siempre. ¿Probar esta combinación?',
+      SEALED_CONFIRMA_BTN: 'PROBAR',
+      SEALED_FALLO: 'El mecanismo gira, se atasca... y se bloquea para siempre. Solo queda la tienda.',
+      SIN_SALIDA: 'Los dos cofres están cerrados para siempre.'
+    },
+    FINAL_MALO: {   // BORRADOR (pantallas provisionales)
+      LIBERACION: [
+        ['EL DUENDE', '¡Lo has conseguido! La cerradura... ¡por fin! {alegre}'],
+        ['EL TRAPERO', 'Por fin, sí. Llevábamos tanto tiempo ahí dentro... {sonrisa}'],
+        ['EL DUENDE', '¿"Llevábamos"? ¿Quién...? {alerta}'],
+        ['???', 'Siempre fuimos uno. Uno te vendía la llave. El otro, la esperanza de usarla. {conspira}'],
+        ['???', 'Pero alguien tiene que quedarse tras el mostrador. {amenaza}']
+      ],
+      OSCURO: ['Silencio.', 'Se oye un cerrojo, a lo lejos.', 'Alguien ha entrado en la sala... y juega en la oscuridad.'],
+      TU_TITULO: 'AHORA ERES EL DUENDE',
+      TU_SUB: 'Llega un nuevo aventurero. ¿Cómo lo recibes?',
+      BIENVENIDAS: ['¡Bienvenido! Echa un ojo a mi mercancía...', '¡Solo uno más! Siempre es solo uno más.', 'Pasa, pasa. Aquí todo tiene su precio.'],
+      ORO_LINEA: 'Cada cofre que abre... te enriquece a ti.',
+      FIN: 'FIN (BORRADOR)',
+      VOLVER: 'VOLVER AL INICIO'
+    },
+    FINAL_BUENO: {   // BORRADOR (pantallas provisionales)
+      LINEAS: ['La cámara se abre sin ruido.', 'Dentro, solo unas gafas.', 'GAFAS DE VER', 'Te las pones. Los cofres son cajas. El oro es metal. La tienda es un cofre más.', 'Al fondo, una puerta. Tras ella, la luz azul del día.'],
+      GRACIAS: 'Gracias por dejar de jugar.',
+      VOLVER: 'VOLVER AL INICIO'
     }
   },
   AYUDAS: { GANZUA_TACTIL: { VECES: 3, ANILLO: 'AGARRA LA GANZÚA Y ARRÁSTRALA', CENTRO: 'MANTÉN EL CENTRO' }, PISTONES_TOQUE: { VECES: 3, TEXTO: 'También puedes tocar cualquier punto de la pantalla para fijar el pistón.' },
@@ -1606,7 +1671,9 @@ const DATOS_JUEGO = {
           "Acepta una maldición, total... ¿qué tienes que perder? {sonrisa}",
           "Aún estás a tiempo de no ser uno más. {triste}",
           "¿Por qué el duende no recoge él mismo el oro? Piénsalo. Te necesita. {conspira}",
-          "Todo el mundo quiere salir de aquí, de lo contrario has perdido. {base}"
+          "Todo el mundo quiere salir de aquí, de lo contrario has perdido. {base}",
+          "¿Has visto algún cofre distinto últimamente? {conspira}",
+          "No todos los cofres son iguales. Algunos esconden algo más. {conspira}"
         ],
         "4": [
           "Voy a contarte algo. Yo también abría cofres. Fue en otro tiempo. {triste}",
@@ -1731,7 +1798,9 @@ const DATOS_JUEGO = {
           "¡Un verdadero aventurero jamás se rinde! ¡Vamos, a por más ORO! {alegre}",
           "¿El Trapero te ha regalado algo alguna vez? Tenlo en cuenta. Tu amigo el duende te cuida. {sospechoso}",
           "Toma esto, la gloria te espera tras la siguiente tapa. No te quedes todo el ORO. {conciliador}",
-          "¡Abre otro! Ya queda poco, necesito un poco más de ese ORO... {codicia}"
+          "¡Abre otro! Ya queda poco, necesito un poco más de ese ORO... {codicia}",
+          "¿Has visto algún cofre... distinto? No, nada, olvídalo. {sospechoso}",
+          "A veces creo que hay un cofre que me mira desde la sombra. ¿Tú lo ves? {alerta}"
         ],
         "5": [
           "¡El tesoro definitivo está a tu alcance! No te detengas por nada. ¡AHORA NO! {ira}",
@@ -1762,7 +1831,9 @@ const DATOS_JUEGO = {
           "Acepta una maldición, total... ¿qué tienes que perder? {sonrisa}",
           "Aún estás a tiempo. {triste}",
           "¿Por qué el duende no recoge él mismo el oro? Piénsalo. {conspira}",
-          "Todo el mundo quiere salir de aquí, de lo contrario has perdido. {base}"
+          "Todo el mundo quiere salir de aquí, de lo contrario has perdido. {base}",
+          "¿Has visto algún cofre distinto últimamente? {conspira}",
+          "Hay cofres que no son lo que parecen. Mira bien. {alerta}"
         ],
         "4": [
           "Voy a contarte algo. Yo también abría cofres. {triste}",
@@ -2093,6 +2164,7 @@ const DATOS_JUEGO = {
       violeta: { tinte: 'rgba(130,70,200,0.22)', fondo: ['#1f0f33', '#120a22', '#05020b'] }
     },
     AMBIENTES_AZAR: ['sepia', 'neon', 'hielo', 'violeta', 'normal', 'apagado'],
+    PROB_APAGADO: 0.25,   // [0.3] probabilidad de que el ambiente aleatorio sea el apagón (el resto se reparte entre los otros 5). Quita la línea para volver al reparto uniforme.
     ICONOS: [
       { nombre: "Telaraña", icono: "🕸️", sprite: "telarana" },
       { nombre: "Muñeco Maldito", icono: "🧸", sprite: "muneco" },

@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — eventos.js — VERSIÓN 0.210
+// JUST ONE MORE CHEST — eventos.js — VERSIÓN 0.3
 // tiendas especiales, visitas, habilidades, temporizador, fallo y Game Over
 // ==========================================================================
 
@@ -744,6 +744,7 @@ function stopMinigameTimer() {
 }
 
 function handleFailure(toolName = 'picks', reasonText = "Fallo en el puzle.") {
+  if (finalPuzzleMode()) { finalPuzzleFailed(); return; }   // [0.3] puzles del cerrojo final: intentos globales
   if (TEST_SERIES.active) { testPuzzleResult(false); return; }   // [0.090] Modo test: no se gasta nada, pasa al siguiente puzle
   humHoldChest = null;   // [0.091] tras fallar, el cofre sigue ahí y el zumbido puede volver
   if (puzzleStat) { statsPuzzle(puzzleStat, false); puzzleStat = null; }   // [0.090]

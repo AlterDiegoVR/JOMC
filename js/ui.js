@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — ui.js — VERSIÓN 0.210
+// JUST ONE MORE CHEST — ui.js — VERSIÓN 0.3
 // actualización de la interfaz (HUD)
 // ==========================================================================
 
@@ -178,11 +178,11 @@ function updateUI() {
       { active: (P.herrero || 0) > 0, text: `🔨 Herrero Lv.${P.herrero}`, shortText: `🔨 Lv.${P.herrero}`, desc: helpPasiva('herrero'), kind: 'mastery', isTorpeza: false },
       { active: modOn('enrachado'), text: `🔥 Enrachado`, shortText: `🔥`, desc: `Enrachado: con racha de más de ${DATOS_JUEGO.MODS_WILDCARD.ENRACHADO.RACHA_MIN} cofres, el bonus de racha sube un ${Math.round(DATOS_JUEGO.MODS_WILDCARD.ENRACHADO.PCT * 100)}%. Se acaba al perder la racha.`, isBoost: true },
       { active: modOn('llaveMaestra'), text: `🗝️ Llave Maestra`, shortText: `🗝️`, desc: `Llave Maestra: si no tienes las herramientas de un cofre, puedes abrirlo con ${DATOS_JUEGO.MODS_WILDCARD.LLAVE_MAESTRA.GANZUAS} ganzúas. Dura todo el bucle.`, isBoost: true },
-      { active: modOn('nocturnidad'), text: `🌑 Nocturnidad x${M.nocturnidad}`, shortText: `🌑 x${M.nocturnidad}`, desc: `Nocturnidad y Alevosía: con la luz apagada puedes robar ${STATE.nightStealsLeft} objeto(s) en la tienda del Duende.`, isBoost: true },
+      { active: modOn('nocturnidad'), text: `🌑 Nocturnidad x${STATE.nightStealsLeft || 0}`, shortText: `🌑 x${STATE.nightStealsLeft || 0}`, desc: `Nocturnidad y Alevosía: con la luz apagada puedes robar ${STATE.nightStealsLeft} objeto(s) en la tienda del Duende.`, isBoost: true },
       { active: (STATE.pulseraLeft || 0) > 0, text: `🎟️ Pulsera x${STATE.pulseraLeft}`, shortText: `🎟️ x${STATE.pulseraLeft}`, desc: `Pulsera VIP: los próximos ${STATE.pulseraLeft} intentos son de cofres épicos/legendarios y sin gastar herramientas.`, isBoost: true },
       { active: modOn('mentirosos'), text: `🎭 Mentirosos`, shortText: `🎭`, desc: `Cofres Mentirosos: un ${Math.round(DATOS_JUEGO.MODS_WILDCARD.MENTIROSOS.PROB * 100)}% de las veces el puzle no es el del cofre. Dura todo el bucle.` },
       { active: modOn('spooky'), text: `🕷️ Spooky`, shortText: `🕷️`, desc: `Spooky Things: tocar objetos de la sala tiene un ${Math.round(DATOS_JUEGO.MODS_WILDCARD.SPOOKY.PROB * 100)}% de maldecirte. Dura todo el bucle.` },
-      { active: modOn('apagonFin'), text: `💡 Apagón x${M.apagonFin}`, shortText: `💡 x${M.apagonFin}`, desc: `Apagón Financiero: pierdes ${DATOS_JUEGO.MODS_WILDCARD.APAGON.GP_POR_TURNO} GP en cada cofre mientras la luz esté apagada.` },
+      { active: modOn('apagonFin'), text: `💡 Apagón`, shortText: `💡`, desc: `Apagón Financiero: pierdes ${DATOS_JUEGO.MODS_WILDCARD.APAGON.GP_POR_TURNO} GP en cada cofre mientras la luz esté apagada. Dura todo el bucle.` },
       { active: (STATE.atajoLeft || 0) > 0, text: `⚡ Atajo x${STATE.atajoLeft}`, shortText: `⚡ x${STATE.atajoLeft}`, desc: `Atajo: si fallas un cofre durante los próximos ${STATE.atajoLeft}, es el fin.` }
     );
     const activePerks = perkList.filter(p => p.active);

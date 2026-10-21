@@ -920,3 +920,100 @@ html:not(.narrow-layout) #pzHardBadge { font-size: 13px; }
 /* ===== [0.210] tienda del Duende a oscuras (luz apagada) ===== */
 .dshop.dshop-dark::before { content: ''; position: absolute; inset: 0; z-index: 4; pointer-events: none; background: radial-gradient(circle at 50% 38%, rgba(0, 0, 0, .15) 0, rgba(0, 0, 0, .72) 55%, rgba(0, 0, 0, .9) 100%); }
 .dshop-slot-vip, .dshop .vip-slot .ic { outline: 2px dashed rgba(250, 204, 21, .6); outline-offset: 2px; }
+
+/* ==========================================================================
+   [0.3] FINAL DEL BUCLE 3: los dos cofres, el cerrojo de la tienda, el cofre sellado y los finales (provisionales)
+   ========================================================================== */
+#gameFrame.final-on #chestActionCard, #gameFrame.final-on #multiChestGrid, #gameFrame.final-on #notesContainer { display: none !important; }
+.fin-ov { position: absolute; inset: 0; z-index: 45; }
+.fin-ov.hidden { display: none !important; }
+.fin-choice { position: absolute; inset: 0; z-index: 12; container-type: inline-size; pointer-events: none; }
+.fin-choice.hidden { display: none; }
+.fc-row { position: absolute; left: 0; right: 0; top: 33%; display: flex; justify-content: center; gap: 3cqw; padding: 0 3cqw; }
+.fc-chest { pointer-events: auto; position: relative; flex: 0 0 44cqw; width: 44cqw; background: none; border: 0; padding: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: transform .2s, filter .2s; }
+.fc-chest::after { content: ''; position: absolute; left: 10%; right: 10%; bottom: 3%; height: 7%; border-radius: 50%; background: rgba(8, 8, 12, .5); z-index: -1; }
+.fc-spr { display: block; width: 100%; aspect-ratio: 36 / 44; background-size: 800% 100%; background-repeat: no-repeat; image-rendering: pixelated; }
+.fc-chest.sel { transform: translateY(-6px) scale(1.04); }
+.fc-chest.sel .fc-spr { filter: drop-shadow(0 0 7px #f5d77a) brightness(1.1); }
+.fc-chest.dim { filter: brightness(.6) saturate(.7); }
+.fc-chest.locked .fc-spr { filter: grayscale(1) brightness(.5); }
+.fc-lock { display: none; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-style: normal; font-size: 30px; }
+.fc-chest.locked .fc-lock { display: block; }
+.fc-cartel { position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); width: min(88cqw, 340px); pointer-events: auto; text-align: center; padding: 10px 12px 12px; background: linear-gradient(#35261a, #241912); border: 3px solid #6b4a2b; border-radius: 8px; box-shadow: 0 0 0 2px #120d09, 0 8px 24px rgba(0, 0, 0, .6); display: flex; flex-direction: column; gap: 6px; align-items: center; }
+.fc-title { font-family: 'Outfit', sans-serif; font-weight: 900; letter-spacing: .08em; font-size: 22px; color: #f1d36a; text-shadow: 0 2px 0 #120d09; }
+.fc-sub { font-size: 12px; line-height: 1.35; color: #e8dcc0; }
+.fc-go { width: 100%; padding: 12px 10px; margin-top: 2px; border-radius: 12px; border: 1px solid rgba(253, 224, 71, .5); background: linear-gradient(90deg, #f59e0b, #ca8a04); color: #020617; font-weight: 900; font-size: 15px; cursor: pointer; }
+.fc-go:disabled { filter: grayscale(1) brightness(.6); cursor: default; }
+.fc-go.hidden { display: none; }
+/* Cerrojo de la tienda */
+.fl-lock { z-index: 45; overflow: hidden; background: var(--ds-relleno) center top / 100% auto repeat-y, #67472d; image-rendering: pixelated; }
+.fl-stage { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); aspect-ratio: 144 / 256; }
+.fl-zoom { position: absolute; inset: 0; transform-origin: 50% 50.39%; will-change: transform; }
+.fl-zoom img { position: absolute; image-rendering: pixelated; display: block; }
+.fl-shop { left: 0; top: 0; width: 100%; height: 100%; }
+.fl-wheel { left: 24.306%; top: 35.9375%; width: 51.389%; height: 28.906%; }
+.fl-placa { left: 21.528%; top: 28.516%; width: 56.944%; height: 43.75%; transform-origin: 12.195% 8.929%; }
+.fl-head { position: absolute; left: 12px; right: 12px; top: 64px; text-align: center; z-index: 3; display: flex; flex-direction: column; gap: 4px; align-items: center; pointer-events: none; }
+.fl-title { font-family: 'Outfit', sans-serif; font-weight: 900; letter-spacing: .08em; font-size: 20px; color: #f1d36a; text-shadow: 0 2px 0 #120d09, 0 0 10px #000; background: rgba(18, 13, 9, .82); border: 2px solid #6b4a2b; border-radius: 8px; padding: 4px 12px; }
+.fl-sub { font-size: 12px; color: #e8dcc0; background: rgba(18, 13, 9, .82); border-radius: 6px; padding: 3px 10px; max-width: 92%; }
+.fl-info { font-size: 11px; font-weight: 800; letter-spacing: .08em; color: #f1d36a; background: rgba(18, 13, 9, .82); border-radius: 6px; padding: 2px 10px; }
+.fl-foot { position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); width: min(86%, 340px); z-index: 3; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+.fl-foot .fc-go.hidden, .fl-back.hidden { display: none; }
+.fl-back { background: rgba(18, 13, 9, .85); border: 1px solid #6b4a2b; color: #e8dcc0; font-weight: 700; font-size: 12px; padding: 8px 16px; border-radius: 10px; cursor: pointer; }
+.fin-hud { position: absolute; left: 50%; transform: translateX(-50%); bottom: 50px; z-index: 46; display: flex; flex-direction: column; align-items: center; gap: 3px; pointer-events: none; }
+.fh-pips { display: flex; gap: 5px; }
+.fh-pips i { width: 14px; height: 14px; border-radius: 3px; background: #1f1a14; border: 2px solid #6b4a2b; }
+.fh-pips i.on { background: #f1d36a; border-color: #f5d77a; box-shadow: 0 0 8px #f5d77a; }
+.fh-pips i.cur { border-color: #f1d36a; animation: finPulse .9s ease-in-out infinite alternate; }
+.fh-txt { font-size: 10px; font-weight: 800; letter-spacing: .1em; color: #f1d36a; text-shadow: 0 1px 0 #000; }
+@keyframes finPulse { from { opacity: .45; } to { opacity: 1; } }
+/* Cofre sellado */
+.fs-screen { background: radial-gradient(ellipse at 50% 35%, #2a3042, #0b0c10 75%); z-index: 45; overflow-y: auto; }
+.fs-head { position: absolute; left: 12px; right: 12px; top: 64px; text-align: center; display: flex; flex-direction: column; gap: 5px; align-items: center; }
+.fs-cols { position: absolute; left: 8px; right: 8px; top: 150px; bottom: 110px; display: flex; gap: 6px; }
+.fs-col { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; }
+.fs-phrase { font-size: 11px; font-weight: 800; line-height: 1.2; text-align: center; color: #f1d36a; padding: 2px 2px 4px; min-height: 2.6em; display: flex; align-items: center; justify-content: center; }
+.fs-word { flex: 0 0 auto; padding: 7px 2px; font-size: 12px; font-weight: 700; color: #cfd6e4; background: #20263a; border: 1px solid #565c70; border-radius: 6px; cursor: pointer; }
+.fs-word.on { background: #5aa1a0; color: #06121a; border-color: #bfeeed; box-shadow: 0 0 8px #5aa1a0; }
+.fs-screen .fl-title { background: rgba(11, 12, 16, .85); border-color: #565c70; color: #bfeeed; }
+/* Final malo (provisional) */
+#gameFrame.fin-glitch { animation: finGlitch .45s steps(2) infinite; }
+@keyframes finGlitch { 0% { filter: hue-rotate(0deg) contrast(1.1); transform: translateX(0); } 25% { filter: hue-rotate(90deg) contrast(1.4) saturate(1.6); transform: translateX(-3px) skewX(1deg); } 50% { filter: hue-rotate(-60deg) invert(.08); transform: translateX(3px); } 75% { filter: hue-rotate(160deg) saturate(.6); transform: translateX(-2px) skewX(-1.5deg); } 100% { filter: none; transform: none; } }
+.fin-black { position: absolute; inset: 0; z-index: 60; background: #000; opacity: 0; transition: opacity 2s ease; display: flex; align-items: center; justify-content: center; padding: 28px; }
+.fin-black.on { opacity: 1; }
+.fb-line, .fg-line { font-family: 'Outfit', sans-serif; font-size: 18px; text-align: center; color: #cfd6e4; opacity: 0; max-width: 300px; line-height: 1.5; }
+.fb-line.show, .fg-line.show { animation: finLine 2.8s ease both; }
+@keyframes finLine { 0% { opacity: 0; } 22% { opacity: 1; } 78% { opacity: 1; } 100% { opacity: 0; } }
+.fg-line.show { animation-duration: 3s; }
+.fin-scene { background: radial-gradient(ellipse at 50% 40%, #3b2a1a, #100b07 80%); overflow: hidden; }
+.fy-you { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 24px; text-align: center; }
+.fy-opts { display: flex; flex-direction: column; gap: 10px; width: min(100%, 320px); }
+.fy-opt { padding: 12px; font-size: 13px; font-weight: 700; color: #e8dcc0; background: #35261a; border: 2px solid #6b4a2b; border-radius: 10px; cursor: pointer; }
+.fy-opt:active { background: #4a341f; }
+.fy-gold { display: flex; flex-direction: column; gap: 12px; align-items: center; }
+.fy-gold.hidden, .fy-end.hidden, .fy-opts.hidden { display: none; }
+.fy-say { font-size: 15px; font-style: italic; color: #e8dcc0; }
+.fy-coins { font-family: 'Outfit', sans-serif; font-weight: 900; font-size: 44px; color: #f1d36a; text-shadow: 0 0 14px rgba(245, 215, 122, .6); }
+.fy-line { font-size: 12px; color: #b9a77a; max-width: 260px; }
+.fy-end { display: flex; flex-direction: column; gap: 12px; align-items: center; width: min(100%, 300px); }
+.fy-fin { font-family: 'Outfit', sans-serif; font-weight: 900; font-size: 22px; letter-spacing: .1em; color: #e8dcc0; }
+.fy-lid { position: absolute; left: -5%; right: -5%; height: 51%; background: #000; transition: transform 2.4s cubic-bezier(.6, 0, .3, 1); z-index: 2; }
+.fy-lid.top { top: 0; border-radius: 0 0 50% 50% / 0 0 18% 18%; }
+.fy-lid.bot { bottom: 0; border-radius: 50% 50% 0 0 / 18% 18% 0 0; }
+.fin-scene.open .fy-lid.top { transform: translateY(-105%); }
+.fin-scene.open .fy-lid.bot { transform: translateY(105%); }
+/* Final bueno (provisional) */
+.fg-scene { background: #000; transition: background 3s ease; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.fg-scene.lit { background: linear-gradient(#0b2a5b, #3d7fd6 60%, #cfe6ff); }
+.fg-text { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 28px; }
+.fg-glasses { font-size: 54px; color: #bfeeed; filter: drop-shadow(0 0 12px #5aa1a0); }
+.fg-glasses.hidden, .fg-door.hidden, .fg-end.hidden { display: none; }
+.fg-door { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); width: 150px; height: 230px; animation: finDoor 2.4s ease both; }
+@keyframes finDoor { from { opacity: 0; transform: translate(-50%, -50%) scale(.85); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+.fg-frame { position: absolute; inset: 0; border: 8px solid #e8dcc0; border-radius: 75px 75px 0 0; background: #fff; box-shadow: 0 0 60px 20px rgba(207, 230, 255, .85); overflow: hidden; }
+.fg-light { position: absolute; inset: 0; background: linear-gradient(#ffffff, #a8d1ff); }
+.fg-rays { position: absolute; left: -90px; right: -90px; top: -70px; bottom: -70px; background: repeating-conic-gradient(from 0deg at 50% 55%, rgba(255, 255, 255, .35) 0 6deg, transparent 6deg 18deg); opacity: .7; animation: finSpin 40s linear infinite; }
+@keyframes finSpin { to { transform: rotate(360deg); } }
+.fg-end { position: absolute; left: 0; right: 0; bottom: 32px; display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 0 24px; }
+.fg-thanks { font-family: 'Outfit', sans-serif; font-weight: 900; font-size: 24px; color: #fff; text-shadow: 0 2px 10px rgba(11, 42, 91, .7); text-align: center; }
+.fg-end .fc-go { max-width: 300px; }
