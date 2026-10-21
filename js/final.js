@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — final.js — VERSIÓN 0.35
+// JUST ONE MORE CHEST — final.js — VERSIÓN 0.36
 // final del bucle 3: los dos cofres, el cerrojo de la tienda (6 puzles con voces), el cofre sellado (3 palabras) y los dos finales (puerta de dungeon / tapa del cofre y tienda del Duende)
 // Todos los textos y números están en DATOS_JUEGO.FINAL3 (datos.js). Este archivo solo tiene la lógica.
 // ==========================================================================
@@ -462,7 +462,7 @@ function finBadSales(B, ui, dm) {
 /* ---------- FINAL BUENO: Gafas de Ver, la puerta de dungeon al fondo de la habitación y la luz azul del día ---------- */
 // Dibujo de la puerta en pixel art (rejilla 26x38 que se escala con image-rendering: pixelated): marco de piedra, cielo, hoja de madera con cerrojo
 function finDrawDoor(frameCv, skyCv, leafCv) {
-  const GX = 26, GY = 38;
+  const GX = 24, GY = 48;
   const arch = (x, y) => { if (x < 0 || x >= GX || y < 0 || y >= GY) return false; const cut = ({ 0: 5, 1: 3, 2: 2, 3: 1, 4: 1 })[y] || 0; return cut <= x && x < GX - cut; };
   const inner = (x, y) => arch(x - 2, y - 2) && arch(x + 2, y + 2) && x >= 2 && x < GX - 2 && y >= 2;
   let seed = 11; const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
@@ -478,13 +478,13 @@ function finDrawDoor(frameCv, skyCv, leafCv) {
       px(L, x, y, c);
     }
   }
-  [[8, 10], [15, 14], [10, 22]].forEach(([cx, cy]) => { for (let dx = -3; dx <= 3; dx++) if (inner(cx + dx, cy)) px(S, cx + dx, cy, '#f2f8ff'); for (let dx = -2; dx <= 2; dx++) if (inner(cx + dx, cy - 1)) px(S, cx + dx, cy - 1, '#ffffff'); });
-  [9, 10, 24, 25].forEach(y => { for (let x = 2; x < GX - 2; x++) if (inner(x, y)) px(L, x, y, y === 9 || y === 24 ? '#2a2a32' : '#3a3a44'); });
-  [4, 8, 17, 21].forEach(x => [9, 24].forEach(y => px(L, x, y, '#9a9aa8')));
-  for (let y = 15; y < 21; y++) for (let x = 10; x < 16; x++) px(L, x, y, '#2a2a32');
-  for (let y = 16; y < 20; y++) for (let x = 11; x < 15; x++) px(L, x, y, '#e0b030');
-  [[12, 17], [13, 17], [12, 18], [13, 18], [12, 19], [13, 19]].forEach(([x, y]) => px(L, x, y, '#2a1608')); px(L, 12, 16, '#fff0a0');
-  px(L, 20, 12, '#8a8a96'); px(L, 20, 13, '#8a8a96');
+  [[7, 12], [13, 18], [9, 28]].forEach(([cx, cy]) => { for (let dx = -3; dx <= 3; dx++) if (inner(cx + dx, cy)) px(S, cx + dx, cy, '#f2f8ff'); for (let dx = -2; dx <= 2; dx++) if (inner(cx + dx, cy - 1)) px(S, cx + dx, cy - 1, '#ffffff'); });
+  [12, 13, 34, 35].forEach(y => { for (let x = 2; x < GX - 2; x++) if (inner(x, y)) px(L, x, y, y === 12 || y === 34 ? '#2a2a32' : '#3a3a44'); });
+  [4, 8, 15, 19].forEach(x => [12, 34].forEach(y => px(L, x, y, '#9a9aa8')));
+  for (let y = 21; y < 28; y++) for (let x = 9; x < 15; x++) px(L, x, y, '#2a2a32');
+  for (let y = 22; y < 27; y++) for (let x = 10; x < 14; x++) px(L, x, y, '#e0b030');
+  [[11, 23], [12, 23], [11, 24], [12, 24], [11, 25], [12, 25]].forEach(([x, y]) => px(L, x, y, '#2a1608')); px(L, 11, 22, '#fff0a0');
+  px(L, 19, 17, '#8a8a96'); px(L, 19, 18, '#8a8a96');
 }
 function finEndGood() {
   finEndCommon();
@@ -502,21 +502,22 @@ function finEndGood() {
   // 2) la sala se aclara y al fondo aparece la puerta con su cerrojo
   const door = finEl('fin-door', `
     <div class="fdr" id="fdr">
-      <canvas class="fdr-sky" width="26" height="38"></canvas>
-      <canvas class="fdr-leaf" width="26" height="38"></canvas>
-      <canvas class="fdr-frame" width="26" height="38"></canvas>
+      <canvas class="fdr-sky" width="24" height="48"></canvas>
+      <canvas class="fdr-leaf" width="24" height="48"></canvas>
+      <canvas class="fdr-frame" width="24" height="48"></canvas>
       <button type="button" class="fdr-hit" aria-label="Abrir la puerta"></button>
     </div>
     <div class="fdr-glow"></div>
     <div class="fdr-line"></div>
-    <div class="fdr-hint">${G.HINT}</div>`, 'finDoor');
+    ${G.HINT ? `<div class="fdr-hint">${G.HINT}</div>` : ''}`, 'finDoor');
   frame.appendChild(door);
   finDrawDoor(door.querySelector('.fdr-frame'), door.querySelector('.fdr-sky'), door.querySelector('.fdr-leaf'));
   finLater(() => {
     line.classList.remove('show'); gl.classList.add('hidden'); dim.classList.add('clear');
     door.classList.add('on'); try { audio.playLightOn(); } catch (e) {}
-    const dl = door.querySelector('.fdr-line'); dl.textContent = G.LINEA_PUERTA; dl.classList.add('show');
-    finLater(() => { dl.classList.remove('show'); door.classList.add('ready'); finRemove('finDim'); }, 3600);
+    const dl = door.querySelector('.fdr-line');
+    if (G.LINEA_PUERTA) { dl.textContent = G.LINEA_PUERTA; dl.classList.add('show'); }
+    finLater(() => { dl.classList.remove('show'); door.classList.add('ready'); finRemove('finDim'); }, G.LINEA_PUERTA ? 3600 : 1600);
   }, t);
   // 3) tocar el cerrojo: la hoja se abre, la luz azul se derrama y llena la pantalla
   let opened = false;

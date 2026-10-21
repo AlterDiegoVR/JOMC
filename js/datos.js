@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — datos.js — VERSIÓN 0.35
+// JUST ONE MORE CHEST — datos.js — VERSIÓN 0.36
 // DATOS_JUEGO: configuración y balance
 // ==========================================================================
 
@@ -9,7 +9,7 @@
 
 const DATOS_JUEGO = {
   // [0.088] Versión visible en pantalla (esquina inferior central) para que las capturas la incluyan
-  VERSION: '0.35',
+  VERSION: '0.36',
   // [0.104] Efectos de la apertura automática de la secuencia final (cofres 101-110); la intensidad sube del primero al último (k = 0..1)
   SECUENCIA_FINAL_FX: { ACTIVAR: true, ESTALLIDOS_BASE: 2, ESTALLIDOS_EXTRA: 4, PARTICULAS_POR_ESTALLIDO: 40, HACIA_CENTRO_BASE: 30, HACIA_CENTRO_EXTRA: 60,
     SACUDIDA_PX: 6, SACUDIDA_EXTRA_PX: 10, SACUDIDA_MS: 520, PULSO_ZOOM: 0.02, DESTELLO: 0.10 },
@@ -140,8 +140,8 @@ const DATOS_JUEGO = {
     },
     FINAL_BUENO: {   // [0.31] rehecho. BORRADOR de textos
       LINEAS: ['La cámara se abre sin ruido.', 'Dentro, solo unas gafas.', 'GAFAS DE VER', 'Te las pones. Los cofres son cajas. El oro es metal. La tienda es un cofre más.'],
-      LINEA_PUERTA: 'Al fondo, una puerta. Tras ella, la luz azul del día.',
-      HINT: 'TOCA EL CERROJO PARA ABRIR',
+      LINEA_PUERTA: '',   // [0.36] el juego no describe lo que el jugador ya ve
+      HINT: '',
       GRACIAS: 'Gracias por dejar de jugar.',
       VOLVER: 'VOLVER AL INICIO'
     }

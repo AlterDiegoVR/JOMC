@@ -1047,22 +1047,22 @@ html:not(.narrow-layout) #pzHardBadge { font-size: 13px; }
 @keyframes finLine { 0% { opacity: 0; } 22% { opacity: 1; } 78% { opacity: 1; } 100% { opacity: 0; } }
 .fin-door { position: absolute; inset: 0; z-index: 55; opacity: 0; pointer-events: none; transition: opacity 2s ease; }
 .fin-door.on { opacity: 1; }
-.fdr { position: absolute; left: 38.8%; top: 28.6%; width: 25.2%; height: 16.6%; perspective: 600px; }
+.fdr { position: absolute; left: 34.4%; top: 28.6%; width: 34%; height: 31%; perspective: 600px; }   /* [0.36] la puerta llega hasta el suelo */
 .fdr canvas { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
 .fdr-leaf { transform-origin: 0 50%; transition: transform 1.6s cubic-bezier(.5,0,.3,1); }
 .fin-door.opening .fdr-leaf { transform: rotateY(-105deg); }
-.fdr-hit { position: absolute; left: 36%; top: 38%; width: 28%; height: 24%; border: 0; background: transparent; cursor: pointer; border-radius: 6px; }
+.fdr-hit { position: absolute; left: 28%; top: 38%; width: 44%; height: 24%; border: 0; background: transparent; cursor: pointer; border-radius: 6px; }
 .fin-door.ready { pointer-events: auto; }
 .fin-door.ready .fdr-hit { animation: fdrPulse 1.4s ease-in-out infinite; }
 @keyframes fdrPulse { 0%,100% { box-shadow: 0 0 6px 2px rgba(245,200,70,.4); } 50% { box-shadow: 0 0 16px 6px rgba(245,200,70,.9); } }
-.fdr-glow { position: absolute; left: 38.8%; top: 28.6%; width: 25.2%; height: 16.6%; opacity: 0; box-shadow: 0 0 50px 24px #7fb8ff; transition: opacity 1.4s; }
+.fdr-glow { position: absolute; left: 34.4%; top: 28.6%; width: 34%; height: 31%; pointer-events: none; opacity: 0; box-shadow: 0 0 50px 24px #7fb8ff; transition: opacity 1.4s; }
 .fin-door.glow .fdr-glow { opacity: 1; }
 .fdr-line { position: absolute; left: 0; right: 0; top: 52%; text-align: center; font: 600 16px/1.4 'Outfit', sans-serif; color: #efe6cf; text-shadow: 0 2px 8px #000; padding: 0 28px; opacity: 0; }
 .fdr-line.show { animation: finLine 3.4s ease both; }
 .fdr-hint { position: absolute; left: 0; right: 0; bottom: 24%; text-align: center; font: 800 12px 'Outfit', sans-serif; letter-spacing: .14em; color: #f1d36a; opacity: 0; transition: opacity .8s; text-shadow: 0 1px 4px #000; }
 .fin-door.ready .fdr-hint { opacity: 1; }
-.fin-flood { position: absolute; inset: 0; z-index: 62; background: radial-gradient(circle at 51% 37%, #cfe6ff 0%, #3d7fd6 45%, #0b2a5b 100%); clip-path: circle(0% at 51% 37%); transition: clip-path 2.4s ease-in; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 14px; padding: 0 24px 40px; }
-.fin-flood.on { clip-path: circle(150% at 51% 37%); }
+.fin-flood { position: absolute; inset: 0; z-index: 62; background: radial-gradient(circle at 51.4% 44%, #cfe6ff 0%, #3d7fd6 45%, #0b2a5b 100%); clip-path: circle(0% at 51.4% 44%); transition: clip-path 2.4s ease-in; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 14px; padding: 0 24px 40px; }
+.fin-flood.on { clip-path: circle(150% at 51.4% 44%); }
 .ff-thanks { font: 900 24px 'Outfit', sans-serif; color: #fff; text-shadow: 0 2px 10px rgba(11,42,91,.7); text-align: center; opacity: 0; transition: opacity 1.4s ease 1.6s; }
 .fin-flood.on .ff-thanks { opacity: 1; }
 .fin-flood .fc-go { max-width: 300px; }
