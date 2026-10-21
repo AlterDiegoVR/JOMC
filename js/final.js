@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — final.js — VERSIÓN 0.31
+// JUST ONE MORE CHEST — final.js — VERSIÓN 0.32
 // final del bucle 3: los dos cofres, el cerrojo de la tienda (6 puzles con voces), el cofre sellado (3 palabras) y los dos finales (puerta de dungeon / tapa del cofre y tienda del Duende)
 // Todos los textos y números están en DATOS_JUEGO.FINAL3 (datos.js). Este archivo solo tiene la lógica.
 // ==========================================================================
@@ -425,29 +425,31 @@ function finBadOpen(B) {
     finBadSales(B, ui, dm);
   }));
 }
-// Entra el aventurero: los sitios de la tienda se van seleccionando uno a uno mientras compra y el oro sube
+// Entra el aventurero: los ítems de la tienda se van seleccionando uno a uno (comprados) y el oro sube con sus precios
 function finBadSales(B, ui, dm) {
   const sp = document.getElementById('npcSpeechText');
-  ui.insertAdjacentHTML('beforeend', `<div class="fx-gp"><span id="fxGp">0</span> GP</div>`);
-  const gpEl = ui.querySelector('#fxGp'); let gp = 0;
-  const per = Math.ceil(B.ORO_FINAL / B.SITIOS.length);
-  B.SITIOS.forEach(([nm, x, y, w, h], k) => {
+  const precios = ((DATOS_JUEGO.ECONOMIA.PRECIOS_POR_BUCLE || {})[3]) || DATOS_JUEGO.ECONOMIA.TIENDA_DUENDE;
+  const items = Object.keys(SHOP_VIS).filter(k => precios[k] != null).map(k => ({ n: SHOP_VIS[k].n, ic: SHOP_VIS[k].ic, p: precios[k] }));
+  const total = items.reduce((a, b) => a + b.p, 0);
+  ui.insertAdjacentHTML('beforeend', `<div class="fx-gp"><span id="fxGp">0</span> GP</div>
+    <div class="fx-list">${items.map(it => `<div class="fx-it"><img src="${shopImg(it.ic)}" alt=""><span class="nm">${it.n}</span><span class="pr">${it.p}<img src="${shopImg('moneda')}" alt="GP"></span></div>`).join('')}</div>`);
+  const gpEl = ui.querySelector('#fxGp'), rows = ui.querySelectorAll('.fx-it'); let gp = 0;
+  items.forEach((it, k) => {
     finLater(() => {
-      ui.querySelectorAll('.fx-hl').forEach(e => e.classList.remove('on'));
-      const hl = finEl('fx-hl on', `<i>${nm}</i>`); hl.style.cssText = `left:${x}%;top:${y}%;width:${w}%;height:${h}%`; ui.appendChild(hl);
+      rows.forEach(r => r.classList.remove('on')); rows[k].classList.add('on'); rows[k].classList.add('bought');
+      rows[k].scrollIntoView({ block: 'nearest' });
       try { audio.playCashRegister(); } catch (e) {}
-      const goal = Math.min(B.ORO_FINAL, gp + per), from = gp; const t0 = performance.now();
+      const from = gp, goal = from + it.p, t0 = performance.now();
       const step = now => { const p = Math.min(1, (now - t0) / (B.SITIO_MS * 0.8)); gp = Math.round(from + (goal - from) * p); gpEl.textContent = gp; if (p < 1) requestAnimationFrame(step); };
       requestAnimationFrame(step);
     }, 900 + k * B.SITIO_MS);
   });
-  const tEnd = 900 + B.SITIOS.length * B.SITIO_MS + 500;
   finLater(() => {
-    ui.querySelectorAll('.fx-hl').forEach(e => e.classList.remove('on')); gpEl.textContent = B.ORO_FINAL;
+    rows.forEach(r => r.classList.remove('on')); gpEl.textContent = total;
     if (sp) sp.innerHTML = B.ORO_LINEA;
     ui.insertAdjacentHTML('beforeend', `<div class="fx-end"><div class="fx-fin">${B.FIN}</div><button type="button" class="fc-go" id="fxBack">${B.VOLVER}</button></div>`);
     ui.querySelector('#fxBack').addEventListener('click', finRestart);
-  }, tEnd);
+  }, 900 + items.length * B.SITIO_MS + 500);
 }
 
 /* ---------- FINAL BUENO: Gafas de Ver, la puerta de dungeon al fondo de la habitación y la luz azul del día ---------- */

@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — datos.js — VERSIÓN 0.31
+// JUST ONE MORE CHEST — datos.js — VERSIÓN 0.32
 // DATOS_JUEGO: configuración y balance
 // ==========================================================================
 
@@ -9,7 +9,7 @@
 
 const DATOS_JUEGO = {
   // [0.088] Versión visible en pantalla (esquina inferior central) para que las capturas la incluyan
-  VERSION: '0.31',
+  VERSION: '0.32',
   // [0.104] Efectos de la apertura automática de la secuencia final (cofres 101-110); la intensidad sube del primero al último (k = 0..1)
   SECUENCIA_FINAL_FX: { ACTIVAR: true, ESTALLIDOS_BASE: 2, ESTALLIDOS_EXTRA: 4, PARTICULAS_POR_ESTALLIDO: 40, HACIA_CENTRO_BASE: 30, HACIA_CENTRO_EXTRA: 60,
     SACUDIDA_PX: 6, SACUDIDA_EXTRA_PX: 10, SACUDIDA_MS: 520, PULSO_ZOOM: 0.02, DESTELLO: 0.10 },
@@ -132,10 +132,8 @@ const DATOS_JUEGO = {
       APERTURA: 'Un aventurero acaba de entrar en tu tienda.',
       SUBTITULO: 'Tu tienda',
       BIENVENIDAS: ['¡Bienvenido! Echa un ojo a mi mercancía...', '¡Solo uno más! Siempre es solo uno más.', 'Pasa, pasa. Aquí todo tiene su precio.'],
-      // Sitios de la tienda que se van "seleccionando" mientras el aventurero compra: [nombre, x%, y%, ancho%, alto%] sobre la pantalla del Duende
-      SITIOS: [['CARTEL', 11, 34.5, 22, 13], ['ORO', 39, 36, 48, 11], ['CAJA', 3, 58.5, 40, 15], ['COFRE', 47, 59, 17, 14], ['POCIONES', 80, 61, 18, 14]],
-      SITIO_MS: 1100,
-      ORO_FINAL: 2000,
+      // [0.32] los 'sitios' son los ítems reales de la tienda (SHOP_VIS + PRECIOS_POR_BUCLE[3]); el oro final es la suma de sus precios
+      SITIO_MS: 700,
       ORO_LINEA: 'Cada cofre que abre... te enriquece a ti.',
       FIN: 'FIN',
       VOLVER: 'VOLVER AL INICIO'
