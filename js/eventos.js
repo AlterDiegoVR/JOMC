@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — eventos.js — VERSIÓN 0.3
+// JUST ONE MORE CHEST — eventos.js — VERSIÓN 0.31
 // tiendas especiales, visitas, habilidades, temporizador, fallo y Game Over
 // ==========================================================================
 
@@ -80,7 +80,7 @@ function openSpecialShopModal() {
   ];
 
   const availableCatalog = catalog.filter(item => (!item.minLvl || STATE.level >= item.minLvl) && (!item.needUnlocked || toolUnlocked(item.needUnlocked)));
-  const offeredItems = [...availableCatalog].sort(() => 0.5 - Math.random()).slice(0, 2);
+  const offeredItems = shuffleU(availableCatalog).slice(0, 2);
 
   const cfgS = shopCfg();
   const descS = cfgS.DESCRIPCIONES || {};

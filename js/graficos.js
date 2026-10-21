@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — graficos.js — VERSIÓN 0.3
+// JUST ONE MORE CHEST — graficos.js — VERSIÓN 0.31
 // canvas, sala, cerradura, decoración, efectos de cofre
 // ==========================================================================
 
@@ -904,11 +904,11 @@ function triggerSecretDecorationReward(decor) {
   if (roll < 20) {
     const themes = DATOS_JUEGO.DECORACIONES_SALA.AMBIENTES_AZAR;
     let chosen = themes[Math.floor(Math.random() * themes.length)];
-    { const pA = DATOS_JUEGO.DECORACIONES_SALA.PROB_APAGADO;   // [0.3] el apagón sale con probabilidad propia y el resto se reparte entre los demás ambientes
-      if (pA != null && themes.includes('apagado')) { const rest = themes.filter(t => t !== 'apagado'); chosen = Math.random() < pA ? 'apagado' : rest[Math.floor(Math.random() * rest.length)]; } }
+    // [0.31] reparto uniforme (1 entre 6 para el apagón); con la sala ya a oscuras no puede volver a salir el apagón
+    if (isRoomDark() && themes.length > 1) { const rest = themes.filter(t => t !== 'apagado'); chosen = rest[Math.floor(Math.random() * rest.length)]; }
     // [0.104] Si toca "color original" y la sala YA tiene su iluminación normal (ni tinte ni oscuridad), se sustituye por otro ambiente al azar
     if (chosen === 'normal' && (!STATE.roomThemeFilter || STATE.roomThemeFilter === 'normal') && !((STATE.roomDarkUntil || 0) > STATE.chestsOpened)) {
-      const others = themes.filter(t => t !== 'normal' && (DATOS_JUEGO.DECORACIONES_SALA.PROB_APAGADO == null || t !== 'apagado'));   // [0.3] el reparto del apagón ya está decidido arriba
+      const others = themes.filter(t => t !== 'normal');
       if (others.length) chosen = others[Math.floor(Math.random() * others.length)];
     }
     // [0.088] El efecto no se aplica hasta cerrar el banner (con el banner delante, la sala está difuminada y no se vería)

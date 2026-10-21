@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — tiendas.js — VERSIÓN 0.3
+// JUST ONE MORE CHEST — tiendas.js — VERSIÓN 0.31
 // tienda del Duende y del Trapero
 // ==========================================================================
 
@@ -331,11 +331,11 @@ function openMerchantShop() {
     if (STATE.perks.clienteVip) {
       // [0.210] Cliente VIP: 2 objetos al azar que NO son herramientas + 1 hueco para elegir cualquier herramienta ya desbloqueada
       const noTools = availableCatalog.filter(i => !i.prop), tools = availableCatalog.filter(i => i.prop);
-      const two = [...noTools].sort(() => 0.5 - Math.random()).slice(0, 2);
+      const two = shuffleU(noTools).slice(0, 2);
       STATE.currentShopOffer = two.map(item => ({ ...item, purchaseCount: 0 }));
       if (tools.length) STATE.currentShopOffer.push({ vipTools: tools.map(t => ({ ...t })), vipSel: 0, purchaseCount: 0, id: 'vip_tool', name: 'Herramienta a elegir', icon: 'fa-toolbox' });
     } else {
-      STATE.currentShopOffer = [...availableCatalog].sort(() => 0.5 - Math.random()).slice(0, 3).map(item => ({
+      STATE.currentShopOffer = shuffleU(availableCatalog).slice(0, 3).map(item => ({
         ...item,
         purchaseCount: 0
       }));
@@ -620,7 +620,7 @@ function openTraperoShop() {
     });
   }
 
-  const selectedDeals = deals.sort(() => 0.5 - Math.random()).slice(0, 3);
+  const selectedDeals = shuffleU(deals).slice(0, 3);
 
   selectedDeals.forEach(deal => {
     const card = document.createElement('div');

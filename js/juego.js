@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — juego.js — VERSIÓN 0.3
+// JUST ONE MORE CHEST — juego.js — VERSIÓN 0.31
 // arte del cofre abierto, subida de nivel, abrir cofre
 // ==========================================================================
 
@@ -218,7 +218,7 @@ function triggerLevelUpChoice() {
     nextBtn.onclick = () => { try { audio.playUiClick(); } catch (e) {} revealChoices(); };
   }), 1300));
 
-  const pool = levelCardPool().sort(() => 0.5 - Math.random()).slice(0, 3);   // [0.210] ver levelCardPool()
+  const pool = shuffleU(levelCardPool()).slice(0, 3);   // [0.210] ver levelCardPool()
 
   pool.forEach(cardData => {
     let currentLvl = 0;

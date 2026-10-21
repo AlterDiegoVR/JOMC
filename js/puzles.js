@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — puzles.js — VERSIÓN 0.3
+// JUST ONE MORE CHEST — puzles.js — VERSIÓN 0.31
 // minijuegos: ganzúa, pistones, hackeo, tuberías
 // ==========================================================================
 
@@ -11,7 +11,8 @@ let lpState = {
   angle: 0, screwdriver: 0, sweetSpot: 0, decoySpots: [], tolerance: 14, health: 100, isTension: false, isBreaking: false,
   isCompleted: false, isTrapChest: false,
   tanteoActive: false, // [0.082] ¿penaliza el tanteo en este cofre? (Bucle 2/3 y rareza Raro+)
-  tanteoUsed: false    // [0.082] ¿el jugador ha soltado la tensión alguna vez en este intento?
+  tanteoUsed: false,   // [0.082] ¿el jugador ha soltado la tensión alguna vez en este intento?
+  twoPhase: false, phase: 1, wrenchSpot: 0, wrenchAng: 0, wrenchTol: 14, wrenchSign: 0   // [0.31] dos fases (bucle 3, Raro+): 1 ganzúa, 2 destornillador
 };
 
 // [0.082] ¿Aplican las reglas avanzadas (Bucle 2/3) a un cofre de esta rareza?
@@ -45,10 +46,58 @@ function setPuzzleHelp(juego) {
   if (h) h.innerHTML = t;
 }
 
+// [0.31] Fase 2 de la ganzúa (bucle 3, Raro+): la ganzúa queda fija en su punto dulce y hay que encontrar el del destornillador (deslizador vertical a la izquierda).
+// Sin colores ni zumbido de cercanía: solo un toquecito al pasar por el centro del punto dulce.
+function lpWrenchApply() {
+  const w = document.getElementById('tensionWrench'), P2 = DATOS_JUEGO.MINIJUEGOS.LOCKPICK.DOS_FASES;
+  if (w) w.style.transform = `rotate(${165 + lpState.wrenchAng * P2.GRADOS_POR_UNIDAD}deg)`;
+}
+function lpSetPhase2UI(on) {
+  const box = document.getElementById('wrenchBox'), sl = document.getElementById('wrenchSlider'), ang = document.getElementById('angleSlider');
+  if (box) box.classList.toggle('hidden', !on);
+  if (sl) { sl.value = 0; sl.disabled = !on; }
+  if (ang) { ang.disabled = !!on; if (on) ang.style.setProperty('--lp-col', '#3a2208'); }
+  lpState.wrenchAng = 0; lpState.wrenchSign = 0; lpWrenchApply();
+}
+function lpEnterPhase2() {
+  const P2 = DATOS_JUEGO.MINIJUEGOS.LOCKPICK.DOS_FASES;
+  lpState.phase = 2; lpState.isTension = false; lpState.screwdriver = 0;
+  lpState.angle = lpState.sweetSpot;   // la ganzúa queda fija en su punto dulce
+  const tol = lpState.tolerance;
+  let spot; do { spot = (Math.random() * 2 - 1) * P2.RANGO; } while (Math.abs(spot) < tol + P2.SEPARACION_MIN);
+  lpState.wrenchSpot = spot; lpState.wrenchTol = tol;
+  { const cy = document.getElementById('cylinderGraphic'); if (cy) cy.classList.remove('cyl-held'); }
+  lpSetPhase2UI(true);
+  try { audio.playLockCharge && audio.playLockCharge(); } catch (e) {}
+  { const bx = document.getElementById('wrenchBox'); if (bx) { bx.classList.add('tap'); setTimeout(() => bx.classList.remove('tap'), 900); } }   // aviso discreto: la barra de la izquierda se ilumina un momento
+  updateLockpickProximityVisuals();
+}
+{
+  const ws = document.getElementById('wrenchSlider');
+  if (ws) ws.addEventListener('input', e => {
+    if (lpState.phase !== 2 || lpState.isBreaking || lpState.isCompleted) return;
+    lpState.wrenchAng = parseFloat(e.target.value); lpWrenchApply();
+    const sg = Math.sign(lpState.wrenchAng - lpState.wrenchSpot);
+    if (lpState.wrenchSign !== 0 && sg !== 0 && sg !== lpState.wrenchSign) {   // cruza el centro del punto dulce: un solo toquecito
+      try { audio.init(); audio.playClick(1); } catch (x) {}
+      try { if (navigator.vibrate) navigator.vibrate(16); } catch (x) {}
+      const bx = document.getElementById('wrenchBox'); if (bx) { bx.classList.add('tap'); setTimeout(() => bx.classList.remove('tap'), 160); }
+    }
+    if (sg !== 0) lpState.wrenchSign = sg;
+    updateLockpickProximityVisuals();
+  });
+}
+
 function startLockpickGame() {
   setPuzzleHelp('lockpick');
   const configLP = DATOS_JUEGO.MINIJUEGOS.LOCKPICK;
-  startMinigameTimer(configLP.TIEMPO_BASE_SEGUNDOS * (pzHardLevel() === 2 ? pzXtr().LOCKPICK.TIEMPO_MULT : 1), 'picks');
+  const active = STATE.screenChests[STATE.activeChestIdx];
+  const rarityId = active ? active.rarity.id : 'normal';
+  const P2 = configLP.DOS_FASES;   // [0.31]
+  lpState.twoPhase = !!(P2 && (STATE.currentLoop || 1) >= P2.DESDE_BUCLE && P2.RAREZAS.includes(rarityId));
+  lpState.phase = 1;
+  lpSetPhase2UI(false);
+  startMinigameTimer(configLP.TIEMPO_BASE_SEGUNDOS * (pzHardLevel() === 2 ? pzXtr().LOCKPICK.TIEMPO_MULT : 1) * (lpState.twoPhase ? P2.TIEMPO_MULT : 1), 'picks');
 
   lpState.angle = 0;
   lpState.screwdriver = 0;
@@ -59,8 +108,6 @@ function startLockpickGame() {
   lpState.isCompleted = false;
   lpState.isTrapChest = false;
 
-  const active = STATE.screenChests[STATE.activeChestIdx];
-  const rarityId = active ? active.rarity.id : 'normal';
   lpState.tanteoActive = isAdvancedLoopFor(rarityId);
   lpState.tanteoUsed = false;
 
@@ -99,6 +146,14 @@ function startLockpickGame() {
 }
 
 function updateLockpickProximityVisuals() {
+  if (lpState.phase === 2) {   // [0.31] fase del destornillador: sin colores de cercanía
+    const pt = document.getElementById('proximityText'), pg = document.getElementById('proximityGlow');
+    if (pt) { pt.textContent = 'DESTORNILLADOR'; pt.className = 'lp-state'; pt.style.setProperty('--st', '#f08a3a'); }
+    if (pg) pg.style.borderColor = '#475569';
+    const nd = document.getElementById('pickNeedle'); if (nd) nd.style.transform = `rotate(${lpState.angle}deg)`;
+    const cyl = document.getElementById('cylinderGraphic'); if (cyl) cyl.style.transform = `rotate(${lpState.screwdriver}deg)`;
+    return;
+  }
   const diffReal = Math.abs(lpState.angle - lpState.sweetSpot);
   let minDiff = diffReal;
   let isNearDecoy = false;
@@ -167,7 +222,22 @@ function tickLockpick() {
   
   if (!lpContainer || lpContainer.classList.contains('hidden') || lpState.isBreaking || lpState.isCompleted) return;
 
-  if (lpState.isTension) {
+  if (lpState.isTension && lpState.phase === 2) {   // [0.31] fase 2: el destornillador solo gira si está en su punto dulce
+    if (Math.abs(lpState.wrenchAng - lpState.wrenchSpot) <= lpState.wrenchTol) {
+      lpState.screwdriver = Math.min(90, lpState.screwdriver + configLP.VELOCIDAD_CILINDRO_ACIERTO);
+      if (lpState.screwdriver >= 90) {
+        lpState.isCompleted = true; lpState.isTension = false;
+        const mm2 = document.getElementById('minigameModal'); if (mm2) mm2.classList.add('hidden');
+        if (lpContainer) lpContainer.classList.add('hidden');
+        triggerLootExplosion();
+        return;
+      }
+    } else {
+      lpState.screwdriver = Math.min(60, lpState.screwdriver + configLP.VELOCIDAD_CILINDRO_ERROR);
+      lpState.health -= configLP.DECAY_SALUD_ERROR;
+      if (lpState.health <= 0) { triggerPickBreakSequence('⚠️ Ganzúa rota: Destornillador mal colocado.'); return; }
+    }
+  } else if (lpState.isTension) {
     if (lpState.isTrapChest) {
       lpState.health -= configLP.DECAY_SALUD_DECOY * 1.5;
       if (lpState.health <= 0) {
@@ -189,6 +259,7 @@ function tickLockpick() {
       } else if (diffReal <= lpState.tolerance) {
         lpState.screwdriver = Math.min(90, lpState.screwdriver + configLP.VELOCIDAD_CILINDRO_ACIERTO);
         
+        if (lpState.screwdriver >= 90 && lpState.twoPhase && lpState.phase === 1) { lpEnterPhase2(); return; }   // [0.31] primera fase superada: pasa al destornillador
         if (lpState.screwdriver >= 90) {
           lpState.isCompleted = true;
           lpState.isTension = false;
@@ -272,6 +343,7 @@ let targetShearPosY = 50;
 let tumblerAdvanced = false;       // [0.082] ¿este intento usa la fase de sellado (Bucle 2/3, Raro+)?
 let tumblerPhase = 'pins';         // 'pins' | 'seal' | 'done'
 let tumblerSeal = null;            // estado de la fase de sellado
+let tumblerSolid = false;          // [0.31] ¿este intento usa pistones solidarios (bucle 3, Raro+)?
 let tumblerOriginalHelpHTML = null;
 let tumblerOriginalBtnHTML = null;
 
@@ -379,6 +451,7 @@ function startTumblerGame() {
 
   // [0.082] Bucle 2/3 (Raro+): fase de sellado con línea azul; la verde siempre en el tercio inferior
   tumblerAdvanced = isAdvancedLoopFor(rarityId);
+  { const SO = DATOS_JUEGO.MINIJUEGOS.AVANZADO.TUMBLER.SOLIDARIOS; tumblerSolid = !!(tumblerAdvanced && SO && (STATE.currentLoop || 1) >= SO.DESDE_BUCLE && SO.RAREZAS.includes(rarityId)); }   // [0.31]
   tumblerPhase = 'pins';
   resetTumblerSealUI();
   if (tumblerAdvanced) {
@@ -387,11 +460,12 @@ function startTumblerGame() {
   } else {
     targetShearPosY = Math.floor(Math.random() * 40) + 30;
   }
-  const shearLine = document.getElementById('shearLine'); if (shearLine) shearLine.style.top = `${targetShearPosY}%`;
+  const shearLine = document.getElementById('shearLine'); if (shearLine) { shearLine.style.top = `${targetShearPosY}%`; shearLine.style.display = tumblerSolid ? 'none' : ''; }   // [0.31] solidarios: sin línea verde
 
   const pinCount = configT.PINS_POR_RAREZA[rarityId] || 3;
   let dynamicTime = configT.TIEMPOS_POR_PIN[pinCount] || 7;
   if (tumblerAdvanced) dynamicTime += DATOS_JUEGO.MINIJUEGOS.AVANZADO.TUMBLER.SEGUNDOS_EXTRA;
+  if (tumblerSolid) dynamicTime += DATOS_JUEGO.MINIJUEGOS.AVANZADO.TUMBLER.SOLIDARIOS.SEGUNDOS_EXTRA;   // [0.31]
   if (pzHardLevel() === 2) dynamicTime *= pzXtr().TUMBLER.TIEMPO_MULT;
 
   startMinigameTimer(dynamicTime, 'proPicks');
@@ -407,10 +481,15 @@ function startTumblerGame() {
     tumblerPinsData.push({
       posY: Math.random() * 60 + 10,
       speed: (Math.random() * 0.25 + baseSpeed) * (Math.random() > 0.5 ? 1 : -1),
-      locked: false
+      locked: false, group: false
     });
   }
   activePinIdx = 0;
+  if (tumblerSolid) {   // [0.31] textos del modo solidario
+    const SO = DATOS_JUEGO.MINIJUEGOS.AVANZADO.TUMBLER.SOLIDARIOS, h = document.getElementById('minigameHelp'), b = document.getElementById('tapPinBtn');
+    if (h) h.innerHTML = SO.TEXTO_AYUDA;
+    if (b) b.innerHTML = `<i class="fa-solid fa-link"></i> ${SO.TEXTO_BOTON}`;
+  }
 
   let allowedTolerance = pzHardLevel() === 2 ? pzXtr().TUMBLER.TOLERANCIA : (pzHardLevel() === 1 ? configT.TOLERANCIA_DIFICIL : configT.TOLERANCIA_NORMAL);
   allowedTolerance += (STATE.perks.sweetSpot * (configT.BONO_MANO_FIRME || 1.5));
@@ -464,7 +543,7 @@ let tumblerLayoutTick = 0;
 function animateSequentialTumblerPins(ts) {
   const tumblerContainer = document.getElementById('tumblerContainer');
   if (!tumblerContainer || tumblerContainer.classList.contains('hidden')) return;
-  if (tumblerPhase !== 'pins') return;
+  if (tumblerPhase !== 'pins' && !(tumblerSolid && tumblerPhase === 'seal')) return;   // [0.31] en el sello solidario el grupo sigue rebotando
 
   if (typeof ts !== 'number') ts = performance.now();
   const dtPins = tumblerPinsLastTs === null ? 0 : Math.max(0, Math.min(0.05, (ts - tumblerPinsLastTs) / 1000));   // [0.091] tiempo real ([0.092b] nunca negativo)
@@ -472,7 +551,8 @@ function animateSequentialTumblerPins(ts) {
   if ((tumblerLayoutTick = (tumblerLayoutTick + 1) % 45) === 0) { try { layoutTumblerLines(); } catch (e) {} }   // [0.106c] la línea verde se reajusta sola cada ~0,3 s (cualquier cambio de tamaño tardío)
   const fpsRef = DATOS_JUEGO.MINIJUEGOS.TUMBLER.VELOCIDAD_FPS_REFERENCIA || 90;
   tumblerPinsData.forEach((pin, i) => {
-    if (!pin.locked) {
+    if (tumblerSolid && pin.group && i > 0) { pin.posY = tumblerPinsData[0].posY; tumblerSetNotch(i, pin.posY); return; }   // [0.31] los unidos siguen al pistón 1
+    if (!pin.locked || (tumblerSolid && i === 0)) {   // [0.31] el pistón 1 sigue moviéndose aunque esté unido: marca el ritmo del grupo
       pin.posY += pin.speed * dtPins * fpsRef;
       // [0.092b] El rebote fija la dirección (no la invierte): con pasos pequeños por tiempo real, invertir en cada fotograma dejaba el pistón pegado al borde
       if (pin.posY >= 82) { pin.posY = 82; pin.speed = -Math.abs(pin.speed); }
@@ -577,6 +657,7 @@ function handleTumblerSealClick() {
   if (tumblerPhase !== 'seal' || !tumblerSeal) return;
   tumblerPhase = 'done';
   if (tumblerAnimationFrameId) { cancelAnimationFrame(tumblerAnimationFrameId); tumblerAnimationFrameId = null; }
+  if (tumblerSeal.solid) tumblerSeal.y = tumblerPinsData[0].posY;   // [0.31] el grupo sigue el ritmo del pistón 1
   const diff = Math.abs(tumblerSeal.y - tumblerSeal.blueY);
   if (diff <= tumblerSeal.tol + (DATOS_JUEGO.MINIJUEGOS.TUMBLER.MARGEN_INVISIBLE_PCT || 0)) {
     audio.playPistonSeal();   // [0.105]
@@ -590,9 +671,47 @@ function handleTumblerSealClick() {
   }
 }
 
+// [0.31] Pistones solidarios: el clic une al grupo los pistones sueltos que estén a la altura del grupo (al principio, la del pistón 1); si no hay ninguno, fallo
+function triggerSolidTumblerClick() {
+  const configT = DATOS_JUEGO.MINIJUEGOS.TUMBLER, SO = DATOS_JUEGO.MINIJUEGOS.AVANZADO.TUMBLER.SOLIDARIOS;
+  let tol = pzHardLevel() === 2 ? pzXtr().TUMBLER.TOLERANCIA : (pzHardLevel() === 1 ? configT.TOLERANCIA_DIFICIL : configT.TOLERANCIA_NORMAL);
+  tol += (STATE.perks.sweetSpot * (configT.BONO_MANO_FIRME || 1.5)); tol += (configT.MARGEN_INVISIBLE_PCT || 0);
+  const lead = tumblerPinsData[0];
+  const joined = [];
+  tumblerPinsData.forEach((p, i) => { if (i > 0 && !p.group && Math.abs(p.posY - lead.posY) <= tol) joined.push(i); });
+  if (!joined.length) { failTumbler(SO.TEXTO_FALLO); return; }
+  audio.playClick(0.9); if (navigator.vibrate) { try { navigator.vibrate(18); } catch (e) {} }
+  lead.group = lead.locked = true;
+  joined.forEach(i => { const p = tumblerPinsData[i]; p.group = p.locked = true; p.posY = lead.posY; tumblerSetNotch(i, p.posY); });
+  tumblerPinsData.forEach((p, i) => { const n = document.getElementById(`pinNotch-${i}`); const l = document.getElementById(`pinLight-${i}`);
+    if (n) n.className = `w-full h-4 ${p.group ? 'bg-emerald-400 border-emerald-200' : 'bg-amber-400 border-yellow-200'} rounded border shadow-md absolute inset-x-0`;
+    if (l) l.className = `w-2.5 h-2.5 rounded-full my-1 ${p.group ? 'bg-emerald-400 border border-emerald-200' : 'bg-slate-800 border border-slate-700'}`; });
+  if (tumblerPinsData.every(p => p.group)) startSolidSealPhase();
+}
+// [0.31] Con todos unidos aparece la línea azul: el grupo sigue rebotando y hay que frenarlo sobre ella
+function startSolidSealPhase() {
+  const cfg = DATOS_JUEGO.MINIJUEGOS.AVANZADO.TUMBLER;
+  tumblerPhase = 'seal'; audio.playClick(1); if (navigator.vibrate) { try { navigator.vibrate(30); } catch (e) {} }
+  tumblerPinsData.forEach((p, i) => { const n = document.getElementById(`pinNotch-${i}`); if (n) n.className = 'w-full h-4 bg-sky-400 border-sky-200 rounded border shadow-md absolute inset-x-0'; });
+  const tol = cfg.TOLERANCIA_AZUL + (STATE.perks.sweetSpot * 1), [bMin, bMax] = cfg.AZUL_RANGO, blueY = bMin + Math.random() * (bMax - bMin);
+  const shearLine = document.getElementById('shearLine');
+  if (shearLine && shearLine.parentElement) {
+    const line = document.createElement('div');
+    line.id = 'sealLine'; line.className = 'absolute left-0 right-0 bg-sky-500/50 border-y border-sky-300 z-10 pointer-events-none flex items-center justify-start pl-2';
+    line.style.top = `${blueY}%`; line.style.height = `${Math.max(10, tol * 1.8)}px`;
+    line.innerHTML = '<span class="text-[9px] font-mono text-sky-200 font-bold tracking-widest uppercase bg-slate-950/80 px-1 rounded">SELLO</span>';
+    shearLine.parentElement.appendChild(line);
+  }
+  const help = document.getElementById('minigameHelp'); if (help) help.innerHTML = cfg.TEXTO_AYUDA_FINAL;
+  const btn = document.getElementById('tapPinBtn'); if (btn) btn.innerHTML = `<i class="fa-solid fa-hand"></i> ${cfg.TEXTO_BOTON_FINAL}`;
+  tumblerSeal = { y: tumblerPinsData[0].posY, blueY, tol, speed: 0, lastTs: null, solid: true };
+  layoutTumblerLines();
+}
+
 function triggerFixActivePin() {
   if (tumblerPhase === 'seal') { handleTumblerSealClick(); return; }
   if (tumblerPhase !== 'pins') return;
+  if (tumblerSolid) { triggerSolidTumblerClick(); return; }   // [0.31]
   if (activePinIdx >= tumblerPinsData.length) return;
 
   const configT = DATOS_JUEGO.MINIJUEGOS.TUMBLER;
@@ -861,6 +980,12 @@ let pipeGridData = [];
 let pipeGridSize = 3;
 let pipeAdvancedActive = false;  // [0.082] ¿este intento usa bombas + VALIDAR?
 let pipeValidated = false;       // [0.082] el botón VALIDAR es de un solo uso
+let pipeMoves = 0, pipeMoveLimit = 0;   // [0.31] giros hechos y límite (0 = sin límite)
+function pipeMovesUpdate() {
+  const el = document.getElementById('pipeMovesInfo'); if (!el) return;
+  if (!pipeMoveLimit) { el.style.display = 'none'; return; }
+  el.style.display = ''; el.innerHTML = `<i class="fa-solid fa-rotate"></i> GIROS <b>${pipeMoves}</b> / ${pipeMoveLimit}`; el.classList.toggle('pm-full', pipeMoves >= pipeMoveLimit);
+}
 
 // [0.082] Prepara (o limpia) el texto de ayuda y el botón VALIDAR del puzle hidráulico
 
@@ -911,7 +1036,7 @@ function drawPipePixels(g, type, wet) {
   // tubos: N-S (recta), N-E (codo), N-S-E (te). Grosor 5,2 unidades.
   const P = wet ? ['#0a3a70', '#1f98ec', '#70d2ff', '#e0f6ff'] : ['#44230f', '#b3652b', '#e6984f', '#ffd29a'];
   const FL = wet ? ['#0a3a70', '#9a8450', '#d6bd78'] : ['#44230f', '#9b6c2a', '#e3bc66'];
-  const sides = type === 'straight' ? ['N', 'S'] : (type === 'corner' ? ['N', 'E'] : ['N', 'S', 'E']);
+  const sides = type === 'straight' ? ['N', 'S'] : (type === 'corner' ? ['N', 'E'] : (type === 'cross' ? ['N', 'E', 'S', 'W'] : ['N', 'S', 'E']));   // [0.31] cruz
   const V = { N: [0, -1], E: [1, 0], S: [0, 1], W: [-1, 0] };
   const W0 = 5.2;
   const layers = [[W0 + 0.9, P[0], 0], [W0, P[1], 0], [W0 * 0.56, P[2], -0.55], [W0 * 0.16, P[3], -1.05]];
@@ -945,6 +1070,7 @@ function setupPipeAdvancedUI(advanced) {
   if (oldBtn) oldBtn.remove();
   const oldHelp = document.getElementById('pipeAdvancedHelp');
   if (oldHelp) oldHelp.remove();
+  const oldMv = document.getElementById('pipeMovesInfo'); if (oldMv) oldMv.remove();   // [0.31]
   if (!advanced) return;
 
   const grid = document.getElementById('pipeGrid');
@@ -952,8 +1078,10 @@ function setupPipeAdvancedUI(advanced) {
   help.id = 'pipeAdvancedHelp';
   help.className = 'text-[10px] text-center text-rose-300 font-mono leading-snug';
   help.innerHTML = '<i class="fa-solid fa-bomb"></i> Evita las bombas. El fluido no se ve hasta que pulses <span class="text-sky-300 font-bold">VALIDAR</span> (un solo intento).';
+  const mv = document.createElement('div'); mv.id = 'pipeMovesInfo'; mv.className = 'text-[11px] text-center text-amber-300 font-mono font-bold tracking-wide'; mv.style.display = 'none';   // [0.31]
   const card = document.getElementById('pzCard');   // [0.103] la ayuda de bombas va en la tarjeta de arriba
   if (card) card.appendChild(help); else pipeContainer.insertBefore(help, grid);
+  if (grid && grid.parentNode) grid.parentNode.appendChild(mv);   // [0.31] el contador de giros va bajo el tablero (no engorda la tarjeta de arriba)
 
   const btn = document.createElement('button');
   btn.id = 'pipeValidateBtn';
@@ -1003,6 +1131,7 @@ function generatePipeBoardAdvanced(size, nObstacles, nBombs) {
   const total = size * size;
   const lastIdx = total - 1;
 
+  const B3 = DATOS_JUEGO.MINIJUEGOS.AVANZADO.PIPE.BUCLE3, loop3 = !!(B3 && (STATE.currentLoop || 1) >= B3.DESDE_BUCLE);   // [0.31]
   const buildPathData = (blocked, bombSet, tProb) => {
     const path = [];
     const seen = new Set();
@@ -1031,24 +1160,28 @@ function generatePipeBoardAdvanced(size, nObstacles, nBombs) {
       let type = 'straight';
       if ((enterSide % 2) !== (exitSide % 2)) type = 'corner';
       else if (Math.random() < tProb) type = 't_junction';
+      if (loop3 && Math.random() < B3.PROB_CRUZ_CAMINO) type = 'cross';   // [0.31] pieza en cruz en el camino
       const good = [];
       for (let rot = 0; rot < 4; rot++) { const sd = getPipeSides(type, rot); if (sd.includes(enterSide) && sd.includes(exitSide)) good.push(rot); }
       const r = good[Math.floor(Math.random() * good.length)];
-      data[curr] = { type, rot: r, requiredRot: r };
+      data[curr] = { type, rot: r, requiredRot: r, good };
     });
     const types = ['straight', 'corner', 't_junction'];
     for (let i = 0; i < total; i++) {
-      if (!data[i]) { const r = Math.floor(Math.random() * 4); data[i] = { type: types[Math.floor(Math.random() * 3)], rot: r, requiredRot: r }; }
+      if (!data[i]) { const r = Math.floor(Math.random() * 4); data[i] = { type: (loop3 && Math.random() < B3.PROB_CRUZ_RELLENO) ? 'cross' : types[Math.floor(Math.random() * 3)], rot: r, requiredRot: r }; }
     }
     return data;
   };
+  // [0.31] giros mínimos del camino previsto (los clics solo giran en un sentido) -> base del límite de giros
+  const minMoves = (data) => { let s = 0; data.forEach(c => { if (c.good && c.type !== 'cross') s += Math.min(...c.good.map(g => (g - c.rot + 4) % 4)); }); return s; };
 
   const scramble = (data) => {
     for (let t = 0; t < 30; t++) {
       data.forEach(c => { if (c.type !== 'stone' && c.type !== 'bomb') c.rot = Math.floor(Math.random() * 4); });
       const sim = simulatePipeFlow(data, size, 'rot');
-      if (!(sim.goal && sim.bombs.size === 0)) return; // no empieza ya resuelto
+      if (!(sim.goal && sim.bombs.size === 0)) break; // no empieza ya resuelto
     }
+    data.minMoves = minMoves(data);   // [0.31]
   };
 
   for (let attempt = 0; attempt < 400; attempt++) {
@@ -1145,6 +1278,7 @@ function validatePipeAdvanced() {
 }
 
 function getPipeSides(type, rot) {
+  if (type === 'cross') return [0, 1, 2, 3];   // [0.31] cruz: sale por los cuatro lados
   if (type === 'straight') return (rot % 2 === 0) ? [0, 2] : [1, 3];
   if (type === 'corner') return [rot, (rot + 1) % 4];
   if (type === 't_junction') return [rot, (rot + 1) % 4, (rot + 2) % 4];
@@ -1188,7 +1322,11 @@ function startPipeGame() {
     // [0.082] Tablero con bombas / obstáculos y solución garantizada
     pipeGridData = generatePipeBoardAdvanced(pipeGridSize, cfgRar.obstacles, cfgRar.bombs);
     generatedAndValid = true;
-  }
+    // [0.31] Bucle 3: límite de giros = mínimo del camino + margen de la rareza (margen 0 = sin límite)
+    const B3 = advPipe.BUCLE3, mg = (B3 && (STATE.currentLoop || 1) >= B3.DESDE_BUCLE) ? ((B3.MARGEN_GIROS || {})[rarityId] || 0) : 0;
+    pipeMoves = 0; pipeMoveLimit = (mg > 0 && pipeGridData && pipeGridData.minMoves != null) ? pipeGridData.minMoves + mg : 0;
+  } else { pipeMoves = 0; pipeMoveLimit = 0; }
+  pipeMovesUpdate();
 
   while (!generatedAndValid && generateAttempts < 100) {
     generateAttempts++;
@@ -1305,16 +1443,19 @@ function startPipeGame() {
     const tile = document.createElement('button');
     tile.className = 'pipe-tile';   // [0.103] aspecto en style.css; el tamaño sale de --pt de la rejilla
     tile.id = `pipeTile-${i}`;
-    const rotStyle = (item.type === 'stone' || item.type === 'bomb') ? '' : `transform: rotate(${item.rot * 90}deg)`;
+    const rotStyle = (item.type === 'stone' || item.type === 'bomb' || item.type === 'cross') ? '' : `transform: rotate(${item.rot * 90}deg)`;
     tile.innerHTML = `<canvas id="pipeSvg-${i}" class="pipe-cv" width="96" height="96" style="${rotStyle}"></canvas>`
       + (i === 0 ? '<span class="pipe-valve" title="Entrada de agua"><i class="pv-wheel"></i><i class="pv-stem"></i><b class="pv-lab">IN</b><em class="pv-arrow">&#9660;</em></span>' : '')
-      + (i === totalTiles - 1 ? '<span class="pipe-out" id="pipeOut" title="Salida (desagüe)"><i class="po-stem"></i><i class="po-basin"></i><b class="po-lab">OUT</b><em class="po-arrow">&#9660;</em></span>' : '');
+      + (i === totalTiles - 1 ? '<span class="pipe-out" id="pipeOut" title="Salida (desagüe)"><i class="po-stem"></i><i class="po-basin"></i><b class="po-lab">OUT</b><em class="po-arrow">&#9660;</em></span><span class="pipe-out-r" title="Salida (desagüe)"><i class="por-stem"></i><i class="por-basin"></i><em class="por-arrow">&#9654;</em></span>' : '');   // [0.31] segunda salida a la derecha (solo estética: da igual por dónde apunte la última pieza)
+    if (i === totalTiles - 1) tile.classList.add('pipe-goal');   // [0.31] casilla de salida marcada
     drawPipePixels(tile.querySelector('canvas').getContext('2d'), item.type, false);
 
-    if (item.type !== 'stone' && item.type !== 'bomb') {
+    if (item.type !== 'stone' && item.type !== 'bomb' && item.type !== 'cross') {   // [0.31] la cruz no se gira
       tile.addEventListener('click', () => {
         if (pipeAdvanced && pipeValidated) return; // tras VALIDAR el tablero queda bloqueado
         if (!minigameInProgress) return;   // [0.097] tras acertar no se pueden girar más tuberías
+        if (pipeMoveLimit && pipeMoves >= pipeMoveLimit) { try { audio.playBreak(); } catch (e) {} const mi = document.getElementById('pipeMovesInfo'); if (mi) { mi.classList.remove('pm-shake'); void mi.offsetWidth; mi.classList.add('pm-shake'); } return; }   // [0.31] sin giros: solo queda VALIDAR
+        pipeMoves++; pipeMovesUpdate();
         audio.playClick(0.5);
         item.rot = (item.rot + 1) % 4;
         const svg = document.getElementById(`pipeSvg-${i}`);
@@ -1448,7 +1589,7 @@ function evaluatePipeFlow() {
    [0.201] MINIJUEGO 5: SECUENCIA (Arca de Neón). Cuatro luces con nota propia; 3 secuencias seguidas que hay que repetir.
    Sin reloj. Un fallo acaba el puzle (cuesta la pila, como el resto de herramientas avanzadas).
    ========================================================================== */
-let sqState = { phase: 'idle', round: 0, seq: [], pos: 0, timers: [], len: [5], rounds: 1, step: 800 };
+let sqState = { phase: 'idle', round: 0, seq: [], pos: 0, timers: [], len: [5], rounds: 1, step: 800, giro: null, rot: 0 };
 
 function sqLater(fn, ms) { sqState.timers.push(setTimeout(fn, ms)); }
 function sqStop() { sqState.timers.forEach(clearTimeout); sqState.timers = []; sqState.phase = 'idle'; }
@@ -1479,6 +1620,20 @@ function sqHub(big, small) {
   const b = document.getElementById('sqHubBig'), s = document.getElementById('sqHubSmall');
   if (b) b.textContent = big; if (s) s.textContent = small;
 }
+// [0.31] Giro del dial (bucle 3, raro/épico/legendario): lista de giros con sentido al azar; el total nunca vuelve a la posición inicial
+function sqRotDial(deg, ms) {
+  const d = document.getElementById('sqDial'); if (!d) return;
+  d.style.setProperty('--sqrt', ms + 'ms'); d.style.setProperty('--sqrot', deg + 'deg');
+}
+function sqTurns(g) {
+  const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+  for (let t = 0; t < 50; t++) {
+    const n = rnd(g.giros[0], g.giros[1]), list = []; let net = 0;
+    for (let i = 0; i < n; i++) { const a = g.angulos[Math.floor(Math.random() * g.angulos.length)] * (Math.random() < 0.5 ? 1 : -1); list.push(a); net += a; }
+    if (((net % 360) + 360) % 360 !== 0) return list;
+  }
+  return [90];
+}
 function sqNewSeq() {
   const n = sqState.len[sqState.round], s = [];
   for (let i = 0; i < n; i++) { let v; do { v = Math.floor(Math.random() * 4); } while (i > 1 && s[i - 1] === v && s[i - 2] === v); s.push(v); }
@@ -1492,11 +1647,20 @@ function sqListen() {
   sqHub(sqState.seq.length, 'NOTAS'); sqStatus('Escucha la secuencia…');
   const step = sqState.step, on = Math.round(step * C.ENCENDIDO_PCT), t0 = C.PAUSA_INICIAL_MS;
   sqState.seq.forEach((v, k) => sqLater(() => { sqLamp(v, true); audio.playSeqNote(v, on / 1000); setTimeout(() => sqLamp(v, false), on); }, t0 + k * step));
+  let tEnd = t0 + sqState.seq.length * step + 150;
+  const G = sqState.giro;
+  if (G) {   // [0.31] el dial gira antes de tu turno
+    const turns = sqTurns(G), gm = C.GIRO;
+    let tt = tEnd + gm.PAUSA_ANTES_MS;
+    sqLater(() => { sqHub('↻', 'GIRA'); sqStatus('¡El dial gira! Las luces cambian de sitio'); }, tEnd);
+    turns.forEach(a => { sqLater(() => { sqState.rot += a; sqRotDial(sqState.rot, gm.GIRO_MS); try { audio.playSwoosh(); } catch (e) {} }, tt); tt += gm.GIRO_MS + gm.PAUSA_GIROS_MS; });
+    tEnd = tt + 150;
+  }
   sqLater(() => {
     sqState.phase = 'input'; sqState.pos = 0; sqSetDisabled(false);
     if (btn) btn.textContent = 'TU TURNO';
     sqHub('0/' + sqState.seq.length, 'TU TURNO'); sqStatus('Tu turno: repite la secuencia');
-  }, t0 + sqState.seq.length * step + 150);
+  }, tEnd);
 }
 function sqPress(i) {
   if (sqState.phase !== 'input' || !minigameInProgress) return;
@@ -1544,6 +1708,8 @@ function startSequenceGame() {
   const cfg = C.POR_RAREZA[active ? active.rarity.id : 'normal'] || C.POR_RAREZA.normal;
   const mult = pzHardLevel() === 2 ? C.TEMPO_MULT_EXTREMO : (pzHardLevel() === 1 ? C.TEMPO_MULT_DIFICIL : 1);
   sqStop();
+  sqState.giro = ((STATE.currentLoop || 1) >= (C.GIRO.DESDE_BUCLE || 3) && active && C.GIRO.POR_RAREZA[active.rarity.id]) || null;   // [0.31]
+  sqState.rot = 0; sqRotDial(0, 0);
   sqState.rounds = C.FASES || 1; sqState.len = Array(sqState.rounds).fill(cfg.largo); sqState.step = Math.round(cfg.paso_ms * mult); sqState.round = 0; sqState.seq = []; sqState.pos = 0;
   startMinigameTimer(null, 'batteries');   // sin reloj
   const sc = document.getElementById('sequenceContainer'); if (sc) sc.classList.remove('hidden');

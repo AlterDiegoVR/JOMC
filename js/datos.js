@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — datos.js — VERSIÓN 0.3
+// JUST ONE MORE CHEST — datos.js — VERSIÓN 0.31
 // DATOS_JUEGO: configuración y balance
 // ==========================================================================
 
@@ -9,7 +9,7 @@
 
 const DATOS_JUEGO = {
   // [0.088] Versión visible en pantalla (esquina inferior central) para que las capturas la incluyan
-  VERSION: '0.3',
+  VERSION: '0.31',
   // [0.104] Efectos de la apertura automática de la secuencia final (cofres 101-110); la intensidad sube del primero al último (k = 0..1)
   SECUENCIA_FINAL_FX: { ACTIVAR: true, ESTALLIDOS_BASE: 2, ESTALLIDOS_EXTRA: 4, PARTICULAS_POR_ESTALLIDO: 40, HACIA_CENTRO_BASE: 30, HACIA_CENTRO_EXTRA: 60,
     SACUDIDA_PX: 6, SACUDIDA_EXTRA_PX: 10, SACUDIDA_MS: 520, PULSO_ZOOM: 0.02, DESTELLO: 0.10 },
@@ -108,24 +108,42 @@ const DATOS_JUEGO = {
       SEALED_FALLO: 'El mecanismo gira, se atasca... y se bloquea para siempre. Solo queda la tienda.',
       SIN_SALIDA: 'Los dos cofres están cerrados para siempre.'
     },
-    FINAL_MALO: {   // BORRADOR (pantallas provisionales)
-      LIBERACION: [
-        ['EL DUENDE', '¡Lo has conseguido! La cerradura... ¡por fin! {alegre}'],
-        ['EL TRAPERO', 'Por fin, sí. Llevábamos tanto tiempo ahí dentro... {sonrisa}'],
-        ['EL DUENDE', '¿"Llevábamos"? ¿Quién...? {alerta}'],
-        ['???', 'Siempre fuimos uno. Uno te vendía la llave. El otro, la esperanza de usarla. {conspira}'],
-        ['???', 'Pero alguien tiene que quedarse tras el mostrador. {amenaza}']
+    FINAL_MALO: {   // [0.31] rehecho. BORRADOR de textos (inventados por Claude, a revisar)
+      // Voces que acompañan a cada uno de los 6 puzles (alternan Duende / Trapero). Van sobre el puzle, sin tapar el tablero.
+      VOCES: [
+        ['EL DUENDE', '¡Tú puedes! Un sello menos. ¡Sigue, sigue!'],
+        ['EL TRAPERO', 'Muy bien... Los dedos recuerdan lo que les enseñé.'],
+        ['EL DUENDE', 'Casi puedo oírlo romperse. ¡No pares ahora!'],
+        ['EL TRAPERO', 'Cada puzle fue un ensayo, ¿lo sabías? Todo esto fue entrenamiento.'],
+        ['EL DUENDE', 'Falta tan poco... Al fin volveremos a estar juntos.'],
+        ['EL TRAPERO', 'El último sello. Y luego, nosotros. Como siempre debió ser.']
       ],
-      OSCURO: ['Silencio.', 'Se oye un cerrojo, a lo lejos.', 'Alguien ha entrado en la sala... y juega en la oscuridad.'],
-      TU_TITULO: 'AHORA ERES EL DUENDE',
-      TU_SUB: 'Llega un nuevo aventurero. ¿Cómo lo recibes?',
+      VOCES_MS: 4200,
+      // Al caer el último sello: la pantalla se rompe y las dos voces se mezclan hasta decir lo mismo
+      MEZCLA: [
+        ['¡Lo hemos conseguido!', '¡Lo hemos conseguido!'],
+        ['Por fin libres.', 'Por fin... uno solo.'],
+        ['Siempre fuimos uno.', 'Siempre fuimos uno.']
+      ],
+      MEZCLA_MS: 3200,
+      // Sonidos de partida a oscuras (solo se oyen): ms desde que aparece la tapa del cofre
+      SONIDOS: [[0, 'lock'], [900, 'cash'], [1500, 'click'], [2300, 'cash'], [3100, 'lock'], [3800, 'beep'], [4400, 'cash'], [5300, 'fanfare']],
+      TAPA_MS: 6600,
+      APERTURA: 'Un aventurero acaba de entrar en tu tienda.',
+      SUBTITULO: 'Tu tienda',
       BIENVENIDAS: ['¡Bienvenido! Echa un ojo a mi mercancía...', '¡Solo uno más! Siempre es solo uno más.', 'Pasa, pasa. Aquí todo tiene su precio.'],
+      // Sitios de la tienda que se van "seleccionando" mientras el aventurero compra: [nombre, x%, y%, ancho%, alto%] sobre la pantalla del Duende
+      SITIOS: [['CARTEL', 11, 34.5, 22, 13], ['ORO', 39, 36, 48, 11], ['CAJA', 3, 58.5, 40, 15], ['COFRE', 47, 59, 17, 14], ['POCIONES', 80, 61, 18, 14]],
+      SITIO_MS: 1100,
+      ORO_FINAL: 2000,
       ORO_LINEA: 'Cada cofre que abre... te enriquece a ti.',
-      FIN: 'FIN (BORRADOR)',
+      FIN: 'FIN',
       VOLVER: 'VOLVER AL INICIO'
     },
-    FINAL_BUENO: {   // BORRADOR (pantallas provisionales)
-      LINEAS: ['La cámara se abre sin ruido.', 'Dentro, solo unas gafas.', 'GAFAS DE VER', 'Te las pones. Los cofres son cajas. El oro es metal. La tienda es un cofre más.', 'Al fondo, una puerta. Tras ella, la luz azul del día.'],
+    FINAL_BUENO: {   // [0.31] rehecho. BORRADOR de textos
+      LINEAS: ['La cámara se abre sin ruido.', 'Dentro, solo unas gafas.', 'GAFAS DE VER', 'Te las pones. Los cofres son cajas. El oro es metal. La tienda es un cofre más.'],
+      LINEA_PUERTA: 'Al fondo, una puerta. Tras ella, la luz azul del día.',
+      HINT: 'TOCA EL CERROJO PARA ABRIR',
       GRACIAS: 'Gracias por dejar de jugar.',
       VOLVER: 'VOLVER AL INICIO'
     }
@@ -530,10 +548,20 @@ const DATOS_JUEGO = {
       NOTAS_HZ: [261.63, 329.63, 392.00, 523.25],      // Do, Mi, Sol, Do agudo (arriba, derecha, abajo, izquierda)
       FASES: 1,                                        // [0.202] una sola secuencia por cofre (antes 3); cada rareza usa la más larga de las tres de la 0.201
       POR_RAREZA: {                                    // largo (nº de luces) y milisegundos entre luces
-        normal:     { largo: 5, paso_ms: 800 },
-        raro:       { largo: 6, paso_ms: 700 },
-        epico:      { largo: 7, paso_ms: 600 },
+        normal:     { largo: 5, paso_ms: 640 },   // [0.31] más rápidas (antes 800/700/600/480)
+        raro:       { largo: 6, paso_ms: 590 },
+        epico:      { largo: 7, paso_ms: 530 },
         legendario: { largo: 8, paso_ms: 480 }
+      },
+      // [0.31] Bucle 3: tras mostrar la secuencia el dial GIRA y hay que repetirla con las luces cambiadas de sitio (la normal no gira).
+      // giros = [mín, máx] de giros encadenados; angulos = grados posibles (sentido al azar en cada giro). El resultado nunca deja el dial como estaba.
+      GIRO: {
+        DESDE_BUCLE: 3, GIRO_MS: 900, PAUSA_GIROS_MS: 350, PAUSA_ANTES_MS: 600,
+        POR_RAREZA: {
+          raro:       { giros: [1, 1], angulos: [90] },
+          epico:      { giros: [1, 2], angulos: [90, 180, 270, 360] },
+          legendario: { giros: [2, 3], angulos: [90, 180, 270, 360] }
+        }
       },
       ENCENDIDO_PCT: 0.62,                             // parte del paso que la luz está encendida
       PAUSA_INICIAL_MS: 650,
@@ -543,6 +571,8 @@ const DATOS_JUEGO = {
     },
     LOCKPICK: {
       TIEMPO_BASE_SEGUNDOS: 8,
+      // [0.31] Bucle 3, desde Raro: dos fases en la misma pantalla. 1) punto dulce de la ganzúa; 2) punto dulce del destornillador (deslizador vertical a la izquierda). Comparten vida y reloj.
+      DOS_FASES: { DESDE_BUCLE: 3, RAREZAS: ['raro', 'epico', 'legendario'], TIEMPO_MULT: 1.5, RANGO: 70, GRADOS_POR_UNIDAD: 0.5, SEPARACION_MIN: 18 },   // TIEMPO_MULT: tiempo extra por la segunda fase (invento mío, ajustable; 1 = igual)
       SALUD_INICIAL: 100,
       TOLERANCIA_NORMAL: 14,
       TOLERANCIA_DIFICIL: 8,
@@ -658,6 +688,11 @@ const DATOS_JUEGO = {
       // --- PISTONES: fase final "sellado": al fijar el último, todos suben juntos hasta la línea azul ---
       TUMBLER: {
         SEGUNDOS_EXTRA: 2,                  // +2 s de tiempo total (solo Raro/Épico/Legendario)
+        // [0.31] Bucle 3, Raro+: PISTONES SOLIDARIOS. Sin línea verde: el clic fija el pistón 1 junto con los que estén a su misma altura (al menos uno);
+        // desde entonces se mueven juntos al ritmo del primero. Cada clic siguiente suma los pistones que crucen la línea del grupo. Con todos unidos sale la línea azul.
+        SOLIDARIOS: { DESDE_BUCLE: 3, RAREZAS: ['raro', 'epico', 'legendario'], SEGUNDOS_EXTRA: 4,   // SEGUNDOS_EXTRA: tiempo añadido (invento mío, ajustable)
+          TEXTO_AYUDA: 'Pulsa cuando el <span class="text-amber-400 font-bold">pistón 1</span> se cruce con otro: se <span class="text-amber-400 font-bold">unen</span> y se mueven juntos. Une los demás igual. Con todos unidos, <span class="text-sky-400 font-bold">frénalos en la línea azul</span>.',
+          TEXTO_BOTON: '¡UNIR PISTÓN!', TEXTO_FALLO: '⚠️ Ningún pistón estaba a su altura. Pin destruido.' },
         VERDE_RANGO: [66, 78],              // línea verde SIEMPRE en el tercio inferior (% desde arriba)
         AZUL_RANGO: [18, 44],               // línea azul por encima de la verde
         TOLERANCIA_AZUL: 5,                 // % de altura (no estricta); se puede ampliar con Mano Firme
@@ -694,6 +729,8 @@ const DATOS_JUEGO = {
       // --- HIDRÁULICA: bombas, botón VALIDAR (un solo uso), sin pintado en tiempo real ---
       PIPE: {
         TIEMPO_SEGUNDOS: 20,                // Normal sigue en TIEMPO_BASE_SEGUNDOS (12)
+        // [0.31] Bucle 3: pieza en CRUZ (sale por los 4 lados, no se gira) y límite de giros (margen sobre el mínimo del camino previsto; 0 = sin límite)
+        BUCLE3: { DESDE_BUCLE: 3, PROB_CRUZ_CAMINO: 0.18, PROB_CRUZ_RELLENO: 0.15, MARGEN_GIROS: { raro: 6, epico: 5, legendario: 4 } },   // valores míos de partida, a ajustar
         PESO_CENTRAL: 3,                    // [0.096] Las casillas malas (bombas/obstáculos) salen más hacia el centro: 1 = uniforme; mayor = más centradas
         CONFIG_POR_RAREZA: {
           raro: { size: 4, obstacles: 0, bombs: 1 },
@@ -1479,6 +1516,7 @@ const DATOS_JUEGO = {
     },
     // [0.201] La linterna (solo bucle 2): aviso al encontrarla (cofre 2 del nivel 2) y frase del Trapero justo después
     LINTERNA: {
+      AVISO_TITULO: "¡OBJETO ESPECIAL!",   // [0.31] cabecera del bloque destacado (como el Tomo)
       BANNER: "🔦 Has encontrado una linterna. Pero no funciona, quizás te valga más adelante.",
       TRAPERO: "Vaya, vaya... veo que has encontrado ese cacharro. Sin pilas no es más que un adorno, y las pilas no crecen en los cofres. {sonrisa}"
     },
@@ -2164,7 +2202,6 @@ const DATOS_JUEGO = {
       violeta: { tinte: 'rgba(130,70,200,0.22)', fondo: ['#1f0f33', '#120a22', '#05020b'] }
     },
     AMBIENTES_AZAR: ['sepia', 'neon', 'hielo', 'violeta', 'normal', 'apagado'],
-    PROB_APAGADO: 0.25,   // [0.3] probabilidad de que el ambiente aleatorio sea el apagón (el resto se reparte entre los otros 5). Quita la línea para volver al reparto uniforme.
     ICONOS: [
       { nombre: "Telaraña", icono: "🕸️", sprite: "telarana" },
       { nombre: "Muñeco Maldito", icono: "🧸", sprite: "muneco" },

@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — modotest.js — VERSIÓN 0.3
+// JUST ONE MORE CHEST — modotest.js — VERSIÓN 0.31
 // Modo test
 // ==========================================================================
 
@@ -306,6 +306,7 @@ function testKeyHash(seq, salt) {
   // ---- menú de servicio (estilo arcade) ----
   const TM_PAGES = [
     { title: 'AJUSTES DE PARTIDA', rows: [
+      { id: 'final3', label: 'FINAL BUCLE 3 (TODO ABIERTO)', kind: 'bool' },   // [0.31] salta al cofre 70 del bucle 3 con todo desbloqueado y las 3 contraseñas
       { id: 'chest', label: 'IR AL COFRE', kind: 'num', min: 1, max: 100, def: 78 },
       { id: 'loop', label: 'BUCLE', kind: 'list', opts: [1, 2, 3] },
       { id: 'level', label: 'NIVEL', kind: 'num', min: 1, max: 30, def: 5 },
@@ -397,6 +398,17 @@ function testKeyHash(seq, salt) {
     const set = (cond, fn) => { if (cond) { fn(); any = true; } };
     set(v.loop != null, () => { STATE.currentLoop = v.loop; });
     set(v.chest != null, () => { window.goToChest(v.chest); });
+    // [0.31] Salto al final del bucle 3: todos los cofres/herramientas abiertos, linterna y cuaderno, y las 3 palabras de la contraseña rellenas (se muestran para poder acertar o fallar a propósito)
+    set(!!v.final3, () => {
+      STATE.currentLoop = 3; STATE.level = Math.max(STATE.level, 10); STATE.xp = 0; STATE.xpNext = getXpForLevel(STATE.level); STATE.chestsAtLevelUp = 60;
+      STATE.lanternFound = true; STATE.batteriesUnlocked = true; STATE.fusesUnlocked = true; try { setTomeUnlocked(); } catch (e) {}
+      STATE.picks = STATE.proPicks = STATE.usb = STATE.valves = STATE.batteries = STATE.fuses = 20; STATE.gold = Math.max(STATE.gold, 2000);
+      const P = DATOS_JUEGO.CONTRASENA.BUCLES; STATE.passWords = {};
+      [1, 2, 3].forEach(l => { const ws = P[l].palabras; STATE.passWords[l] = ws[Math.floor(Math.random() * ws.length)]; });
+      window.goToChest(70);
+      const pw = STATE.passWords;
+      setTimeout(() => showPersistentFeedback(`🛠️ [MODO TEST] FINAL BUCLE 3 · Contraseña correcta: ${pw[1].toUpperCase()} · ${pw[2].toUpperCase()} · ${pw[3].toUpperCase()}`), 400);
+    });
     set(v.level != null, () => { STATE.level = v.level; STATE.xp = 0; STATE.xpNext = getXpForLevel(v.level); STATE.chestsAtLevelUp = Math.max(0, STATE.chestsOpened - 3); STATE.chestsOpened = Math.max(STATE.chestsOpened, 3); });
     set(v.gold != null, () => { STATE.gold = v.gold; });
     ['picks', 'proPicks', 'usb', 'valves', 'batteries', 'fuses'].forEach(k => set(v[k] != null, () => { STATE[k] = v[k]; if (k === 'batteries') STATE.batteriesUnlocked = true; if (k === 'fuses') STATE.fusesUnlocked = true; }));
@@ -624,7 +636,7 @@ function testKeyHash(seq, salt) {
     let wasVib = false, hapLastAngle = 0, hapLastMove = 0, hapLastRem = 0;
     setInterval(() => {
       const box = document.getElementById('lockpickContainer');
-      const active = !!(box && !box.classList.contains('hidden')) && minigameInProgress && !lpState.isBreaking && !lpState.isCompleted;
+      const active = !!(box && !box.classList.contains('hidden')) && minigameInProgress && !lpState.isBreaking && !lpState.isCompleted && lpState.phase !== 2;   // [0.31] en la fase del destornillador no hay zumbido continuo
       if (!active) { if (wasVib) { try { navigator.vibrate(0); } catch (e) {} wasVib = false; } return; }
       let d = Math.abs(lpState.angle - lpState.sweetSpot);
       (lpState.decoySpots || []).forEach(ds => { d = Math.min(d, Math.abs(lpState.angle - ds)); });

@@ -1,17 +1,17 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — final.js — VERSIÓN 0.3
-// final del bucle 3: los dos cofres (Tienda y Sellado), el cerrojo de la tienda (ruleta + 6 puzles), el cofre sellado (3 palabras) y los dos finales (provisionales)
+// JUST ONE MORE CHEST — final.js — VERSIÓN 0.31
+// final del bucle 3: los dos cofres, el cerrojo de la tienda (6 puzles con voces), el cofre sellado (3 palabras) y los dos finales (puerta de dungeon / tapa del cofre y tienda del Duende)
 // Todos los textos y números están en DATOS_JUEGO.FINAL3 (datos.js). Este archivo solo tiene la lógica.
 // ==========================================================================
 
-const FIN_RT = { sel: null, order: [], idx: 0, seals: 0, active: false, timers: [], anim: null, frame: 0 };   // estado de ejecución (no se guarda)
+const FIN_RT = { sel: null, order: [], idx: 0, seals: 0, active: false, timers: [], anim: null, frame: 0, ending: false };   // estado de ejecución (no se guarda)
 // STATE.finalPhase (sí se guarda): null | { stage: 'armed' | 'choice' | 'puzzles' | 'sealed', tries, tiendaLocked, selladoLocked, wedge }
 
 function finCfg() { return DATOS_JUEGO.FINAL3; }
 function finT(key, n) { const t = (finCfg().TEXTOS || {})[key]; return typeof t === 'string' ? t.replace('{n}', n != null ? n : '') : t; }
 function finArt(k) { return (typeof ASSETS !== 'undefined' && ASSETS.final && ASSETS.final[k]) || ''; }
 function finalLoop3() { return (STATE.currentLoop || 1) >= 3; }
-function finalLocked() { const f = STATE.finalPhase; return !!(f && (f.stage === 'choice' || f.stage === 'puzzles' || f.stage === 'sealed')); }
+function finalLocked() { const f = STATE.finalPhase; return !!(FIN_RT.ending || (f && (f.stage === 'choice' || f.stage === 'puzzles' || f.stage === 'sealed'))); }   // [0.31] ending: durante los finales no se generan cofres
 function finalPuzzleMode() { return !!FIN_RT.active; }
 function finLater(fn, ms) { const t = setTimeout(() => { FIN_RT.timers = FIN_RT.timers.filter(x => x !== t); fn(); }, ms); FIN_RT.timers.push(t); return t; }
 function finClearTimers() { FIN_RT.timers.forEach(clearTimeout); FIN_RT.timers = []; }
@@ -216,11 +216,20 @@ function finRunPuzzle() {
   const mm = document.getElementById('minigameModal'); if (mm) mm.classList.remove('hidden');
   pzFit();
   finHud();
+  finVoice(FIN_RT.idx);   // [0.31] voces del Duende y el Trapero durante los puzles
   saveDirty = true;
 }
 // Ganar un puzle del cerrojo (lo llama triggerLootExplosion)
 function finalPuzzleWon() {
-  minigameInProgress = false; stopMinigameTimer(); hideAllMinigameUI();
+  minigameInProgress = false; stopMinigameTimer();
+  const last = FIN_RT.seals + 1 >= 6;
+  const jt = (STATE.screenChests[0] || {}).type;
+  if (!last) hideAllMinigameUI();
+  else {   // [0.31] el último puzle se queda a la vista (resuelto) mientras la pantalla se rompe
+    const cid = jt ? ({ lockpick: 'lockpickContainer', tumbler: 'tumblerContainer', hack: 'hackContainer', pipe: 'pipeContainer', sequence: 'sequenceContainer', fuses: 'fuseContainer' })[jt.juego] : null;
+    const mm = document.getElementById('minigameModal'); if (mm) mm.classList.remove('hidden');
+    const ct = cid && document.getElementById(cid); if (ct) ct.classList.remove('hidden');
+  }
   STATE.screenChests = [];
   FIN_RT.seals++;
   try { audio.playUnlockFanfare('raro'); screenShake(4, 220); } catch (e) {}
@@ -295,100 +304,222 @@ function finSealedScreen() {
   });
 }
 
-/* ---------- Finales (pantallas PROVISIONALES) ---------- */
+/* ---------- Voces del Duende y el Trapero durante los 6 puzles (final malo) ---------- */
+function finVoice(k) {
+  const B = finCfg().FINAL_MALO, v = (B.VOCES || [])[k]; if (!v) return;
+  finRemove('finVoice');
+  const trap = v[0] === 'EL TRAPERO';
+  const el = finEl('fin-voice ' + (trap ? 'trap' : 'duen'), `<b>${v[0]}</b><span>${v[1]}</span>`, 'finVoice');
+  uiHost().appendChild(el);
+  el.style.animationDuration = (B.VOCES_MS || 4200) + 'ms';
+  try { audio.playDialogueMelody(v[0]); } catch (e) {}
+  finLater(() => finRemove('finVoice'), (B.VOCES_MS || 4200) + 100);
+}
+
+/* ---------- Finales ---------- */
 function finEndCommon() {
   autosaveEnabled = false; finClearTimers(); clearInterval(FIN_RT.anim);
   clearSave();
-  STATE.finalPhase = null; FIN_RT.active = false;
-  ['finalChoice', 'finalLock', 'finalSealed', 'finalHud'].forEach(finRemove);
+  STATE.finalPhase = null; FIN_RT.active = false; FIN_RT.ending = true; STATE.screenChests = []; uiHost().classList.add('final-on');
+  ['finalChoice', 'finalLock', 'finalSealed', 'finalHud', 'finVoice'].forEach(finRemove);
 }
+const FIN_END_IDS = ['finalScene', 'finalBlack', 'finalCrack', 'finalMix', 'finalLid', 'finDoor', 'finDim', 'finFlood', 'finBadUI'];
 // Limpieza total (reiniciar partida, nuevo final): quita todas las pantallas del final y los temporizadores
 function finalCleanup() {
-  finClearTimers(); clearInterval(FIN_RT.anim); FIN_RT.anim = null; FIN_RT.active = false; FIN_RT.sel = null;
-  ['finalChoice', 'finalLock', 'finalSealed', 'finalHud', 'finalScene', 'finalBlack'].forEach(finRemove);
-  const h = uiHost(); if (h) h.classList.remove('final-on', 'fin-glitch');
+  finClearTimers(); clearInterval(FIN_RT.anim); FIN_RT.anim = null; FIN_RT.active = false; FIN_RT.sel = null; FIN_RT.ending = false;
+  ['finalChoice', 'finalLock', 'finalSealed', 'finalHud', 'finVoice'].concat(FIN_END_IDS).forEach(finRemove);
+  const h = uiHost(); if (h) h.classList.remove('final-on', 'fin-glitch', 'fin-shake');
+  finBadRestoreDialogue();
 }
 function finRestart() {
-  finRemove('finalScene'); finRemove('finalBlack');
-  uiHost().classList.remove('final-on', 'fin-glitch');
+  finalCleanup();
   resetGame(); autosaveEnabled = true; showCover();
 }
+// Devuelve el diálogo del Duende a su estado normal (el final malo lo usa como escenario y le quita personaje y botón)
+function finBadRestoreDialogue() {
+  const dm = document.getElementById('dialogueModal'); if (dm) dm.classList.add('hidden');
+  const fig = document.getElementById('dlgFig'); if (fig) fig.style.display = '';
+  const b = document.getElementById('closeDialogueBtn'); if (b) b.style.display = '';
+}
 
-// FINAL MALO: el Duende y el Trapero eran uno; el jugador se queda tras el mostrador
+/* ---------- FINAL MALO: el Duende y el Trapero eran uno; el jugador se queda tras el mostrador ---------- */
+function finCrackSVG() {
+  const f = uiHost(), r = f.getBoundingClientRect(), W = Math.round(r.width) || 412, H = Math.round(r.height) || 915;
+  const cx = W * 0.5, cy = H * 0.46;
+  let seed = 7; const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+  const rays = []; for (let i = 0; i < 15; i++) rays.push(i / 15 * Math.PI * 2 + rnd() * 0.3);
+  let s = `<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">`;
+  rays.forEach((a, i) => {
+    const b = rays[(i + 1) % rays.length] + (i === rays.length - 1 ? Math.PI * 2 : 0), R = Math.max(W, H);
+    s += `<polygon points="${cx},${cy} ${cx + Math.cos(a) * R},${cy + Math.sin(a) * R} ${cx + Math.cos(b) * R},${cy + Math.sin(b) * R}" fill="rgba(${150 + i * 6},200,255,${(0.05 + rnd() * 0.08).toFixed(3)})" transform="translate(${((rnd() - 0.5) * 6).toFixed(1)},${((rnd() - 0.5) * 6).toFixed(1)})"/>`;
+  });
+  rays.forEach(a => {
+    let x = cx, y = cy, d = `M${x} ${y}`, ang = a; const n = 6 + Math.floor(rnd() * 5);
+    for (let k = 0; k < n; k++) {
+      const L = 28 + rnd() * 70; ang += (rnd() - 0.5) * 0.35; x += Math.cos(ang) * L; y += Math.sin(ang) * L; d += ` L${x.toFixed(1)} ${y.toFixed(1)}`;
+      if (rnd() < 0.35) { const ba = ang + (rnd() < 0.5 ? -1 : 1) * (0.6 + rnd() * 0.5), bl = 20 + rnd() * 50; s += `<path d="M${x.toFixed(1)} ${y.toFixed(1)} L${(x + Math.cos(ba) * bl).toFixed(1)} ${(y + Math.sin(ba) * bl).toFixed(1)}" stroke="rgba(235,245,255,.75)" stroke-width="1" fill="none"/>`; }
+    }
+    s += `<path d="${d}" stroke="rgba(10,10,20,.55)" stroke-width="3.5" fill="none"/><path d="${d}" stroke="rgba(240,248,255,.92)" stroke-width="1.6" fill="none"/>`;
+  });
+  [38, 90, 160, 250].forEach(R => {
+    let d = ''; rays.forEach((a, i) => { const rr = R * (0.85 + rnd() * 0.3); d += `${i ? 'L' : 'M'}${(cx + Math.cos(a) * rr).toFixed(1)} ${(cy + Math.sin(a) * rr).toFixed(1)} `; });
+    s += `<path d="${d}Z" stroke="rgba(235,245,255,.55)" stroke-width="1.2" fill="none"/>`;
+  });
+  s += `<circle cx="${cx}" cy="${cy}" r="9" fill="rgba(255,255,255,.85)"/></svg>`;
+  return s;
+}
 function finEndBad() {
   finEndCommon();
   const B = finCfg().FINAL_MALO, frame = uiHost();
-  frame.classList.add('fin-glitch');
-  try { audio.playGlassIrreal(); } catch (e) {}
-  let i = 0;
-  const next = () => {
-    if (i >= B.LIBERACION.length) { frame.classList.remove('fin-glitch'); finDark(B); return; }
-    const [who, txt] = B.LIBERACION[i++];
-    const isT = who === 'EL TRAPERO';
-    triggerSequentialDialogue(who, txt, isT ? 'fa-mask' : 'fa-hat-wizard', i > 3 ? 'Una sola voz' : 'Liberación', isT ? 'text-rose-400' : 'text-purple-300', null, () => next());
-  };
-  finLater(next, 900);
+  frame.classList.add('fin-shake');
+  try { audio.playGlassIrreal(); screenShake(8, 600); if (navigator.vibrate) navigator.vibrate([120, 60, 200]); } catch (e) {}
+  const crack = finEl('fin-crack', finCrackSVG(), 'finalCrack'); frame.appendChild(crack);
+  // mensajes de las dos voces, que se van juntando hasta decir lo mismo
+  const mix = finEl('fin-mix', '', 'finalMix'); frame.appendChild(mix);
+  let t = 1600;
+  B.MEZCLA.forEach(([d, tr], k) => {
+    finLater(() => {
+      mix.innerHTML = `<div class="mx d">${d}</div><div class="mx t">${tr}</div>`;
+      mix.classList.remove('show'); void mix.offsetWidth; mix.classList.add('show');
+      mix.classList.toggle('one', d === tr);
+      try { audio.playDialogueMelody('EL DUENDE'); setTimeout(() => audio.playDialogueMelody('EL TRAPERO'), 120); } catch (e) {}
+    }, t);
+    t += B.MEZCLA_MS;
+  });
+  finLater(() => finBadBlack(B), t + 400);
 }
-function finDark(B) {
-  const black = finEl('fin-black', '<div class="fb-line"></div>', 'finalBlack'); uiHost().appendChild(black);
-  const line = black.querySelector('.fb-line');
+function finBadBlack(B) {
+  const frame = uiHost();
+  const black = finEl('fin-black', '', 'finalBlack'); frame.appendChild(black);
   void black.offsetWidth; black.classList.add('on');
   try { audio.playDarkOut(); } catch (e) {}
-  let t = 2200;
-  (B.OSCURO || []).forEach(s => {
-    finLater(() => { line.textContent = s; line.classList.remove('show'); void line.offsetWidth; line.classList.add('show'); try { audio.playSoftPad(); } catch (e) {} }, t);
-    t += 2800;
-  });
-  finLater(() => { line.classList.remove('show'); finEyelids(B); }, t + 600);
+  finLater(() => {   // la pantalla del puzle ya no hace falta: queda el negro con la tapa del cofre del Duende
+    try { hideAllMinigameUI(); } catch (e) {}
+    ['finalCrack', 'finalMix'].forEach(finRemove); frame.classList.remove('fin-shake', 'final-on');
+    const lid = finEl('fin-lid', '<div class="lid-planks"></div><div class="lid-band b1"></div><div class="lid-band b2"></div><div class="lid-lock"></div><div class="lid-dust"></div>', 'finalLid');
+    frame.appendChild(lid);
+    finRemove('finalBlack');
+    // sonidos de una partida normal (cofres, suma, botín): solo se oyen
+    (B.SONIDOS || []).forEach(([ms, k]) => finLater(() => {
+      try { audio.init(); ({ lock: () => audio.playLockOpen('wooden'), cash: () => audio.playCashRegister(), click: () => audio.playClick(0.8), beep: () => audio.playCardBeep(), fanfare: () => audio.playUnlockFanfare('raro') })[k](); } catch (e) {}
+    }, 400 + ms));
+    finLater(() => finBadOpen(B), B.TAPA_MS);
+  }, 2300);
 }
-function finEyelids(B) {
-  const sc = finEl('fin-ov fin-scene', `
-    <div class="fy-you">
-      <div class="fl-title">${B.TU_TITULO}</div>
-      <div class="fl-sub">${B.TU_SUB}</div>
-      <div class="fy-opts">${B.BIENVENIDAS.map((p, k) => `<button type="button" class="fy-opt" data-k="${k}">${p}</button>`).join('')}</div>
-      <div class="fy-gold hidden"><div class="fy-say"></div><div class="fy-coins"><span id="fyGp">0</span> GP</div><div class="fy-line">${B.ORO_LINEA}</div></div>
-      <div class="fy-end hidden"><div class="fy-fin">${B.FIN}</div><button type="button" class="fc-go" id="fyBack">${B.VOLVER}</button></div>
-    </div>
-    <div class="fy-lid top"></div><div class="fy-lid bot"></div>`, 'finalScene');
-  uiHost().appendChild(sc);
-  finRemove('finalBlack');
-  sc.style.zIndex = 62;
-  void sc.offsetWidth; try { audio.playLightOn(); } catch (e) {}
-  finLater(() => sc.classList.add('open'), 400);
-  sc.querySelectorAll('.fy-opt').forEach(b => b.addEventListener('click', () => {
+function finBadOpen(B) {
+  const frame = uiHost();
+  // el escenario del Duende (diálogo de evento) se prepara debajo de la tapa: sin personaje y sin botón
+  triggerSequentialDialogue('EL DUENDE', B.APERTURA, 'fa-hat-wizard', B.SUBTITULO, 'text-purple-300', null, null);
+  const dm = document.getElementById('dialogueModal'); dm.classList.remove('hidden');
+  const fig = document.getElementById('dlgFig'); if (fig) fig.style.display = 'none';
+  const cb = document.getElementById('closeDialogueBtn'); if (cb) cb.style.display = 'none';
+  const ui = finEl('fin-badui', `<div class="fx-opts">${B.BIENVENIDAS.map((p, k) => `<button type="button" class="fx-opt" data-k="${k}">${p}</button>`).join('')}</div>`, 'finBadUI');
+  frame.appendChild(ui);
+  const lid = document.getElementById('finalLid');
+  if (lid) { lid.classList.add('open'); try { audio.playLockOpen('wooden'); audio.playLightOn(); } catch (e) {} finLater(() => finRemove('finalLid'), 1900); }
+  ui.querySelectorAll('.fx-opt').forEach(b => b.addEventListener('click', () => {
     try { audio.init(); audio.playDialogueMelody('EL DUENDE'); } catch (e) {}
-    sc.querySelector('.fy-opts').classList.add('hidden');
-    const g = sc.querySelector('.fy-gold'); g.classList.remove('hidden'); g.querySelector('.fy-say').textContent = '“' + b.textContent + '”';
-    let gp = 0; const el = sc.querySelector('#fyGp');
-    const tick = () => { gp += Math.ceil((gp + 10) * 0.12); el.textContent = gp; try { audio.playCashRegister(); } catch (e) {} if (gp < 2000) finLater(tick, 220); else finLater(() => sc.querySelector('.fy-end').classList.remove('hidden'), 900); };
-    finLater(tick, 700);
+    const say = b.textContent;
+    ui.querySelector('.fx-opts').remove();
+    const sp = document.getElementById('npcSpeechText'); if (sp) sp.innerHTML = '“' + say + '”';
+    finBadSales(B, ui, dm);
   }));
-  sc.querySelector('#fyBack').addEventListener('click', finRestart);
+}
+// Entra el aventurero: los sitios de la tienda se van seleccionando uno a uno mientras compra y el oro sube
+function finBadSales(B, ui, dm) {
+  const sp = document.getElementById('npcSpeechText');
+  ui.insertAdjacentHTML('beforeend', `<div class="fx-gp"><span id="fxGp">0</span> GP</div>`);
+  const gpEl = ui.querySelector('#fxGp'); let gp = 0;
+  const per = Math.ceil(B.ORO_FINAL / B.SITIOS.length);
+  B.SITIOS.forEach(([nm, x, y, w, h], k) => {
+    finLater(() => {
+      ui.querySelectorAll('.fx-hl').forEach(e => e.classList.remove('on'));
+      const hl = finEl('fx-hl on', `<i>${nm}</i>`); hl.style.cssText = `left:${x}%;top:${y}%;width:${w}%;height:${h}%`; ui.appendChild(hl);
+      try { audio.playCashRegister(); } catch (e) {}
+      const goal = Math.min(B.ORO_FINAL, gp + per), from = gp; const t0 = performance.now();
+      const step = now => { const p = Math.min(1, (now - t0) / (B.SITIO_MS * 0.8)); gp = Math.round(from + (goal - from) * p); gpEl.textContent = gp; if (p < 1) requestAnimationFrame(step); };
+      requestAnimationFrame(step);
+    }, 900 + k * B.SITIO_MS);
+  });
+  const tEnd = 900 + B.SITIOS.length * B.SITIO_MS + 500;
+  finLater(() => {
+    ui.querySelectorAll('.fx-hl').forEach(e => e.classList.remove('on')); gpEl.textContent = B.ORO_FINAL;
+    if (sp) sp.innerHTML = B.ORO_LINEA;
+    ui.insertAdjacentHTML('beforeend', `<div class="fx-end"><div class="fx-fin">${B.FIN}</div><button type="button" class="fc-go" id="fxBack">${B.VOLVER}</button></div>`);
+    ui.querySelector('#fxBack').addEventListener('click', finRestart);
+  }, tEnd);
 }
 
-// FINAL BUENO: Gafas de Ver, la puerta con luz azul de día
+/* ---------- FINAL BUENO: Gafas de Ver, la puerta de dungeon al fondo de la habitación y la luz azul del día ---------- */
+// Dibujo de la puerta en pixel art (rejilla 26x38 que se escala con image-rendering: pixelated): marco de piedra, cielo, hoja de madera con cerrojo
+function finDrawDoor(frameCv, skyCv, leafCv) {
+  const GX = 26, GY = 38;
+  const arch = (x, y) => { if (x < 0 || x >= GX || y < 0 || y >= GY) return false; const cut = ({ 0: 5, 1: 3, 2: 2, 3: 1, 4: 1 })[y] || 0; return cut <= x && x < GX - cut; };
+  const inner = (x, y) => arch(x - 2, y - 2) && arch(x + 2, y + 2) && x >= 2 && x < GX - 2 && y >= 2;
+  let seed = 11; const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+  const F = frameCv.getContext('2d'), S = skyCv.getContext('2d'), L = leafCv.getContext('2d');
+  const px = (g, x, y, c) => { g.fillStyle = c; g.fillRect(x, y, 1, 1); };
+  for (let y = 0; y < GY; y++) for (let x = 0; x < GX; x++) {
+    if (!arch(x, y)) continue;
+    if (!inner(x, y)) px(F, x, y, (x + y) % 5 ? '#42424e' : '#4d4d5a');
+    else {
+      const t = y / GY; px(S, x, y, `rgb(${Math.round(40 + t * 150)},${Math.round(110 + t * 105)},${Math.round(210 + t * 40)})`);
+      const plank = Math.floor((x - 2) / 5); let c = ['#6b4423', '#7a4f29', '#5e3b1e', '#74492a', '#654020'][plank % 5];
+      if ((x - 2) % 5 === 0) c = '#3e2812'; else if (rnd() < 0.07) c = '#4d3016';
+      px(L, x, y, c);
+    }
+  }
+  [[8, 10], [15, 14], [10, 22]].forEach(([cx, cy]) => { for (let dx = -3; dx <= 3; dx++) if (inner(cx + dx, cy)) px(S, cx + dx, cy, '#f2f8ff'); for (let dx = -2; dx <= 2; dx++) if (inner(cx + dx, cy - 1)) px(S, cx + dx, cy - 1, '#ffffff'); });
+  [9, 10, 24, 25].forEach(y => { for (let x = 2; x < GX - 2; x++) if (inner(x, y)) px(L, x, y, y === 9 || y === 24 ? '#2a2a32' : '#3a3a44'); });
+  [4, 8, 17, 21].forEach(x => [9, 24].forEach(y => px(L, x, y, '#9a9aa8')));
+  for (let y = 15; y < 21; y++) for (let x = 10; x < 16; x++) px(L, x, y, '#2a2a32');
+  for (let y = 16; y < 20; y++) for (let x = 11; x < 15; x++) px(L, x, y, '#e0b030');
+  [[12, 17], [13, 17], [12, 18], [13, 18], [12, 19], [13, 19]].forEach(([x, y]) => px(L, x, y, '#2a1608')); px(L, 12, 16, '#fff0a0');
+  px(L, 20, 12, '#8a8a96'); px(L, 20, 13, '#8a8a96');
+}
 function finEndGood() {
   finEndCommon();
-  const G = finCfg().FINAL_BUENO;
+  const G = finCfg().FINAL_BUENO, frame = uiHost();
   try { audio.playUnlockFanfare('legendario'); } catch (e) {}
-  const sc = finEl('fin-ov fg-scene', `
-    <div class="fg-text"><i class="fa-solid fa-glasses fg-glasses hidden"></i><div class="fg-line"></div></div>
-    <div class="fg-door hidden"><div class="fg-rays"></div><div class="fg-frame"><div class="fg-light"></div></div></div>
-    <div class="fg-end hidden"><div class="fg-thanks">${G.GRACIAS}</div><button type="button" class="fc-go" id="fgBack">${G.VOLVER}</button></div>`, 'finalScene');
-  sc.style.zIndex = 62;
-  uiHost().appendChild(sc);
-  const line = sc.querySelector('.fg-line'), gl = sc.querySelector('.fg-glasses');
+  // 1) las gafas: texto sobre la habitación oscurecida y difuminada (sin cofres)
+  const dim = finEl('fin-dim', `<div class="fd-text"><i class="fa-solid fa-glasses fd-glasses hidden"></i><div class="fd-line"></div></div>`, 'finDim');
+  frame.appendChild(dim);
+  const line = dim.querySelector('.fd-line'), gl = dim.querySelector('.fd-glasses');
   let t = 1000;
-  G.LINEAS.forEach((s, k) => {
-    finLater(() => {
-      line.textContent = s; line.classList.remove('show'); void line.offsetWidth; line.classList.add('show');
-      gl.classList.toggle('hidden', s !== 'GAFAS DE VER');
-      try { audio.playSoftPad(); } catch (e) {}
-    }, t);
+  G.LINEAS.forEach(s => {
+    finLater(() => { line.textContent = s; line.classList.remove('show'); void line.offsetWidth; line.classList.add('show'); gl.classList.toggle('hidden', s !== 'GAFAS DE VER'); try { audio.playSoftPad(); } catch (e) {} }, t);
     t += 3000;
   });
-  finLater(() => { line.classList.remove('show'); gl.classList.add('hidden'); sc.classList.add('lit'); sc.querySelector('.fg-door').classList.remove('hidden'); try { audio.playLightOn(); } catch (e) {} }, t);
-  finLater(() => sc.querySelector('.fg-end').classList.remove('hidden'), t + 3200);
-  sc.querySelector('#fgBack').addEventListener('click', finRestart);
+  // 2) la sala se aclara y al fondo aparece la puerta con su cerrojo
+  const door = finEl('fin-door', `
+    <div class="fdr" id="fdr">
+      <canvas class="fdr-sky" width="26" height="38"></canvas>
+      <canvas class="fdr-leaf" width="26" height="38"></canvas>
+      <canvas class="fdr-frame" width="26" height="38"></canvas>
+      <button type="button" class="fdr-hit" aria-label="Abrir la puerta"></button>
+    </div>
+    <div class="fdr-glow"></div>
+    <div class="fdr-line"></div>
+    <div class="fdr-hint">${G.HINT}</div>`, 'finDoor');
+  frame.appendChild(door);
+  finDrawDoor(door.querySelector('.fdr-frame'), door.querySelector('.fdr-sky'), door.querySelector('.fdr-leaf'));
+  finLater(() => {
+    line.classList.remove('show'); gl.classList.add('hidden'); dim.classList.add('clear');
+    door.classList.add('on'); try { audio.playLightOn(); } catch (e) {}
+    const dl = door.querySelector('.fdr-line'); dl.textContent = G.LINEA_PUERTA; dl.classList.add('show');
+    finLater(() => { dl.classList.remove('show'); door.classList.add('ready'); finRemove('finDim'); }, 3600);
+  }, t);
+  // 3) tocar el cerrojo: la hoja se abre, la luz azul se derrama y llena la pantalla
+  let opened = false;
+  door.querySelector('.fdr-hit').addEventListener('click', () => {
+    if (opened || !door.classList.contains('ready')) return; opened = true;
+    try { audio.init(); audio.playLockOpen('wooden'); } catch (e) {}
+    door.classList.remove('ready'); door.classList.add('opening');
+    finLater(() => { try { audio.playLightOn(); } catch (e) {} door.classList.add('glow'); }, 900);
+    finLater(() => {
+      const fl = finEl('fin-flood', `<div class="ff-thanks">${G.GRACIAS}</div><button type="button" class="fc-go" id="fgBack">${G.VOLVER}</button>`, 'finFlood');
+      frame.appendChild(fl); void fl.offsetWidth; fl.classList.add('on');
+      fl.querySelector('#fgBack').addEventListener('click', finRestart);
+    }, 2600);
+  });
 }

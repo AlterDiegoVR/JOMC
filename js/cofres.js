@@ -1,11 +1,10 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — cofres.js — VERSIÓN 0.3
+// JUST ONE MORE CHEST — cofres.js — VERSIÓN 0.31
 // selección de cofres, banner, diálogos, post-its, botín y subida de nivel
 // ==========================================================================
 
 function generateScreenChests() {
   if (finalLocked()) { STATE.screenChests = []; return; }   // [0.3] durante el final solo se ven los dos cofres especiales
-  quadPicked = false; quadMarked = -1;
   STATE.screenChests = [];
   let chestCount = STATE.chestsOpened < 4 ? 1 : (Math.random() < 0.6 ? 2 : 3);
   const destino = modOn('destino') && !isClimaxActive();
@@ -135,32 +134,24 @@ function getRequiredToolCount(rarity) {
   return base;
 }
 
-let quadMarked = -1;   // [0.106b] cofre marcado (primer toque) en la cuadrícula de 4
-let quadPicked = false;   // [0.105] con 4 cofres, la cuadrícula 2x2 solo se ve hasta que eliges uno
 function updateChestSelectionUI() {
   const multiGrid = document.getElementById('multiChestGrid');
   if (multiGrid) {
     multiGrid.innerHTML = '';
-    multiGrid.classList.toggle('quad4', STATE.screenChests.length === 4 && !quadPicked);   // [0.104] 4 cofres: centrados en 2x2 con velo difuminado
+    multiGrid.classList.remove('quad4');   // [0.31] sin pantalla especial de 4 cofres: se usan los 4 selectores normales
 
     if (STATE.screenChests.length > 1) {
       multiGrid.classList.remove('hidden');
       STATE.screenChests.forEach((c, idx) => {
         const btn = document.createElement('button');
         const isSelected = idx === STATE.activeChestIdx;
-        const quadMk = STATE.screenChests.length === 4 && !quadPicked && quadMarked === idx;   // [0.106b]
-        btn.className = `${quadMk ? 'quad-mark ' : ''}p-2 rounded-xl text-xs font-bold border flex flex-col items-center gap-1 transition-all ${chestVisRarity(c).border} ${isSelected ? 'bg-slate-800 scale-105 ring-2 ring-amber-400' : 'bg-slate-900/80 opacity-70'}`;
+        btn.className = `p-2 rounded-xl text-xs font-bold border flex flex-col items-center gap-1 transition-all ${chestVisRarity(c).border} ${isSelected ? 'bg-slate-800 scale-105 ring-2 ring-amber-400' : 'bg-slate-900/80 opacity-70'}`;
         btn.innerHTML = `
           <span class="text-[9px] font-extrabold font-mono" style="color: ${c.fog ? '#94a3b8' : c.rarity.color}">${c.fog ? '???' : c.rarity.name}</span>
           ${ART_ON && ASSETS.cofres[c.type.id] ? `<img src="${chestSpriteSrc(c.type, c.fog ? CHEST_RARITIES[0] : c.rarity)}" alt="" style="image-rendering:pixelated;width:44px;height:auto">` : '<i class="fa-solid fa-box text-sm"></i>'}
         `;
         btn.addEventListener('click', () => {
           audio.init();
-          // [0.106b] Con 4 cofres: el primer toque solo marca (marco brillante) y el segundo sobre el mismo confirma
-          if (STATE.screenChests.length === 4 && !quadPicked) {
-            if (quadMarked === idx) { audio.playClick(0.8); quadPicked = true; quadMarked = -1; STATE.activeChestIdx = idx; updateChestSelectionUI(); return; }
-            audio.playSwoosh(); quadMarked = idx; STATE.activeChestIdx = idx; updateChestSelectionUI(); return;
-          }
           if (STATE.activeChestIdx !== idx) audio.playSwoosh(); else audio.playClick(0.5);   // [0.090] swoosh al cambiar de cofre
           STATE.activeChestIdx = idx;
           updateChestSelectionUI();
@@ -1057,7 +1048,9 @@ function triggerLootExplosion() {
     // [0.201] Bucle 2, nivel 2, cofre 2: aparece la linterna (no funciona todavía) y, justo al cerrar el botín, el Trapero comenta el "cacharro"
     if ((STATE.currentLoop || 1) === 2 && STATE.level === 2 && !STATE.lanternFound && chestsSinceLevelUp === 2) {
       STATE.lanternFound = true; STATE.pendingTraperoLantern = true;
-      extraLootHTML += `<div class="lt-extra text-sky-300"><span>${DATOS_JUEGO.NARRATIVA.LINTERNA.BANNER}</span></div>`;
+      // [0.31] El aviso de la linterna se hace notar como el del Tomo: bloque destacado arriba del botín con el objeto grande
+      const LN = DATOS_JUEGO.NARRATIVA.LINTERNA, lanImg = (typeof ASSETS !== 'undefined' && ASSETS.objetos && ASSETS.objetos.linterna) || '';
+      tomeFindHTML += `<div class="lt-find"><span class="lt-find-ex">!</span>${lanImg ? `<img class="lt-find-img" src="${lanImg}" alt="">` : ''}<div class="lt-find-txt"><b>${LN.AVISO_TITULO}</b><span>${LN.BANNER}</span></div><span class="lt-find-ex">!</span></div>`;
     }
 
     // [0.082] Dedos Rotos activo: en un cofre NORMAL de madera la ganzúa extra baja a un % fijo (silencioso).

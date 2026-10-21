@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — estado.js — VERSIÓN 0.3
+// JUST ONE MORE CHEST — estado.js — VERSIÓN 0.31
 // estado, wildcards, guardado, logros, estadísticas, reinicio
 // ==========================================================================
 
@@ -331,6 +331,8 @@ function modOn(id) { return !!(STATE.mods && STATE.mods[id] > 0); }
 function breakStreak() { STATE.cleanStreak = 0; if (STATE.mods && STATE.mods.enrachado) { delete STATE.mods.enrachado; showPersistentFeedback('🔥 Has perdido la racha: el Enrachado se acaba.'); } }
 // [0.210] Cartas tácticas que ya pueden salir (algunas solo desde el bucle 2)
 function tacticasDisponibles() { return DATOS_JUEGO.CARTAS_NIVEL.TACTICAS.filter(c => !c.minBucle || (STATE.currentLoop || 1) >= c.minBucle); }
+// [0.31] Barajado uniforme (Fisher-Yates). Sustituye a sort(() => 0.5 - Math.random()), que está sesgado y repetía los primeros elementos
+function shuffleU(arr) { const a = Array.from(arr); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
 function isRoomDark() { return (STATE.roomDarkUntil || 0) > STATE.chestsOpened; }
 // [0.3] Cada vez que la luz se apaga de nuevo en el bucle, Nocturnidad y Alevosía recupera sus robos
 function nightStealReset() { if (modOn('nocturnidad')) STATE.nightStealsLeft = (DATOS_JUEGO.MODS_WILDCARD.NOCTURNIDAD || {}).ROBOS || 2; }
@@ -465,7 +467,7 @@ function pickWildcard() {
   const wcList = DATOS_JUEGO.WILDCARDS || [];
   if (wcList.length === 0) return null;
   const wantBad = Math.random() < getWildcardBadChance();
-  const okList = wcList.filter(w => (!w.minNivel || STATE.level >= w.minNivel) && (!w.minBucle || (STATE.currentLoop || 1) >= w.minBucle));   // [0.210] minBucle
+  const okList = wcList.filter(w => (!w.minNivel || STATE.level >= w.minNivel) && (!w.minBucle || (STATE.currentLoop || 1) >= w.minBucle) && !(isRoomDark() && (w.efecto === 'APAGON_FINANCIERO' || w.efecto === 'NOCTURNIDAD')));   // [0.210] minBucle; [0.31] con la sala a oscuras no salen los que la apagan
   let pool = okList.filter(w => (w.tipo === 'PERJUDICIAL') === wantBad);
   if (pool.length === 0) pool = okList.length ? okList : wcList;
   const pw = w => ((STATE.currentLoop || 1) === 1 && w.pesoBucle1 != null) ? w.pesoBucle1 : (w.peso != null ? w.peso : 1);   // [0.210] peso propio en el bucle 1

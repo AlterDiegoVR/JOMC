@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — extras.js — VERSIÓN 0.3
+// JUST ONE MORE CHEST — extras.js — VERSIÓN 0.31
 // cartas y comodines nuevos de la 0.210: Inconformista, Herrero, Re-Roll, Pulsera VIP, Ruleta, Hallazgo Táctico+
 // ==========================================================================
 
@@ -179,7 +179,7 @@ function openTacticPicker(n) {
   if (label) label.textContent = `Elige ${n} cartas tácticas:`;
   choices.classList.remove('hidden');
   grid.innerHTML = '';
-  const pool = levelCardPool(true).sort(() => 0.5 - Math.random()).slice(0, 3);
+  const pool = shuffleU(levelCardPool(true)).slice(0, 3);
   let left = Math.min(n, pool.length);
   pool.forEach(cd => {
     const el = document.createElement('button');
