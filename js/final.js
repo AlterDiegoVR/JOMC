@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — final.js — VERSIÓN 0.32
+// JUST ONE MORE CHEST — final.js — VERSIÓN 0.33
 // final del bucle 3: los dos cofres, el cerrojo de la tienda (6 puzles con voces), el cofre sellado (3 palabras) y los dos finales (puerta de dungeon / tapa del cofre y tienda del Duende)
 // Todos los textos y números están en DATOS_JUEGO.FINAL3 (datos.js). Este archivo solo tiene la lógica.
 // ==========================================================================
@@ -274,7 +274,7 @@ function finSealedScreen() {
       ${P[l].palabras.map(w => `<button type="button" class="fs-word" data-w="${w}">${w}</button>`).join('')}
     </div>`).join('');
   const ov = finEl('fin-ov fs-screen', `
-    <div class="fs-head"><div class="fl-title">${T.SEALED_TITULO}</div><div class="fl-sub">${T.SEALED_SUB}</div></div>
+    <div class="fs-head"><div class="fl-title">${T.SEALED_TITULO}</div><div class="fl-sub">${T.SEALED_SUB}</div>${STATE.testPassHint && STATE.passWords ? `<div class="fs-test">[MODO TEST] Correctas: ${[1, 2, 3].map(l => String(STATE.passWords[l]).toUpperCase()).join(' · ')}</div>` : ''}</div>
     <div class="fs-cols">${cols}</div>
     <div class="fl-foot"><button type="button" class="fc-go" id="fsGo" disabled>${T.SEALED_BTN}</button><button type="button" class="fl-back" id="fsBack">← VOLVER</button></div>`, 'finalSealed');
   uiHost().appendChild(ov);

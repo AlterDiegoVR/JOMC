@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — estado.js — VERSIÓN 0.32
+// JUST ONE MORE CHEST — estado.js — VERSIÓN 0.33
 // estado, wildcards, guardado, logros, estadísticas, reinicio
 // ==========================================================================
 
@@ -920,6 +920,7 @@ function resetGame(keepLoop) {
   STATE.harderPuzzlesLeft = 0; STATE.harderSrc = ''; STATE.extremePuzzlesLeft = 0; STATE.extremeSrc = ''; STATE.oxidadoLeft = 0; STATE.recharge = {};
   STATE.mods = {};
   STATE.pendingNotes = [];
+  STATE.testPassHint = false;
   if (keepLoop !== true) { STATE.blankNotes = {}; STATE.passWords = {}; }   // [0.202] la contraseña también va ligada a la partida   // [0.095] partida nueva = post-its nuevos; el cambio de bucle los conserva
   STATE.traperoBuffs = { bonusXp: false, harderMinigames: false, shortPipeTimer: false, doubleGold: false };
   STATE.cursedChestsLeft = 0;

@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — modotest.js — VERSIÓN 0.32
+// JUST ONE MORE CHEST — modotest.js — VERSIÓN 0.33
 // Modo test
 // ==========================================================================
 
@@ -406,6 +406,7 @@ function testKeyHash(seq, salt) {
       const P = DATOS_JUEGO.CONTRASENA.BUCLES; STATE.passWords = {};
       [1, 2, 3].forEach(l => { const ws = P[l].palabras; STATE.passWords[l] = ws[Math.floor(Math.random() * ws.length)]; });
       window.goToChest(70);
+      STATE.testPassHint = true;
       const pw = STATE.passWords;
       setTimeout(() => showPersistentFeedback(`🛠️ [MODO TEST] FINAL BUCLE 3 · Contraseña correcta: ${pw[1].toUpperCase()} · ${pw[2].toUpperCase()} · ${pw[3].toUpperCase()}`), 400);
     });

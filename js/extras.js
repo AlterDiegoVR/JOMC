@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — extras.js — VERSIÓN 0.32
+// JUST ONE MORE CHEST — extras.js — VERSIÓN 0.33
 // cartas y comodines nuevos de la 0.210: Inconformista, Herrero, Re-Roll, Pulsera VIP, Ruleta, Hallazgo Táctico+
 // ==========================================================================
 
