@@ -1068,3 +1068,8 @@ html:not(.narrow-layout) #pzHardBadge { font-size: 13px; }
 .fin-flood .fc-go { max-width: 300px; }
 
 .fs-test { margin-top: 4px; padding: 4px 8px; font: 800 11px 'Outfit', sans-serif; color: #fbbf24; background: rgba(0,0,0,.6); border: 1px dashed #fbbf24; border-radius: 6px; text-align: center; }
+
+/* [0.34] pistones solidarios: halo discreto y destello al unirse */
+.t-solid-halo { box-shadow: 0 0 8px 2px rgba(110, 231, 183, .55); }
+.t-solid-flash { position: absolute; height: 2px; margin-top: -1px; transform-origin: 0 50%; z-index: 12; pointer-events: none; background: linear-gradient(90deg, rgba(255,255,255,0), #fff, rgba(167,243,208,.9)); box-shadow: 0 0 8px 2px rgba(167,243,208,.9); animation: tSolidFlash .45s ease-out forwards; }
+@keyframes tSolidFlash { 0% { opacity: 1; } 100% { opacity: 0; } }

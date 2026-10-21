@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — puzles.js — VERSIÓN 0.33
+// JUST ONE MORE CHEST — puzles.js — VERSIÓN 0.34
 // minijuegos: ganzúa, pistones, hackeo, tuberías
 // ==========================================================================
 
@@ -672,6 +672,17 @@ function handleTumblerSealClick() {
 }
 
 // [0.31] Pistones solidarios: el clic une al grupo los pistones sueltos que estén a la altura del grupo (al principio, la del pistón 1); si no hay ninguno, fallo
+// [0.34] Destello fino entre dos pistones solidarios (dura un instante)
+function tumblerSolidFlash(a, b) {
+  const na = document.getElementById(`pinNotch-${a}`), nb = document.getElementById(`pinNotch-${b}`);
+  const host = na && na.offsetParent; if (!host || !nb) return;
+  const hr = host.getBoundingClientRect(), ra = na.getBoundingClientRect(), rb = nb.getBoundingClientRect();
+  const ax = ra.left + ra.width / 2 - hr.left, ay = ra.top + ra.height / 2 - hr.top, bx = rb.left + rb.width / 2 - hr.left, by = rb.top + rb.height / 2 - hr.top;
+  const len = Math.hypot(bx - ax, by - ay), ang = Math.atan2(by - ay, bx - ax) * 180 / Math.PI;
+  const f = document.createElement('div'); f.className = 't-solid-flash';
+  f.style.cssText = `left:${ax}px;top:${ay}px;width:${len}px;transform:rotate(${ang}deg)`;
+  host.appendChild(f); setTimeout(() => f.remove(), 480);
+}
 function triggerSolidTumblerClick() {
   const configT = DATOS_JUEGO.MINIJUEGOS.TUMBLER, SO = DATOS_JUEGO.MINIJUEGOS.AVANZADO.TUMBLER.SOLIDARIOS;
   let tol = pzHardLevel() === 2 ? pzXtr().TUMBLER.TOLERANCIA : (pzHardLevel() === 1 ? configT.TOLERANCIA_DIFICIL : configT.TOLERANCIA_NORMAL);
@@ -683,8 +694,9 @@ function triggerSolidTumblerClick() {
   audio.playClick(0.9); if (navigator.vibrate) { try { navigator.vibrate(18); } catch (e) {} }
   lead.group = lead.locked = true;
   joined.forEach(i => { const p = tumblerPinsData[i]; p.group = p.locked = true; p.posY = lead.posY; tumblerSetNotch(i, p.posY); });
+  joined.forEach(i => tumblerSolidFlash(0, i));   // [0.34] destello entre el primer pistón y el que se une
   tumblerPinsData.forEach((p, i) => { const n = document.getElementById(`pinNotch-${i}`); const l = document.getElementById(`pinLight-${i}`);
-    if (n) n.className = `w-full h-4 ${p.group ? 'bg-emerald-400 border-emerald-200' : 'bg-amber-400 border-yellow-200'} rounded border shadow-md absolute inset-x-0`;
+    if (n) n.className = `w-full h-4 ${p.group ? 'bg-emerald-400 border-emerald-200 t-solid-halo' : 'bg-amber-400 border-yellow-200'} rounded border shadow-md absolute inset-x-0`;
     if (l) l.className = `w-2.5 h-2.5 rounded-full my-1 ${p.group ? 'bg-emerald-400 border border-emerald-200' : 'bg-slate-800 border border-slate-700'}`; });
   if (tumblerPinsData.every(p => p.group)) startSolidSealPhase();
 }
@@ -692,7 +704,7 @@ function triggerSolidTumblerClick() {
 function startSolidSealPhase() {
   const cfg = DATOS_JUEGO.MINIJUEGOS.AVANZADO.TUMBLER;
   tumblerPhase = 'seal'; audio.playClick(1); if (navigator.vibrate) { try { navigator.vibrate(30); } catch (e) {} }
-  tumblerPinsData.forEach((p, i) => { const n = document.getElementById(`pinNotch-${i}`); if (n) n.className = 'w-full h-4 bg-sky-400 border-sky-200 rounded border shadow-md absolute inset-x-0'; });
+  tumblerPinsData.forEach((p, i) => { const n = document.getElementById(`pinNotch-${i}`); if (n) n.className = 'w-full h-4 bg-sky-400 border-sky-200 t-solid-halo rounded border shadow-md absolute inset-x-0'; });
   const tol = cfg.TOLERANCIA_AZUL + (STATE.perks.sweetSpot * 1), [bMin, bMax] = cfg.AZUL_RANGO, blueY = bMin + Math.random() * (bMax - bMin);
   const shearLine = document.getElementById('shearLine');
   if (shearLine && shearLine.parentElement) {
@@ -1324,7 +1336,7 @@ function startPipeGame() {
     generatedAndValid = true;
     // [0.31] Bucle 3: límite de giros = mínimo del camino + margen de la rareza (margen 0 = sin límite)
     const B3 = advPipe.BUCLE3, mg = (B3 && (STATE.currentLoop || 1) >= B3.DESDE_BUCLE) ? ((B3.MARGEN_GIROS || {})[rarityId] || 0) : 0;
-    pipeMoves = 0; pipeMoveLimit = (mg > 0 && pipeGridData && pipeGridData.minMoves != null) ? pipeGridData.minMoves + mg : 0;
+    pipeMoves = 0; pipeMoveLimit = (mg > 0 && pipeGridData && pipeGridData.minMoves != null) ? Math.max((B3 && B3.MIN_GIROS) || 0, pipeGridData.minMoves + mg) : 0;   // [0.34] mínimo MIN_GIROS
   } else { pipeMoves = 0; pipeMoveLimit = 0; }
   pipeMovesUpdate();
 

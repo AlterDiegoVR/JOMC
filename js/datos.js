@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — datos.js — VERSIÓN 0.33
+// JUST ONE MORE CHEST — datos.js — VERSIÓN 0.34
 // DATOS_JUEGO: configuración y balance
 // ==========================================================================
 
@@ -9,7 +9,7 @@
 
 const DATOS_JUEGO = {
   // [0.088] Versión visible en pantalla (esquina inferior central) para que las capturas la incluyan
-  VERSION: '0.33',
+  VERSION: '0.34',
   // [0.104] Efectos de la apertura automática de la secuencia final (cofres 101-110); la intensidad sube del primero al último (k = 0..1)
   SECUENCIA_FINAL_FX: { ACTIVAR: true, ESTALLIDOS_BASE: 2, ESTALLIDOS_EXTRA: 4, PARTICULAS_POR_ESTALLIDO: 40, HACIA_CENTRO_BASE: 30, HACIA_CENTRO_EXTRA: 60,
     SACUDIDA_PX: 6, SACUDIDA_EXTRA_PX: 10, SACUDIDA_MS: 520, PULSO_ZOOM: 0.02, DESTELLO: 0.10 },
@@ -728,7 +728,7 @@ const DATOS_JUEGO = {
       PIPE: {
         TIEMPO_SEGUNDOS: 20,                // Normal sigue en TIEMPO_BASE_SEGUNDOS (12)
         // [0.31] Bucle 3: pieza en CRUZ (sale por los 4 lados, no se gira) y límite de giros (margen sobre el mínimo del camino previsto; 0 = sin límite)
-        BUCLE3: { DESDE_BUCLE: 3, PROB_CRUZ_CAMINO: 0.18, PROB_CRUZ_RELLENO: 0.15, MARGEN_GIROS: { raro: 6, epico: 5, legendario: 4 } },   // valores míos de partida, a ajustar
+        BUCLE3: { DESDE_BUCLE: 3, MIN_GIROS: 15, PROB_CRUZ_CAMINO: 0.18, PROB_CRUZ_RELLENO: 0.15, MARGEN_GIROS: { raro: 6, epico: 5, legendario: 4 } },   // valores míos de partida, a ajustar
         PESO_CENTRAL: 3,                    // [0.096] Las casillas malas (bombas/obstáculos) salen más hacia el centro: 1 = uniforme; mayor = más centradas
         CONFIG_POR_RAREZA: {
           raro: { size: 4, obstacles: 0, bombs: 1 },

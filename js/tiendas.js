@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — tiendas.js — VERSIÓN 0.33
+// JUST ONE MORE CHEST — tiendas.js — VERSIÓN 0.34
 // tienda del Duende y del Trapero
 // ==========================================================================
 
@@ -396,6 +396,7 @@ function renderMerchantShopGrid() {
           // [0.210] Con la luz apagada (Nocturnidad) los robos salen del cupo del comodín y el Ladrón no se gasta hasta el tercero
           if (nightOn) STATE.nightStealsLeft--; else STATE.perks.shopStealFree = false;
           grantItem(item);
+          if (item.isChestCounter) STATE.currentShopOffer = STATE.currentShopOffer.filter(s => s !== slot);   // [0.34] el contador se agota siempre al conseguirlo
 
           STATE.shopSession.items.push({ name: item.name, costText: 'GRATIS (ROBO)', icon: item.icon, ic: vis.ic, isStolen: true });
 
@@ -410,6 +411,7 @@ function renderMerchantShopGrid() {
         } else {
           STATE.gold -= currentPrice;
           const spoke = grantItem(item);   // [0.104] el contador de cofres ya trae su propia frase
+          if (item.isChestCounter) STATE.currentShopOffer = STATE.currentShopOffer.filter(s => s !== slot);   // [0.34] se agota al comprarlo
 
           STATE.shopSession.items.push({ name: item.name, costText: `${currentPrice} GP`, icon: item.icon, ic: vis.ic, isStolen: false });
           STATE.shopSession.totalGold += currentPrice;
