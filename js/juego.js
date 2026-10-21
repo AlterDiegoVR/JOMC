@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — juego.js — VERSIÓN 0.34
+// JUST ONE MORE CHEST — juego.js — VERSIÓN 0.35
 // arte del cofre abierto, subida de nivel, abrir cofre
 // ==========================================================================
 
@@ -479,7 +479,8 @@ function pzScale(m) {
     }
   }
   const btn = m.querySelector('#' + idOf[which] + ' .pz-btn');
-  const used = card.offsetHeight + timer.offsetHeight + foot.offsetHeight + (btn ? btn.offsetHeight : 0) + 20 + 2 * (cfg.MARGEN_PX || 26);
+  const inFinal = !!(frame.closest && frame.closest('.final-on'));   // [0.35] en los 6 puzles finales hay menos margen para que las tuberías no se vean diminutas
+  const used = card.offsetHeight + timer.offsetHeight + foot.offsetHeight + (btn ? btn.offsetHeight : 0) + 20 + 2 * (inFinal ? 8 : (cfg.MARGEN_PX || 26));
   const natH = body.offsetHeight || 1;
   const maxZ = narrow ? 1 : ((cfg.MAX && cfg.MAX[which]) || 1.5);
   let z = Math.min(maxZ, (frame.clientHeight - used) / natH, (m.clientWidth - 16) / 400);   // el ancho útil es el del marco de juego (9:16), no el de la ventana

@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — puzles.js — VERSIÓN 0.34
+// JUST ONE MORE CHEST — puzles.js — VERSIÓN 0.35
 // minijuegos: ganzúa, pistones, hackeo, tuberías
 // ==========================================================================
 
@@ -148,8 +148,12 @@ function startLockpickGame() {
 function updateLockpickProximityVisuals() {
   if (lpState.phase === 2) {   // [0.31] fase del destornillador: sin colores de cercanía
     const pt = document.getElementById('proximityText'), pg = document.getElementById('proximityGlow');
-    if (pt) { pt.textContent = 'DESTORNILLADOR'; pt.className = 'lp-state'; pt.style.setProperty('--st', '#f08a3a'); }
-    if (pg) pg.style.borderColor = '#475569';
+    // [0.35] dentro del margen del destornillador: zona verde (texto, aro de la cerradura y botón del deslizador en verde)
+    const inZone = Math.abs(lpState.wrenchAng - lpState.wrenchSpot) <= lpState.wrenchTol;
+    if (pt) { pt.textContent = inZone ? 'VERDE · PUNTO DULCE' : 'DESTORNILLADOR'; pt.className = 'lp-state'; pt.style.setProperty('--st', inZone ? '#3cd696' : '#f08a3a'); }
+    if (pg) pg.style.borderColor = inZone ? '#34d399' : '#475569';
+    const wsl = document.getElementById('wrenchSlider');
+    if (wsl) { wsl.style.setProperty('--lp-col', inZone ? 'hsl(125 90% 52%)' : '#3a2208'); wsl.style.setProperty('--lp-glow', inZone ? 'hsla(125 95% 55% / .8)' : 'transparent'); }
     const nd = document.getElementById('pickNeedle'); if (nd) nd.style.transform = `rotate(${lpState.angle}deg)`;
     const cyl = document.getElementById('cylinderGraphic'); if (cyl) cyl.style.transform = `rotate(${lpState.screwdriver}deg)`;
     return;

@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — final.js — VERSIÓN 0.34
+// JUST ONE MORE CHEST — final.js — VERSIÓN 0.35
 // final del bucle 3: los dos cofres, el cerrojo de la tienda (6 puzles con voces), el cofre sellado (3 palabras) y los dos finales (puerta de dungeon / tapa del cofre y tienda del Duende)
 // Todos los textos y números están en DATOS_JUEGO.FINAL3 (datos.js). Este archivo solo tiene la lógica.
 // ==========================================================================
@@ -197,7 +197,7 @@ function finRunPuzzle() {
   const type = DATOS_JUEGO.COFRES.ESTANDAR.find(t => t.id === C.TIPOS_CUNAS[wedge]);
   const rarity = CHEST_RARITIES.find(r => r.id === C.RAREZA_PUZLES) || CHEST_RARITIES[2];
   const lock = document.getElementById('finalLock'); if (lock) lock.classList.add('hidden');
-  FIN_RT.active = true;
+  FIN_RT.active = true; finRemove('finalGap');
   STATE.screenChests = [{ type, rarity }]; STATE.activeChestIdx = 0;
   ['lockpickContainer', 'tumblerContainer', 'hackContainer', 'pipeContainer', 'sequenceContainer', 'fuseContainer'].forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); });
   const staleHelp = document.getElementById('pipeAdvancedHelp'); if (staleHelp) staleHelp.remove();
@@ -219,6 +219,12 @@ function finRunPuzzle() {
   finVoice(FIN_RT.idx);   // [0.31] voces del Duende y el Trapero durante los puzles
   saveDirty = true;
 }
+// [0.35] Entre un puzle y el siguiente se ve el cofre de la tienda en la habitación (no la habitación vacía)
+function finShowGapChest() {
+  finRemove('finalGap');
+  const el = finEl('fin-choice fin-gap', `<div class="fc-row"><div class="fc-chest"><span class="fc-spr" style="background-image:url('${finArt('tienda')}')"></span></div></div>`, 'finalGap');
+  uiHost().appendChild(el);
+}
 // Ganar un puzle del cerrojo (lo llama triggerLootExplosion)
 function finalPuzzleWon() {
   minigameInProgress = false; stopMinigameTimer();
@@ -236,6 +242,7 @@ function finalPuzzleWon() {
   if (FIN_RT.seals >= 6) { finEndBad(); return; }
   FIN_RT.idx++;
   FIN_RT.active = true;   // sigue en modo final hasta que arranque el siguiente puzle
+  finShowGapChest();
   finHud();
   finLater(() => finRunPuzzle(), 900);
 }
@@ -245,7 +252,7 @@ function finalPuzzleFailed() {
   const f = STATE.finalPhase; FIN_RT.active = false; STATE.screenChests = [];
   if (!f) return;
   try { audio.playBreak(); screenShake(7, 320); } catch (e) {}
-  f.tries--; FIN_RT.seals = 0; FIN_RT.idx = 0; saveDirty = true;
+  finRemove('finalGap'); f.tries--; FIN_RT.seals = 0; FIN_RT.idx = 0; saveDirty = true;
   finRemove('finalHud');
   if (f.tries <= 0) {
     f.tiendaLocked = true; finRemove('finalLock');
@@ -321,13 +328,13 @@ function finEndCommon() {
   autosaveEnabled = false; finClearTimers(); clearInterval(FIN_RT.anim);
   clearSave();
   STATE.finalPhase = null; FIN_RT.active = false; FIN_RT.ending = true; STATE.screenChests = []; uiHost().classList.add('final-on');
-  ['finalChoice', 'finalLock', 'finalSealed', 'finalHud', 'finVoice'].forEach(finRemove);
+  ['finalChoice', 'finalLock', 'finalSealed', 'finalHud', 'finVoice', 'finalGap'].forEach(finRemove);
 }
 const FIN_END_IDS = ['finalScene', 'finalBlack', 'finalCrack', 'finalMix', 'finalLid', 'finDoor', 'finDim', 'finFlood', 'finBadUI'];
 // Limpieza total (reiniciar partida, nuevo final): quita todas las pantallas del final y los temporizadores
 function finalCleanup() {
   finClearTimers(); clearInterval(FIN_RT.anim); FIN_RT.anim = null; FIN_RT.active = false; FIN_RT.sel = null; FIN_RT.ending = false;
-  ['finalChoice', 'finalLock', 'finalSealed', 'finalHud', 'finVoice'].concat(FIN_END_IDS).forEach(finRemove);
+  ['finalChoice', 'finalLock', 'finalSealed', 'finalHud', 'finVoice', 'finalGap'].concat(FIN_END_IDS).forEach(finRemove);
   const h = uiHost(); if (h) h.classList.remove('final-on', 'fin-glitch', 'fin-shake');
   finBadRestoreDialogue();
 }

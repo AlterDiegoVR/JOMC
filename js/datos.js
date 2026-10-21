@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — datos.js — VERSIÓN 0.34
+// JUST ONE MORE CHEST — datos.js — VERSIÓN 0.35
 // DATOS_JUEGO: configuración y balance
 // ==========================================================================
 
@@ -9,7 +9,7 @@
 
 const DATOS_JUEGO = {
   // [0.088] Versión visible en pantalla (esquina inferior central) para que las capturas la incluyan
-  VERSION: '0.34',
+  VERSION: '0.35',
   // [0.104] Efectos de la apertura automática de la secuencia final (cofres 101-110); la intensidad sube del primero al último (k = 0..1)
   SECUENCIA_FINAL_FX: { ACTIVAR: true, ESTALLIDOS_BASE: 2, ESTALLIDOS_EXTRA: 4, PARTICULAS_POR_ESTALLIDO: 40, HACIA_CENTRO_BASE: 30, HACIA_CENTRO_EXTRA: 60,
     SACUDIDA_PX: 6, SACUDIDA_EXTRA_PX: 10, SACUDIDA_MS: 520, PULSO_ZOOM: 0.02, DESTELLO: 0.10 },
@@ -69,8 +69,8 @@ const DATOS_JUEGO = {
   // Secuencia: cofre 79 (el Trapero revela que el Duende vive en un cofre) -> en la siguiente aparición de la tienda (cofre 80, el siguiente múltiplo de DUENDE_INTERVALO) salen los dos cofres.
   FINAL3: {
     INTENTOS: 3,                       // intentos GLOBALES del Cofre-Tienda: un fallo reinicia desde el primer puzle; sin intentos, la tienda se atasca para siempre
-    RAREZA_PUZLES: 'epico',            // rareza con la que se generan los 6 puzles (cambia su dificultad base)
-    DUREZA_PUZLES: 1,                  // 0 normal, 1 difícil, 2 extremo (se suma a los efectos de dureza que ya tengas)
+    RAREZA_PUZLES: 'legendario',            // [0.35] la versión más difícil del bucle 3 de cada puzle // rareza con la que se generan los 6 puzles (cambia su dificultad base)
+    DUREZA_PUZLES: 0,                  // [0.35] sin 'puzles endurecidos': solo la versión legendario del bucle 3 // 0 normal, 1 difícil, 2 extremo (se suma a los efectos de dureza que ya tengas)
     TIPOS_CUNAS: ['wooden', 'piston', 'hydraulic', 'cyber', 'neon', 'electric'],   // cuña 0..5 de la rueda: ganzúa, pistones, llave de paso, pantalla, luces, fusible
     NOMBRES_CUNAS: ['GANZÚA', 'PISTONES', 'LLAVE DE PASO', 'PANTALLA', 'LUCES', 'FUSIBLE'],
     RULETA: { ZOOM: 1.8, ZOOM_MS: 900, PASOS: 22, MS_INICIO: 55, MS_FINAL: 520, PARPADEOS: 8, PARPADEO_MS: 150 },
