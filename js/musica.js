@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — musica.js — VERSIÓN 0.38
+// JUST ONE MORE CHEST — musica.js — VERSIÓN 0.39
 // Música del juego: las piezas elegidas por el jugador (F menú, I inicio de bucle, A tienda de tratos, J tienda del Duende, K cerrojo final, G final bueno, H final malo).
 // Se generan con WebAudio (sin archivos). Un "director" mira cada medio segundo qué pantalla hay y cambia de pieza con fundido.
 // Volumen general: DATOS_JUEGO.SONIDO.MUSICA.VOLUMEN (0.7 = el del artefacto de pruebas). Cofres con música de bucle: MUSICA.BUCLE_COFRES.
@@ -30,10 +30,10 @@ function impulse(c, sec, dark){
   return (_irCache[key] = b);
 }
 function makeFx(c, p, level, outNode){
-  const master = c.createGain(), comp = c.createDynamicsCompressor(), vol = c.createGain();
+  const master = c.createGain(), comp = c.createDynamicsCompressor(), vol = c.createGain(), duck = c.createGain();   // duck: baja la música mientras hay un puzle musical
   comp.threshold.value = -16; comp.ratio.value = 3; comp.attack.value = 0.03; comp.release.value = 0.4;
   vol.gain.value = 0.0001;
-  master.connect(comp); comp.connect(vol); vol.connect(outNode);
+  master.connect(comp); comp.connect(vol); vol.connect(duck); duck.connect(outNode);
   const inp = c.createGain();
   const dry = c.createGain(); dry.gain.value = 1 - (p.rev.wet * 0.35); inp.connect(dry); dry.connect(master);
   const conv = c.createConvolver(); conv.buffer = impulse(c, p.rev.sec, p.rev.dark);
@@ -43,7 +43,7 @@ function makeFx(c, p, level, outNode){
     dl.delayTime.value = p.delay.time; fb.gain.value = p.delay.fb; dm.gain.value = p.delay.mix;
     inp.connect(dl); dl.connect(fb); fb.connect(dl); dl.connect(dm); dm.connect(master); dm.connect(conv);
   }
-  return { inp: inp, vol: vol, target: level * (p.lvl || 1) };
+  return { inp: inp, vol: vol, duck: duck, target: level * (p.lvl || 1) };
 }
 /* ---------- voces ---------- */
 function V(c, out, o){
@@ -442,8 +442,8 @@ function musStopCur(fade) {
 function musStart(id) {
   const p = PIECES.find(x => x.id === id), c = audio.ctx; if (!p || !c) return;
   if (MUS.cur && MUS.cur.id === id) return;
-  musStopCur(1.5);
-  const level = musCfg().VOLUMEN != null ? musCfg().VOLUMEN : 0.7;
+  musStopCur(musCfg().FUNDIDO_CAMBIO != null ? musCfg().FUNDIDO_CAMBIO : 1);
+  const level = (musCfg().VOLUMEN != null ? musCfg().VOLUMEN : 0.7) * ((musCfg().NIVELES || {})[id] != null ? musCfg().NIVELES[id] : 1);   // NIVELES: volumen propio de cada pieza (más bajas las de fondo y las tiendas)
   const fx = makeFx(c, p, level, audio.master || c.destination);
   const T0 = c.currentTime + 0.15; let passes = 0, queue = [];
   fx.vol.gain.setValueAtTime(0.0001, c.currentTime); fx.vol.gain.linearRampToValueAtTime(fx.target, c.currentTime + 1.2);
@@ -461,7 +461,7 @@ function musStart(id) {
     if (c.currentTime > T0 + passes * p.len - 12) enqueue();
     while (queue.length && queue[0].t < c.currentTime + 3) { const e = queue.shift(); if (!audio.muted) { try { e.f(); } catch (x) {} } }
   }
-  MUS.cur = m; enqueue(); tick(); m.timer = setInterval(tick, 250);
+  MUS.cur = m; m.duckV = 1; fx.duck.gain.value = musDucked(); m.duckV = fx.duck.gain.value; enqueue(); tick(); m.timer = setInterval(tick, 250);
 }
 function musVisible(id) { try { return typeof modalVisible === 'function' ? modalVisible(id) : !!(document.getElementById(id) && !document.getElementById(id).classList.contains('hidden')); } catch (e) { return false; } }
 // Qué pieza toca ahora según lo que hay en pantalla (null = silencio)
@@ -477,17 +477,26 @@ function musWanted() {
   if (typeof STATE !== 'undefined' && !STATE.finalPhase && (STATE.chestsOpened || 0) < n) return 'I';
   return null;
 }
+// [0.38] El Simón dice es un puzle musical: mientras está en pantalla la música casi desaparece (MUSICA.BAJA_EN_SIMON, 0 = no bajar)
+function musDucked() {
+  const lv = musCfg().BAJA_EN_SIMON != null ? musCfg().BAJA_EN_SIMON : 0.04;
+  const sq = document.getElementById('sequenceContainer');
+  return (sq && !sq.classList.contains('hidden') && musVisible('minigameModal')) ? lv : 1;
+}
 function musDirector() {
   let w = null; try { w = musWanted(); } catch (e) {}
-  if (w === (MUS.cur && MUS.cur.id) || (!w && !MUS.cur)) return;
-  if (!w) { musStopCur(2.5); return; }
+  const m = MUS.cur;
+  if (m) { try { const d = musDucked(); if (m.duckV !== d) { m.duckV = d; m.fx.duck.gain.setTargetAtTime(d, m.c.currentTime, 0.12); } } catch (e) {} }
+  if (w === (m && m.id) || (!w && !m)) return;
+  if (!w) { musStopCur(musCfg().FUNDIDO_SALIDA != null ? musCfg().FUNDIDO_SALIDA : 0.8); return; }
   try { musStart(w); } catch (e) {}
 }
-setInterval(musDirector, 500);
+setInterval(musDirector, 250);
 
 // Los finales piden su pieza a la fuerza (musicForce) hasta que se libera (musicRelease)
 AudioEngine.prototype.musicForce = function (id) { MUS.force = id; musDirector(); };
 AudioEngine.prototype.musicRelease = function () { MUS.force = null; musDirector(); };
+AudioEngine.prototype.musicDuck = function () { return MUS.cur ? MUS.cur.duckV : null; };
 AudioEngine.prototype.musicNow = function () { return MUS.cur ? MUS.cur.id : null; };
 AudioEngine.prototype.musicSwell = function () {};   // [0.38] ya no existe el crescendo de la 0.37
 AudioEngine.prototype.musicStop = function (fade) { MUS.force = null; musStopCur(fade); };

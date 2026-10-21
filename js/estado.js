@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — estado.js — VERSIÓN 0.38
+// JUST ONE MORE CHEST — estado.js — VERSIÓN 0.39
 // estado, wildcards, guardado, logros, estadísticas, reinicio
 // ==========================================================================
 
