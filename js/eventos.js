@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — eventos.js — VERSIÓN 0.39
+// JUST ONE MORE CHEST — eventos.js — VERSIÓN 0.40
 // tiendas especiales, visitas, habilidades, temporizador, fallo y Game Over
 // ==========================================================================
 
@@ -16,6 +16,8 @@ function seqCondemn() {
 }
 
 function triggerSpecialMerchantShop() {
+  try { if (!STATE.finalFree) nbReg('npc.duende.3'); } catch (e) {}   // [0.40] cuaderno
+  if (STATE.finalFree) { processNextQueuedEvent(); return; }   // [0.40] tercer final: ni el Duende ni el Trapero vuelven a salir
   const co = STATE.chestsOpened;
   const seqHist = narr('HISTORIA_SECUENCIA');
   let speech = "";
@@ -388,6 +390,7 @@ function executeDiffuseEchoTransition() {
         try { audio.restoreAll(); } catch (e) {}   // [0.209]
 
         // 🟢 TRANSICIÓN AL SIGUIENTE BUCLE (1→2, 2→3; el 3 es el último por ahora y se repite con el mismo final)
+        try { nbReg('loop.' + (STATE.currentLoop || 1)); } catch (e) {}   // [0.40] cuaderno: la vuelta que acaba queda escrita
         STATE.currentLoop = Math.min((STATE.currentLoop || 1) + 1, 3);   // [0.203]
         glassShatterRestore();   // [0.103] el marco vuelve a verse
         resetGame(true);
@@ -398,6 +401,8 @@ function executeDiffuseEchoTransition() {
 }
 
 function triggerDuendeNarrativeVisit() {
+  try { if (!STATE.finalFree && (STATE.currentLoop || 1) === 1) nbReg('npc.duende.2'); } catch (e) {}   // [0.40] cuaderno
+  if (STATE.finalFree) { processNextQueuedEvent(); return; }   // [0.40] tercer final: ni el Duende ni el Trapero vuelven a salir
   const tier = getNarrativeTier();
   const phrases = narr('DUENDE_FRASES')[tier];
   const speech = phrases[Math.floor(Math.random() * phrases.length)];
@@ -550,6 +555,7 @@ if (btnPerdedor) {
 const btnSummon = document.getElementById('abilitySummonDuendeBtn');
 if (btnSummon) {
   btnSummon.addEventListener('click', () => {
+    if (STATE.finalFree) { showPersistentFeedback('🧙 El Duende ya no responde.'); return; }   // [0.40]
     if (STATE.abilities.summonDuende > 0) {
       STATE.abilities.summonDuende--;
       audio.playClick(0.9);
@@ -1018,7 +1024,7 @@ function checkGameOver(force) {   // [0.210] force: el Atajo lanza el Game Over 
   if (gameOverSeq) return;
   gameOverSeq = true;
   whenBannerClosed(() => runGameOverStrike(() => {
-    if (STATE.salvageCurseActive && STATE.cursedChestsLeft > 0) { showFinalGameOver(); return; }
+    if ((STATE.salvageCurseActive && STATE.cursedChestsLeft > 0) || STATE.finalFree) { showFinalGameOver(); return; }   // [0.40] en el tercer final no hay trato del Trapero
     openUnfairDeal();
   }));
 }

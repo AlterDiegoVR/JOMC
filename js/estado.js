@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — estado.js — VERSIÓN 0.39
+// JUST ONE MORE CHEST — estado.js — VERSIÓN 0.40
 // estado, wildcards, guardado, logros, estadísticas, reinicio
 // ==========================================================================
 
@@ -16,6 +16,7 @@ function getXpForLevel(lvl) {
 let curseHold = false;   // [0.096] el tinte de maldición se mantiene hasta que se cierra el mensaje de fin de maldición
 const STATE = {
   currentLoop: 1, // Control de Bucle (1 o 2)
+  finDelay: 0, finalFree: false,   // [0.40] retrasos de +10 cofres antes del final / tercer final (juego libre sin Duende ni Trapero)
   finalPhase: null,   // [0.3] final del bucle 3: null | { stage, tries, tiendaLocked, selladoLocked, wedge } (ver final.js)
   level: DATOS_JUEGO.CONFIG_INICIAL.NIVEL,
   xp: 0,
@@ -353,6 +354,7 @@ function rechargeTick() {
 }
 
 function applyWildcard(wc) {
+  try { nbReg('wc.' + wc.id); } catch (e) {}   // [0.40] cuaderno
   let extra = '';
   switch (wc.efecto) {
     case 'MODIFICADOR':
@@ -547,7 +549,7 @@ function runWildcardRoulette(res, onDone) {
 const SAVE_KEY = 'justOneMoreChest_save_v1';
 const SAVE_VERSION = 1;
 const SAVE_KEYS = [
-  'currentLoop', 'finalPhase', 'level', 'xp', 'gold', 'chestsOpened', 'chestsAtLevelUp', 'chestCounterUnlocked',
+  'currentLoop', 'finalPhase', 'finDelay', 'finalFree', 'level', 'xp', 'gold', 'chestsOpened', 'chestsAtLevelUp', 'chestCounterUnlocked',
   'cleanStreak', 'paranoiaStage', 'traperoVisits', 'lastTraperoChest', 'salvageDealsCount', 'salvageCurseActive',
   'picks', 'proPicks', 'usb', 'valves', 'batteries', 'batteriesUnlocked', 'fuses', 'fusesUnlocked', 'lanternFound', 'noXpChestsLeft', 'picksBrokenOnUse', 'tanteoExplainedLoop', 'xpBoostChestsLeft', 'torpezas',
   'seqStage', 'traperoStrikes', 'seqLastBuyCo', 'seqLastChance', 'climaxPhase', 'sequenceBroken', 'perks', 'abilities',
@@ -875,6 +877,7 @@ function resetGame(keepLoop) {
   STATE.traperoVisits = 0;
   STATE.lastTraperoChest = 0;
   STATE.eventQueue = [];
+  STATE.finDelay = 0; STATE.finalFree = false;
   STATE.finalPhase = null; if (typeof finalCleanup === 'function') finalCleanup();   // [0.3]
   STATE.salvageDealsCount = 0;
   STATE.salvageCurseActive = false;

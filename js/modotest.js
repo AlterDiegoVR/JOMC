@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — modotest.js — VERSIÓN 0.39
+// JUST ONE MORE CHEST — modotest.js — VERSIÓN 0.40
 // Modo test
 // ==========================================================================
 
@@ -122,20 +122,8 @@ function testKeyHash(seq, salt) {
         <div id="optVersion" class="text-center text-[10px] font-mono text-slate-500 tracking-widest">v${DATOS_JUEGO.VERSION}</div>
       </div>`;
     const q = id => o.querySelector('#' + id);
-    // [0.202] CUADERNO (solo si ya se ha encontrado): de momento solo muestra un mensaje de prueba
-    if (q('optTome')) q('optTome').addEventListener('click', () => {
-      close('optionsModal');
-      const T = DATOS_JUEGO.NARRATIVA.TOMO, t = overlay('tomeModal', 10030);
-      t.className += ' bg-slate-950/90 backdrop-blur-md';
-      t.innerHTML = `
-        <div class="bg-stone-900 border-2 border-amber-700/70 rounded-3xl p-6 w-full max-w-xs shadow-2xl text-center flex flex-col items-center gap-3">
-          <div class="w-14 h-14 rounded-full bg-amber-950/80 border border-amber-600 flex items-center justify-center text-2xl text-amber-400"><i class="fa-solid fa-book"></i></div>
-          <h3 class="text-xl font-black text-amber-300 font-retro">${T.MOCK_TITULO}</h3>
-          <p class="text-sm font-mono italic text-amber-100/90 leading-relaxed">${T.MOCK_TEXTO}</p>
-          <button id="tomeClose" class="w-full py-2.5 bg-slate-800 active:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl cursor-pointer">Cerrar</button>
-        </div>`;
-      t.querySelector('#tomeClose').addEventListener('click', () => close('tomeModal'));
-    });
+    // [0.40] CUADERNO (solo si ya se ha encontrado): abre el cuaderno de verdad (cuaderno.js)
+    if (q('optTome')) q('optTome').addEventListener('click', () => { close('optionsModal'); nbOpen(); });
     q('optClose').addEventListener('click', () => close('optionsModal'));
     q('optStats').addEventListener('click', () => { close('optionsModal'); openStatsBoard(); });
     q('optList').addEventListener('click', () => { close('optionsModal'); openAchievementsList(); });

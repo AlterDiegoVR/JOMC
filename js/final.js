@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — final.js — VERSIÓN 0.39
+// JUST ONE MORE CHEST — final.js — VERSIÓN 0.40
 // final del bucle 3: los dos cofres, el cerrojo de la tienda (6 puzles con voces), el cofre sellado (3 palabras) y los dos finales (puerta de dungeon / tapa del cofre y tienda del Duende)
 // Todos los textos y números están en DATOS_JUEGO.FINAL3 (datos.js). Este archivo solo tiene la lógica.
 // ==========================================================================
@@ -20,13 +20,29 @@ function finRemove(id) { const e = document.getElementById(id); if (e) e.remove(
 
 /* ---------- Armado en el cofre 79 y aparición de los dos cofres ---------- */
 function finalArm() {
+  try { nbReg('npc.reveal'); } catch (e) {}   // [0.40] cuaderno
   STATE.finalPhase = { stage: 'armed', tries: finCfg().INTENTOS, tiendaLocked: false, selladoLocked: false, wedge: -1 };
   saveDirty = true;
 }
-// Gancho del cofre abierto (cofres.js): en el 79 habla el Trapero; en la siguiente aparición de la tienda salen los dos cofres
+// [0.40] Cofre en el que arranca la secuencia final: el 79, o +10 por cada retraso (STATE.finDelay) si al llegar faltaban puzles por conocer
+function finStartCo() { return DATOS_JUEGO.PROGRESIÓN.SECUENCIA_HISTORIA.COFRE_INICIO_TRAPERO + 10 * (STATE.finDelay || 0); }
+// [0.40] ¿Están desbloqueados los 6 tipos de puzle (según el nivel)?
+function finAllPuzzlesUnlocked() { return DATOS_JUEGO.COFRES.ESTANDAR.every(t => STATE.level >= chestMinLevel(t)); }
+// [0.40] Post-its del tramo de retraso: el primer retraso usa unos nuevos (RETRASO.POSTITS_NUEVOS) y los siguientes repiten los de antes del 79 (POSTITS_OBLIGATORIOS)
+function finDelayNote(co) {
+  const d = STATE.finDelay || 0; if (!d || !finalLoop3()) return null;
+  const R = finCfg().RETRASO || {}, base = DATOS_JUEGO.PROGRESIÓN.SECUENCIA_HISTORIA.COFRE_INICIO_TRAPERO + 10 * (d - 1);   // inicio del último tramo de retraso
+  if (co <= base || co >= finStartCo()) return null;
+  const i = (R.DESP || []).indexOf(co - base); if (i < 0) return null;
+  if (d === 1) return (R.POSTITS_NUEVOS || [])[i] || null;
+  const orig = finCfg().POSTITS_OBLIGATORIOS || []; return orig[i] ? orig[i].texto : null;
+}
+// Gancho del cofre abierto (cofres.js): en el cofre de inicio habla el Trapero; en la siguiente aparición de la tienda salen los dos cofres
 function finalHook(co) {
-  const seq = DATOS_JUEGO.PROGRESIÓN.SECUENCIA_HISTORIA, f = STATE.finalPhase;
-  if (co === seq.COFRE_INICIO_TRAPERO && !f) {
+  if (STATE.finalFree) return;   // [0.40] tercer final: ya no vuelve a haber eventos de la historia
+  const seq = DATOS_JUEGO.PROGRESIÓN.SECUENCIA_HISTORIA, f = STATE.finalPhase, start = finStartCo();
+  if (co === start && !f) {
+    if (!finAllPuzzlesUnlocked()) { STATE.finDelay = (STATE.finDelay || 0) + 1; saveDirty = true; return; }   // [0.40] faltan puzles por conocer: todo se pospone 10 cofres
     finalArm();
     (finCfg().REVELACION || []).forEach((txt, i, arr) => {
       STATE.eventQueue.push(() => triggerSequentialDialogue('EL TRAPERO', txt, 'fa-mask', i === 0 ? 'Advertencia' : 'Instrucción', 'text-rose-400', null, () => processNextQueuedEvent()));
@@ -34,7 +50,7 @@ function finalHook(co) {
     return;
   }
   const freq = DATOS_JUEGO.PROGRESIÓN.INTERVALOS_VISITAS.DUENDE_INTERVALO;
-  if (f && f.stage === 'armed' && co > seq.COFRE_INICIO_TRAPERO && co % freq === 0) STATE.eventQueue.push(() => finalStart());
+  if (f && f.stage === 'armed' && co > start && co % freq === 0) STATE.eventQueue.push(() => finalStart());
 }
 function finalStart() {
   const f = STATE.finalPhase; if (!f) return;
@@ -263,11 +279,16 @@ function finalPuzzleFailed() {
   }
   finLockScreen(true, f.tries === 1 ? finT('FALLO_UNO') : finT('FALLO', f.tries));
 }
+// [0.40] TERCER FINAL: los dos cofres fallados. No hay game over: el juego sigue normal e infinito hasta morir, y ya nunca vuelven el Duende ni el Trapero
 function finNoExit() {
-  STATE.finalPhase = null; finRemove('finalChoice'); finRemove('finalLock'); finRemove('finalSealed'); finRemove('finalHud');
+  STATE.finalPhase = null; STATE.finalFree = true; saveDirty = true;
+  FIN_RT.active = false; FIN_RT.ending = false; finClearTimers(); clearInterval(FIN_RT.anim);
+  ['finalChoice', 'finalLock', 'finalSealed', 'finalHud', 'finalGap'].forEach(finRemove);
   uiHost().classList.remove('final-on');
+  try { audio.musicRelease(); } catch (e) {}
+  try { nbReg('fin.libre'); } catch (e) {}
   showPersistentFeedback(finT('SIN_SALIDA'));
-  whenBannerClosed(() => showFinalGameOver());
+  whenBannerClosed(() => { try { generateScreenChests(); updateUI(); } catch (e) {} });
 }
 
 /* ---------- Cofre Sellado: reto de memoria (una palabra de cada bucle) ---------- */
@@ -393,6 +414,7 @@ function finCrackSVG() {
   return s;
 }
 function finEndBad() {
+  try { nbReg('fin.malo'); nbReg('npc.uno'); } catch (e) {}   // [0.40] cuaderno
   finEndCommon();
   const B = finCfg().FINAL_MALO, frame = uiHost();
   frame.classList.add('fin-shake');
@@ -505,6 +527,7 @@ function finDrawDoor(frameCv, skyCv, leafCv) {
   px(L, 19, 17, '#8a8a96'); px(L, 19, 18, '#8a8a96');
 }
 function finEndGood() {
+  try { nbReg('fin.bueno'); } catch (e) {}   // [0.40] cuaderno
   finEndCommon();
   const G = finCfg().FINAL_BUENO, frame = uiHost();
   try { audio.playUnlockFanfare('legendario'); setTimeout(() => audio.musicForce('G'), 1500); } catch (e) {}   // [0.38] Alba (post-rock con dungeon synth)

@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — puzles.js — VERSIÓN 0.39
+// JUST ONE MORE CHEST — puzles.js — VERSIÓN 0.40
 // minijuegos: ganzúa, pistones, hackeo, tuberías
 // ==========================================================================
 
@@ -41,6 +41,7 @@ function pzHardBadgeUpdate() {
 }
 
 function setPuzzleHelp(juego) {
+  try { const T = { lockpick: 'wooden', tumbler: 'piston', hack: 'cyber', pipe: 'hydraulic', sequence: 'neon', fuses: 'electric' }[juego]; if (T) nbReg('puz.' + T); } catch (e) {}   // [0.40] cuaderno
   const h = document.getElementById('minigameHelp');
   const t = (DATOS_JUEGO.AYUDAS && DATOS_JUEGO.AYUDAS.PUZLES && DATOS_JUEGO.AYUDAS.PUZLES[juego]) || '';
   if (h) h.innerHTML = t;
@@ -53,6 +54,7 @@ function lpWrenchApply() {
   if (w) w.style.transform = `rotate(${165 + lpState.wrenchAng * P2.GRADOS_POR_UNIDAD}deg)`;
 }
 function lpSetPhase2UI(on) {
+  if (on) { try { nbReg('puz.wooden.destornillador'); } catch (e) {} }   // [0.40] cuaderno
   const box = document.getElementById('wrenchBox'), sl = document.getElementById('wrenchSlider'), ang = document.getElementById('angleSlider');
   if (box) box.classList.toggle('hidden', !on);
   if (sl) { sl.value = 0; sl.disabled = !on; }
@@ -504,6 +506,7 @@ function startTumblerGame() {
   }
   activePinIdx = 0;
   if (tumblerSolid) {   // [0.31] textos del modo solidario
+    try { nbReg('puz.piston.solidarios'); } catch (e) {}   // [0.40] cuaderno
     const SO = DATOS_JUEGO.MINIJUEGOS.AVANZADO.TUMBLER.SOLIDARIOS, h = document.getElementById('minigameHelp'), b = document.getElementById('tapPinBtn');
     if (h) h.innerHTML = SO.TEXTO_AYUDA;
     if (b) b.innerHTML = `<i class="fa-solid fa-link"></i> ${SO.TEXTO_BOTON}`;
@@ -608,6 +611,7 @@ function failTumbler(message) {
 
 // [0.082] FASE DE SELLADO: todos los pistones encajan en la línea verde (clic) y suben juntos hasta la línea azul
 function startTumblerSealPhase() {
+  try { nbReg('puz.piston.sello'); } catch (e) {}   // [0.40] cuaderno
   const cfg = DATOS_JUEGO.MINIJUEGOS.AVANZADO.TUMBLER;
   if (tumblerAnimationFrameId) { cancelAnimationFrame(tumblerAnimationFrameId); tumblerAnimationFrameId = null; }
   tumblerPhase = 'seal';
@@ -720,6 +724,7 @@ function triggerSolidTumblerClick() {
 }
 // [0.31] Con todos unidos aparece la línea azul: el grupo sigue rebotando y hay que frenarlo sobre ella
 function startSolidSealPhase() {
+  try { nbReg('puz.piston.sello'); } catch (e) {}   // [0.40] cuaderno
   const cfg = DATOS_JUEGO.MINIJUEGOS.AVANZADO.TUMBLER;
   tumblerPhase = 'seal'; audio.playClick(1); if (navigator.vibrate) { try { navigator.vibrate(30); } catch (e) {} }
   tumblerLeadLineSync();   // [0.38] con todos unidos desaparece la línea gris
@@ -1357,6 +1362,7 @@ function startPipeGame() {
     const B3 = advPipe.BUCLE3, mg = (B3 && (STATE.currentLoop || 1) >= B3.DESDE_BUCLE) ? ((B3.MARGEN_GIROS || {})[rarityId] || 0) : 0;
     pipeMoves = 0; pipeMoveLimit = (mg > 0 && pipeGridData && pipeGridData.minMoves != null) ? Math.max((B3 && B3.MIN_GIROS) || 0, pipeGridData.minMoves + mg) : 0;   // [0.34] mínimo MIN_GIROS
   } else { pipeMoves = 0; pipeMoveLimit = 0; }
+  if (pipeAdvanced) { try { nbReg('puz.hydraulic.validar'); if (pipeMoveLimit > 0) nbReg('puz.hydraulic.giros'); } catch (e) {} }   // [0.40] cuaderno
   pipeMovesUpdate();
 
   while (!generatedAndValid && generateAttempts < 100) {
@@ -1740,6 +1746,7 @@ function startSequenceGame() {
   const mult = pzHardLevel() === 2 ? C.TEMPO_MULT_EXTREMO : (pzHardLevel() === 1 ? C.TEMPO_MULT_DIFICIL : 1);
   sqStop();
   sqState.giro = ((STATE.currentLoop || 1) >= (C.GIRO.DESDE_BUCLE || 3) && active && C.GIRO.POR_RAREZA[active.rarity.id]) || null;   // [0.31]
+  if (sqState.giro) { try { nbReg('puz.neon.giro'); } catch (e) {} }   // [0.40] cuaderno
   sqState.rot = 0; sqRotDial(0, 0);
   sqState.rounds = C.FASES || 1; sqState.len = Array(sqState.rounds).fill(cfg.largo); sqState.step = Math.round(cfg.paso_ms * mult); sqState.round = 0; sqState.seq = []; sqState.pos = 0;
   startMinigameTimer(null, 'batteries');   // sin reloj

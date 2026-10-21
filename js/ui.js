@@ -1,11 +1,12 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — ui.js — VERSIÓN 0.39
+// JUST ONE MORE CHEST — ui.js — VERSIÓN 0.40
 // actualización de la interfaz (HUD)
 // ==========================================================================
 
 function updateUI() {
   try { reflowNotes(); } catch (e) {}   // [0.2] el HUD puede cambiar de alto con esta actualización
   trackStats();   // [0.090]
+  try { nbSync(); } catch (e) {}   // [0.40] cuaderno
   const levelEl = document.getElementById('playerLevel'); if (levelEl) levelEl.textContent = STATE.level;
   
   const xpBar = document.getElementById('xpBar'); 

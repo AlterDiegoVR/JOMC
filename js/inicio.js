@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — inicio.js — VERSIÓN 0.39
+// JUST ONE MORE CHEST — inicio.js — VERSIÓN 0.40
 // portada, arranque, avisos, pantalla completa
 // ==========================================================================
 
@@ -74,6 +74,7 @@ function attachCoverClose(cover) {
     cover.style.backgroundImage = `url('${ASSETS.portada}')`;
     cover.classList.remove('hidden');
     attachCoverClose(cover);
+    if (typeof coverAnimate === 'function') coverAnimate(cover);   // [0.40] portada animada
   } else if (cover) {
     cover.remove();
   }
@@ -245,6 +246,7 @@ function showCover() {
   c.style.backgroundImage = `url('${ASSETS.portada}')`;
   uiHost().appendChild(c);
   attachCoverClose(c);
+  if (typeof coverAnimate === 'function') coverAnimate(c);   // [0.40]
 }
 
 

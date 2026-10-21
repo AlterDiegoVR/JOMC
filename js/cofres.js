@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — cofres.js — VERSIÓN 0.39
+// JUST ONE MORE CHEST — cofres.js — VERSIÓN 0.40
 // selección de cofres, banner, diálogos, post-its, botín y subida de nivel
 // ==========================================================================
 
@@ -101,7 +101,7 @@ let mentiraPuzzle = false;   // [0.210] Cofres Mentirosos: el puzle en curso no 
 function isClimaxActive() {
   const co = STATE.chestsOpened;
   const seqConfig = DATOS_JUEGO.PROGRESIÓN.SECUENCIA_HISTORIA;
-  return STATE.climaxPhase || finalLocked() || (!STATE.sequenceBroken && co >= (seqConfig.COFRE_CLIMAX_INICIO - 1));
+  return STATE.climaxPhase || finalLocked() || (!STATE.sequenceBroken && !finalLoop3() && co >= (seqConfig.COFRE_CLIMAX_INICIO - 1));   // [0.40] en el bucle 3 no hay modo sin herramientas
 }
 
 // [0.210] Llave Maestra: ¿puedo abrir este cofre pagando ganzúas porque me faltan sus herramientas?
@@ -333,6 +333,7 @@ function tomeSlotFree(co) {
   return true;
 }
 function triggerSequentialDialogue(speaker, speechText, iconClass, subtitleText, titleColorClass, giftObj = null, onComplete = null, itemSrc = null) {
+  if (STATE.finalFree && (speaker === 'EL TRAPERO' || speaker === 'EL DUENDE')) { if (typeof onComplete === 'function') { try { onComplete(); } catch (e) {} } else processNextQueuedEvent(); return; }   // [0.40] tercer final: ni el Duende ni el Trapero vuelven a salir
   // [0.086] Las frases llevan su mood al final: "texto {alegre}". Se separa aquí y manda sobre el subtítulo.
   let taggedMood = null;
   if (typeof speechText === 'string') {
@@ -718,7 +719,8 @@ function openNoteEditor(noteEl, p, refill) {
   paper.querySelector('.note-x').addEventListener('click', close);
 }
 
-function spawnStickyNote(forcedText) {   // [0.209] forcedText: post-it de culpa tras robar al Duende (no cuenta para el tope de 5 y no sale en el clímax, como todos)
+function spawnStickyNote(forcedText) {
+  try { nbReg('obj.postit'); } catch (e) {}   // [0.40] cuaderno   // [0.209] forcedText: post-it de culpa tras robar al Duende (no cuenta para el tope de 5 y no sale en el clímax, como todos)
   if (STATE.climaxPhase || (!forcedText && document.querySelectorAll('.sticky-note').length >= 5)) return;
 
   const container = document.getElementById('notesContainer');
@@ -1144,12 +1146,13 @@ function triggerLootExplosion() {
 
     const lootTitle = document.getElementById('lootHeaderTitle');
     if (lootTitle) lootTitle.textContent = `¡BOTÍN ${active.rarity.name}!`;
+    try { nbReg('rar.' + active.rarity.id); } catch (e) {}   // [0.40] cuaderno
 
     const lootModal = document.getElementById('lootModal');
     if (lootModal) lootModal.classList.remove('hidden');
 
     const seqConfig = DATOS_JUEGO.PROGRESIÓN.SECUENCIA_HISTORIA;
-    if (!STATE.sequenceBroken && STATE.chestsOpened >= seqConfig.COFRE_AUTO_OPEN_INICIO && STATE.chestsOpened <= seqConfig.COFRE_AUTO_OPEN_FIN) {
+    if (!STATE.sequenceBroken && !finalLoop3() && STATE.chestsOpened >= seqConfig.COFRE_AUTO_OPEN_INICIO && STATE.chestsOpened <= seqConfig.COFRE_AUTO_OPEN_FIN) {
       setTimeout(() => {
         const claimBtn = document.getElementById('claimLootBtn');
         if (claimBtn) claimBtn.click();
@@ -1158,7 +1161,9 @@ function triggerLootExplosion() {
 
     // [0.3] Bucle 3: post-its obligatorios sobre la segunda cerradura (FINAL3.POSTITS_OBLIGATORIOS); sustituyen al normal de ese turno
     const finNote = finalLoop3() ? ((DATOS_JUEGO.FINAL3.POSTITS_OBLIGATORIOS || []).find(n => n.cofre === STATE.chestsOpened) || null) : null;
+    const delayTxt = finalLoop3() ? finDelayNote(STATE.chestsOpened) : null;   // [0.40] post-its del tramo de retraso
     if (finNote) spawnStickyNote(finNote.texto);
+    else if (delayTxt) spawnStickyNote(delayTxt);
     else if (!playerNotesFor(STATE.chestsOpened).length) spawnStickyNote();   // [0.096] el post-it del jugador SUSTITUYE al normal de ese turno
     updateUI();
   } finally {
@@ -1330,11 +1335,12 @@ if (claimLootBtn) {
       }
     }
 
-    if (!STATE.climaxPhase && co < seqConfig.COFRE_CLIMAX_INICIO) {
+    const startCo = finalLoop3() ? finStartCo() : seqConfig.COFRE_INICIO_TRAPERO;   // [0.40] en el bucle 3 el inicio se desplaza +10 por cada retraso
+    if (!STATE.finalFree && !STATE.climaxPhase && (finalLoop3() || co < seqConfig.COFRE_CLIMAX_INICIO)) {
       const duendeFreq = DATOS_JUEGO.PROGRESIÓN.INTERVALOS_VISITAS.DUENDE_INTERVALO;
       const isDuendeChest = (co % duendeFreq === 0) && ![seqConfig.COFRE_OFERTA_1, seqConfig.COFRE_OFERTA_2, seqConfig.COFRE_OFERTA_3].includes(co);
 
-      if (isDuendeChest && (co < seqConfig.COFRE_INICIO_TRAPERO || STATE.sequenceBroken)) {
+      if (isDuendeChest && (co < startCo || STATE.sequenceBroken)) {
         if (co < 30) {
           STATE.eventQueue.push(() => triggerMerchantShopModalSequence());
         } else {
@@ -1349,7 +1355,7 @@ if (claimLootBtn) {
       const isFirstTrapero = (co === primerTrapero);
       const isSubsequentTrapero = (STATE.lastTraperoChest > 0 && (co - STATE.lastTraperoChest >= intervaloTrapero));
 
-      if ((isFirstTrapero || isSubsequentTrapero) && (co < seqConfig.COFRE_INICIO_TRAPERO || STATE.sequenceBroken) && !isDuendeChest) {
+      if ((isFirstTrapero || isSubsequentTrapero) && (co < startCo || STATE.sequenceBroken) && !isDuendeChest) {
         STATE.lastTraperoChest = co;
         if (STATE.paranoiaStage === 0) STATE.paranoiaStage = 1;
         STATE.eventQueue.push(() => triggerTraperoShopSequence());
@@ -1361,7 +1367,7 @@ if (claimLootBtn) {
     processNextQueuedEvent();
     generateScreenChests();
 
-    if (!STATE.sequenceBroken && co >= 100 && co < seqConfig.COFRE_AUTO_OPEN_FIN) {
+    if (!STATE.sequenceBroken && !finalLoop3() && co >= 100 && co < seqConfig.COFRE_AUTO_OPEN_FIN) {
       setTimeout(() => {
         openActiveChest();   // [0.089] apertura automática: directa, sin doble toque
       }, 350);

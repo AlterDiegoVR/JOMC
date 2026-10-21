@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — datos.js — VERSIÓN 0.39
+// JUST ONE MORE CHEST — datos.js — VERSIÓN 0.40
 // DATOS_JUEGO: configuración y balance
 // ==========================================================================
 
@@ -9,7 +9,7 @@
 
 const DATOS_JUEGO = {
   // [0.088] Versión visible en pantalla (esquina inferior central) para que las capturas la incluyan
-  VERSION: '0.39',
+  VERSION: '0.40',
   // [0.104] Efectos de la apertura automática de la secuencia final (cofres 101-110); la intensidad sube del primero al último (k = 0..1)
   SECUENCIA_FINAL_FX: { ACTIVAR: true, ESTALLIDOS_BASE: 2, ESTALLIDOS_EXTRA: 4, PARTICULAS_POR_ESTALLIDO: 40, HACIA_CENTRO_BASE: 30, HACIA_CENTRO_EXTRA: 60,
     SACUDIDA_PX: 6, SACUDIDA_EXTRA_PX: 10, SACUDIDA_MS: 520, PULSO_ZOOM: 0.02, DESTELLO: 0.10 },
@@ -65,6 +65,117 @@ const DATOS_JUEGO = {
       3: { frase: 'Ahora sé que la salida es', palabras: ['parar', 'soltar', 'dormir', 'creer', 'romper', 'olvidar', 'recordar', 'esperar', 'escribir', 'mirar'] }
     }
   },
+  // [0.40] EL CUADERNO. Solo se escribe lo que el juego ha REGISTRADO (nbReg en cuaderno.js): lo no descubierto no aparece (ni secciones, ni páginas, ni notas).
+  // BORRADOR: los textos marcados "BORRADOR" los he inventado yo (narrativa de los NPC y de las vueltas); los de mecánicas copian las ayudas del propio juego.
+  CUADERNO: {
+    ETIQUETA_BUCLE: 'descubierto en el bucle {n}',   // solo se muestra cuando el jugador ya ha pasado del bucle 1
+    VACIO: 'Todas las páginas están en blanco. Se irá escribiendo solo.',
+    // Orden de las secciones; el número romano se asigna según cuántas haya visibles. tipo: 'paginas' (tarjetas → página con notas) | 'notas' (notas directas)
+    SECCIONES: [
+      { id: 'cofres',   nombre: 'Cofres y rarezas',    hint: 'normal, raro, épico, legendario',  color: '#8c5a2b', tipo: 'notas',   unidad: 'rarezas' },
+      { id: 'puzles',   nombre: 'Puzles',              hint: 'una cerradura por cada tipo de cofre', color: '#a9442f', tipo: 'paginas', unidad: 'puzles' },
+      { id: 'herram',   nombre: 'Herramientas',        hint: 'lo que gastas al abrir',            color: '#7a6a3a', tipo: 'notas',   unidad: 'hallazgos' },
+      { id: 'objetos',  nombre: 'Objetos en pantalla', hint: 'lo que aparece y qué hace',         color: '#3f6a63', tipo: 'notas',   unidad: 'hallazgos' },
+      { id: 'maestrias',nombre: 'Maestrías',           hint: 'lo que mejoras al subir de nivel',  color: '#5b4a7a', tipo: 'notas',   unidad: 'maestrías' },
+      { id: 'rachas',   nombre: 'Rachas',              hint: 'cofres seguidos sin fallar',        color: '#6a3f55', tipo: 'notas',   unidad: 'notas' },
+      { id: 'cartas',   nombre: 'Cartas tácticas',     hint: 'las que has llegado a tener',       color: '#2f6a8a', tipo: 'notas',   unidad: 'cartas' },
+      { id: 'comodin',  nombre: 'Comodines',           hint: 'lo que te pasa por el camino',      color: '#4f7a3a', tipo: 'notas',   unidad: 'comodines' },
+      { id: 'modif',    nombre: 'Modificadores',       hint: 'efectos que duran unos cofres',     color: '#8a6a2a', tipo: 'notas',   unidad: 'efectos' },
+      { id: 'maldic',   nombre: 'Maldiciones',         hint: 'lo que pesa sobre ti',              color: '#7a2f3a', tipo: 'notas',   unidad: 'maldiciones' },
+      { id: 'npcs',     nombre: 'Los que visitan',     hint: 'quién es quién',                    color: '#6a5a3a', tipo: 'paginas', unidad: 'páginas' },
+      { id: 'pasado',   nombre: 'Lo que ha pasado',    hint: 'el cuaderno recuerda cada vuelta',  color: '#4a5b7a', tipo: 'notas',   unidad: 'entradas' }
+    ],
+    // --- Cofres y rarezas (clave 'rar.<id>') ---
+    RAREZAS: [
+      { k: 'rar.normal',     h: 'Normal',     t: 'El cofre de todos los días. Una herramienta y el puzle más sencillo.' },
+      { k: 'rar.raro',       h: 'Raro',       t: 'Da más botín que uno normal, y su puzle es más difícil.' },
+      { k: 'rar.epico',      h: 'Épico',      t: 'Botín todavía mayor. Su puzle es aún más exigente.' },
+      { k: 'rar.legendario', h: 'Legendario', t: 'El mejor botín. Piden más de una herramienta y su puzle es el más difícil.' }
+    ],
+    // --- Puzles: una página por tipo de cofre; notas por mecánica descubierta ('puz.<tipo>' abre la página) ---
+    PUZLES: [
+      { id: 'wooden', k: 'puz.wooden', titulo: 'Cofre de madera', sub: 'la ganzúa', notas: [
+        { k: 'puz.wooden', h: 'Qué hay que hacer', t: 'Mueve la ganzúa hasta dar con el punto dulce. Las zonas falsas hacen vibrar la herramienta.' },
+        { k: 'puz.wooden.destornillador', h: 'El destornillador', t: 'Después de la ganzúa viene una segunda fase: el destornillador se mueve con la barra de la izquierda y, al pasar por el centro del punto dulce, se nota un toquecito.' }
+      ] },
+      { id: 'piston', k: 'puz.piston', titulo: 'Caja de acero', sub: 'los pistones', notas: [
+        { k: 'puz.piston', h: 'Qué hay que hacer', t: 'Fija el pistón activo con la unión latón/acero sobre la línea verde.' },
+        { k: 'puz.piston.solidarios', h: 'Pistones solidarios', t: 'Pulsa cuando el pistón 1 se cruce con otro: se unen y se mueven juntos. Une los demás igual.' },
+        { k: 'puz.piston.sello', h: 'La línea azul', t: 'Con todos los pistones fijados, hay que detenerlos juntos sobre la línea azul.' }
+      ] },
+      { id: 'cyber', k: 'puz.cyber', titulo: 'Arca digital', sub: 'la terminal', notas: [
+        { k: 'puz.cyber', h: 'Qué hay que hacer', t: 'Elige la palabra de la lista. Cada intento te dice cuántas letras coinciden.' }
+      ] },
+      { id: 'hydraulic', k: 'puz.hydraulic', titulo: 'Cofre de vapor', sub: 'las tuberías', notas: [
+        { k: 'puz.hydraulic', h: 'Qué hay que hacer', t: 'Gira las tuberías para llevar el agua de la válvula a la salida.' },
+        { k: 'puz.hydraulic.validar', h: 'Bombas y VALIDAR', t: 'Evita las bombas. El fluido no se ve hasta pulsar VALIDAR, y solo hay un intento.' },
+        { k: 'puz.hydraulic.giros', h: 'Giros contados', t: 'Algunos tableros limitan los giros que puedes dar. Pasarse del límite es fallar.' }
+      ] },
+      { id: 'neon', k: 'puz.neon', titulo: 'Arca de neón', sub: 'las luces', notas: [
+        { k: 'puz.neon', h: 'Qué hay que hacer', t: 'Memoriza la secuencia de luces y repítela con las mismas notas. Una sola pifia y se acaba.' },
+        { k: 'puz.neon.giro', h: 'El dial gira', t: 'Después de enseñarte la secuencia, el dial gira y las luces cambian de sitio.' }
+      ] },
+      { id: 'electric', k: 'puz.electric', titulo: 'Cuadro eléctrico', sub: 'los fusibles', notas: [
+        { k: 'puz.electric', h: 'Qué hay que hacer', t: 'Toca un fusible: se invierte él y sus vecinos. Deja todos los filamentos encendidos antes de quedarte sin jugadas. No hay reloj.' }
+      ] }
+    ],
+    // --- Herramientas (clave 'herr.<prop>', se registran al tener alguna) ---
+    HERRAMIENTAS: [
+      { k: 'herr.picks',    h: 'Ganzúas',       t: 'Abren los cofres de madera. Solo se gastan cuando la ganzúa se rompe.' },
+      { k: 'herr.proPicks', h: 'Pines de acero', t: 'Abren las cajas de acero. Los cofres legendarios piden más de uno.' },
+      { k: 'herr.usb',      h: 'Llaves USB',    t: 'Abren las arcas digitales. Los cofres legendarios piden más de una.' },
+      { k: 'herr.valves',   h: 'Válvulas',      t: 'Abren los cofres de vapor. Los cofres legendarios piden más de una.' },
+      { k: 'herr.batteries',h: 'Pilas',         t: 'Encienden la linterna para abrir las arcas de neón. Los cofres legendarios piden más de una.' },
+      { k: 'herr.fuses',    h: 'Fusibles',      t: 'Abren los cuadros eléctricos. Los cofres legendarios piden más de uno.' }
+    ],
+    // --- Objetos en pantalla ---
+    OBJETOS: [
+      { k: 'obj.postit',     h: 'Los post-its',   t: 'Aparecen pegados en la sala. Algunos parecen escritos por alguien que ya estuvo aquí.' },
+      { k: 'obj.linterna',   h: 'La linterna',    t: 'La encontré en un cofre. Sin pilas no sirve de nada.' },
+      { k: 'obj.oscuridad',  h: 'La sala a oscuras', t: 'A veces la luz se va y la sala queda a oscuras unos cofres.' },
+      { k: 'obj.tomo',       h: 'Este cuaderno',  t: 'Un viejo cuaderno de tapas gastadas. Se escribe solo, a medida que descubro cosas del mundo.' }
+    ],
+    // --- Rachas ---
+    RACHAS: [
+      { k: 'racha.1', h: 'Racha de apertura', t: 'Cofres seguidos sin fallar un puzle. Desde {min} seguidos gano GP extra en cada cofre. Un fallo la rompe.' }
+    ],
+    // --- Cartas tácticas (clave 'carta.<abilityKey>'; texto = TEXTOS_AYUDA.cartas[<abilityKey>]) ---
+    CARTAS: { auto: 'AUTO', double: '2X', shield: 'ESCUDO', riskPot: 'APUESTA', perdedor: 'PERDEDOR', summonDuende: 'DUENDE', cofradia: 'COFRADÍA DEL COFRE', reroll: 'RE-ROLL', pulsera: 'PULSERA VIP', ruleta: 'RULETA' },
+    // --- Maldiciones fijas ---
+    MALDICIONES: [
+      { k: 'curse.trato', h: 'Maldición del trato', t: 'Sufro un -50% de ganancias en GP y XP durante unos cofres.' }
+    ],
+    // --- Los que visitan (páginas por NPC; notas por lo que se ha ido descubriendo). BORRADOR de textos ---
+    NPCS: [
+      { id: 'duende', k: 'npc.duende.1', titulo: 'El Duende', sub: 'el de la tienda', notas: [
+        { k: 'npc.duende.1', h: 'Primer encuentro', t: 'Un duende verde con una tienda en un rincón. Simpático, y de vez en cuando me regala una herramienta. Parece de fiar.' },
+        { k: 'npc.duende.2', h: 'Cada vez más pegajoso', t: 'Ahora habla de oro. Mucho. Cada vez que me ve quiere que siga abriendo cofres.' },
+        { k: 'npc.duende.3', h: 'Algo se le rompe', t: 'Ya casi no habla de otra cosa que no sea el oro. Se enfada si no le compro. Parece haber perdido la cabeza.' },
+        { k: 'npc.duende.4', h: 'Otra vez desde el principio', t: 'Vuelve a ser amable, como si no recordara nada. Yo sí lo recuerdo.' },
+        { k: 'npc.duende.5', h: 'Más desesperado', t: 'Algo ha cambiado. Quiere el oro con una prisa que antes no tenía.' },
+        { k: 'npc.reveal', h: 'Vive en un cofre', t: 'El Trapero dice que el Duende vive dentro de un cofre. Y todo cofre tiene su cerradura.' },
+        { k: 'npc.uno', h: 'Lo que pasa de verdad', t: 'El Duende y el Trapero son la misma cosa: la codicia que exige oro y el cansancio que promete una salida falsa. Todo lo que me enseñaron servía para romper el sello.' }
+      ] },
+      { id: 'trapero', k: 'npc.trapero.1', titulo: 'El Trapero', sub: 'el de los tratos', notas: [
+        { k: 'npc.trapero.1', h: 'Primer encuentro', t: 'Un tipo encapuchado con tratos raros. Desconfío mucho de él: nada de lo que ofrece sale gratis.' },
+        { k: 'npc.trapero.2', h: 'Sus tratos', t: 'Acepté uno de sus tratos. Cumple lo que promete, aunque cobra caro.' },
+        { k: 'obj.tomo', h: 'El cuaderno', t: 'Me dejó quedarme con un viejo cuaderno, sin pedir nada a cambio. No es propio de él.' },
+        { k: 'npc.trapero.advierte', h: 'Me avisa', t: 'Me dice que no le compre nada al Duende. Por primera vez me da un consejo sin cobrarme. Le hago caso.' },
+        { k: 'npc.trapero.5', h: 'Sabe más de lo que dice', t: 'Me mira como si me conociera de antes. Cada vuelta me deja un poco más cerca de entender qué busca.' },
+        { k: 'npc.reveal', h: 'Las cerraduras', t: 'Me ha estado enseñando a abrir cerraduras todo este tiempo. Ahora dice que hay una más.' },
+        { k: 'npc.uno', h: 'Lo que pasa de verdad', t: 'Él y el Duende son la misma cosa. Siempre lo fueron.' }
+      ] }
+    ],
+    // --- Lo que ha pasado (clave 'loop.<n>' al terminar la vuelta; 'fin.*' al terminar el juego). BORRADOR ---
+    PASADO: [
+      { k: 'loop.1', h: 'Primera vuelta', t: 'Hice todo lo que el Trapero me dijo, pero todo parece haber vuelto a empezar.' },
+      { k: 'loop.2', h: 'Segunda vuelta', t: 'Otra vez la misma sala. Esta vez sabía lo que me esperaba, y aun así los cofres siguieron llamándome. Volví a empezar.' },
+      { k: 'fin.bueno', h: 'Las tres palabras', t: 'Acerté las tres palabras. Una puerta, luz de día. Dejé de jugar.' },
+      { k: 'fin.malo',  h: 'Los seis sellos', t: 'Rompí los seis sellos. Eran la misma cosa y les di lo que querían. Ahora me toca a mí atender la tienda.' },
+      { k: 'fin.libre', h: 'Las dos cerraduras', t: 'Fallé las dos cerraduras. Ni el Duende ni el Trapero han vuelto. Solo quedan los cofres, uno tras otro, sin fin.' }
+    ]
+  },
+
   // [0.3] FINAL DEL BUCLE 3 (esqueleto). TODOS los textos y números del final están aquí. Los textos marcados "BORRADOR" los he inventado yo para que los edites.
   // Secuencia: cofre 79 (el Trapero revela que el Duende vive en un cofre) -> en la siguiente aparición de la tienda (cofre 80, el siguiente múltiplo de DUENDE_INTERVALO) salen los dos cofres.
   FINAL3: {
@@ -80,6 +191,15 @@ const DATOS_JUEGO = {
       { cofre: 73, texto: "Si el cofre del Duende tiene cerradura, tiene que haber una llave." },
       { cofre: 77, texto: "Una segunda cerradura. Escondida. Lo sé." }
     ],
+    RETRASO: {   // [0.40] BORRADOR (textos inventados por Claude). Si al llegar al cofre 79 faltan puzles por conocer, todo se pospone 10 cofres (89, 99...)
+      DESP: [2, 5, 7, 9],   // en qué cofre del tramo de 10 sale cada post-it (2 = dos cofres después del inicio del tramo)
+      POSTITS_NUEVOS: [   // 1.er retraso (del 79 al 89): post-its nuevos, parecidos a los del 62-77
+        "Aún no conozco todas las cerraduras. Falta alguna por aprender.",
+        "Cada tipo de cofre esconde su truco. Me falta ver alguno.",
+        "Si la tienda del Duende tiene seis sellos, tengo que conocer los seis.",
+        "Todavía no. Aún no estoy listo para su cerradura."
+      ]   // los siguientes retrasos (89-99...) repiten los de POSTITS_OBLIGATORIOS
+    },
     REVELACION: [   // BORRADOR: lo dice el Trapero en el cofre 79 (una frase por ventana)
       "El Duende vive en un cofre... y todo cofre tiene su cerradura. {conspira}",
       "Esa tienda tan simpática no es más que otro cofre. Y toda cerradura puede abrirse. {alerta}"

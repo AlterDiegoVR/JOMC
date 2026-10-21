@@ -1085,3 +1085,39 @@ html:not(.narrow-layout) #pzHardBadge { font-size: 13px; }
 .fin-voice .fv-npc { position: absolute; bottom: 1%; height: 38%; width: auto; max-width: 46%; object-fit: contain; image-rendering: pixelated; filter: drop-shadow(0 4px 6px rgba(0,0,0,.6)); }
 .fin-voice.duen .fv-npc { left: 3%; } .fin-voice.trap .fv-npc { right: 3%; }
 @keyframes finVoiceA { 0% { opacity: 0; } 10% { opacity: 1; } 88% { opacity: 1; } 100% { opacity: 0; } }
+
+/* ==========================================================================
+   [0.40] EL CUADERNO (cuaderno.js): tapas de cuero, papel pautado, pestañas de color y letra a mano
+   ========================================================================== */
+.nbk { position: absolute; inset: 0; z-index: 10030; background: #120c08; overflow: hidden; font-family: 'IM Fell English', Georgia, serif; color: #33231a; -webkit-tap-highlight-color: transparent; }
+.nbk * { box-sizing: border-box; }
+.nbk button { font-family: inherit; color: inherit; background: none; border: 0; padding: 0; margin: 0; text-align: left; cursor: pointer; }
+.nbk-cover { position: absolute; left: 0; top: 0; bottom: 0; width: 36px; background: linear-gradient(90deg, #1e1109, #4a2b1a 62%, #33200f); }
+.nbk-st { position: absolute; left: 15px; width: 6px; height: 30px; border-radius: 3px; background: #c9a766; box-shadow: 0 0 0 1px #5a3b1e; }
+.nbk-paper { position: absolute; left: 32px; top: 10px; right: 16px; bottom: 10px; border-radius: 2px 8px 8px 2px;
+  background: radial-gradient(120% 60% at 85% 100%, rgba(120,72,24,.24), transparent 60%), radial-gradient(90% 40% at 10% 0%, rgba(120,72,24,.16), transparent 60%), repeating-linear-gradient(180deg, transparent 0 31px, rgba(80,50,25,.15) 31px 32px), #e6d5ae;
+  box-shadow: inset 7px 0 14px rgba(60,30,10,.38), 0 0 0 1px #2a170b; }
+.nbk-margin { position: absolute; left: 62px; top: 10px; bottom: 10px; width: 1px; background: rgba(150,50,40,.32); }
+.nbk-tab { position: absolute; right: 0; width: 26px; height: 38px; border-radius: 0 7px 7px 0; display: flex !important; align-items: center; justify-content: center; font-size: 13px; color: #f0e2c0 !important; box-shadow: 0 0 0 1px #1a0e07; text-align: center !important; font-family: 'IM Fell English SC', Georgia, serif !important; }
+.nbk-tab.on { width: 34px; right: -2px; color: #fff !important; }
+.nbk-x { position: absolute; right: 36px; top: 22px; width: 44px; height: 44px; border-radius: 22px !important; background: #3a2418 !important; box-shadow: 0 0 0 1px #1a0e07; display: flex !important; align-items: center; justify-content: center; }
+.nbk-scroll { position: absolute; left: 78px; right: 40px; top: 10px; bottom: 10px; overflow-y: auto; padding: 18px 0 28px; scrollbar-width: none; }
+.nbk-scroll::-webkit-scrollbar { display: none; }
+.nbk-head { display: flex; flex-direction: column; gap: 4px; margin-bottom: 22px; padding-right: 46px; }
+.nbk-title { font-family: 'IM Fell English SC', Georgia, serif; font-size: 30px; line-height: 1.02; color: #2b1c12; }
+.nbk-big { font-size: 38px; margin-right: 8px; }
+.nbk-sub, .nbk-back { font-family: 'Caveat', 'Segoe Print', 'Bradley Hand', cursive; font-size: 20px; line-height: 1.1; color: #6b4a2c; transform: rotate(-1deg); transform-origin: left; }
+.nbk-back { min-height: 44px; display: inline-flex !important; align-items: center; transform: none; font-size: 22px; }
+.nbk-body { display: flex; flex-direction: column; gap: 4px; }
+.nbk-row { display: flex !important; align-items: flex-end; gap: 10px; min-height: 54px; padding: 6px 0; width: 100%; }
+.nbk-num { width: 34px; font-family: 'IM Fell English SC', Georgia, serif; font-size: 17px; color: #7a5a3a; padding-bottom: 2px; flex: none; }
+.nbk-rn b, .nbk-cn b { display: block; font-weight: normal; font-size: 21px; line-height: 1.05; color: #33231a; }
+.nbk-rn i, .nbk-cn i { display: block; font-style: normal; font-family: 'Caveat', 'Segoe Print', cursive; font-size: 18px; line-height: 1; color: #6b4a2c; margin-top: 2px; }
+.nbk-lead { flex: 1; border-bottom: 2px dotted rgba(90,60,30,.45); margin-bottom: 6px; min-width: 12px; }
+.nbk-cnt { font-family: 'Caveat', 'Segoe Print', cursive; font-size: 24px; line-height: 1; color: #3d2a1a; flex: none; }
+.nbk-card { display: flex !important; align-items: center; gap: 12px; min-height: 68px; padding: 8px 12px; margin-bottom: 8px; width: 100%; border-radius: 6px; background: rgba(255,248,226,.38); box-shadow: 0 0 0 1px rgba(90,60,30,.35); }
+.nbk-note { display: flex; flex-direction: column; gap: 2px; margin-bottom: 20px; }
+.nbk-nh { font-size: 20px; line-height: 1.05; font-style: italic; color: #2b1c12; }
+.nbk-nt { font-family: 'Caveat', 'Segoe Print', cursive; font-size: 21px; line-height: 1.12; color: #3d2a1a; }
+.nbk-tag { align-self: flex-start; font-family: 'Caveat', 'Segoe Print', cursive; font-size: 16px; line-height: 1; color: #7a3b2a; border: 1.5px solid rgba(122,59,42,.55); border-radius: 10px; padding: 2px 8px 3px; margin-top: 4px; transform: rotate(-1.5deg); }
+.nbk-empty { font-family: 'Caveat', 'Segoe Print', cursive; font-size: 24px; line-height: 1.15; color: #6b4a2c; margin-top: 40px; }

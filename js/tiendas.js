@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — tiendas.js — VERSIÓN 0.39
+// JUST ONE MORE CHEST — tiendas.js — VERSIÓN 0.40
 // tienda del Duende y del Trapero
 // ==========================================================================
 
@@ -195,6 +195,8 @@ function dshopPicksPrice(n) { return `x${n}<img src="${shopImg('ic_ganzua')}" al
 function dshopPoorReact(phrases) { try { audio.init(); audio.playBreak(); } catch (e) {} dshopSay(shopRandom(phrases), 'enfadado'); }
 
 function triggerMerchantShopModalSequence() {
+  try { if (!STATE.finalFree) { nbReg('npc.duende.1'); const L = STATE.currentLoop || 1; if (L === 2) nbReg('npc.duende.4'); if (L >= 3) nbReg('npc.duende.5'); } } catch (e) {}   // [0.40] cuaderno
+  if (STATE.finalFree) { processNextQueuedEvent(); return; }   // [0.40] tercer final: ni el Duende ni el Trapero vuelven a salir
   const tier = getNarrativeTier();
   const phrases = narr('DUENDE_TIENDA_FRASES')[tier];
   // [0.102] Primero se "abre" la tienda (persiana) y luego el Duende dice la frase dentro de su bocadillo
@@ -503,6 +505,8 @@ closeMerchantBtns.forEach(btn => {
 // [0.102] Entrada del Trapero: juego -> negro -> pantalla de tratos. Habla arriba; al continuar, los tratos aparecen en cascada.
 let traperoTimers = [];
 function triggerTraperoShopSequence() {
+  try { if (!STATE.finalFree) { nbReg('npc.trapero.1'); if ((STATE.currentLoop || 1) >= 2) nbReg('npc.trapero.5'); } } catch (e) {}   // [0.40] cuaderno
+  if (STATE.finalFree) { processNextQueuedEvent(); return; }   // [0.40] tercer final: ni el Duende ni el Trapero vuelven a salir
   const tier = getNarrativeTier();
   const phrases = narr('TRAPERO_FRASES')[tier];
   const t = shopSplitMood(phrases[Math.floor(Math.random() * phrases.length)]);
@@ -568,6 +572,7 @@ function traperoCascade() {
 }
 
 function showTraperoDealFeedback(dealTitle, summaryText, onClose) {
+  try { nbReg('npc.trapero.2'); } catch (e) {}   // [0.40] cuaderno
   triggerSequentialDialogue(
     "EL TRAPERO",
     summaryText,
