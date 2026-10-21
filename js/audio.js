@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — audio.js — VERSIÓN 0.36
+// JUST ONE MORE CHEST — audio.js — VERSIÓN 0.37
 // motor de audio
 // ==========================================================================
 
@@ -494,6 +494,110 @@ class AudioEngine {
     });
   }
 }
+/* ==========================================================================
+   [0.37] MÚSICA GENERADA CON CÓDIGO (inicio, final malo, final bueno)
+   audio.musicPlay('titulo' | 'final_malo' | 'final_bueno'), audio.musicStop(fundido_s), audio.musicSwell() (sube la intensidad)
+   Un secuenciador de semicorcheas programa las notas con un poco de antelación; el volumen sale de DATOS_JUEGO.SONIDO.MUSICA.
+   ========================================================================== */
+const _mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+const MUSICA_DEF = {
+  // Pantalla de inicio: caja de música en La menor, 72 ppm; la progresión termina en el E (dominante) y vuelve a empezar: nunca cierra
+  titulo: {
+    bpm: 72, steps: 128, vol: 1,
+    bars: [
+      { bass: 45, ch: [57, 60, 64, 69], mel: [69, 0, 72, 0, 76, 0, 72, 0] },
+      { bass: 41, ch: [53, 57, 60, 65], mel: [77, 0, 76, 0, 72, 0, 69, 0] },
+      { bass: 48, ch: [60, 64, 67, 72], mel: [72, 0, 76, 0, 79, 0, 76, 0] },
+      { bass: 40, ch: [52, 56, 59, 64], mel: [76, 0, 74, 0, 71, 0, 68, 0] },
+      { bass: 45, ch: [57, 60, 64, 69], mel: [69, 0, 72, 0, 76, 0, 81, 0] },
+      { bass: 41, ch: [53, 57, 60, 65], mel: [77, 0, 81, 0, 77, 0, 72, 0] },
+      { bass: 38, ch: [50, 53, 57, 62], mel: [74, 0, 77, 0, 81, 0, 77, 0] },
+      { bass: 40, ch: [52, 56, 59, 64], mel: [76, 0, 71, 0, 68, 0, 71, 0] }
+    ],
+    step(S, i, t, st) {
+      const bar = S.bars[Math.floor(i / 16) % S.bars.length], p = i % 16, e = p >> 1;
+      if (p === 0) { S.pad(bar.ch.slice(0, 3).map(m => m - 12), t, st * 16, 0.05); S.sine(_mtof(bar.bass), t, st * 7, 0.2); }
+      if (p === 8) S.sine(_mtof(bar.bass + 7), t, st * 6, 0.12);
+      if (p % 2 === 0) S.pluck(_mtof(bar.ch[[0, 1, 2, 3, 2, 1, 2, 1][e]]), t, st * 5, 0.05);
+      if (p % 2 === 0 && bar.mel[e]) S.pluck(_mtof(bar.mel[e] + 12), t, st * 9, 0.085, 1);
+      if (p % 4 === 0) S.tick(t, 0.012);   // un reloj lejano: el bucle
+    }
+  },
+  // Final malo: el vals de la tienda del Duende, desafinado y con un latido grave; 3/4, 12 pasos por compás
+  final_malo: {
+    bpm: 84, steps: 96, vol: 1,
+    bars: [
+      { bass: 36, ch: [60, 64, 67], mel: [76, 0, 0, 72, 0, 0, 67, 0, 0, 72, 0, 0] },
+      { bass: 32, ch: [56, 60, 63], mel: [75, 0, 0, 72, 0, 0, 68, 0, 0, 72, 0, 0] },
+      { bass: 29, ch: [53, 56, 60], mel: [77, 0, 0, 72, 0, 0, 68, 0, 0, 65, 0, 0] },
+      { bass: 31, ch: [55, 59, 62], mel: [74, 0, 0, 71, 0, 0, 66, 0, 0, 71, 0, 0] },
+      { bass: 36, ch: [60, 64, 67], mel: [76, 0, 0, 79, 0, 0, 76, 0, 0, 72, 0, 0] },
+      { bass: 30, ch: [54, 57, 60], mel: [78, 0, 0, 75, 0, 0, 72, 0, 0, 69, 0, 0] },
+      { bass: 32, ch: [56, 60, 63], mel: [80, 0, 0, 77, 0, 0, 72, 0, 0, 68, 0, 0] },
+      { bass: 31, ch: [55, 59, 62, 65], mel: [74, 0, 0, 77, 0, 0, 71, 0, 0, 62, 0, 0] }
+    ],
+    step(S, i, t, st) {
+      const bar = S.bars[Math.floor(i / 12) % S.bars.length], p = i % 12;
+      if (p === 0) { S.sine(_mtof(bar.bass), t, st * 10, 0.26); S.thump(t, 0.3); S.pad(bar.ch.map(m => m - 12), t, st * 12, 0.045, 14); }
+      if (p === 4 || p === 8) bar.ch.forEach((m, k) => S.pluck(_mtof(m) * (1 + (k - 1) * 0.004), t + k * st * 0.35, st * 3, 0.04));
+      if (p % 3 === 0 && bar.mel[p]) S.pluck(_mtof(bar.mel[p] + 12) * (1 + (Math.random() - 0.5) * 0.035), t, st * 7, 0.09, 1);
+    }
+  },
+  // Final bueno: Re mayor, campanas lentas y cuerdas que se abren; musicSwell() las lleva al máximo al abrir la puerta
+  final_bueno: {
+    bpm: 60, steps: 128, vol: 1,
+    bars: [
+      { bass: 38, ch: [62, 66, 69, 74] }, { bass: 37, ch: [61, 64, 69, 73] }, { bass: 35, ch: [59, 62, 66, 71] }, { bass: 43, ch: [59, 62, 67, 74] },
+      { bass: 38, ch: [62, 66, 69, 74] }, { bass: 40, ch: [64, 67, 71, 76] }, { bass: 45, ch: [64, 69, 73, 76] }, { bass: 45, ch: [61, 64, 69, 76] }
+    ],
+    step(S, i, t, st) {
+      const bar = S.bars[Math.floor(i / 16) % S.bars.length], p = i % 16, sw = S.swell ? 1 : 0;
+      if (p === 0) { S.pad(bar.ch.map(m => m - 12), t, st * 16, 0.05 + sw * 0.03, 10); S.sine(_mtof(bar.bass), t, st * 14, 0.2); }
+      if (p % 4 === 0) S.bell(_mtof(bar.ch[[0, 1, 2, 3][(p >> 2) % 4]] + 12), t, st * 12, 0.07);
+      if (sw && p % 2 === 0) S.bell(_mtof(bar.ch[[3, 2, 1, 2, 3, 2, 1, 0][p >> 1]] + 24), t, st * 6, 0.05);
+    }
+  }
+};
+AudioEngine.prototype.musicPlay = function (name) {
+  const def = MUSICA_DEF[name]; if (!this.ctx || !def) return;
+  if (this._mus && this._mus.name === name) return;
+  this.musicStop(0.6);
+  const c = this.ctx, cfg = (DATOS_JUEGO.SONIDO || {}).MUSICA || {};
+  const out = c.createGain(); out.gain.value = 0; out.connect(this.master);
+  const dry = c.createGain(); dry.connect(out);
+  const rv = _reverb(c, out, 2.6, 0.55); const wet = c.createGain(); wet.connect(rv);
+  const st = 60 / def.bpm / 4;
+  const M = { name, def, out, dry, next: c.currentTime + 0.15, i: 0, timer: null, level: cfg.VOLUMEN != null ? cfg.VOLUMEN : 0.5, swell: false };
+  const env = (g, t, a, d, v, r) => { g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(Math.max(0.0002, v), t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + d + (r || 0.05)); };
+  const osc = (type, f, t, d, v, a, det, filt) => {
+    const o = c.createOscillator(), g = c.createGain(); o.type = type; o.frequency.value = f; if (det) o.detune.value = det;
+    let last = o; if (filt) { const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = filt; o.connect(lp); last = lp; }
+    env(g, t, a, d, v); last.connect(g); g.connect(dry); g.connect(wet); o.start(t); o.stop(t + d + 0.15);
+  };
+  const S = {
+    bars: def.bars, get swell() { return M.swell; },
+    sine: (f, t, d, v) => osc('sine', f, t, d, v, 0.02),
+    pluck: (f, t, d, v, lead) => { osc('triangle', f, t, d, v, 0.003); osc('sine', f * 2, t, d * 0.5, v * 0.35, 0.002); if (lead) osc('sine', f * 3.01, t, d * 0.25, v * 0.12, 0.002); },
+    bell: (f, t, d, v) => { osc('sine', f, t, d, v, 0.004); osc('sine', f * 2.76, t, d * 0.45, v * 0.3, 0.003); osc('sine', f * 5.4, t, d * 0.2, v * 0.1, 0.003); },
+    pad: (notes, t, d, v, detune) => notes.forEach(m => { osc('sawtooth', _mtof(m), t, d, v * 0.35, Math.min(d * 0.45, 1.6), -(detune || 6), 900); osc('sawtooth', _mtof(m), t, d, v * 0.35, Math.min(d * 0.45, 1.6), (detune || 6), 900); }),
+    tick: (t, v) => osc('square', 1800, t, 0.012, v, 0.001),
+    thump: (t, v) => { const o = c.createOscillator(), g = c.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(90, t); o.frequency.exponentialRampToValueAtTime(38, t + 0.18); env(g, t, 0.005, 0.22, v); o.connect(g); g.connect(dry); o.start(t); o.stop(t + 0.35); }
+  };
+  M.S = S;
+  const tick = () => {
+    if (this._mus !== M) return;
+    out.gain.setTargetAtTime(this.muted ? 0 : M.level * (M.swell ? 1.25 : 1), c.currentTime, 0.4);
+    if (this.muted) { M.next = Math.max(M.next, c.currentTime + 0.05); return; }
+    while (M.next < c.currentTime + 0.5) { try { def.step(S, M.i % def.steps, M.next, st); } catch (e) {} M.i++; M.next += st; }
+  };
+  this._mus = M; tick(); M.timer = setInterval(tick, 120);
+};
+AudioEngine.prototype.musicSwell = function () { if (this._mus) this._mus.swell = true; };
+AudioEngine.prototype.musicStop = function (fade = 1.2) {
+  const M = this._mus; if (!M || !this.ctx) return; this._mus = null; clearInterval(M.timer);
+  const t = this.ctx.currentTime; try { M.out.gain.cancelScheduledValues(t); M.out.gain.setTargetAtTime(0, t, Math.max(0.05, fade / 3)); } catch (e) {}
+  setTimeout(() => { try { M.out.disconnect(); } catch (e) {} }, fade * 1000 + 2500);
+};
 const audio = new AudioEngine();
 // [0.087] Registro del último sonido para que el clic de interfaz no se solape con sonidos propios
 ['playClick', 'playSeqNote', 'playSeqFail', 'playSeqWin', 'playPaperRustle', 'playDecoyBuzz', 'playBreak', 'playUnlockFanfare', 'playLockCharge', 'playLockOpen', 'playGameOver', 'playDarkOut', 'playLightOn', 'playDecorTap', 'playKeyPickup', 'playKeySpend', 'playCardBeep', 'playCashRegister', 'playCurseStart', 'playCurseEnd', 'playDialogueMelody', 'playIntro', 'playDuendeAngry', 'playSwoosh', 'playGameOverStrike', 'playLevelUpFanfare', 'playLevelUpQuick', 'playRouletteTick', 'playCardRise', 'playChestMutate'].forEach(n => {

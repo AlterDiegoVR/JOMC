@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — datos.js — VERSIÓN 0.36
+// JUST ONE MORE CHEST — datos.js — VERSIÓN 0.37
 // DATOS_JUEGO: configuración y balance
 // ==========================================================================
 
@@ -9,7 +9,7 @@
 
 const DATOS_JUEGO = {
   // [0.088] Versión visible en pantalla (esquina inferior central) para que las capturas la incluyan
-  VERSION: '0.36',
+  VERSION: '0.37',
   // [0.104] Efectos de la apertura automática de la secuencia final (cofres 101-110); la intensidad sube del primero al último (k = 0..1)
   SECUENCIA_FINAL_FX: { ACTIVAR: true, ESTALLIDOS_BASE: 2, ESTALLIDOS_EXTRA: 4, PARTICULAS_POR_ESTALLIDO: 40, HACIA_CENTRO_BASE: 30, HACIA_CENTRO_EXTRA: 60,
     SACUDIDA_PX: 6, SACUDIDA_EXTRA_PX: 10, SACUDIDA_MS: 520, PULSO_ZOOM: 0.02, DESTELLO: 0.10 },
@@ -172,7 +172,8 @@ const DATOS_JUEGO = {
       escritorio: { GENERAL: 1, PEQUENOS: 1, BOTIN: 1 },
       movil:      { GENERAL: 1, PEQUENOS: 2.0, BOTIN: 0.5 }
     },
-    CANAL_VIVO: { ACTIVAR: true, NIVEL: 0.0015 }
+    CANAL_VIVO: { ACTIVAR: true, NIVEL: 0.0015 },
+    MUSICA: { VOLUMEN: 0.5 }   // [0.37] volumen de la música generada (0-1); ajustable
   },
 
   // [0.089b] Zumbido grave que muta despacio, solo cuando el cofre seleccionado es legendario (se calla al empezar el puzle y con el botón de silencio)

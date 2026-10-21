@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — final.js — VERSIÓN 0.36
+// JUST ONE MORE CHEST — final.js — VERSIÓN 0.37
 // final del bucle 3: los dos cofres, el cerrojo de la tienda (6 puzles con voces), el cofre sellado (3 palabras) y los dos finales (puerta de dungeon / tapa del cofre y tienda del Duende)
 // Todos los textos y números están en DATOS_JUEGO.FINAL3 (datos.js). Este archivo solo tiene la lógica.
 // ==========================================================================
@@ -333,6 +333,7 @@ function finEndCommon() {
 const FIN_END_IDS = ['finalScene', 'finalBlack', 'finalCrack', 'finalMix', 'finalLid', 'finDoor', 'finDim', 'finFlood', 'finBadUI'];
 // Limpieza total (reiniciar partida, nuevo final): quita todas las pantallas del final y los temporizadores
 function finalCleanup() {
+  try { audio.musicStop(0.8); } catch (e) {}   // [0.37]
   finClearTimers(); clearInterval(FIN_RT.anim); FIN_RT.anim = null; FIN_RT.active = false; FIN_RT.sel = null; FIN_RT.ending = false;
   ['finalChoice', 'finalLock', 'finalSealed', 'finalHud', 'finVoice', 'finalGap'].concat(FIN_END_IDS).forEach(finRemove);
   const h = uiHost(); if (h) h.classList.remove('final-on', 'fin-glitch', 'fin-shake');
@@ -417,6 +418,7 @@ function finBadOpen(B) {
   const frame = uiHost();
   // el escenario del Duende (diálogo de evento) se prepara debajo de la tapa: sin personaje y sin botón
   triggerSequentialDialogue('EL DUENDE', B.APERTURA, 'fa-hat-wizard', B.SUBTITULO, 'text-purple-300', null, null);
+  try { audio.musicPlay('final_malo'); } catch (e) {}   // [0.37] el vals desafinado de la tienda
   const dm = document.getElementById('dialogueModal'); dm.classList.remove('hidden');
   const fig = document.getElementById('dlgFig'); if (fig) fig.style.display = 'none';
   const cb = document.getElementById('closeDialogueBtn'); if (cb) cb.style.display = 'none';
@@ -489,7 +491,7 @@ function finDrawDoor(frameCv, skyCv, leafCv) {
 function finEndGood() {
   finEndCommon();
   const G = finCfg().FINAL_BUENO, frame = uiHost();
-  try { audio.playUnlockFanfare('legendario'); } catch (e) {}
+  try { audio.playUnlockFanfare('legendario'); setTimeout(() => audio.musicPlay('final_bueno'), 1500); } catch (e) {}   // [0.37]
   // 1) las gafas: texto sobre la habitación oscurecida y difuminada (sin cofres)
   const dim = finEl('fin-dim', `<div class="fd-text"><i class="fa-solid fa-glasses fd-glasses hidden"></i><div class="fd-line"></div></div>`, 'finDim');
   frame.appendChild(dim);
@@ -525,6 +527,7 @@ function finEndGood() {
     if (opened || !door.classList.contains('ready')) return; opened = true;
     try { audio.init(); audio.playLockOpen('wooden'); } catch (e) {}
     door.classList.remove('ready'); door.classList.add('opening');
+    try { audio.musicSwell(); } catch (e) {}
     finLater(() => { try { audio.playLightOn(); } catch (e) {} door.classList.add('glow'); }, 900);
     finLater(() => {
       const fl = finEl('fin-flood', `<div class="ff-thanks">${G.GRACIAS}</div><button type="button" class="fc-go" id="fgBack">${G.VOLVER}</button>`, 'finFlood');

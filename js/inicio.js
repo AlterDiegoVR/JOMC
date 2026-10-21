@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — inicio.js — VERSIÓN 0.36
+// JUST ONE MORE CHEST — inicio.js — VERSIÓN 0.37
 // portada, arranque, avisos, pantalla completa
 // ==========================================================================
 
@@ -10,6 +10,11 @@ function attachCoverClose(cover) {
     cover.style.opacity = '0';
     setTimeout(() => cover.remove(), 450);
     try { audio.init(); audio.playClick(0.8); audio.playIntro(); } catch (e) {}
+    // [0.37] música de inicio: si ya sonaba en la portada (tras volver de un final) se apaga con fundido; la primera vez, el navegador solo deja sonar tras este toque, así que suena unos segundos como introducción
+    try {
+      if (audio._mus && audio._mus.name === 'titulo') audio.musicStop(1.5);
+      else { audio.musicPlay('titulo'); setTimeout(() => { if (audio._mus && audio._mus.name === 'titulo') audio.musicStop(3); }, 8000); }
+    } catch (e) {}
     try { requestGameFullscreen(); } catch (e) {}   // [0.088]
   }, { once: true });
 }
@@ -245,6 +250,7 @@ function showCover() {
   c.style.backgroundImage = `url('${ASSETS.portada}')`;
   uiHost().appendChild(c);
   attachCoverClose(c);
+  try { if (audio.ctx && !audio.muted) audio.musicPlay('titulo'); } catch (e) {}   // [0.37] música de la portada al volver al inicio
 }
 
 
