@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — puzles.js — VERSIÓN 0.37
+// JUST ONE MORE CHEST — puzles.js — VERSIÓN 0.38
 // minijuegos: ganzúa, pistones, hackeo, tuberías
 // ==========================================================================
 
@@ -370,15 +370,28 @@ let tumblerShearTol = 6;
 // [0.207] Los pistones se mueven con transform (compositor) en vez de top (layout + repintado de toda la caja en cada fotograma).
 // La posición sigue siendo un % del carril: se convierte a píxeles con la altura medida del carril.
 let tumblerNotchEls = [], tumblerTrackH = 0;
+let tumblerLeadEl = null, tumblerLeadBase = 0;   // [0.38] línea gris que sigue al primer pistón en el modo solidario
 function tumblerSetNotch(i, pct) {
   const el = tumblerNotchEls[i]; if (!el) return;
-  el.style.transform = `translate3d(0,${Math.floor(pct * tumblerTrackH / 100)}px,0)`;   // píxeles enteros: nada de bordes difuminados al componer
+  const py = Math.floor(pct * tumblerTrackH / 100);
+  el.style.transform = `translate3d(0,${py}px,0)`;   // píxeles enteros: nada de bordes difuminados al componer
+  if (i === 0 && tumblerLeadEl) tumblerLeadEl.style.transform = `translate3d(0,${tumblerLeadBase + py}px,0)`;
+}
+// [0.38] La línea gris horizontal acompaña al primer pistón: los que se unen son los que pasan por ella
+function tumblerLeadLineSync() {
+  const want = !!(tumblerSolid && tumblerPhase === 'pins');
+  const board = document.getElementById('tumblerBoard');
+  if (!want || !board) { const old = document.getElementById('leadLine'); if (old) old.remove(); tumblerLeadEl = null; return; }
+  let ln = document.getElementById('leadLine');
+  if (!ln) { ln = document.createElement('div'); ln.id = 'leadLine'; ln.className = 't-lead-line'; board.appendChild(ln); }
+  tumblerLeadEl = ln;
 }
 function tumblerRepaintNotches() { tumblerPinsData.forEach((p, i) => tumblerSetNotch(i, p.posY)); }
 function tumblerCacheNotches() {
   tumblerNotchEls = tumblerPinsData.map((_, i) => document.getElementById(`pinNotch-${i}`));
   const t = tumblerNotchEls[0] && tumblerNotchEls[0].parentElement;
   tumblerTrackH = t ? t.clientHeight : 0;
+  tumblerLeadLineSync();   // [0.38]
   tumblerRepaintNotches();
 }
 // [0.106c] Posición local (sin zoom) de un elemento respecto al borde interior de `ancestor`, sumando solo offsetTop/clientTop.
@@ -404,6 +417,7 @@ function layoutTumblerLines() {
   if (ty === null || !trH) return;
   if (trH !== tumblerTrackH && tumblerNotchEls.length) { tumblerTrackH = trH; tumblerRepaintNotches(); }   // [0.207] el carril cambió de tamaño: los pistones se recolocan
   const notchH = notch.offsetHeight || 16;
+  { const nb = ty + track.clientTop + notchH / 2 - 1; if (nb !== tumblerLeadBase) { tumblerLeadBase = nb; if (tumblerLeadEl) tumblerSetNotch(0, tumblerPinsData[0] ? tumblerPinsData[0].posY : 0); } }   // [0.38] centro del primer pistón
   const place = (el, pct, tol, minH) => {
     if (!el) return;
     const h = Math.max(minH, 2 * tol * trH / 100);
@@ -708,6 +722,7 @@ function triggerSolidTumblerClick() {
 function startSolidSealPhase() {
   const cfg = DATOS_JUEGO.MINIJUEGOS.AVANZADO.TUMBLER;
   tumblerPhase = 'seal'; audio.playClick(1); if (navigator.vibrate) { try { navigator.vibrate(30); } catch (e) {} }
+  tumblerLeadLineSync();   // [0.38] con todos unidos desaparece la línea gris
   tumblerPinsData.forEach((p, i) => { const n = document.getElementById(`pinNotch-${i}`); if (n) n.className = 'w-full h-4 bg-sky-400 border-sky-200 t-solid-halo rounded border shadow-md absolute inset-x-0'; });
   const tol = cfg.TOLERANCIA_AZUL + (STATE.perks.sweetSpot * 1), [bMin, bMax] = cfg.AZUL_RANGO, blueY = bMin + Math.random() * (bMax - bMin);
   const shearLine = document.getElementById('shearLine');

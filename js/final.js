@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — final.js — VERSIÓN 0.37
+// JUST ONE MORE CHEST — final.js — VERSIÓN 0.38
 // final del bucle 3: los dos cofres, el cerrojo de la tienda (6 puzles con voces), el cofre sellado (3 palabras) y los dos finales (puerta de dungeon / tapa del cofre y tienda del Duende)
 // Todos los textos y números están en DATOS_JUEGO.FINAL3 (datos.js). Este archivo solo tiene la lógica.
 // ==========================================================================
@@ -53,6 +53,7 @@ function finShowChoice() {
   const f = STATE.finalPhase; if (!f) return;
   f.stage = 'choice';
   finClearTimers(); FIN_RT.active = false; FIN_RT.sel = null;
+  try { audio.musicRelease(); } catch (e) {}   // [0.38] en la pantalla de los dos cofres no suena el Cerrojo
   ['finalLock', 'finalSealed', 'finalHud'].forEach(finRemove);
   uiHost().classList.add('final-on');
   STATE.screenChests = [];
@@ -111,7 +112,7 @@ function finOpen(k) {
   const f = STATE.finalPhase; if (!f) return;
   if ((k === 'tienda' && f.tiendaLocked) || (k === 'sellado' && f.selladoLocked)) return;
   finHideChoice();
-  if (k === 'tienda') { f.stage = 'puzzles'; FIN_RT.seals = 0; FIN_RT.idx = 0; finLockScreen(false, ''); }
+  if (k === 'tienda') { f.stage = 'puzzles'; FIN_RT.seals = 0; FIN_RT.idx = 0; finLockScreen(false, ''); try { audio.musicForce('K'); } catch (e) {} }   // [0.38] Cerrojo: música movida de los 6 puzles
   else { f.stage = 'sealed'; finSealedScreen(); }
   saveDirty = true;
 }
@@ -144,7 +145,7 @@ function finLockScreen(restart, msg) {
   go.addEventListener('click', () => {
     try { audio.init(); } catch (e) {}
     go.disabled = true; back.classList.add('hidden'); go.classList.add('hidden');
-    if (restart) { finRunPuzzle(); return; }
+    if (restart) { finVoiceThenPuzzle(); return; }
     finRoulette(ov, zoom, wheel, placa);
   });
 }
@@ -180,7 +181,7 @@ function finRoulette(ov, zoom, wheel, placa) {
   finLater(() => { wheel.src = lits[w]; try { audio.playUnlockFanfare('raro'); } catch (e) {} }, t0);
   const sub = document.getElementById('flSub');
   finLater(() => { if (sub) sub.textContent = finCfg().NOMBRES_CUNAS[w]; }, 1450 + R.ZOOM_MS + 350 + 400);
-  finLater(() => finRunPuzzle(), t0 + 1000);
+  finLater(() => finVoiceThenPuzzle(), t0 + 1000);
 }
 function finHud() {
   let h = document.getElementById('finalHud');
@@ -216,7 +217,6 @@ function finRunPuzzle() {
   const mm = document.getElementById('minigameModal'); if (mm) mm.classList.remove('hidden');
   pzFit();
   finHud();
-  finVoice(FIN_RT.idx);   // [0.31] voces del Duende y el Trapero durante los puzles
   saveDirty = true;
 }
 // [0.35] Entre un puzle y el siguiente se ve el cofre de la tienda en la habitación (no la habitación vacía)
@@ -244,7 +244,7 @@ function finalPuzzleWon() {
   FIN_RT.active = true;   // sigue en modo final hasta que arranque el siguiente puzle
   finShowGapChest();
   finHud();
-  finLater(() => finRunPuzzle(), 900);
+  finLater(() => finVoiceThenPuzzle(), 900);
 }
 // Fallar (lo llama handleFailure): un fallo reinicia desde el primer puzle; sin intentos, la tienda se atasca para siempre
 function finalPuzzleFailed() {
@@ -313,19 +313,35 @@ function finSealedScreen() {
 
 /* ---------- Voces del Duende y el Trapero durante los 6 puzles (final malo) ---------- */
 function finVoice(k) {
-  const B = finCfg().FINAL_MALO, v = (B.VOCES || [])[k]; if (!v) return;
+  const B = finCfg().FINAL_MALO, v = (B.VOCES || [])[k]; if (!v) return 0;
   finRemove('finVoice');
   const trap = v[0] === 'EL TRAPERO';
-  const el = finEl('fin-voice ' + (trap ? 'trap' : 'duen'), `<b>${v[0]}</b><span>${v[1]}</span>`, 'finVoice');
+  const bank = (typeof ASSETS !== 'undefined' && (trap ? ASSETS.trapero : ASSETS.duende)) || {};
+  const src = bank.base || '';
+  const ms = B.VOCES_MS || 4200;
+  const el = finEl('fin-voice ' + (trap ? 'trap' : 'duen'), `<div class="fv-bub"><b>${v[0]}</b><span>${v[1]}</span></div>${src ? `<img class="fv-npc" src="${src}" alt="">` : ''}`, 'finVoice');
   uiHost().appendChild(el);
-  el.style.animationDuration = (B.VOCES_MS || 4200) + 'ms';
+  el.style.animationDuration = ms + 'ms';
+  const im = el.querySelector('.fv-npc'); if (im) { try { npcMotion(im, trap ? 'trapero' : 'duende', 'base'); } catch (e) {} }
   try { audio.playDialogueMelody(v[0]); } catch (e) {}
-  finLater(() => finRemove('finVoice'), (B.VOCES_MS || 4200) + 100);
+  finLater(() => finRemove('finVoice'), ms + 100);
+  return ms;
+}
+// [0.38] Las voces ya no salen durante el puzle (con el temporizador nadie las lee): van entre un puzle y el siguiente, con el cofre de la tienda a la vista y el monigote de quien habla
+function finVoiceThenPuzzle() {
+  const f = STATE.finalPhase; if (!f) return;
+  const lock = document.getElementById('finalLock'); if (lock) lock.classList.add('hidden');
+  FIN_RT.active = true;
+  if (!document.getElementById('finalGap')) finShowGapChest();
+  finHud();
+  const ms = finVoice(FIN_RT.idx);
+  finLater(() => finRunPuzzle(), ms ? ms + 350 : 0);
 }
 
 /* ---------- Finales ---------- */
 function finEndCommon() {
   autosaveEnabled = false; finClearTimers(); clearInterval(FIN_RT.anim);
+  try { audio.musicRelease(); } catch (e) {}   // [0.38] el Cerrojo se apaga al empezar el final
   clearSave();
   STATE.finalPhase = null; FIN_RT.active = false; FIN_RT.ending = true; STATE.screenChests = []; uiHost().classList.add('final-on');
   ['finalChoice', 'finalLock', 'finalSealed', 'finalHud', 'finVoice', 'finalGap'].forEach(finRemove);
@@ -333,7 +349,7 @@ function finEndCommon() {
 const FIN_END_IDS = ['finalScene', 'finalBlack', 'finalCrack', 'finalMix', 'finalLid', 'finDoor', 'finDim', 'finFlood', 'finBadUI'];
 // Limpieza total (reiniciar partida, nuevo final): quita todas las pantallas del final y los temporizadores
 function finalCleanup() {
-  try { audio.musicStop(0.8); } catch (e) {}   // [0.37]
+  try { audio.musicStop(0.8); } catch (e) {}   // [0.38] se libera la música forzada del final
   finClearTimers(); clearInterval(FIN_RT.anim); FIN_RT.anim = null; FIN_RT.active = false; FIN_RT.sel = null; FIN_RT.ending = false;
   ['finalChoice', 'finalLock', 'finalSealed', 'finalHud', 'finVoice', 'finalGap'].concat(FIN_END_IDS).forEach(finRemove);
   const h = uiHost(); if (h) h.classList.remove('final-on', 'fin-glitch', 'fin-shake');
@@ -418,7 +434,7 @@ function finBadOpen(B) {
   const frame = uiHost();
   // el escenario del Duende (diálogo de evento) se prepara debajo de la tapa: sin personaje y sin botón
   triggerSequentialDialogue('EL DUENDE', B.APERTURA, 'fa-hat-wizard', B.SUBTITULO, 'text-purple-300', null, null);
-  try { audio.musicPlay('final_malo'); } catch (e) {}   // [0.37] el vals desafinado de la tienda
+  try { audio.musicForce('H'); } catch (e) {}   // [0.38] Hielo (atmospheric black metal sin trémolo)
   const dm = document.getElementById('dialogueModal'); dm.classList.remove('hidden');
   const fig = document.getElementById('dlgFig'); if (fig) fig.style.display = 'none';
   const cb = document.getElementById('closeDialogueBtn'); if (cb) cb.style.display = 'none';
@@ -491,7 +507,7 @@ function finDrawDoor(frameCv, skyCv, leafCv) {
 function finEndGood() {
   finEndCommon();
   const G = finCfg().FINAL_BUENO, frame = uiHost();
-  try { audio.playUnlockFanfare('legendario'); setTimeout(() => audio.musicPlay('final_bueno'), 1500); } catch (e) {}   // [0.37]
+  try { audio.playUnlockFanfare('legendario'); setTimeout(() => audio.musicForce('G'), 1500); } catch (e) {}   // [0.38] Alba (post-rock con dungeon synth)
   // 1) las gafas: texto sobre la habitación oscurecida y difuminada (sin cofres)
   const dim = finEl('fin-dim', `<div class="fd-text"><i class="fa-solid fa-glasses fd-glasses hidden"></i><div class="fd-line"></div></div>`, 'finDim');
   frame.appendChild(dim);
@@ -527,7 +543,6 @@ function finEndGood() {
     if (opened || !door.classList.contains('ready')) return; opened = true;
     try { audio.init(); audio.playLockOpen('wooden'); } catch (e) {}
     door.classList.remove('ready'); door.classList.add('opening');
-    try { audio.musicSwell(); } catch (e) {}
     finLater(() => { try { audio.playLightOn(); } catch (e) {} door.classList.add('glow'); }, 900);
     finLater(() => {
       const fl = finEl('fin-flood', `<div class="ff-thanks">${G.GRACIAS}</div><button type="button" class="fc-go" id="fgBack">${G.VOLVER}</button>`, 'finFlood');

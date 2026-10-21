@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — datos.js — VERSIÓN 0.37
+// JUST ONE MORE CHEST — datos.js — VERSIÓN 0.38
 // DATOS_JUEGO: configuración y balance
 // ==========================================================================
 
@@ -9,7 +9,7 @@
 
 const DATOS_JUEGO = {
   // [0.088] Versión visible en pantalla (esquina inferior central) para que las capturas la incluyan
-  VERSION: '0.37',
+  VERSION: '0.38',
   // [0.104] Efectos de la apertura automática de la secuencia final (cofres 101-110); la intensidad sube del primero al último (k = 0..1)
   SECUENCIA_FINAL_FX: { ACTIVAR: true, ESTALLIDOS_BASE: 2, ESTALLIDOS_EXTRA: 4, PARTICULAS_POR_ESTALLIDO: 40, HACIA_CENTRO_BASE: 30, HACIA_CENTRO_EXTRA: 60,
     SACUDIDA_PX: 6, SACUDIDA_EXTRA_PX: 10, SACUDIDA_MS: 520, PULSO_ZOOM: 0.02, DESTELLO: 0.10 },
@@ -118,7 +118,7 @@ const DATOS_JUEGO = {
         ['EL DUENDE', 'Falta tan poco... Al fin volveremos a estar juntos.'],
         ['EL TRAPERO', 'El último sello. Y luego, nosotros. Como siempre debió ser.']
       ],
-      VOCES_MS: 4200,
+      VOCES_MS: 4600,
       // Al caer el último sello: la pantalla se rompe y las dos voces se mezclan hasta decir lo mismo
       MEZCLA: [
         ['¡Lo hemos conseguido!', '¡Lo hemos conseguido!'],
@@ -173,7 +173,7 @@ const DATOS_JUEGO = {
       movil:      { GENERAL: 1, PEQUENOS: 2.0, BOTIN: 0.5 }
     },
     CANAL_VIVO: { ACTIVAR: true, NIVEL: 0.0015 },
-    MUSICA: { VOLUMEN: 0.5 }   // [0.37] volumen de la música generada (0-1); ajustable
+    MUSICA: { VOLUMEN: 0.7, BUCLE_COFRES: 5 }   // [0.38] VOLUMEN: 0.7 es el del artefacto de pruebas (música en musica.js). BUCLE_COFRES: cuántos cofres del bucle suena la pieza ambiental I al empezar
   },
 
   // [0.089b] Zumbido grave que muta despacio, solo cuando el cofre seleccionado es legendario (se calla al empezar el puzle y con el botón de silencio)
