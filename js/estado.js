@@ -67,6 +67,7 @@ const STATE = {
   boughtInCurrentShop: false,
   climaxPhase: false,
   sequenceBroken: false,
+  infinite: false,   // [0.44] modo infinito
 
   shopSession: null,
   currentShopOffer: null,
@@ -260,7 +261,7 @@ function abandonCurrentMinigame() {
   audio.playBreak();
   hideAllMinigameUI();
   showPersistentFeedback("🚪 Has abandonado el puzle: cuenta como fallo y pierdes la herramienta.");
-  if (isTrapLockpickActive()) showPersistentFeedback(DATOS_JUEGO.MINIJUEGOS.LOCKPICK.MENSAJES_TRAMPA.ABANDONO, 'trampa');
+  if (isTrapLockpickActive()) { try { nbReg('puz.wooden.troll'); } catch (e) {} showPersistentFeedback(DATOS_JUEGO.MINIJUEGOS.LOCKPICK.MENSAJES_TRAMPA.ABANDONO, 'trampa'); }
   handleFailure(currentPuzzleConsumable);
 }
 
@@ -278,6 +279,7 @@ const TACTICA_A_HABILIDAD = {
 };
 
 function getWildcardBadChance() {
+  if (STATE.infinite) return 0.5;   // [0.44] modo infinito: siempre 50-50
   const table = DATOS_JUEGO.PROBABILIDADES.WILDCARD_MALA_POR_BUCLE;
   const loop = Math.min(STATE.currentLoop || 1, 3);
   return table[loop] !== undefined ? table[loop] : table[1];
@@ -552,7 +554,7 @@ const SAVE_KEYS = [
   'currentLoop', 'finalPhase', 'finDelay', 'finalFree', 'level', 'xp', 'gold', 'chestsOpened', 'chestsAtLevelUp', 'chestCounterUnlocked',
   'cleanStreak', 'paranoiaStage', 'traperoVisits', 'lastTraperoChest', 'salvageDealsCount', 'salvageCurseActive',
   'picks', 'proPicks', 'usb', 'valves', 'batteries', 'batteriesUnlocked', 'fuses', 'fusesUnlocked', 'lanternFound', 'noXpChestsLeft', 'picksBrokenOnUse', 'tanteoExplainedLoop', 'xpBoostChestsLeft', 'torpezas',
-  'seqStage', 'traperoStrikes', 'seqLastBuyCo', 'seqLastChance', 'climaxPhase', 'sequenceBroken', 'perks', 'abilities',
+  'seqStage', 'traperoStrikes', 'seqLastBuyCo', 'seqLastChance', 'climaxPhase', 'sequenceBroken', 'infinite', 'perks', 'abilities',
   'active2XMultiplier', 'activeShield', 'riskModeActive', 'riskPot', 'perdedorActive', 'perdedorLootPending', 'fallosConsecutivos',
   'heavyChestsLeft', 'greedCurseLeft', 'harderPuzzlesLeft', 'oxidadoLeft', 'recharge', 'harderSrc', 'extremePuzzlesLeft', 'extremeSrc', 'mods', 'blankNotes', 'passWords', 'pendingNotes', 'traperoBuffs', 'cursedChestsLeft',
   'roomDecorations', 'roomThemeFilter', 'roomDarkUntil', 'rerollCount', 'pulseraLeft', 'atajoLeft', 'nightStealsLeft', 'curseHalf', 'opensByType', 'acceptDelayUses', 'hintUses', 'stats', 'giftLadron', 'giftNight', 'achG'
@@ -857,6 +859,7 @@ function resetGame(keepLoop) {
   STATE.boughtInCurrentShop = false;
   STATE.climaxPhase = false;
   STATE.sequenceBroken = false;
+  STATE.infinite = false;   // [0.44]
   STATE.shopSession = null;
   STATE.currentShopOffer = null;
 

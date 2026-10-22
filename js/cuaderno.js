@@ -38,6 +38,13 @@ function nbSync(force) {
     Object.keys(NB_PERKS).forEach(k => { if (S.perks && S.perks[k]) nbReg('mae.' + NB_PERKS[k]); });
     Object.keys(C.CARTAS).forEach(k => { if (S.abilities && S.abilities[k] > 0) nbReg('carta.' + k); });
     if ((S.cleanStreak || 0) >= (DATOS_JUEGO.ECONOMIA.RACHAS_APERTURA || {}).MINIMO_PARA_BONUS) nbReg('racha.1');
+    // [0.44] pequeñas mecánicas de los puzles: unas se apuntan al llevar cierto número de puzles de ese tipo, otras (troll) solo al verlas
+    const pz = (S.stats && S.stats.puz) || {}, pn = j => ((pz[j] || {}).ok || 0) + ((pz[j] || {}).fail || 0);
+    if (pn('lockpick') >= 6) nbReg('puz.wooden.falsos');
+    if (pn('tumbler') >= 5) nbReg('puz.piston.rareza');
+    if (pn('hack') >= 5) nbReg('puz.cyber.longitud');
+    if (pn('pipe') >= 4) nbReg('puz.hydraulic.obstaculos');
+    if (pn('sequence') >= 5) nbReg('puz.neon.prisa');
     // [0.43] arco del personaje
     if ((S.chestsOpened || 0) >= 1) nbReg('arc.despertar');
     if ((S.chestsOpened || 0) >= 5) nbReg('arc.abrir');

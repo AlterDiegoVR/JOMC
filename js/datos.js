@@ -9,7 +9,7 @@
 
 const DATOS_JUEGO = {
   // [0.088] Versión visible en pantalla (esquina inferior central) para que las capturas la incluyan
-  VERSION: '0.43',
+  VERSION: '0.44',
   // [0.104] Efectos de la apertura automática de la secuencia final (cofres 101-110); la intensidad sube del primero al último (k = 0..1)
   SECUENCIA_FINAL_FX: { ACTIVAR: true, ESTALLIDOS_BASE: 2, ESTALLIDOS_EXTRA: 4, PARTICULAS_POR_ESTALLIDO: 40, HACIA_CENTRO_BASE: 30, HACIA_CENTRO_EXTRA: 60,
     SACUDIDA_PX: 6, SACUDIDA_EXTRA_PX: 10, SACUDIDA_MS: 520, PULSO_ZOOM: 0.02, DESTELLO: 0.10 },
@@ -99,26 +99,32 @@ const DATOS_JUEGO = {
         { k: 'puz.wooden', h: 'Qué hay que hacer', t: 'Mueve la ganzúa hasta dar con el punto dulce. Las zonas falsas hacen vibrar la herramienta.' },
         { k: 'puz.wooden.tanteo', h: 'Probar el punto dulce', t: 'Si mantengo apretado el botón de probar y lo suelto, noto si el punto dulce es el bueno. Cuidado: se me puede romper la ganzúa.' },
         { k: 'puz.wooden.tanteo.pena', h: 'Tantear ahora cuesta', t: 'Tantear con la ganzúa ya no sale gratis: me quita un 30 % del oro y de la experiencia de ese cofre.' },
-        { k: 'puz.wooden.destornillador', h: 'El destornillador', t: 'Después de la ganzúa viene una segunda fase: el destornillador se mueve con la barra de la izquierda y, al pasar por el centro del punto dulce, se nota un toquecito.' }
+        { k: 'puz.wooden.destornillador', h: 'El destornillador', t: 'Después de la ganzúa viene una segunda fase: el destornillador se mueve con la barra de la izquierda y, al pasar por el centro del punto dulce, se nota un toquecito.' },
+        { k: 'puz.wooden.falsos', h: 'Zonas falsas', t: 'Cuanto más valioso es el cofre, más trampas esconde la cerradura. En los de madera sencillos casi nunca hay zonas falsas; en los mejores, casi siempre.' },
+        { k: 'puz.wooden.troll', h: 'Un cofre sin solución', t: 'Hoy encontré un cofre que no se podía abrir. Ningún punto era el bueno. De vez en cuando, uno de los mejores es un simple engaño.' }
       ] },
       { id: 'piston', k: 'puz.piston', titulo: 'Caja de acero', sub: 'los pistones', notas: [
         { k: 'puz.piston', h: 'Qué hay que hacer', t: 'Fija el pistón activo con la unión latón/acero sobre la línea verde.' },
         { k: 'puz.piston.solidarios', h: 'Pistones solidarios', t: 'Pulsa cuando el pistón 1 se cruce con otro: se unen y se mueven juntos. Une los demás igual.' },
-        { k: 'puz.piston.sello', h: 'La línea azul', t: 'Con todos los pistones fijados, hay que detenerlos juntos sobre la línea azul.' }
+        { k: 'puz.piston.sello', h: 'La línea azul', t: 'Con todos los pistones fijados, hay que detenerlos juntos sobre la línea azul.' },
+        { k: 'puz.piston.rareza', h: 'Cajas mejores, pistones peor', t: 'Cuanto mejor es la caja, más pistones tiene, menos tiempo me deja y más justo hay que acertar.' }
       ] },
       { id: 'cyber', k: 'puz.cyber', titulo: 'Arca digital', sub: 'la terminal', notas: [
         { k: 'puz.cyber', h: 'Qué hay que hacer', t: 'Elige la palabra de la lista. Cada intento te dice cuántas letras coinciden.' },
-        { k: 'puz.cyber.numeros', h: 'Números', t: 'A veces la lista no trae palabras, sino números. Cada intento me dice cuántas cifras coinciden.' }
+        { k: 'puz.cyber.numeros', h: 'Números', t: 'A veces la lista no trae palabras, sino números. Cada intento me dice cuántas cifras coinciden.' },
+        { k: 'puz.cyber.longitud', h: 'Palabras largas', t: 'Cuanto mejor es el cofre, más largas son las palabras. Dentro de una misma lista todas miden lo mismo.' }
       ] },
       { id: 'hydraulic', k: 'puz.hydraulic', titulo: 'Cofre de vapor', sub: 'las tuberías', notas: [
         { k: 'puz.hydraulic', h: 'Qué hay que hacer', t: 'Gira las tuberías para llevar el agua de la válvula a la salida.' },
         { k: 'puz.hydraulic.validar', h: 'Bombas y VALIDAR', t: 'Evita las bombas. El fluido no se ve hasta pulsar VALIDAR, y solo hay un intento.' },
         { k: 'puz.hydraulic.cruz', h: 'Piezas en cruz', t: 'Hay piezas con cuatro salidas: el agua sale por todos los lados. Con una bomba cerca, cuidado.' },
-        { k: 'puz.hydraulic.giros', h: 'Giros contados', t: 'Algunos tableros limitan los giros que puedes dar. Pasarse del límite es fallar.' }
+        { k: 'puz.hydraulic.giros', h: 'Giros contados', t: 'Algunos tableros limitan los giros que puedes dar. Pasarse del límite es fallar.' },
+        { k: 'puz.hydraulic.obstaculos', h: 'Casillas muertas', t: 'Hay casillas por las que el agua no pasa. No explotan, pero cortan el camino. Mejor buscar otro.' }
       ] },
       { id: 'neon', k: 'puz.neon', titulo: 'Arca de neón', sub: 'las luces', notas: [
         { k: 'puz.neon', h: 'Qué hay que hacer', t: 'Memoriza la secuencia de luces y repítela con las mismas notas. Una sola pifia y se acaba.' },
-        { k: 'puz.neon.giro', h: 'El dial gira', t: 'Después de enseñarte la secuencia, el dial gira y las luces cambian de sitio.' }
+        { k: 'puz.neon.giro', h: 'El dial gira', t: 'Después de enseñarte la secuencia, el dial gira y las luces cambian de sitio.' },
+        { k: 'puz.neon.prisa', h: 'Luces con prisa', t: 'Cuanto mejor es el arca, más deprisa se encienden las luces. Hay que estar atento desde el primer destello.' }
       ] },
       { id: 'electric', k: 'puz.electric', titulo: 'Cuadro eléctrico', sub: 'los fusibles', notas: [
         { k: 'puz.electric', h: 'Qué hay que hacer', t: 'Toca un fusible: se invierte él y sus vecinos. Deja todos los filamentos encendidos antes de quedarte sin jugadas. No hay reloj.' }
@@ -140,14 +146,14 @@ const DATOS_JUEGO = {
       { k: 'obj.postit.familiar', h: 'Un post-it conocido', t: 'Hoy me he encontrado un post-it y me era extrañamente familiar. Creo que lo he escrito yo.' },
       { k: 'obj.postit.contra',   h: 'La frase a medias', t: 'Hay un post-it distinto: una frase sin terminar y un hueco para una palabra. Elijo una, y no sé para qué sirve. Todavía.' },
       { k: 'obj.adorno',         h: 'Los adornos',    t: 'Hay objetos viejos repartidos por la sala: velas, cráneos, espejos... Si los toco, hacen algo.' },
-      { k: 'obj.adorno.herr',    h: 'Adornos con herramientas', t: 'Algunos esconden una herramienta: una ganzúa, una llave USB, a veces una válvula.' },
+      { k: 'obj.adorno.herr',    h: 'Adornos con herramientas', t: 'Algunos esconden una herramienta: una ganzúa, una llave USB, a veces una válvula. Y si ya conozco las demás, también pueden esconder pilas, fusibles o pines de acero.' },
       { k: 'obj.adorno.oro',     h: 'Adornos con monedas', t: 'Otros esconden unas pocas monedas.' },
       { k: 'obj.adorno.ambiente',h: 'Adornos que cambian la sala', t: 'A veces cambian el color de la sala. Y a veces la bombilla se funde y todo queda a oscuras unos cofres.' },
       { k: 'obj.adorno.mutan',   h: 'Luz misteriosa', t: 'Una luz extraña hace que los cofres de la pantalla cambien por otros.' },
       { k: 'obj.adorno.rayo',    h: 'Rayo de sombra', t: 'Un rayo de sombra puede convertir el cofre que tengo delante en legendario.' },
-      { k: 'obj.adorno.temblor', h: 'Vibración', t: 'A veces solo tiembla la sala, y no hay nada más.' },
+      { k: 'obj.adorno.temblor', h: 'Vibración', t: 'A veces tiembla la sala y los cofres se resienten: todos pierden algo de lo que eran. Los más humildes se desmoronan, aunque siempre queda uno en pie.' },
       { k: 'obj.adorno.maldito', h: 'Algo se pega', t: 'Hay días en que tocar un adorno me deja una maldición pegada durante unos cofres.' },
-      { k: 'obj.adorno.nunca',   h: 'Lo que no esconden', t: 'Los adornos no dan pines de acero, ni pilas, ni fusibles, ni cartas. Solo ganzúas, USB, válvulas, monedas y cosas de la sala.' },
+      { k: 'obj.adorno.nunca',   h: 'Lo que no esconden', t: 'Los adornos nunca dan cartas. Solo herramientas, monedas y cosas de la sala.' },
       { k: 'obj.linterna',   h: 'La linterna',    t: 'La encontré en un cofre. Sin pilas no sirve de nada.' },
       { k: 'obj.oscuridad',  h: 'La sala a oscuras', t: 'A veces la luz se va y la sala queda a oscuras unos cofres.' },
       { k: 'obj.tomo',       h: 'Este cuaderno',  t: 'Un viejo cuaderno de tapas gastadas. Se escribe solo, a medida que descubro cosas del mundo.' }

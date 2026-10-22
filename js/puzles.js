@@ -27,7 +27,9 @@ function isAdvancedLoopFor(rarityId) {
 function pzHardLevel() {
   const fin = finalPuzzleMode() ? (DATOS_JUEGO.FINAL3.DUREZA_PUZLES || 0) : 0;   // [0.3] los puzles del cerrojo final son difíciles
   if (STATE.extremePuzzlesLeft > 0) return 2;
-  return Math.max(fin, (STATE.traperoBuffs.harderMinigames || STATE.harderPuzzlesLeft > 0) ? 1 : 0);
+  const inf = (typeof infHardLevel === 'function') ? infHardLevel() : 0;   // [0.44] modo infinito
+  if (inf === 2) return 2;
+  return Math.max(fin, inf, (STATE.traperoBuffs.harderMinigames || STATE.harderPuzzlesLeft > 0) ? 1 : 0);
 }
 function pzXtr() { return DATOS_JUEGO.MINIJUEGOS.EXTREMO; }
 function pzHardBadgeUpdate() {
@@ -158,6 +160,13 @@ function updateLockpickProximityVisuals() {
     if (wsl) { wsl.style.setProperty('--lp-col', inZone ? 'hsl(125 90% 52%)' : '#3a2208'); wsl.style.setProperty('--lp-glow', inZone ? 'hsla(125 95% 55% / .8)' : 'transparent'); }
     const nd = document.getElementById('pickNeedle'); if (nd) nd.style.transform = `rotate(${lpState.angle}deg)`;
     const cyl = document.getElementById('cylinderGraphic'); if (cyl) cyl.style.transform = `rotate(${lpState.screwdriver}deg)`;
+    // [0.44] al girar la cerradura con el destornillador: mismo clic de cercanía que con la ganzúa y una vibración suave al estar en la zona verde
+    if (lpState.isTension) {
+      const dist = Math.abs(lpState.wrenchAng - lpState.wrenchSpot), ratio = inZone ? 1 : Math.max(0.15, 1 - (dist - lpState.wrenchTol) / (lpState.wrenchTol * 4));
+      try { audio.playClick(ratio); } catch (x) {}
+      const nowT = Date.now();
+      if (inZone && nowT - (lpState.wrenchVibT || 0) > 110) { lpState.wrenchVibT = nowT; try { if (navigator.vibrate) navigator.vibrate(12); } catch (x) {} }
+    }
     return;
   }
   const diffReal = Math.abs(lpState.angle - lpState.sweetSpot);
@@ -247,6 +256,7 @@ function tickLockpick() {
     if (lpState.isTrapChest) {
       lpState.health -= configLP.DECAY_SALUD_DECOY * 1.5;
       if (lpState.health <= 0) {
+        try { nbReg('puz.wooden.troll'); } catch (e) {}
         triggerPickBreakSequence(DATOS_JUEGO.MINIJUEGOS.LOCKPICK.MENSAJES_TRAMPA.ROTURA, 'trampa');
         return;
       }

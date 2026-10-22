@@ -433,6 +433,8 @@ function triggerDuendeNarrativeVisit() {
 (function () {
   const ids = { abilityAutoBtn: 'auto', ability2xBtn: 'double', abilityShieldBtn: 'shield', abilityRiskBtn: 'riskPot', abilityPerdedorBtn: 'perdedor', abilitySummonDuendeBtn: 'summonDuende', abilityCofradiaBtn: 'cofradia', abilityRerollBtn: 'reroll', abilityPulseraBtn: 'pulsera', abilityRuletaBtn: 'ruleta' };
   const NOMBRES = { auto: 'AUTO', double: '2X', shield: 'ESCUDO', riskPot: 'APUESTA', perdedor: 'PERDEDOR', summonDuende: 'DUENDE', cofradia: 'COFRADÍA DEL COFRE', reroll: 'RE-ROLL', pulsera: 'PULSERA VIP', ruleta: 'RULETA' };
+  // [0.44] color de cada carta = color de su botón en la barra
+  const CARD_TINT = { auto: ['#818cf8', '#3730a3'], double: ['#fbbf24', '#78350f'], shield: ['#34d399', '#065f46'], perdedor: ['#c084fc', '#581c87'], summonDuende: ['#e879f9', '#701a75'], cofradia: ['#2dd4bf', '#134e4a'], reroll: ['#38bdf8', '#0c4a6e'], pulsera: ['#facc15', '#713f12'], ruleta: ['#a3e635', '#365314'] };
   let bypass = false;
   document.addEventListener('click', (e) => {
     const cfg = DATOS_JUEGO.CARTAS_PANTALLA_PREVIA || {};
@@ -448,7 +450,7 @@ function triggerDuendeNarrativeVisit() {
     m.id = 'cardPreModal';
     m.className = 'fixed inset-0 z-[9990] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-5 gx-ov';
     m.innerHTML = `
-      <div class="gm-card gx-card violet">
+      <div class="gm-card gx-card ${key === 'riskPot' ? 'risk' : 'tint'}" style="${key === 'riskPot' ? '' : (CARD_TINT[key] ? '--ac:' + CARD_TINT[key][0] + ';--ac2:' + CARD_TINT[key][1] + ';--glow:' + CARD_TINT[key][0] + '44' : '')}">
         <i class="cr a"></i><i class="cr b"></i><i class="cr c"></i><i class="cr d"></i>
         <div class="gm-seal">CARTA TÁCTICA</div>
         <div class="gx-ico"><i class="${(btn.querySelector('i') || {}).className || 'fa-solid fa-scroll'}"></i></div>
@@ -712,6 +714,7 @@ function paintBigTimer(seconds) {
 
 function startMinigameTimer(seconds, consumableName) {
   stopMinigameTimer();
+  if (typeof seconds === 'number') { try { seconds = Math.max(3, Math.round(seconds * infTimeMult())); } catch (e) {} }   // [0.44] modo infinito: cada vez menos tiempo
   // [CAMBIO] Se fija ANTES del return para los puzles sin tiempo (hack no legendario); si no, la X cobraba la herramienta equivocada
   currentPuzzleConsumable = consumableName;
 
@@ -742,7 +745,7 @@ function startMinigameTimer(seconds, consumableName) {
       audio.playBreak();
       hideAllMinigameUI();
       showPersistentFeedback("⏱️ ¡TIEMPO AGOTADO! Fallo en el puzle.");
-      if (isTrapLockpickActive()) showPersistentFeedback(DATOS_JUEGO.MINIJUEGOS.LOCKPICK.MENSAJES_TRAMPA.TIEMPO, 'trampa');
+      if (isTrapLockpickActive()) { try { nbReg('puz.wooden.troll'); } catch (e) {} showPersistentFeedback(DATOS_JUEGO.MINIJUEGOS.LOCKPICK.MENSAJES_TRAMPA.TIEMPO, 'trampa'); }
       handleFailure(currentPuzzleConsumable);
     }
   }, 1000);

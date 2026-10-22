@@ -31,7 +31,8 @@ function achEvent(ev, data) {
     case 'recycle': achProg.recycled += (data || 0); achProgSave(); break;
     case 'deal': a.l.deals = (a.l.deals || 0) + 1; break;
     case 'curse': a.l.curse = (a.l.curse || 0) + 1; break;
-    case 'puzzle': a.l.tot = (a.l.tot || 0) + 1; if (data) a.l.ok = (a.l.ok || 0) + 1; break;
+    case 'puzzle': if (typeof isClimaxActive === 'function' && isClimaxActive()) break;   // [0.44] el tramo final (sin puzle o automático) no cuenta para el 90%
+      a.l.tot = (a.l.tot || 0) + 1; if (data) a.l.ok = (a.l.ok || 0) + 1; break;
     case 'spent': a.g.spent = (a.g.spent || 0) + (data || 0); break;
     case 'steal': case 'flawless': case 'good': case 'bad': case 'gift': if (ev !== 'gift') achProg.flags[ev] = Date.now(); achProgSave(); break;
     case 'loopEnd': {   // data = nº de bucle que se acaba de pasar

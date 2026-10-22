@@ -10,7 +10,7 @@ const FIN_RT = { sel: null, order: [], idx: 0, seals: 0, active: false, timers: 
 function finCfg() { return DATOS_JUEGO.FINAL3; }
 function finT(key, n) { const t = (finCfg().TEXTOS || {})[key]; return typeof t === 'string' ? t.replace('{n}', n != null ? n : '') : t; }
 function finArt(k) { return (typeof ASSETS !== 'undefined' && ASSETS.final && ASSETS.final[k]) || ''; }
-function finalLoop3() { return (STATE.currentLoop || 1) >= 3; }
+function finalLoop3() { return !STATE.infinite && (STATE.currentLoop || 1) >= 3; }   // [0.44] en el modo infinito no hay final
 function finalLocked() { const f = STATE.finalPhase; return !!(FIN_RT.ending || (f && (f.stage === 'choice' || f.stage === 'puzzles' || f.stage === 'sealed'))); }   // [0.31] ending: durante los finales no se generan cofres
 function finalPuzzleMode() { return !!FIN_RT.active; }
 function finLater(fn, ms) { const t = setTimeout(() => { FIN_RT.timers = FIN_RT.timers.filter(x => x !== t); fn(); }, ms); FIN_RT.timers.push(t); return t; }

@@ -38,7 +38,8 @@ function generateScreenChests() {
     let rarity = CHEST_RARITIES[0];
     if (STATE.chestsOpened >= 3) {
       const levelKey = Math.min(STATE.level, 4);
-      const probMap = DATOS_JUEGO.PROBABILIDADES.RAREZAS_COFRES_POR_NIVEL[levelKey] || DATOS_JUEGO.PROBABILIDADES.RAREZAS_COFRES_POR_NIVEL[4];
+      let probMap = DATOS_JUEGO.PROBABILIDADES.RAREZAS_COFRES_POR_NIVEL[levelKey] || DATOS_JUEGO.PROBABILIDADES.RAREZAS_COFRES_POR_NIVEL[4];
+      try { probMap = infRarityMap(probMap); } catch (e) {}   // [0.44]
 
       let pNormal = probMap.normal;
       let pRaro = probMap.raro;
@@ -264,6 +265,7 @@ function fbVariant(raw) {
   const bad = has(cfg.MALAS), curse = /maldici|trato injusto|castigo|trampa|robo|oscuridad|condena/i.test(raw);
   const gain = /recib|ganas|premio|regalo|obtien|\+\s?\d/i.test(raw) && has(cfg.BUENAS);   // «Ganzúa Perdida: recibes +5 ganzúas» es un premio aunque lleve «perdida»
   if (/^\s*ℹ️/.test(raw)) return { cls: '', seal: 'AYUDA', art: 'pergamino' };
+  if (/bote de riesgo|doble o nada|cobrar bote|apuesta/i.test(raw)) return { cls: 'risk', seal: 'APUESTA', art: 'pergamino' };   // [0.44] la Apuesta siempre en naranja
   if (curse) return /maldici|trato|condena/i.test(raw) ? { cls: 'curse', seal: 'MALDICIÓN', art: 'trapero' } : { cls: 'curse', seal: '¡CUIDADO!', art: 'pergamino' };
   if (gain) return { cls: 'good', seal: 'PREMIO', art: 'duende', item: fbItemIcon(raw) };
   if (bad) return { cls: 'curse', seal: '¡CUIDADO!', art: 'pergamino' };
@@ -273,7 +275,7 @@ function fbApplyVariant(raw) {
   const card = document.getElementById('fbCard'), seal = document.getElementById('fbSeal'), img = document.getElementById('fbImg');
   if (!card) return;
   const v = fbVariant(raw);
-  card.classList.toggle('curse', v.cls === 'curse'); card.classList.toggle('good', v.cls === 'good');
+  card.classList.toggle('curse', v.cls === 'curse'); card.classList.toggle('good', v.cls === 'good'); card.classList.toggle('risk', v.cls === 'risk');
   if (seal) seal.textContent = v.seal;
   if (img) {
     const A = (typeof ASSETS !== 'undefined' && ASSETS) || {};
@@ -491,7 +493,7 @@ function placeStickyNote(note, container) {
 // [0.096] Lista (sin efectos) de los post-its de jugador que toca mostrar con co cofres abiertos
 function playerNotesFor(co) {
   const cfg = DATOS_JUEGO.NOTAS_JUGADOR, out = [];
-  if (!cfg || STATE.climaxPhase) return out;
+  if (!cfg || STATE.climaxPhase || STATE.infinite) return out;   // [0.44] sin post-its de historia en el modo infinito
   STATE.blankNotes = STATE.blankNotes || {};
   (cfg.COFRES || []).forEach(slot => {
     if (co === slot - 1) {   // eco: lo escrito en bucles anteriores (el del bucle 1 primero)
@@ -1277,6 +1279,7 @@ if (claimLootBtn) {
     }
 
     const co = STATE.chestsOpened;
+    try { infAdvance(co); } catch (e) {}   // [0.44] modo infinito: el bucle efectivo sube con los cofres
     queuePlayerNotes(co);   // [0.095] post-its de jugador (se muestran al generar los cofres)
     const seqHist = narr('HISTORIA_SECUENCIA');
     const seqConfig = DATOS_JUEGO.PROGRESIÓN.SECUENCIA_HISTORIA;
@@ -1339,9 +1342,9 @@ if (claimLootBtn) {
     }
 
     const startCo = finalLoop3() ? finStartCo() : seqConfig.COFRE_INICIO_TRAPERO;   // [0.40] en el bucle 3 el inicio se desplaza +10 por cada retraso
-    if (!STATE.finalFree && !STATE.climaxPhase && (finalLoop3() || co < seqConfig.COFRE_CLIMAX_INICIO)) {
+    if (!STATE.finalFree && !STATE.climaxPhase && (finalLoop3() || STATE.infinite || co < seqConfig.COFRE_CLIMAX_INICIO)) {
       const duendeFreq = DATOS_JUEGO.PROGRESIÓN.INTERVALOS_VISITAS.DUENDE_INTERVALO;
-      const isDuendeChest = (co % duendeFreq === 0) && ![seqConfig.COFRE_OFERTA_1, seqConfig.COFRE_OFERTA_2, seqConfig.COFRE_OFERTA_3].includes(co);
+      const isDuendeChest = (co % duendeFreq === 0) && (STATE.infinite || ![seqConfig.COFRE_OFERTA_1, seqConfig.COFRE_OFERTA_2, seqConfig.COFRE_OFERTA_3].includes(co));
 
       if (isDuendeChest && (co < startCo || STATE.sequenceBroken)) {
         if (co < 30) {

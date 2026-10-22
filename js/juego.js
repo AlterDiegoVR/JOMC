@@ -451,8 +451,11 @@ function pzFit() {
   const m = document.getElementById('minigameModal'), card = document.getElementById('pzCard'), st = document.getElementById('minigameStatus');
   if (!m || !card || !st) return;
   const ch = card.offsetHeight, sh = st.offsetHeight;
-  m.style.setProperty('--pzcardh', ch + 'px');
-  m.style.setProperty('--pzshift', Math.max(0, (ch - sh) / 2) + 'px');
+  // [0.44] en el móvil el pie no reserva toda la altura de la tarjeta (con la etiqueta de «puzle endurecido» la tarjeta crece y el puzle se hacía diminuto)
+  const narrowL = document.documentElement.classList.contains('narrow-layout');
+  const fh = narrowL ? Math.min(ch, sh + 24) : ch;
+  m.style.setProperty('--pzcardh', fh + 'px');
+  m.style.setProperty('--pzshift', Math.max(0, (fh - sh) / 2) + 'px');
   pzScale(m);
 }
 // [0.104] Escala el puzle activo (ganzúa, tuberías, terminal) al espacio libre. En PC hasta un tope; en móvil solo se reduce si no cabe.

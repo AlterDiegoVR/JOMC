@@ -116,6 +116,7 @@ function testKeyHash(seq, salt) {
         ${(typeof tomeUnlocked === 'function' && tomeUnlocked()) ? b('optTome', 'fa-book', 'CUADERNO', 'bg-gradient-to-r from-stone-700 to-amber-900 text-amber-100') : ''}
         ${b('optAch', 'fa-trophy', 'RESETEAR LOGROS')}
         ${b('optWipe', 'fa-trash', 'BORRAR TODOS LOS DATOS', 'bg-rose-950/80 active:bg-rose-900 text-rose-200')}
+        ${(typeof infUnlocked === 'function' && infUnlocked()) ? b('optInf', 'fa-infinity', 'MODO INFINITO', 'bg-gradient-to-r from-violet-800 to-fuchsia-800 text-white') : ''}
         ${b('optNew', 'fa-rotate-left', 'EMPEZAR DE NUEVO', 'bg-rose-950/80 active:bg-rose-900 text-rose-200')}
         ${b('optTest', 'fa-flask', 'MODO TEST', 'bg-slate-950 text-slate-400')}
         <button id="optClose" class="mt-1 w-full py-2.5 bg-slate-800 active:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl cursor-pointer">Cerrar</button>
@@ -127,6 +128,8 @@ function testKeyHash(seq, salt) {
     q('optClose').addEventListener('click', () => close('optionsModal'));
     q('optStats').addEventListener('click', () => { close('optionsModal'); openStatsBoard(); });
     q('optList').addEventListener('click', () => { close('optionsModal'); openAchievementsList(); });
+    if (q('optInf')) q('optInf').style.background = 'linear-gradient(90deg,#5b21b6,#a21caf)';
+    if (q('optInf')) q('optInf').addEventListener('click', () => { close('optionsModal'); confirmBox('¿MODO INFINITO?', 'Empieza una partida nueva sin final: los cofres no paran y cada vez piden más. Se perderá la partida actual.', 'SÍ, EMPEZAR', () => startInfiniteMode()); });
     q('optNew').addEventListener('click', () => { close('optionsModal'); showResetConfirm(); });
     q('optAch').addEventListener('click', () => { close('optionsModal'); confirmBox('¿RESETEAR LOGROS?', 'Se borrarán los logros desbloqueados en este navegador. La partida no se toca.', 'SÍ, BORRAR LOGROS', () => { clearAchievements(); showPersistentFeedback('🏆 Logros reseteados.'); }); });
     q('optWipe').addEventListener('click', () => { close('optionsModal'); confirmBox('¿BORRAR TODOS LOS DATOS?', 'Se borrará TODO lo guardado en este navegador: la partida, los logros, las estadísticas acumuladas y el cuaderno con sus desbloqueos. No se puede deshacer.', 'SÍ, BORRAR TODO', () => wipeAllGameData()); });   // [0.209] sustituye a RESETEAR CONTADORES

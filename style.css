@@ -1209,3 +1209,14 @@ html:not(.narrow-layout) #pzHardBadge { font-size: 13px; }
 .rn-sp { display: inline-block; width: .5em; }
 @keyframes rnBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
 .rn-text { margin: 0; max-width: 30rem; font: 500 16px/1.5 'Outfit', sans-serif; color: #d9d0f0; text-wrap: balance; }
+
+/* [0.44] Carta táctica / avisos: cada carta usa el mismo color en su botón, su pantalla previa y sus avisos */
+.gm-card.tint .gm-seal { background: color-mix(in srgb, var(--ac) 65%, #000); }
+.gm-card.tint .gm-btn:not(.sec) { background: var(--ac); border-color: color-mix(in srgb, var(--ac) 30%, #000); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--ac) 55%, #fff), 0 0 0 2px #0e1220, 0 3px 0 2px #0e1220; color: #0b0a14; text-shadow: 0 1px 0 color-mix(in srgb, var(--ac) 50%, #fff); }
+.gm-card.risk { --ac: #f97316; --ac2: #7c2d12; --glow: #f9731644; }
+.gm-card.risk .gm-seal { background: #c2410c; }
+.gm-card.risk .gm-btn:not(.sec) { background: #f08a3a; border-color: #5a2408; box-shadow: inset 0 0 0 2px #ffc08a, 0 0 0 2px #0e1220, 0 3px 0 2px #0e1220; color: #2a1004; text-shadow: 0 1px 0 #ffd2a8; }
+.gm-card.risk .gm-btn.sec { background: #3a3f55; border-color: #1a1d2c; box-shadow: inset 0 0 0 2px #5c6285, 0 0 0 2px #0e1220, 0 3px 0 2px #0e1220; color: #e6e8f5; text-shadow: 0 1px 0 #0006; }
+#abilityRiskBtn { background: rgb(67 20 7 / .8) !important; border-color: rgb(249 115 22 / .45) !important; color: #fdba74 !important; }
+#abilityRiskBtn:hover { background: rgb(124 45 18) !important; }
+#riskPotBar { background: rgb(67 20 7 / .9) !important; border-color: rgb(249 115 22 / .8) !important; color: #fdba74 !important; }

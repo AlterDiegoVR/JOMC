@@ -226,8 +226,12 @@ function showShopReceipt(onCloseCallback) {
   if (session) session.giftPhrase = null;
   const originalCallback = onCloseCallback;
   onCloseCallback = () => {
-    if (originalCallback) originalCallback();
-    if (giftText) { try { showPersistentFeedback('EL DUENDE: ' + giftText); } catch (e) {} }   // [0.42]
+    // [0.44] el agradecimiento del Duende por no robar sale como una escena: fondo de tienda y el Duende en grande hablando (antes era un banner)
+    if (giftText) {
+      let ok = false;
+      try { triggerSequentialDialogue('EL DUENDE', giftText, 'fa-hat-wizard', 'Encuentro Casual', 'text-purple-300', null, () => { if (originalCallback) originalCallback(); }); ok = true; } catch (e) {}
+      if (!ok && originalCallback) originalCallback();
+    } else if (originalCallback) originalCallback();
     if (guiltText) { try { spawnStickyNote(guiltText); } catch (e) {} }   // [0.209] ya no es un banner (la voz del protagonista): aparece como un post-it más en la sala
   };
 

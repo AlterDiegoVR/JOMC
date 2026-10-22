@@ -957,17 +957,34 @@ function triggerSecretDecorationReward(decor) {
       msg += " (+5 GP descubiertos)";
     }
   } else if (roll >= 45 && roll < 65) { _nb('obj.adorno.oro'); STATE.gold += 2; msg += " (+2 GP secretos)"; }
-  else if (roll >= 65 && roll < 80) { _nb('obj.adorno.herr'); STATE.picks += 1; msg += " (+1 Ganzúa hallada)"; }
-  else if (roll >= 80 && roll < 90) { _nb('obj.adorno.herr'); STATE.usb += 1; msg += " (+1 USB hallado)"; }
-  else if (roll >= 90 && roll < 97) {
-    if (STATE.level >= valvesDropLevel()) { _nb('obj.adorno.herr'); STATE.valves += 1; msg += " (+1 Válvula hallada)"; }
-    else { STATE.gold += 2; msg += " (+2 GP secretos)"; }   // [0.089] sin válvulas antes del nivel mínimo
+  else if (roll >= 65 && roll < 97) {
+    // [0.44] el adorno puede dar cualquier herramienta ya desbloqueada (también pilas, fusibles y pines de acero)
+    _nb('obj.adorno.herr');
+    const pool = [['picks', 15, 'Ganzúa'], ['usb', 10, 'USB']];
+    if (STATE.level >= valvesDropLevel()) pool.push(['valves', 7, 'Válvula']);
+    ['proPicks', 'batteries', 'fuses'].forEach(k => { if (toolUnlocked(k)) pool.push([k, 6, ({ proPicks: 'Pin de acero', batteries: 'Pila', fuses: 'Fusible' })[k]]); });
+    let w = Math.random() * pool.reduce((a, x) => a + x[1], 0), pick = pool[0];
+    for (const x of pool) { if (w < x[1]) { pick = x; break; } w -= x[1]; }
+    STATE[pick[0]] = (STATE[pick[0]] || 0) + 1;
+    msg += ` (+1 ${pick[2]} hallad${pick[0] === 'picks' || pick[0] === 'batteries' || pick[0] === 'valves' ? 'a' : 'o'})`;
   }
   else {
-    _nb('obj.adorno.temblor'); msg += " (¡Vibración sísmica en la sala!)";
-    const appBody = document.getElementById('appBody');
-    if (appBody) appBody.classList.add('shake-screen');
-    setTimeout(() => { if (appBody) appBody.classList.remove('shake-screen'); }, 600);
+    // [0.44] el temblor ocurre al cerrar el banner y hace que todos los cofres pierdan una rareza (los normales desaparecen, pero siempre queda uno)
+    _nb('obj.adorno.temblor'); msg += " (¡Vibración sísmica en la sala! Los cofres se resienten.)";
+    chestMutateFx(() => {
+      const appBody = document.getElementById('appBody');
+      if (appBody) { appBody.classList.add('shake-screen'); setTimeout(() => appBody.classList.remove('shake-screen'), 600); }
+      const list = STATE.screenChests || [], act = list[STATE.activeChestIdx] || list[0];
+      if (!list.length) return;
+      const lower = r => { const i = CHEST_RARITIES.findIndex(x => x.id === r.id); return i > 0 ? (r.fog ? Object.assign({}, CHEST_RARITIES[i - 1], { fogOne: true }) : CHEST_RARITIES[i - 1]) : null; };
+      const kept = [];
+      list.forEach(c => { const n = lower(c.rarity); if (n) { c.rarity = n; kept.push(c); } });
+      if (!kept.length) kept.push(act);   // todos eran normales: se queda el seleccionado
+      STATE.screenChests = kept;
+      STATE.activeChestIdx = Math.max(0, kept.indexOf(act));
+      try { audio.playBreak(); } catch (e) {}
+      updateChestSelectionUI(); updateUI();
+    });
   }
 
   updateUI();
