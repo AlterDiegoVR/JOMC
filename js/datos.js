@@ -9,7 +9,7 @@
 
 const DATOS_JUEGO = {
   // [0.088] Versión visible en pantalla (esquina inferior central) para que las capturas la incluyan
-  VERSION: '0.42',
+  VERSION: '0.43',
   // [0.104] Efectos de la apertura automática de la secuencia final (cofres 101-110); la intensidad sube del primero al último (k = 0..1)
   SECUENCIA_FINAL_FX: { ACTIVAR: true, ESTALLIDOS_BASE: 2, ESTALLIDOS_EXTRA: 4, PARTICULAS_POR_ESTALLIDO: 40, HACIA_CENTRO_BASE: 30, HACIA_CENTRO_EXTRA: 60,
     SACUDIDA_PX: 6, SACUDIDA_EXTRA_PX: 10, SACUDIDA_MS: 520, PULSO_ZOOM: 0.02, DESTELLO: 0.10 },
@@ -171,6 +171,7 @@ const DATOS_JUEGO = {
         { k: 'npc.duende.4', h: 'Otra vez desde el principio', t: 'Vuelve a ser amable, como si no recordara nada. Yo sí lo recuerdo.' },
         { k: 'npc.duende.5', h: 'Más desesperado', t: 'Algo ha cambiado. Quiere el oro con una prisa que antes no tenía.' },
         { k: 'npc.duende.6', h: 'La codicia lo cambia', t: 'Otra vez desde cero, y él peor. La primera vez me sorprendió su afán por el oro. Ahora me asusta: la codicia lo está transformando en otra cosa.' },
+        { k: 'npc.duende.7', h: 'Su verdadera cara', t: 'Creo que esta es su verdadera cara, y no me gusta nada. Le brillan los ojos con cada moneda. De verdad ansía ese oro, pero ¿para qué?' },
         { k: 'npc.reveal', h: 'Vive en un cofre', t: 'El Trapero dice que el Duende vive dentro de un cofre. Y todo cofre tiene su cerradura.' },
         { k: 'npc.uno', h: 'Lo que pasa de verdad', t: 'El Duende y el Trapero son la misma cosa: la codicia que exige oro y el cansancio que promete una salida falsa. Todo lo que me enseñaron servía para romper el sello.' }
       ] },
@@ -187,10 +188,19 @@ const DATOS_JUEGO = {
     ],
     // --- Lo que ha pasado (clave 'loop.<n>' al terminar la vuelta; 'fin.*' al terminar el juego). BORRADOR ---
     PASADO: [
+      // [0.43] Arco del personaje (textos BORRADOR míos salvo los que corrigió el usuario). Salen conforme se cumple cada condición (ver nbSync en cuaderno.js)
+      { k: 'arc.despertar', h: 'Despertar', t: 'No sé dónde estoy. Una sala sin puertas ni ventanas. Solo hay cofres.' },
+      { k: 'arc.abrir', h: 'Abrir por abrir', t: 'Abro uno y aparece otro. No sé por qué sigo.' },
+      { k: 'arc.postits', h: 'Los post-its', t: 'Hay notas pegadas por las paredes. No recuerdo haber escrito ninguna, pero algunas me resultan familiares.' },
+      { k: 'arc.truco', h: 'Cogerle el truco', t: 'Las manos van solas. Algo me empuja a abrir uno más.' },
+      { k: 'arc.duende', h: 'El de la tienda', t: 'Me vende cosas como si esto fuera una tienda cualquiera. Nunca me pregunta dónde estamos.' },
+      { k: 'arc.trapero', h: 'El de los tratos', t: 'Habla poco y sabe demasiado. No me fío, pero le escucho.' },
+      { k: 'arc.escribir', h: 'Escribir', t: 'Hay notas en blanco. Dejo una escrita, no sé por qué. Quizás le sirva de ayuda a alguien, o quizás me la vuelva a encontrar y pueda entender algo de lo que está pasando.' },
+      { k: 'arc.luz', h: 'A oscuras', t: 'Se apagó la luz y seguí abriendo cofres a ciegas.' },
       { k: 'loop.1', h: 'Primera vuelta', t: 'Hice todo lo que el Trapero me dijo, pero todo parece haber vuelto a empezar.' },
       { k: 'loop.2', h: 'Segunda vuelta', t: 'No me lo creo: otra vez al principio. Es la tercera vez que me despierto en esta misma sala. Sabía lo que me esperaba y aun así hice lo mismo. Y todo vuelve a empezar.' },
-      { k: 'fin.bueno', h: 'Las tres palabras', t: 'Acerté las tres palabras. Una puerta, luz de día. Dejé de jugar.' },
-      { k: 'fin.malo',  h: 'Los seis sellos', t: 'Rompí los seis sellos. Eran la misma cosa y les di lo que querían. Ahora me toca a mí atender la tienda.' },
+      { k: 'fin.bueno', h: 'Las tres palabras', t: 'Acerté las tres palabras. La contraseña la tenía yo todo este tiempo. Al fin, me voy.' },
+      { k: 'fin.malo',  h: 'Los seis sellos', t: 'Rompí los seis sellos. Eran la misma cosa y les di lo que querían. Ahora me toca a mí atender la tienda. Debo salir de aquí, cueste lo que cueste. Haré lo que sea.' },
       { k: 'fin.libre', h: 'Las dos cerraduras', t: 'Fallé las dos cerraduras. Ni el Duende ni el Trapero han vuelto. Solo quedan los cofres, uno tras otro, sin fin.' }
     ]
   },

@@ -38,6 +38,16 @@ function nbSync(force) {
     Object.keys(NB_PERKS).forEach(k => { if (S.perks && S.perks[k]) nbReg('mae.' + NB_PERKS[k]); });
     Object.keys(C.CARTAS).forEach(k => { if (S.abilities && S.abilities[k] > 0) nbReg('carta.' + k); });
     if ((S.cleanStreak || 0) >= (DATOS_JUEGO.ECONOMIA.RACHAS_APERTURA || {}).MINIMO_PARA_BONUS) nbReg('racha.1');
+    // [0.43] arco del personaje
+    if ((S.chestsOpened || 0) >= 1) nbReg('arc.despertar');
+    if ((S.chestsOpened || 0) >= 5) nbReg('arc.abrir');
+    if (nbHas('obj.postit')) nbReg('arc.postits');
+    if ((S.level || 1) >= 3 || (S.cleanStreak || 0) >= 3) nbReg('arc.truco');
+    if (nbHas('npc.duende.1')) nbReg('arc.duende');
+    if (nbHas('npc.trapero.1')) nbReg('arc.trapero');
+    if (nbHas('obj.postit.escribir')) nbReg('arc.escribir');
+    if (nbHas('obj.oscuridad')) nbReg('arc.luz');
+    if (S.climaxPhase || S.finalPhase) nbReg('npc.duende.7');   // al ver cerca su objetivo, el Duende enseña su verdadera cara
     if (S.lanternFound) nbReg('obj.linterna');
     if (typeof isRoomDark === 'function' && isRoomDark()) nbReg('obj.oscuridad');
     if (typeof tomeUnlocked === 'function' && tomeUnlocked()) nbReg('obj.tomo');
