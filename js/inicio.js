@@ -273,7 +273,7 @@ let rotateBlocked = false;
     if (rotateBlocked) {
       const cfg = DATOS_JUEGO.AVISO_GIRAR || {};
       const list = cfg.FRASES || [];
-      const t = document.getElementById('rotateTitle'); if (t) t.textContent = cfg.TITULO || '';
+      const t = document.getElementById('rotateTitle'); if (t) t.innerHTML = [...(cfg.TITULO || '')].map((ch, i) => ch === ' ' ? '<span class="rn-sp"></span>' : `<span class="rn-l" style="animation-delay:${i * 60}ms">${ch}</span>`).join('');   // [0.42] letras gráficas
       const m = document.getElementById('rotateText'); if (m && list.length) m.textContent = list[Math.floor(Math.random() * list.length)];
     }
   };

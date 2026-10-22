@@ -75,6 +75,9 @@ function nbSectionItems(sec) {
     case 'maldic': return C.MALDICIONES.filter(vis).map(nbNote).concat(nbWildcardNotes('maldic'));
     case 'pasado': return C.PASADO.filter(vis).map(nbNote);
     case 'puzles': return C.PUZLES.filter(p => p.notas.some(vis)).map(p => ({ id: p.id, titulo: p.titulo, sub: p.sub, notas: p.notas.filter(vis).map(nbNote) }));
+    case 'tratos': { const T = DATOS_JUEGO.TRATOS_TRAPERO, all = T.INICIALES.concat(T.OSCUROS).concat([{ id: 'contador_cofres_trapero', titulo: 'Contador de Cofres', desc: 'Entrego 5 ganzúas básicas y a cambio me deja ver cuántos cofres llevo.' }]);
+      const fx = d => String(d.desc).replace('{LEONINO}', (typeof leoninoGp === 'function' ? leoninoGp() : '')).replace('{VENTA}', (typeof ventaGp === 'function' ? ventaGp() : ''));
+      return all.filter(d => nbHas('trato.' + d.id)).map(d => ({ h: d.titulo, t: fx(d), tag: nbLoopTag('trato.' + d.id), k: 'trato.' + d.id })); }
     case 'npcs': return C.NPCS.filter(p => p.notas.some(vis)).map(p => ({ id: p.id, titulo: p.titulo, sub: p.sub, notas: p.notas.filter(vis).map(nbNote) }));
   }
   return [];

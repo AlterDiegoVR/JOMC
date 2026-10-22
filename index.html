@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap" rel="stylesheet">   <!-- [0.40] letra del cuaderno (si no carga, se usa una de reserva) -->
-  <link rel="stylesheet" href="./style.css?v=0.41">
+  <link rel="stylesheet" href="./style.css?v=0.42">
   <!-- [0.085] Estilos CRÍTICOS del marco vertical: van aquí (además de en style.css) para que el diseño no dependa de que style.css esté actualizado -->
   <style id="layoutCritico">
     html, body { margin: 0; height: 100%; }
@@ -70,6 +70,7 @@
     #fsBtn.hidden { display: none; }
     #rotateNotice { display: none; position: fixed; inset: 0; z-index: 10000; background: #05060b; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 16px 8vw; gap: 10px; }
     html.rotate-block #rotateNotice { display: flex; }
+    /* [0.42] aviso de girar el móvil con letras gráficas (los estilos .rn-* están en style.css) */
     html.narrow-layout #multiChestGrid { margin-bottom: 30px; gap: 10px; }
     html.narrow-layout #multiChestGrid > button { flex: 1 1 0; max-width: 104px; min-height: 86px; padding: 8px 6px; }
     html.narrow-layout #multiChestGrid img { width: 58px !important; }
@@ -85,7 +86,7 @@
     }
   </style>
   <!-- [0.103] Tailwind propio (tailwind.css, generado con la CLI) en lugar del CDN: sin aviso de consola y sin depender de internet. Va al final del head, igual que lo inyectaba el CDN, para conservar el orden de las reglas -->
-  <link rel="stylesheet" href="./tailwind.css?v=0.41">
+  <link rel="stylesheet" href="./tailwind.css?v=0.42">
 </head>
 <body id="appBody" class="select-none relative overflow-hidden bg-slate-950">
 
@@ -97,6 +98,11 @@
 
   <canvas id="roomCanvas" class="absolute inset-0 w-full h-full z-0 pointer-events-auto"></canvas>
   <div id="eerieOverlay" class="absolute inset-0 z-0 pointer-events-none transition-colors duration-1000 bg-transparent"></div>
+  <!-- [0.42] Botones de las pasivas INCONFORMISTA y HERRERO: solo icono, flotando a los lados del cofre grande (no empujan el selector ni tapan los objetos de la sala) -->
+  <div id="perkActions" class="hidden absolute inset-0 pointer-events-none" style="z-index:12">
+    <button id="rerollPerkBtn" type="button" class="hidden perk-side pa-reroll" aria-label="Cambiar cofres"><i class="fa-solid fa-arrows-rotate"></i><b id="rerollPerkCost">30 GP</b></button>
+    <button id="smithPerkBtn" type="button" class="hidden perk-side pa-smith" aria-label="Herrero"><i class="fa-solid fa-hammer"></i></button>
+  </div>
 
   <!-- TOP HUD PERSISTENTE -->
   <header id="persistentHUD" class="relative z-30 p-3 flex flex-col gap-2 pointer-events-auto">
@@ -254,12 +260,6 @@
 
       <div id="chestCostRequirement" class="text-[10px] font-bold text-amber-400 mb-3 bg-slate-900 px-2.5 py-0.5 rounded-md border border-slate-800">
         REQUIERE: 1 GANZÚA
-      </div>
-
-      <!-- [0.210] Botones de las pasivas INCONFORMISTA y HERRERO (se ven solo si las tienes) -->
-      <div id="perkActions" class="hidden pointer-events-auto flex gap-2 justify-center mb-2">
-        <button id="rerollPerkBtn" type="button" class="hidden perk-act pa-reroll"><i class="fa-solid fa-arrows-rotate"></i><span>CAMBIAR COFRES</span><b id="rerollPerkCost">30 GP</b></button>
-        <button id="smithPerkBtn" type="button" class="hidden perk-act pa-smith"><i class="fa-solid fa-hammer"></i><span>HERRERO</span></button>
       </div>
 
       <button id="openChestBtn" class="pointer-events-auto w-full py-4 bg-gradient-to-r from-amber-500 to-yellow-600 active:from-amber-400 text-slate-950 font-black text-base rounded-2xl shadow-2xl border border-yellow-300/50 flex items-center justify-center gap-2">
@@ -514,60 +514,36 @@
 
   <!-- MODAL DE TRATO INJUSTO DE SALVACIÓN -->
   <div id="unfairDealModal" class="fixed inset-0 z-50 bg-rose-950/95 backdrop-blur-xl flex items-center justify-center p-5 hidden">
-    <div class="bg-slate-900 border border-rose-800 rounded-3xl p-6 w-full max-w-xs shadow-2xl text-center flex flex-col items-center">
-      <div class="w-16 h-16 rounded-full bg-rose-950/80 border border-rose-500 flex items-center justify-center text-3xl text-rose-500 mb-3 animate-pulse">
-        <i class="fa-solid fa-handshake-angle"></i>
-      </div>
-      <h2 class="text-2xl font-black text-rose-400 font-retro">¡ÚLTIMA OPORTUNIDAD!</h2>
-      <p class="text-xs text-slate-300 my-2 italic">
-        Te has quedado sin recursos en la sala... Pero el Trapero te ofrece un único trato de salvación.
-      </p>
-
-      <div class="bg-slate-950 p-3.5 rounded-2xl border border-rose-900/60 w-full text-xs text-slate-300 my-2 space-y-2 text-left font-mono">
-        <div class="text-rose-400 font-extrabold uppercase text-[10px]">PAGARÁS UN PRECIO ALTO:</div>
+    <div class="gm-card curse gx-card">
+      <i class="cr a"></i><i class="cr b"></i><i class="cr c"></i><i class="cr d"></i>
+      <div class="gm-seal">ÚLTIMA OPORTUNIDAD</div>
+      <div class="gx-ico gx-pulse"><i class="fa-solid fa-handshake-angle"></i></div>
+      <h2 class="gx-ttl">UN TRATO DE SALVACIÓN</h2>
+      <p class="gx-tx">Te has quedado sin recursos en la sala... Pero el Trapero te ofrece un único trato.</p>
+      <div class="gx-box">
+        <div class="gx-cap">PAGARÁS UN PRECIO ALTO</div>
         <div id="unfairOfferText">• Recibes herramientas inmediatas.</div>
-        <div>• <span class="text-rose-400 font-bold">Maldición (-50% GP/XP)</span> durante los próximos 10 cofres.</div>
+        <div>• <span class="gx-bad">Maldición (-50% GP/XP)</span> durante los próximos 10 cofres.</div>
       </div>
-
-      <button id="acceptDealBtn" class="mt-3 w-full py-3.5 bg-gradient-to-r from-amber-600 to-rose-600 active:from-amber-500 text-white font-extrabold text-xs rounded-xl shadow-xl border border-amber-400/40">
-        ACEPTAR EL TRATO (seguir jugando)
-      </button>
-
-      <button id="declineDealBtn" class="mt-2 w-full py-2.5 bg-slate-800 active:bg-slate-700 text-slate-400 font-bold text-xs rounded-xl">
-        ACEPTAR EL FIN
-      </button>
+      <button id="acceptDealBtn" class="gm-btn" type="button">ACEPTAR EL TRATO (seguir jugando)</button>
+      <button id="declineDealBtn" class="gm-btn sec" type="button">ACEPTAR EL FIN</button>
     </div>
   </div>
 
   <!-- MODAL FINAL DE GAME OVER -->
   <div id="gameOverModal" class="fixed inset-0 z-50 bg-rose-950/98 backdrop-blur-xl flex items-center justify-center p-5 hidden">
-    <div class="bg-slate-900 border border-rose-800 rounded-3xl p-6 w-full max-w-xs shadow-2xl text-center flex flex-col items-center">
-      <div class="w-16 h-16 rounded-full bg-rose-950/80 border border-rose-500 flex items-center justify-center text-3xl text-rose-500 mb-3">
-        <i class="fa-solid fa-skull"></i>
+    <div class="gm-card curse gx-card">
+      <i class="cr a"></i><i class="cr b"></i><i class="cr c"></i><i class="cr d"></i>
+      <div class="gm-seal">FIN DE LA PARTIDA</div>
+      <div class="gx-ico"><i class="fa-solid fa-skull"></i></div>
+      <h2 class="gx-ttl gx-big">GAME OVER</h2>
+      <p class="gx-tx">Sin herramientas y con la maldición a cuestas. Tu aventura termina aquí.</p>
+      <div class="gx-stats">
+        <div><span>Cofres abiertos</span><b id="goChests">0</b></div>
+        <div><span>Nivel alcanzado</span><b id="goLevel">1</b></div>
+        <div id="goLoopRow" class="hidden"><span>Bucle</span><b id="goLoop">1</b></div>
       </div>
-      <h2 class="text-2xl font-black text-rose-400 font-retro">GAME OVER</h2>
-      <p class="text-xs text-slate-400 my-3">
-        Sin herramientas y con la maldición a cuestas. Tu aventura termina aquí.
-      </p>
-
-      <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 w-full text-xs font-mono text-slate-300 my-2 space-y-1.5">
-        <div class="flex justify-between">
-          <span>Cofres Abiertos:</span>
-          <span id="goChests" class="text-amber-400 font-bold">0</span>
-        </div>
-        <div class="flex justify-between">
-          <span>Nivel Alcanzado:</span>
-          <span id="goLevel" class="text-indigo-400 font-bold">1</span>
-        </div>
-        <div id="goLoopRow" class="hidden flex justify-between">
-          <span>Bucle:</span>
-          <span id="goLoop" class="text-amber-400 font-bold">1</span>
-        </div>
-      </div>
-
-      <button id="restartGameBtn" class="mt-4 w-full py-3 bg-gradient-to-r from-rose-600 to-amber-600 active:from-rose-500 text-white font-extrabold text-xs rounded-xl shadow-xl">
-        REINTENTAR PARTIDA
-      </button>
+      <button id="restartGameBtn" class="gm-btn" type="button">REINTENTAR PARTIDA</button>
     </div>
   </div>
 
@@ -584,32 +560,33 @@
 
   <!-- [0.088] Aviso "gira el móvil" (táctil + apaisado + poca altura). Fuera del marco para cubrir toda la pantalla -->
   <div id="rotateNotice" role="alert">
-    <i class="fa-solid fa-mobile-screen-button" style="font-size:34px;color:#c084fc"></i>
-    <h2 id="rotateTitle" class="font-retro" style="font-size:24px;font-weight:900;color:#d8b4fe;letter-spacing:.04em;margin:0"></h2>
-    <p id="rotateText" class="font-mono" style="max-width:34rem;font-size:14px;line-height:1.5;font-style:italic;color:#e2e8f0;margin:0"></p>
+    <div class="rn-phone" aria-hidden="true"><i></i></div>
+    <h2 id="rotateTitle" class="rn-title"></h2>
+    <p id="rotateText" class="rn-text"></p>
   </div>
 
   <!-- [0.085] Marquesina derecha -->
   <div id="marqueeR" class="marquee marquee-r" aria-hidden="true"></div>
 
   <!-- [0.1] El juego está dividido en varios archivos. El ORDEN importa: cada uno usa lo definido en los anteriores. -->
-  <script src="./js/datos.js?v=0.41"></script>
-  <script src="./js/audio.js?v=0.41"></script>
-  <script src="./js/musica.js?v=0.41"></script>
-  <script src="./js/estado.js?v=0.41"></script>
-  <script src="./js/cuaderno.js?v=0.41"></script>
-  <script src="./js/assets.js?v=0.41"></script>
-  <script src="./js/graficos.js?v=0.41"></script>
-  <script src="./js/cofres.js?v=0.41"></script>
-  <script src="./js/eventos.js?v=0.41"></script>
-  <script src="./js/ui.js?v=0.41"></script>
-  <script src="./js/puzles.js?v=0.41"></script>
-  <script src="./js/tiendas.js?v=0.41"></script>
-  <script src="./js/extras.js?v=0.41"></script>
-  <script src="./js/final.js?v=0.41"></script>
-  <script src="./js/juego.js?v=0.41"></script>
-  <script src="./js/portada_anim.js?v=0.41"></script>
-  <script src="./js/inicio.js?v=0.41"></script>
-  <script src="./js/modotest.js?v=0.41"></script>
+  <script src="./js/datos.js?v=0.42"></script>
+  <script src="./js/audio.js?v=0.42"></script>
+  <script src="./js/musica.js?v=0.42"></script>
+  <script src="./js/estado.js?v=0.42"></script>
+  <script src="./js/logros.js?v=0.42"></script>   <!-- [0.42] -->
+  <script src="./js/cuaderno.js?v=0.42"></script>
+  <script src="./js/assets.js?v=0.42"></script>
+  <script src="./js/graficos.js?v=0.42"></script>
+  <script src="./js/cofres.js?v=0.42"></script>
+  <script src="./js/eventos.js?v=0.42"></script>
+  <script src="./js/ui.js?v=0.42"></script>
+  <script src="./js/puzles.js?v=0.42"></script>
+  <script src="./js/tiendas.js?v=0.42"></script>
+  <script src="./js/extras.js?v=0.42"></script>
+  <script src="./js/final.js?v=0.42"></script>
+  <script src="./js/juego.js?v=0.42"></script>
+  <script src="./js/portada_anim.js?v=0.42"></script>
+  <script src="./js/inicio.js?v=0.42"></script>
+  <script src="./js/modotest.js?v=0.42"></script>
 </body>
 </html>

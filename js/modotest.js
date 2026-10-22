@@ -157,12 +157,12 @@ function testKeyHash(seq, salt) {
   }
   const STATS_COLS_HTML = `<div class="jm-chalk" style="display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr);gap:5px;font-size:15px;opacity:.9;margin:6px 0 4px;border-bottom:2px solid rgba(238,243,234,.4);padding-bottom:3px"><span></span><span style="text-align:right;color:#ffe9a8">PARTIDA<br>ACTUAL</span><span style="text-align:right;color:#bfe9ff">ACUMULADO</span></div>`;
   function achievementsChalkHtml(animate) {
-    const all = (DATOS_JUEGO.LOGROS && DATOS_JUEGO.LOGROS.LISTA) || [];
-    const got = all.filter(l => achievementsUnlocked[l.id]).sort((a, b) => achievementsUnlocked[a.id] - achievementsUnlocked[b.id]);
-    if (!got.length) return `<div class="jm-chalk" style="text-align:center;font-size:19px;opacity:.8;padding:18px 6px">Aún no has desbloqueado ningún logro.</div>`;
     const cls = animate ? 'jm-chalk jm-chalk-row' : 'jm-chalk';
-    return `<div class="jm-chalk" style="text-align:center;font-size:15px;opacity:.8;margin-bottom:4px">${got.length} desbloqueado${got.length === 1 ? '' : 's'}</div>` + got.map((l, i) =>
-      `<div class="${cls}" style="animation-delay:${i * 70}ms;display:flex;gap:10px;align-items:center;padding:5px 2px;border-bottom:1px dotted rgba(238,243,234,.18)"><div style="font-size:24px;line-height:1">${l.icono || '🏆'}</div><div style="min-width:0"><div style="color:#ffe9a8;font-size:21px;letter-spacing:.06em;line-height:1.05">${l.titulo}</div><div style="font-size:16px;line-height:1.1;opacity:.85">${l.descripcion || ''}</div></div></div>`).join('');
+    const ct = achCounts();
+    return `<div class="jm-chalk" style="text-align:center;font-size:15px;opacity:.8;margin-bottom:4px">${ct.got} de ${ct.total} conseguidos</div>` + achSorted().map((l, i) => {
+      const on = !!achievementsUnlocked[l.id];
+      return `<div class="${cls}" style="animation-delay:${Math.min(i, 12) * 50}ms;display:flex;gap:10px;align-items:center;padding:5px 2px;border-bottom:1px dotted rgba(238,243,234,.18);${on ? '' : 'opacity:.5;filter:grayscale(.85)'}"><div style="flex:none;width:38px;height:38px;line-height:0">${achIcon(l.ic, 38)}</div><div style="min-width:0"><div style="color:${on ? '#ffe9a8' : '#cfd8cc'};font-size:21px;letter-spacing:.06em;line-height:1.05">${l.titulo}</div><div style="font-size:16px;line-height:1.1;opacity:.85">${achDescText(l)}</div></div></div>`;
+    }).join('');
   }
 
   // [0.103] PC: el cartel de la marquesina derecha se convierte en una pizarra con ESTADÍSTICAS y LOGROS. Móvil / pantalla estrecha: ventanas como hasta ahora.
@@ -230,17 +230,18 @@ function testKeyHash(seq, salt) {
     audio.init(); try { audio.playUiClick(); } catch (e) {}
     const o = overlay('achievementsModal', 10020);
     o.className += ' bg-slate-950/90 backdrop-blur-md';
-    const all = (DATOS_JUEGO.LOGROS && DATOS_JUEGO.LOGROS.LISTA) || [];
-    const got = all.filter(l => achievementsUnlocked[l.id]).sort((a, b) => achievementsUnlocked[a.id] - achievementsUnlocked[b.id]);
-    const rowsHtml = got.length ? got.map(l => `
-        <div style="display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:12px;background:rgba(2,6,23,.7);border:1px solid rgba(245,158,11,.35)">
-          <div style="font-size:26px;line-height:1">${l.icono || '🏆'}</div>
-          <div style="min-width:0"><div class="font-retro" style="color:#fcd34d;font-size:19px;letter-spacing:.06em;line-height:1.1">${l.titulo}</div><div style="color:#cbd5e1;font-size:12px;line-height:1.25">${l.descripcion || ''}</div></div>
-        </div>`).join('') : `<div style="text-align:center;color:#94a3b8;font-size:13px;padding:18px 6px">Aún no has desbloqueado ningún logro.</div>`;
+    const ct = achCounts();
+    const rowsHtml = achSorted().map(l => {
+      const on = !!achievementsUnlocked[l.id];
+      return `<div style="display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:12px;background:rgba(2,6,23,.7);border:1px solid ${on ? 'rgba(245,158,11,.45)' : 'rgba(100,116,139,.3)'};${on ? '' : 'opacity:.55;filter:grayscale(.8)'}">
+          <div style="flex:none;width:40px;height:40px;line-height:0">${achIcon(l.ic, 40)}</div>
+          <div style="min-width:0"><div class="font-retro" style="color:${on ? '#fcd34d' : '#cbd5e1'};font-size:19px;letter-spacing:.06em;line-height:1.1">${l.titulo}</div><div style="color:#cbd5e1;font-size:12px;line-height:1.25">${achDescText(l)}</div></div>
+        </div>`;
+    }).join('');
     o.innerHTML = `
       <div class="bg-slate-900 border-2 border-amber-500/50 rounded-3xl p-5 w-full max-w-xs shadow-2xl flex flex-col gap-2.5" style="max-height:86vh">
         <h3 class="text-center text-2xl font-black text-amber-300 font-retro tracking-wide"><i class="fa-solid fa-trophy"></i> LOGROS</h3>
-        <div style="text-align:center;color:#94a3b8;font-size:11px;margin-top:-4px">${got.length} desbloqueado${got.length === 1 ? '' : 's'}</div>
+        <div style="text-align:center;color:#94a3b8;font-size:11px;margin-top:-4px">${ct.got} de ${ct.total} conseguidos</div>
         <div style="display:flex;flex-direction:column;gap:7px;overflow-y:auto;min-height:0">${rowsHtml}</div>
         <button id="achClose" class="mt-1 w-full py-2.5 bg-slate-800 active:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl cursor-pointer">Cerrar</button>
       </div>`;
@@ -431,14 +432,18 @@ function testKeyHash(seq, salt) {
     audio.init();
     const o = overlay('testMenuModal', 10040);
     o.style.padding = '0';
-    o.innerHTML = `<div class="tm-root" style="position:relative;width:100%;height:100%;display:flex;flex-direction:column;padding:10px 8px;overflow-y:auto">
+    o.innerHTML = `<div class="tm-root" style="position:relative;width:100%;height:100%;display:flex;flex-direction:column;padding:10px 8px 8px;overflow:hidden;box-sizing:border-box">
       <div style="text-align:center;color:#ffe14a;font-size:26px;letter-spacing:.1em;line-height:1">— MODO TEST —</div>
       <div style="text-align:center;color:#999;font-size:17px;margin-bottom:6px">JOMC v${DATOS_JUEGO.VERSION} · <span id="tmPg"></span></div>
-      <div id="tmRows" style="flex:1"></div>
-      <div id="tmNote" style="color:#8fd6ff;font-size:17px;min-height:42px;padding:4px 6px"></div>
-      <div style="display:flex;gap:6px;margin-top:4px"><button class="tm-btn" id="tmNext">NEXT PAGE ▶</button><button class="tm-btn go" id="tmGo">VALIDAR</button></div>
-      <div style="display:flex;gap:6px;margin-top:6px"><button class="tm-btn warn" id="tmExit">SALIR</button></div>
-    </div>`;
+      <div id="tmScroll" style="flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain">
+        <div id="tmRows"></div>
+        <div id="tmNote" style="color:#8fd6ff;font-size:17px;min-height:42px;padding:4px 6px"></div>
+      </div>
+      <div id="tmFoot" style="flex:none;padding-top:6px;border-top:2px solid #333;background:#000">
+        <div style="display:flex;gap:6px"><button class="tm-btn" id="tmNext">NEXT PAGE ▶</button><button class="tm-btn go" id="tmGo">VALIDAR</button></div>
+        <div style="display:flex;gap:6px;margin-top:6px"><button class="tm-btn warn" id="tmExit">SALIR</button></div>
+      </div>
+    </div>`;   // [0.42] los controles de abajo quedan FIJOS; solo se desplazan las filas
     const rowsEl = o.querySelector('#tmRows');
     const draw = () => {
       const pg = TM_PAGES[tmPage];

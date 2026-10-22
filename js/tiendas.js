@@ -195,7 +195,7 @@ function dshopPicksPrice(n) { return `x${n}<img src="${shopImg('ic_ganzua')}" al
 function dshopPoorReact(phrases) { try { audio.init(); audio.playBreak(); } catch (e) {} dshopSay(shopRandom(phrases), 'enfadado'); }
 
 function triggerMerchantShopModalSequence() {
-  try { if (!STATE.finalFree) { nbReg('npc.duende.1'); const L = STATE.currentLoop || 1; if (L === 2) nbReg('npc.duende.4'); if (L >= 3) nbReg('npc.duende.5'); } } catch (e) {}   // [0.40] cuaderno
+  try { if (!STATE.finalFree) { nbReg('npc.duende.1'); const L = STATE.currentLoop || 1; if (L === 2) nbReg('npc.duende.4'); if (L >= 3) { nbReg('npc.duende.5'); nbReg('npc.duende.6'); } } } catch (e) {}   // [0.40] cuaderno
   if (STATE.finalFree) { processNextQueuedEvent(); return; }   // [0.40] tercer final: ni el Duende ni el Trapero vuelven a salir
   const tier = getNarrativeTier();
   const phrases = narr('DUENDE_TIENDA_FRASES')[tier];
@@ -222,9 +222,12 @@ function showShopReceipt(onCloseCallback) {
   // [0.084] Frase de culpa por robo: aparece DESPUÉS del recibo, ya fuera de la tienda
   const guiltText = session && session.guiltPhrase ? session.guiltPhrase : null;
   if (session) session.guiltPhrase = null;
+  const giftText = session && session.giftPhrase ? session.giftPhrase : null;   // [0.42]
+  if (session) session.giftPhrase = null;
   const originalCallback = onCloseCallback;
   onCloseCallback = () => {
     if (originalCallback) originalCallback();
+    if (giftText) { try { showPersistentFeedback('EL DUENDE: ' + giftText); } catch (e) {} }   // [0.42]
     if (guiltText) { try { spawnStickyNote(guiltText); } catch (e) {} }   // [0.209] ya no es un banner (la voz del protagonista): aparece como un post-it más en la sala
   };
 
@@ -295,6 +298,7 @@ function openMerchantShop() {
   if (!STATE.shopSession) {
     resetShopSession();
   }
+  shopMode = 'pagar'; shopVisit = null;   // [0.42]
 
   const shopGrid = document.getElementById('shopItemsList') || document.getElementById('merchantItemsGrid'); 
   if (!shopGrid) return;
@@ -347,39 +351,53 @@ function openMerchantShop() {
   renderMerchantShopGrid();
 }
 
+function grantItem(item) {
+  if (item.isChestCounter) {
+    STATE.chestCounterUnlocked = true;
+    // [0.104] La respuesta la dice el Duende en la propia tienda (burbuja de texto), sin pantalla narrativa
+    dshopSay(narr('FRASES_RECIBO_DUENDE').CONTADOR_RESPUESTA);
+    return true;
+  } else if (item.prop) {
+    STATE[item.prop] += item.qty;
+  } else if (item.abilityProp) {
+    STATE.abilities[item.abilityProp]++;
+  }
+}
+
 // [0.210] Nocturnidad y Alevosía: con la luz apagada y robos disponibles
 function nightStealActive() { return modOn('nocturnidad') && (STATE.nightStealsLeft || 0) > 0 && isRoomDark(); }
+// [0.42] Selector ROBAR / PAGAR de la tienda del Duende: modo elegido y qué robos había al entrar (para el regalo por no robar)
+let shopMode = 'pagar', shopVisit = null;
 
 function renderMerchantShopGrid() {
   const shopGrid = document.getElementById('shopItemsList') || document.getElementById('merchantItemsGrid'); 
   if (!shopGrid || !STATE.currentShopOffer) return;
   shopGrid.innerHTML = '';
 
-  function grantItem(item) {
-    if (item.isChestCounter) {
-      STATE.chestCounterUnlocked = true;
-      // [0.104] La respuesta la dice el Duende en la propia tienda (burbuja de texto), sin pantalla narrativa
-      dshopSay(narr('FRASES_RECIBO_DUENDE').CONTADOR_RESPUESTA);
-      return true;
-    } else if (item.prop) {
-      STATE[item.prop] += item.qty;
-    } else if (item.abilityProp) {
-      STATE.abilities[item.abilityProp]++;
-    }
-  }
-
   const aumentoPrecio = shopBasePrice('aumento_precio_por_compra');
+  const cfg0 = shopCfg();
   const cfg = shopCfg();
   const desc = cfg.DESCRIPCIONES || {};
   const B = cfg.BOTONES || {};
   shopArtInit();
 
   const nightOn = nightStealActive();   // [0.210] Nocturnidad y Alevosía
+  const stealPossible = !!(STATE.perks.shopStealFree || nightOn);
+  if (!shopVisit) shopVisit = { l: !!STATE.perks.shopStealFree, n: nightOn, uL: false, uN: false };
+  if (!stealPossible) shopMode = 'pagar';
+  // [0.42] Selector: solo si había robo disponible al entrar en la tienda; se desactiva cuando ya no queda ninguno
+  if (shopVisit.l || shopVisit.n) {
+    const SB = cfg0.BOTONES_SELECTOR || {};
+    const sel = document.createElement('div'); sel.className = 'dshop-sel' + (stealPossible ? '' : ' off');
+    sel.innerHTML = `<button type="button" class="sp${shopMode === 'pagar' ? ' on' : ''}" data-m="pagar">${SB.PAGAR || 'PAGAR'}</button><button type="button" class="sr${shopMode === 'robar' ? ' on' : ''}" data-m="robar"${stealPossible ? '' : ' disabled'}>${SB.ROBAR || 'ROBAR'}</button>`;
+    sel.querySelectorAll('button').forEach(b => b.addEventListener('click', () => { if (b.disabled) return; shopMode = b.dataset.m; try { audio.init(); audio.playClick(0.8); } catch (e) {} renderMerchantShopGrid(); }));
+    shopGrid.appendChild(sel);
+  }
   STATE.currentShopOffer.forEach(slot => {
     // [0.210] Cliente VIP: el hueco de herramienta muestra la que hayas elegido (toca el icono para cambiar)
     const item = slot.vipTools ? Object.assign({}, slot.vipTools[slot.vipSel], { purchaseCount: slot.purchaseCount, vipSlot: slot }) : slot;
     const currentPrice = item.baseCost + (item.purchaseCount * aumentoPrecio);
-    const isStealAvailable = STATE.perks.shopStealFree || nightOn;
+    const isStealAvailable = stealPossible && shopMode === 'robar';   // [0.42] solo roba si el jugador lo ha elegido
     const vis = SHOP_VIS[item.id] || { n: item.name.toUpperCase(), ic: 'ic_ganzua' };
     const poor = !isStealAvailable && STATE.gold < currentPrice;
     const own = item.prop ? STATE[item.prop] : (item.abilityProp ? STATE.abilities[item.abilityProp] : 0);
@@ -396,7 +414,9 @@ function renderMerchantShopGrid() {
 
         if (isStealAvailable) {
           // [0.210] Con la luz apagada (Nocturnidad) los robos salen del cupo del comodín y el Ladrón no se gasta hasta el tercero
-          if (nightOn) STATE.nightStealsLeft--; else STATE.perks.shopStealFree = false;
+          if (nightOn) { STATE.nightStealsLeft--; if (shopVisit) shopVisit.uN = true; } else { STATE.perks.shopStealFree = false; if (shopVisit) shopVisit.uL = true; }
+          try { achEvent('steal'); } catch (e) {}   // [0.42] logro
+          if (!(STATE.perks.shopStealFree || nightStealActive())) shopMode = 'pagar';   // [0.42] sin robos: el selector vuelve a PAGAR
           grantItem(item);
           if (item.isChestCounter) STATE.currentShopOffer = STATE.currentShopOffer.filter(s => s !== slot);   // [0.34] el contador se agota siempre al conseguirlo
 
@@ -468,6 +488,7 @@ function renderMerchantShopGrid() {
 
           STATE.shopSession.items.push({ name: `Reciclaje: ${target.name}`, costText: `${reqGanzuasReciclaje} Ganzúas`, icon: target.icon, ic: vis.ic, isStolen: false });
           STATE.shopSession.totalPicksRecycled += reqGanzuasReciclaje;
+          try { achEvent('recycle', reqGanzuasReciclaje); } catch (e) {}   // [0.42]
 
           audio.playClick(0.9);
           updateUI();
@@ -482,6 +503,28 @@ function renderMerchantShopGrid() {
   dshopShow(false);
 }
 
+// [0.42] Regalo del Duende por no robar: un objeto al azar de su tienda, UNA vez por cada condición de robo (Ladrón / Nocturnidad) que estuviera disponible y no se usara
+function shopGiveNoStealGift() {
+  const v = shopVisit; shopVisit = null; shopMode = 'pagar';
+  if (!v || !STATE.currentShopOffer || !STATE.currentShopOffer.length) return;
+  let n = 0;
+  if (v.l && !v.uL && !STATE.giftLadron) { STATE.giftLadron = true; n++; }
+  if (v.n && !v.uN && !STATE.giftNight) { STATE.giftNight = true; n++; }
+  if (!n) return;
+  if (!STATE.shopSession) resetShopSession();
+  for (let i = 0; i < n; i++) {
+    const slot = STATE.currentShopOffer[Math.floor(Math.random() * STATE.currentShopOffer.length)];
+    const item = slot.vipTools ? Object.assign({}, slot.vipTools[Math.floor(Math.random() * slot.vipTools.length)]) : slot;
+    const vis = SHOP_VIS[item.id] || { n: item.name.toUpperCase(), ic: 'ic_ganzua' };
+    grantItem(item);
+    STATE.shopSession.items.push({ name: item.name, costText: 'REGALO', icon: item.icon, ic: vis.ic, isStolen: false, isGift: true });
+  }
+  const fr = shopCfg().FRASES_REGALO || ['HAS HECHO LO CORRECTO. TOMA.'];
+  STATE.shopSession.giftPhrase = fr[Math.floor(Math.random() * fr.length)];
+  try { achEvent('gift'); } catch (e) {}
+  updateUI();
+}
+
 const closeMerchantBtns = [
   document.getElementById('closeMerchantBtn'),
   document.getElementById('leaveShopBtn')
@@ -489,7 +532,8 @@ const closeMerchantBtns = [
 closeMerchantBtns.forEach(btn => {
   if (btn) {
     btn.addEventListener('click', () => {
-      if (specialShopOpen) { handleSpecialShopNoBuy(); return; }
+      if (specialShopOpen) { shopVisit = null; handleSpecialShopNoBuy(); return; }
+      shopGiveNoStealGift();   // [0.42] regalo por no robar (antes de vaciar la oferta)
       STATE.currentShopOffer = null;
       const merchantModal = document.getElementById('merchantModal'); 
       if (merchantModal) merchantModal.classList.add('hidden');
@@ -505,7 +549,7 @@ closeMerchantBtns.forEach(btn => {
 // [0.102] Entrada del Trapero: juego -> negro -> pantalla de tratos. Habla arriba; al continuar, los tratos aparecen en cascada.
 let traperoTimers = [];
 function triggerTraperoShopSequence() {
-  try { if (!STATE.finalFree) { nbReg('npc.trapero.1'); if ((STATE.currentLoop || 1) >= 2) nbReg('npc.trapero.5'); } } catch (e) {}   // [0.40] cuaderno
+  try { if (!STATE.finalFree) { nbReg('npc.trapero.1'); if ((STATE.currentLoop || 1) >= 2) nbReg('npc.trapero.5'); if ((STATE.currentLoop || 1) >= 3) nbReg('npc.trapero.6'); } } catch (e) {}   // [0.40] cuaderno
   if (STATE.finalFree) { processNextQueuedEvent(); return; }   // [0.40] tercer final: ni el Duende ni el Trapero vuelven a salir
   const tier = getNarrativeTier();
   const phrases = narr('TRAPERO_FRASES')[tier];
@@ -572,6 +616,7 @@ function traperoCascade() {
 }
 
 function showTraperoDealFeedback(dealTitle, summaryText, onClose) {
+  try { achEvent('deal'); } catch (e) {}   // [0.42] logros: tratos hechos en el bucle
   try { nbReg('npc.trapero.2'); } catch (e) {}   // [0.40] cuaderno
   triggerSequentialDialogue(
     "EL TRAPERO",
@@ -628,6 +673,7 @@ function openTraperoShop() {
   }
 
   const selectedDeals = shuffleU(deals).slice(0, 3);
+  try { selectedDeals.forEach(d => { if (typeof nbReg === 'function') nbReg('trato.' + d.id); }); } catch (e) {}   // [0.42] cuaderno: todo trato ofrecido queda anotado
 
   selectedDeals.forEach(deal => {
     const card = document.createElement('div');

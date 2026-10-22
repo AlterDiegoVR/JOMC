@@ -323,6 +323,7 @@ const startTension = (e) => { e.preventDefault(); if (!lpState.isBreaking && !lp
 const stopTension = (e) => {
   e.preventDefault();
   // [0.082] Bucle 2/3 (Raro+): cualquier tensión mantenida y luego soltada cuenta como tanteo
+  if (lpState.isTension && !lpState.isBreaking && !lpState.isCompleted) { try { nbReg('puz.wooden.tanteo'); } catch (e) {} }   // [0.42] cuaderno: primer tanteo, aunque no haya mensaje del Trapero
   if (lpState.isTension && lpState.tanteoActive && !lpState.isBreaking && !lpState.isCompleted) {
     lpState.tanteoUsed = true;
   }
@@ -859,6 +860,7 @@ function startHackGame() {
   let options;
   let numberGroups = null;
   if (numericMode) {
+    try { nbReg('puz.cyber.numeros'); } catch (e) {}   // [0.42] cuaderno
     const built = buildHackNumberOptions(chosenLength, (advCfg.OPCIONES_NUMEROS && advCfg.OPCIONES_NUMEROS[rarityId]) || displayCount, advCfg.GRUPO_DIGITOS);
     options = built.values;
     numberGroups = built.groups;
@@ -1362,6 +1364,7 @@ function startPipeGame() {
     const B3 = advPipe.BUCLE3, mg = (B3 && (STATE.currentLoop || 1) >= B3.DESDE_BUCLE) ? ((B3.MARGEN_GIROS || {})[rarityId] || 0) : 0;
     pipeMoves = 0; pipeMoveLimit = (mg > 0 && pipeGridData && pipeGridData.minMoves != null) ? Math.max((B3 && B3.MIN_GIROS) || 0, pipeGridData.minMoves + mg) : 0;   // [0.34] mínimo MIN_GIROS
   } else { pipeMoves = 0; pipeMoveLimit = 0; }
+  if (pipeAdvanced) { try { if (typeof pipeGridData !== 'undefined' && pipeGridData.some(c => c && c.type === 'cross')) nbReg('puz.hydraulic.cruz'); } catch (e) {} }   // [0.42]
   if (pipeAdvanced) { try { nbReg('puz.hydraulic.validar'); if (pipeMoveLimit > 0) nbReg('puz.hydraulic.giros'); } catch (e) {} }   // [0.40] cuaderno
   pipeMovesUpdate();
 

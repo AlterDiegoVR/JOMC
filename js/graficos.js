@@ -735,6 +735,7 @@ function renderRoom() {
       drawChestAnim(activeChest.type.id, R, aco, ctx, oxs, oys, pxs);
     }
 
+    try { if (typeof placePerkSide === 'function') placePerkSide(ccx, ccy, dw, dh); } catch (e) {}   // [0.42] botones de pasivas a los lados del cofre
     // [0.086] Cerradura táctil (solo pantalla ancha)
     const tl = g.TOCAR_CERRADURA || {};
     const L = (g.CERRADURAS || {})[activeChest.type.id];
@@ -884,11 +885,12 @@ setInterval(() => {
 }, 200);
 function triggerSecretDecorationReward(decor) {
   let roll = Math.random() * 100;
+  const _nb = k => { try { nbReg('obj.adorno'); nbReg('obj.adorno.nunca'); if (k) nbReg(k); } catch (e) {} };   // [0.42] cuaderno: explica los adornos conforme ocurren
   let msg = `Inspeccionaste ${decor.name}. "${decor.descriptor.toUpperCase()}"`;
   // [0.210] Spooky Things: tocar un objeto puede maldecirte unos cofres
   if (modOn('spooky') && Math.random() < DATOS_JUEGO.MODS_WILDCARD.SPOOKY.PROB) {
     const nC = DATOS_JUEGO.MODS_WILDCARD.SPOOKY.COFRES_MALDICION;
-    STATE.cursedChestsLeft += nC;
+    STATE.cursedChestsLeft += nC; _nb('obj.adorno.maldito');
     try { audio.init(); audio.playBreak(); } catch (e) {}
     updateUI();
     showPersistentFeedback(msg + ` (¡Algo se te pega a los dedos! Maldición durante ${nC} cofres.)`);
@@ -902,6 +904,7 @@ function triggerSecretDecorationReward(decor) {
   }
 
   if (roll < 20) {
+    _nb('obj.adorno.ambiente');
     const themes = DATOS_JUEGO.DECORACIONES_SALA.AMBIENTES_AZAR;
     let chosen = themes[Math.floor(Math.random() * themes.length)];
     // [0.31] reparto uniforme (1 entre 6 para el apagón); con la sala ya a oscuras no puede volver a salir el apagón
@@ -938,11 +941,13 @@ function triggerSecretDecorationReward(decor) {
     }
     audio.playClick(0.9);
   } else if (roll >= 20 && roll < 35) {
+    _nb('obj.adorno.mutan');
     chestMutateFx(() => generateScreenChests());
     msg += " (¡Luz misteriosa! Los cofres mutan).";
     audio.playUnlockFanfare('raro');
   } else if (roll >= 35 && roll < 45) {
     const active = STATE.screenChests[STATE.activeChestIdx];
+    _nb('obj.adorno.rayo');
     if (active && active.rarity.id !== 'legendario') {
       chestMutateFx(() => { active.rarity = active.fog ? Object.assign({}, CHEST_RARITIES[3], { fogOne: true }) : CHEST_RARITIES[3]; updateChestSelectionUI(); });   // [0.097b] el cambio real también tras el banner
       msg += " (¡Un rayo de sombra eleva el cofre a LEGENDARIO!)";
@@ -951,15 +956,15 @@ function triggerSecretDecorationReward(decor) {
       STATE.gold += 5;
       msg += " (+5 GP descubiertos)";
     }
-  } else if (roll >= 45 && roll < 65) { STATE.gold += 2; msg += " (+2 GP secretos)"; }
-  else if (roll >= 65 && roll < 80) { STATE.picks += 1; msg += " (+1 Ganzúa hallada)"; }
-  else if (roll >= 80 && roll < 90) { STATE.usb += 1; msg += " (+1 USB hallado)"; }
+  } else if (roll >= 45 && roll < 65) { _nb('obj.adorno.oro'); STATE.gold += 2; msg += " (+2 GP secretos)"; }
+  else if (roll >= 65 && roll < 80) { _nb('obj.adorno.herr'); STATE.picks += 1; msg += " (+1 Ganzúa hallada)"; }
+  else if (roll >= 80 && roll < 90) { _nb('obj.adorno.herr'); STATE.usb += 1; msg += " (+1 USB hallado)"; }
   else if (roll >= 90 && roll < 97) {
-    if (STATE.level >= valvesDropLevel()) { STATE.valves += 1; msg += " (+1 Válvula hallada)"; }
+    if (STATE.level >= valvesDropLevel()) { _nb('obj.adorno.herr'); STATE.valves += 1; msg += " (+1 Válvula hallada)"; }
     else { STATE.gold += 2; msg += " (+2 GP secretos)"; }   // [0.089] sin válvulas antes del nivel mínimo
   }
   else {
-    msg += " (¡Vibración sísmica en la sala!)";
+    _nb('obj.adorno.temblor'); msg += " (¡Vibración sísmica en la sala!)";
     const appBody = document.getElementById('appBody');
     if (appBody) appBody.classList.add('shake-screen');
     setTimeout(() => { if (appBody) appBody.classList.remove('shake-screen'); }, 600);

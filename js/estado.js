@@ -469,7 +469,7 @@ function pickWildcard() {
   const wcList = DATOS_JUEGO.WILDCARDS || [];
   if (wcList.length === 0) return null;
   const wantBad = Math.random() < getWildcardBadChance();
-  const okList = wcList.filter(w => (!w.minNivel || STATE.level >= w.minNivel) && (!w.minBucle || (STATE.currentLoop || 1) >= w.minBucle) && !(isRoomDark() && (w.efecto === 'APAGON_FINANCIERO' || w.efecto === 'NOCTURNIDAD')));   // [0.210] minBucle; [0.31] con la sala a oscuras no salen los que la apagan
+  const okList = wcList.filter(w => (!w.minNivel || STATE.level >= w.minNivel) && (!w.minBucle || (STATE.currentLoop || 1) >= w.minBucle));   // [0.210] minBucle; [0.42] con la sala a oscuras SÍ pueden salir las dos cartas (solo el ambiente decorativo no re-apaga)
   let pool = okList.filter(w => (w.tipo === 'PERJUDICIAL') === wantBad);
   if (pool.length === 0) pool = okList.length ? okList : wcList;
   const pw = w => ((STATE.currentLoop || 1) === 1 && w.pesoBucle1 != null) ? w.pesoBucle1 : (w.peso != null ? w.peso : 1);   // [0.210] peso propio en el bucle 1
@@ -555,7 +555,7 @@ const SAVE_KEYS = [
   'seqStage', 'traperoStrikes', 'seqLastBuyCo', 'seqLastChance', 'climaxPhase', 'sequenceBroken', 'perks', 'abilities',
   'active2XMultiplier', 'activeShield', 'riskModeActive', 'riskPot', 'perdedorActive', 'perdedorLootPending', 'fallosConsecutivos',
   'heavyChestsLeft', 'greedCurseLeft', 'harderPuzzlesLeft', 'oxidadoLeft', 'recharge', 'harderSrc', 'extremePuzzlesLeft', 'extremeSrc', 'mods', 'blankNotes', 'passWords', 'pendingNotes', 'traperoBuffs', 'cursedChestsLeft',
-  'roomDecorations', 'roomThemeFilter', 'roomDarkUntil', 'rerollCount', 'pulseraLeft', 'atajoLeft', 'nightStealsLeft', 'curseHalf', 'opensByType', 'acceptDelayUses', 'hintUses', 'stats'
+  'roomDecorations', 'roomThemeFilter', 'roomDarkUntil', 'rerollCount', 'pulseraLeft', 'atajoLeft', 'nightStealsLeft', 'curseHalf', 'opensByType', 'acceptDelayUses', 'hintUses', 'stats', 'giftLadron', 'giftNight', 'achG'
 ];
 
 let autosaveEnabled = false;
@@ -621,6 +621,7 @@ function statsPuzzle(juego, ok) {
   if (statsPaused || !juego) return;
   if (!STATE.stats) STATE.stats = blankStats();
   [STATE.stats, lifeStats].forEach(S => { if (S.puz[juego]) S.puz[juego][ok ? 'ok' : 'fail']++; });
+  try { achEvent('puzzle', ok); } catch (e) {}   // [0.42] logros
   lifeStatsDirty = true;
 }
 function trackStats() {
@@ -628,7 +629,7 @@ function trackStats() {
   if (!STATE.stats) STATE.stats = normStats(null);
   if (statsGoldPrev !== null) {
     const d = STATE.gold - statsGoldPrev;
-    if (d > 0) statsAdd('goldEarned', d); else if (d < 0) statsAdd('goldSpent', -d);
+    if (d > 0) statsAdd('goldEarned', d); else if (d < 0) { statsAdd('goldSpent', -d); try { achEvent('spent', -d); } catch (e) {} }   // [0.42]
   }
   statsGoldPrev = STATE.gold;
   [[STATE.stats, 'cur'], [lifeStats, 'life']].forEach(([S]) => {
@@ -639,54 +640,7 @@ function trackStats() {
 }
 let puzzleStat = null;   // tipo de puzle en curso (para contar acierto/fallo)
 
-function isAchievementMet(logro) {
-  const c = logro.condicion || {};
-  if (c.tipo === 'COFRES_ABIERTOS') return STATE.chestsOpened >= c.valor;
-  return false;
-}
-
-function checkAchievements() {
-  const cfg = DATOS_JUEGO.LOGROS;
-  if (!cfg || !cfg.LISTA) return;
-  let changed = false;
-  cfg.LISTA.forEach(l => {
-    if (achievementsUnlocked[l.id]) return;
-    if (isAchievementMet(l)) {
-      achievementsUnlocked[l.id] = Date.now();
-      changed = true;
-      achievementBannerQueue.push(l);
-    }
-  });
-  if (changed) saveAchievements();
-  showNextAchievementBanner();
-}
-
-function showNextAchievementBanner() {
-  if (achievementBannerBusy || !achievementBannerQueue.length) return;
-  achievementBannerBusy = true;
-  const l = achievementBannerQueue.shift();
-  let el = document.getElementById('achievementBanner');
-  if (!el) {
-    el = document.createElement('div');
-    el.id = 'achievementBanner';
-    el.className = 'fixed left-1/2 bottom-4 z-[9998] -translate-x-1/2 pointer-events-none';
-    el.style.transition = 'opacity .35s ease, transform .35s ease';
-    el.style.opacity = '0';
-    el.style.transform = 'translate(-50%, 20px)';
-    uiHost().appendChild(el);
-  }
-  el.innerHTML = `<div class="flex items-center gap-3 bg-slate-950/95 border-2 border-amber-400 rounded-xl px-4 py-2 shadow-2xl font-mono">
-    <span class="text-2xl">${l.icono || '🏆'}</span>
-    <div><div class="text-[10px] text-amber-400 tracking-widest uppercase">Logro desbloqueado</div>
-    <div class="text-sm font-black text-white">${l.titulo}</div>
-    <div class="text-xs text-slate-300">${l.descripcion}</div></div></div>`;
-  requestAnimationFrame(() => { el.style.opacity = '1'; el.style.transform = 'translate(-50%, 0)'; });
-  try { audio.playUnlockFanfare('epico'); } catch (e) {}
-  setTimeout(() => {
-    el.style.opacity = '0'; el.style.transform = 'translate(-50%, 20px)';
-    setTimeout(() => { achievementBannerBusy = false; showNextAchievementBanner(); }, 400);
-  }, DATOS_JUEGO.LOGROS.DURACION_BANNER_MS || 4000);
-}
+// [0.42] isAchievementMet / checkAchievements / showNextAchievementBanner viven ahora en js/logros.js
 loadAchievements();
 
 function readSave() {
@@ -778,19 +732,21 @@ function showResumePrompt(data) {
   const s = data.state;
   const modal = document.createElement('div');
   modal.id = 'resumeGameModal';
-  modal.className = 'fixed inset-0 z-[10001] bg-slate-950/95 backdrop-blur-xl flex items-center justify-center p-5 font-sans';
+  modal.className = 'fixed inset-0 z-[10001] bg-slate-950/95 backdrop-blur-xl flex items-center justify-center p-5 gx-ov';
   modal.innerHTML = `
-    <div class="bg-slate-900 border-2 border-amber-500/60 rounded-3xl p-6 w-full max-w-xs shadow-2xl text-center flex flex-col items-center gap-3">
-      <div class="w-14 h-14 rounded-full bg-amber-950/80 border border-amber-500 flex items-center justify-center text-2xl text-amber-400"><i class="fa-solid fa-floppy-disk"></i></div>
-      <h3 class="text-xl font-black text-amber-300 font-retro">PARTIDA GUARDADA</h3>
-      <div class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-3 text-xs font-mono text-slate-300 space-y-1.5">
-        ${(s.currentLoop || 1) >= 2 ? `<div class="flex justify-between"><span>Bucle:</span><span class="text-amber-400 font-bold">${s.currentLoop}</span></div>` : ''}
-        <div class="flex justify-between"><span>Nivel:</span><span class="text-indigo-400 font-bold">${s.level}</span></div>
-        <div class="flex justify-between"><span>Cofres abiertos:</span><span class="text-amber-400 font-bold">${s.chestsOpened}</span></div>
-        <div class="flex justify-between"><span>Oro:</span><span class="text-yellow-400 font-bold">${s.gold} GP</span></div>
+    <div class="gm-card gx-card">
+      <i class="cr a"></i><i class="cr b"></i><i class="cr c"></i><i class="cr d"></i>
+      <div class="gm-seal">PARTIDA GUARDADA</div>
+      <div class="gx-ico"><i class="fa-solid fa-floppy-disk"></i></div>
+      <h3 class="gx-ttl">¿SEGUIMOS?</h3>
+      <div class="gx-stats">
+        ${(s.currentLoop || 1) >= 2 ? `<div><span>Bucle</span><b>${s.currentLoop}</b></div>` : ''}
+        <div><span>Nivel</span><b>${s.level}</b></div>
+        <div><span>Cofres abiertos</span><b>${s.chestsOpened}</b></div>
+        <div><span>Oro</span><b>${s.gold} GP</b></div>
       </div>
-      <button id="resumeContinueBtn" class="w-full py-3 bg-gradient-to-r from-amber-500 to-yellow-500 active:from-amber-400 text-slate-950 font-black text-sm rounded-xl shadow-lg cursor-pointer">CONTINUAR PARTIDA</button>
-      <button id="resumeNewBtn" class="w-full py-2.5 bg-slate-800 active:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl cursor-pointer">NUEVA PARTIDA</button>
+      <button id="resumeContinueBtn" class="gm-btn" type="button">CONTINUAR PARTIDA</button>
+      <button id="resumeNewBtn" class="gm-btn sec" type="button">NUEVA PARTIDA</button>
     </div>
   `;
   uiHost().appendChild(modal);
@@ -831,14 +787,16 @@ function showResetConfirm() {
   if (document.getElementById('resetConfirmModal')) return;
   const modal = document.createElement('div');
   modal.id = 'resetConfirmModal';
-  modal.className = 'fixed inset-0 z-[10001] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-5 font-sans';
+  modal.className = 'fixed inset-0 z-[10001] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-5 gx-ov';
   modal.innerHTML = `
-    <div class="bg-slate-900 border-2 border-rose-700/70 rounded-3xl p-6 w-full max-w-xs shadow-2xl text-center flex flex-col items-center gap-3">
-      <div class="w-14 h-14 rounded-full bg-rose-950/80 border border-rose-500 flex items-center justify-center text-2xl text-rose-400"><i class="fa-solid fa-triangle-exclamation"></i></div>
-      <h3 class="text-xl font-black text-rose-300 font-retro">¿EMPEZAR DE CERO?</h3>
-      <p class="text-xs text-slate-300">Perderás todo tu progreso y la partida guardada.</p>
-      <button id="resetConfirmYesBtn" class="w-full py-3 bg-gradient-to-r from-rose-600 to-amber-600 active:from-rose-500 text-white font-black text-sm rounded-xl shadow-lg cursor-pointer">SÍ, BORRAR PARTIDA</button>
-      <button id="resetConfirmNoBtn" class="w-full py-2.5 bg-slate-800 active:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl cursor-pointer">Cancelar</button>
+    <div class="gm-card curse gx-card">
+      <i class="cr a"></i><i class="cr b"></i><i class="cr c"></i><i class="cr d"></i>
+      <div class="gm-seal">CUIDADO</div>
+      <div class="gx-ico"><i class="fa-solid fa-triangle-exclamation"></i></div>
+      <h3 class="gx-ttl">¿EMPEZAR DE CERO?</h3>
+      <p class="gx-tx">Perderás todo tu progreso y la partida guardada.</p>
+      <button id="resetConfirmYesBtn" class="gm-btn" type="button">SÍ, BORRAR PARTIDA</button>
+      <button id="resetConfirmNoBtn" class="gm-btn sec" type="button">Cancelar</button>
     </div>
   `;
   uiHost().appendChild(modal);
@@ -910,6 +868,7 @@ function resetGame(keepLoop) {
 
   STATE.abilities = { auto: 0, double: 0, shield: 0, reveal: 0, riskPot: 0, perdedor: 0, summonDuende: 0, cofradia: 0, reroll: 0, pulsera: 0, ruleta: 0 };
   STATE.rerollCount = 0; STATE.pulseraLeft = 0; STATE.atajoLeft = 0; STATE.nightStealsLeft = 0; STATE.curseHalf = false;   // [0.210]
+  STATE.giftLadron = false; STATE.giftNight = false;   // [0.42] regalo por no robar: una vez por condición
   STATE.active2XMultiplier = false;
   STATE.activeShield = false;
   STATE.riskModeActive = false;
@@ -939,6 +898,7 @@ function resetGame(keepLoop) {
   STATE.acceptDelayUses = {};
   STATE.hintUses = {};
   STATE.stats = blankStats(); statsGoldPrev = null; statsPaused = false;
+  try { achResetCounters(keepLoop); } catch (e) {}   // [0.42] logros: contadores de bucle / partida
 
   const notesContainer = document.getElementById('notesContainer');
   if (notesContainer) notesContainer.innerHTML = '';

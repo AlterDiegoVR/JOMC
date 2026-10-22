@@ -9,7 +9,7 @@
 
 const DATOS_JUEGO = {
   // [0.088] Versión visible en pantalla (esquina inferior central) para que las capturas la incluyan
-  VERSION: '0.41',
+  VERSION: '0.42',
   // [0.104] Efectos de la apertura automática de la secuencia final (cofres 101-110); la intensidad sube del primero al último (k = 0..1)
   SECUENCIA_FINAL_FX: { ACTIVAR: true, ESTALLIDOS_BASE: 2, ESTALLIDOS_EXTRA: 4, PARTICULAS_POR_ESTALLIDO: 40, HACIA_CENTRO_BASE: 30, HACIA_CENTRO_EXTRA: 60,
     SACUDIDA_PX: 6, SACUDIDA_EXTRA_PX: 10, SACUDIDA_MS: 520, PULSO_ZOOM: 0.02, DESTELLO: 0.10 },
@@ -82,6 +82,7 @@ const DATOS_JUEGO = {
       { id: 'comodin',  nombre: 'Comodines',           hint: 'lo que te pasa por el camino',      color: '#4f7a3a', tipo: 'notas',   unidad: 'comodines' },
       { id: 'modif',    nombre: 'Modificadores',       hint: 'efectos que duran unos cofres',     color: '#8a6a2a', tipo: 'notas',   unidad: 'efectos' },
       { id: 'maldic',   nombre: 'Maldiciones',         hint: 'lo que pesa sobre ti',              color: '#7a2f3a', tipo: 'notas',   unidad: 'maldiciones' },
+      { id: 'tratos',   nombre: 'Tratos del Trapero',  hint: 'todo lo que ha ofrecido',           color: '#8a3a2a', tipo: 'notas',   unidad: 'tratos' },
       { id: 'npcs',     nombre: 'Los que visitan',     hint: 'quién es quién',                    color: '#6a5a3a', tipo: 'paginas', unidad: 'páginas' },
       { id: 'pasado',   nombre: 'Lo que ha pasado',    hint: 'el cuaderno recuerda cada vuelta',  color: '#4a5b7a', tipo: 'notas',   unidad: 'entradas' }
     ],
@@ -96,6 +97,8 @@ const DATOS_JUEGO = {
     PUZLES: [
       { id: 'wooden', k: 'puz.wooden', titulo: 'Cofre de madera', sub: 'la ganzúa', notas: [
         { k: 'puz.wooden', h: 'Qué hay que hacer', t: 'Mueve la ganzúa hasta dar con el punto dulce. Las zonas falsas hacen vibrar la herramienta.' },
+        { k: 'puz.wooden.tanteo', h: 'Probar el punto dulce', t: 'Si mantengo apretado el botón de probar y lo suelto, noto si el punto dulce es el bueno. Cuidado: se me puede romper la ganzúa.' },
+        { k: 'puz.wooden.tanteo.pena', h: 'Tantear ahora cuesta', t: 'Tantear con la ganzúa ya no sale gratis: me quita un 30 % del oro y de la experiencia de ese cofre.' },
         { k: 'puz.wooden.destornillador', h: 'El destornillador', t: 'Después de la ganzúa viene una segunda fase: el destornillador se mueve con la barra de la izquierda y, al pasar por el centro del punto dulce, se nota un toquecito.' }
       ] },
       { id: 'piston', k: 'puz.piston', titulo: 'Caja de acero', sub: 'los pistones', notas: [
@@ -104,11 +107,13 @@ const DATOS_JUEGO = {
         { k: 'puz.piston.sello', h: 'La línea azul', t: 'Con todos los pistones fijados, hay que detenerlos juntos sobre la línea azul.' }
       ] },
       { id: 'cyber', k: 'puz.cyber', titulo: 'Arca digital', sub: 'la terminal', notas: [
-        { k: 'puz.cyber', h: 'Qué hay que hacer', t: 'Elige la palabra de la lista. Cada intento te dice cuántas letras coinciden.' }
+        { k: 'puz.cyber', h: 'Qué hay que hacer', t: 'Elige la palabra de la lista. Cada intento te dice cuántas letras coinciden.' },
+        { k: 'puz.cyber.numeros', h: 'Números', t: 'A veces la lista no trae palabras, sino números. Cada intento me dice cuántas cifras coinciden.' }
       ] },
       { id: 'hydraulic', k: 'puz.hydraulic', titulo: 'Cofre de vapor', sub: 'las tuberías', notas: [
         { k: 'puz.hydraulic', h: 'Qué hay que hacer', t: 'Gira las tuberías para llevar el agua de la válvula a la salida.' },
         { k: 'puz.hydraulic.validar', h: 'Bombas y VALIDAR', t: 'Evita las bombas. El fluido no se ve hasta pulsar VALIDAR, y solo hay un intento.' },
+        { k: 'puz.hydraulic.cruz', h: 'Piezas en cruz', t: 'Hay piezas con cuatro salidas: el agua sale por todos los lados. Con una bomba cerca, cuidado.' },
         { k: 'puz.hydraulic.giros', h: 'Giros contados', t: 'Algunos tableros limitan los giros que puedes dar. Pasarse del límite es fallar.' }
       ] },
       { id: 'neon', k: 'puz.neon', titulo: 'Arca de neón', sub: 'las luces', notas: [
@@ -131,6 +136,18 @@ const DATOS_JUEGO = {
     // --- Objetos en pantalla ---
     OBJETOS: [
       { k: 'obj.postit',     h: 'Los post-its',   t: 'Aparecen pegados en la sala. Algunos parecen escritos por alguien que ya estuvo aquí.' },
+      { k: 'obj.postit.escribir', h: 'Post-its en blanco', t: 'Algunos post-its están en blanco: puedo escribir lo que quiera. Voy a dejarme algo a mí mismo.' },
+      { k: 'obj.postit.familiar', h: 'Un post-it conocido', t: 'Hoy me he encontrado un post-it y me era extrañamente familiar. Creo que lo he escrito yo.' },
+      { k: 'obj.postit.contra',   h: 'La frase a medias', t: 'Hay un post-it distinto: una frase sin terminar y un hueco para una palabra. Elijo una, y no sé para qué sirve. Todavía.' },
+      { k: 'obj.adorno',         h: 'Los adornos',    t: 'Hay objetos viejos repartidos por la sala: velas, cráneos, espejos... Si los toco, hacen algo.' },
+      { k: 'obj.adorno.herr',    h: 'Adornos con herramientas', t: 'Algunos esconden una herramienta: una ganzúa, una llave USB, a veces una válvula.' },
+      { k: 'obj.adorno.oro',     h: 'Adornos con monedas', t: 'Otros esconden unas pocas monedas.' },
+      { k: 'obj.adorno.ambiente',h: 'Adornos que cambian la sala', t: 'A veces cambian el color de la sala. Y a veces la bombilla se funde y todo queda a oscuras unos cofres.' },
+      { k: 'obj.adorno.mutan',   h: 'Luz misteriosa', t: 'Una luz extraña hace que los cofres de la pantalla cambien por otros.' },
+      { k: 'obj.adorno.rayo',    h: 'Rayo de sombra', t: 'Un rayo de sombra puede convertir el cofre que tengo delante en legendario.' },
+      { k: 'obj.adorno.temblor', h: 'Vibración', t: 'A veces solo tiembla la sala, y no hay nada más.' },
+      { k: 'obj.adorno.maldito', h: 'Algo se pega', t: 'Hay días en que tocar un adorno me deja una maldición pegada durante unos cofres.' },
+      { k: 'obj.adorno.nunca',   h: 'Lo que no esconden', t: 'Los adornos no dan pines de acero, ni pilas, ni fusibles, ni cartas. Solo ganzúas, USB, válvulas, monedas y cosas de la sala.' },
       { k: 'obj.linterna',   h: 'La linterna',    t: 'La encontré en un cofre. Sin pilas no sirve de nada.' },
       { k: 'obj.oscuridad',  h: 'La sala a oscuras', t: 'A veces la luz se va y la sala queda a oscuras unos cofres.' },
       { k: 'obj.tomo',       h: 'Este cuaderno',  t: 'Un viejo cuaderno de tapas gastadas. Se escribe solo, a medida que descubro cosas del mundo.' }
@@ -153,6 +170,7 @@ const DATOS_JUEGO = {
         { k: 'npc.duende.3', h: 'Algo se le rompe', t: 'Ya casi no habla de otra cosa que no sea el oro. Se enfada si no le compro. Parece haber perdido la cabeza.' },
         { k: 'npc.duende.4', h: 'Otra vez desde el principio', t: 'Vuelve a ser amable, como si no recordara nada. Yo sí lo recuerdo.' },
         { k: 'npc.duende.5', h: 'Más desesperado', t: 'Algo ha cambiado. Quiere el oro con una prisa que antes no tenía.' },
+        { k: 'npc.duende.6', h: 'La codicia lo cambia', t: 'Otra vez desde cero, y él peor. La primera vez me sorprendió su afán por el oro. Ahora me asusta: la codicia lo está transformando en otra cosa.' },
         { k: 'npc.reveal', h: 'Vive en un cofre', t: 'El Trapero dice que el Duende vive dentro de un cofre. Y todo cofre tiene su cerradura.' },
         { k: 'npc.uno', h: 'Lo que pasa de verdad', t: 'El Duende y el Trapero son la misma cosa: la codicia que exige oro y el cansancio que promete una salida falsa. Todo lo que me enseñaron servía para romper el sello.' }
       ] },
@@ -161,6 +179,7 @@ const DATOS_JUEGO = {
         { k: 'npc.trapero.2', h: 'Sus tratos', t: 'Acepté uno de sus tratos. Cumple lo que promete, aunque cobra caro.' },
         { k: 'obj.tomo', h: 'El cuaderno', t: 'Me dejó quedarme con un viejo cuaderno, sin pedir nada a cambio. No es propio de él.' },
         { k: 'npc.trapero.advierte', h: 'Me avisa', t: 'Me dice que no le compre nada al Duende. Por primera vez me da un consejo sin cobrarme. Le hago caso.' },
+        { k: 'npc.trapero.6', h: 'Una duda', t: 'Al principio parecía malo. Luego parecía que me ayudaba. Pero ya van dos veces y todo sigue pasando igual. Si de verdad ayudara, no estaría otra vez aquí. Ya no me fío del todo.' },
         { k: 'npc.trapero.5', h: 'Sabe más de lo que dice', t: 'Me mira como si me conociera de antes. Cada vuelta me deja un poco más cerca de entender qué busca.' },
         { k: 'npc.reveal', h: 'Las cerraduras', t: 'Me ha estado enseñando a abrir cerraduras todo este tiempo. Ahora dice que hay una más.' },
         { k: 'npc.uno', h: 'Lo que pasa de verdad', t: 'Él y el Duende son la misma cosa. Siempre lo fueron.' }
@@ -169,7 +188,7 @@ const DATOS_JUEGO = {
     // --- Lo que ha pasado (clave 'loop.<n>' al terminar la vuelta; 'fin.*' al terminar el juego). BORRADOR ---
     PASADO: [
       { k: 'loop.1', h: 'Primera vuelta', t: 'Hice todo lo que el Trapero me dijo, pero todo parece haber vuelto a empezar.' },
-      { k: 'loop.2', h: 'Segunda vuelta', t: 'Otra vez la misma sala. Esta vez sabía lo que me esperaba, y aun así los cofres siguieron llamándome. Volví a empezar.' },
+      { k: 'loop.2', h: 'Segunda vuelta', t: 'No me lo creo: otra vez al principio. Es la tercera vez que me despierto en esta misma sala. Sabía lo que me esperaba y aun así hice lo mismo. Y todo vuelve a empezar.' },
       { k: 'fin.bueno', h: 'Las tres palabras', t: 'Acerté las tres palabras. Una puerta, luz de día. Dejé de jugar.' },
       { k: 'fin.malo',  h: 'Los seis sellos', t: 'Rompí los seis sellos. Eran la misma cosa y les di lo que querían. Ahora me toca a mí atender la tienda.' },
       { k: 'fin.libre', h: 'Las dos cerraduras', t: 'Fallé las dos cerraduras. Ni el Duende ni el Trapero han vuelto. Solo quedan los cofres, uno tras otro, sin fin.' }
@@ -365,6 +384,9 @@ const DATOS_JUEGO = {
       FRASES_SIN_ORO: ['EL ORO NO SE ESTIRA...', 'VUELVA CON MÁS ORO', 'ESO NO LE ALCANZA', 'SIN ORO NO HAY TRATO'],
       FRASES_SIN_GANZUAS: ['FALTAN GANZÚAS', 'NO TIENE SUFICIENTES', 'TRAIGA MÁS GANZÚAS'],
       FRASES_COMPRA: ['¡EXCELENTE ELECCIÓN!', '¡ASÍ SE HACE!', 'UNO MÁS... SIEMPRE UNO MÁS', 'HE AHÍ, HE AHÍ'],
+      // [0.42] Regalo por no robar (BORRADOR MÍO: textos inventados)
+      FRASES_REGALO: ['HE VISTO LA TENTACIÓN EN TUS OJOS Y AUN ASÍ HAS HECHO LO CORRECTO. TOMA, POR LA CASA.', 'PODÍAS HABERTE LLEVADO LO QUE QUISIERAS Y NO LO HAS HECHO. ESO SE PREMIA.', 'MANOS QUIETAS... NO ES COMÚN POR AQUÍ. ESTO ES PARA TI.'],
+      BOTONES_SELECTOR: { PAGAR: 'PAGAR', ROBAR: 'ROBAR' },
       FRASES_ROBO: ['...ME HA PARECIDO VER ALGO', '¿DÓNDE HA IDO MI MERCANCÍA?', 'QUÉ MANOS TAN LISTAS'],
       FRASES_RECICLAJE: ['EL TALLER LO AGRADECE', 'DE LATÓN A ACERO', 'BUEN CANJE'],
       FRASE_ESPECIAL: ['SOLO UNA COSITA...', 'NO SE VAYA SIN NADA', 'SE LO PONGO FÁCIL'],
@@ -506,11 +528,49 @@ const DATOS_JUEGO = {
   },
 
   // 🏆 LOGROS (textos y condiciones ajustables). Se guardan aparte de la partida: sobreviven a "Nueva partida".
-  // condicion.tipo disponible: 'COFRES_ABIERTOS' (valor = nº de cofres abiertos en la partida actual)
+  // condicion.tipo: COFRES_ABIERTOS (partida actual) · TIPO_COFRES (acumulado por tipo) · ORO_ACUM · ORO_PARTIDA · RACHA · RECICLADAS · EVENTO (ev) · TODOS (todos los demás)
   LOGROS: {
     DURACION_BANNER_MS: 4000,
+    // [0.42] Cada logro lleva su icono dibujado (ic) y, si 'secreto' es true, su descripción no se muestra hasta conseguirlo (evita spoilers). Textos: BORRADOR MÍO.
+    TEXTO_SECRETO: 'Logro secreto · la descripción está oculta para evitar spoilers',
     LISTA: [
-      { id: 'un_gran_paso', icono: '🏆', titulo: 'UN GRAN PASO', descripcion: 'Abre tu primer cofre', condicion: { tipo: 'COFRES_ABIERTOS', valor: 1 } }
+      { id: "un_gran_paso", ic: "cofre:#a16207:1", titulo: "UN GRAN PASO", descripcion: "Abre tu primer cofre", secreto: false, condicion: {"tipo": "COFRES_ABIERTOS", "valor": 1} },
+      { id: "cofre_wooden_1", ic: "cofre:#a16207:1", titulo: "ASTILLAS", descripcion: "Abre tu primer Cofre de Madera", secreto: false, condicion: {"tipo": "TIPO_COFRES", "cofre": "wooden", "valor": 1} },
+      { id: "cofre_wooden_50", ic: "cofre:#a16207:50", titulo: "CARPINTERO", descripcion: "Abre 50 Cofres de Madera (entre todas tus partidas)", secreto: false, condicion: {"tipo": "TIPO_COFRES", "cofre": "wooden", "valor": 50} },
+      { id: "cofre_wooden_100", ic: "cofre:#a16207:100", titulo: "TALA TOTAL", descripcion: "Abre 100 Cofres de Madera (entre todas tus partidas)", secreto: false, condicion: {"tipo": "TIPO_COFRES", "cofre": "wooden", "valor": 100} },
+      { id: "cofre_piston_1", ic: "cofre:#64748b:1", titulo: "ACERO FRÍO", descripcion: "Abre tu primera Caja de Acero", secreto: false, condicion: {"tipo": "TIPO_COFRES", "cofre": "piston", "valor": 1} },
+      { id: "cofre_piston_50", ic: "cofre:#64748b:50", titulo: "CERRAJERO", descripcion: "Abre 50 Cajas de Acero (entre todas tus partidas)", secreto: false, condicion: {"tipo": "TIPO_COFRES", "cofre": "piston", "valor": 50} },
+      { id: "cofre_piston_100", ic: "cofre:#64748b:100", titulo: "ACERO TEMPLADO", descripcion: "Abre 100 Cajas de Acero (entre todas tus partidas)", secreto: false, condicion: {"tipo": "TIPO_COFRES", "cofre": "piston", "valor": 100} },
+      { id: "cofre_cyber_1", ic: "cofre:#0891b2:1", titulo: "CLAVE DE ACCESO", descripcion: "Abre tu primera Arca Digital", secreto: false, condicion: {"tipo": "TIPO_COFRES", "cofre": "cyber", "valor": 1} },
+      { id: "cofre_cyber_50", ic: "cofre:#0891b2:50", titulo: "HACKER", descripcion: "Abre 50 Arcas Digitales (entre todas tus partidas)", secreto: false, condicion: {"tipo": "TIPO_COFRES", "cofre": "cyber", "valor": 50} },
+      { id: "cofre_cyber_100", ic: "cofre:#0891b2:100", titulo: "ROOT", descripcion: "Abre 100 Arcas Digitales (entre todas tus partidas)", secreto: false, condicion: {"tipo": "TIPO_COFRES", "cofre": "cyber", "valor": 100} },
+      { id: "cofre_hydraulic_1", ic: "cofre:#0d9488:1", titulo: "PRIMERA GOTA", descripcion: "Abre tu primer Cofre de Vapor", secreto: true, condicion: {"tipo": "TIPO_COFRES", "cofre": "hydraulic", "valor": 1} },
+      { id: "cofre_hydraulic_50", ic: "cofre:#0d9488:50", titulo: "FONTANERO", descripcion: "Abre 50 Cofres de Vapor (entre todas tus partidas)", secreto: true, condicion: {"tipo": "TIPO_COFRES", "cofre": "hydraulic", "valor": 50} },
+      { id: "cofre_hydraulic_100", ic: "cofre:#0d9488:100", titulo: "DILUVIO", descripcion: "Abre 100 Cofres de Vapor (entre todas tus partidas)", secreto: true, condicion: {"tipo": "TIPO_COFRES", "cofre": "hydraulic", "valor": 100} },
+      { id: "cofre_neon_1", ic: "cofre:#c026d3:1", titulo: "PRIMERA CHISPA", descripcion: "Abre tu primera Arca de Neón", secreto: true, condicion: {"tipo": "TIPO_COFRES", "cofre": "neon", "valor": 1} },
+      { id: "cofre_neon_50", ic: "cofre:#c026d3:50", titulo: "LUCES DE NEÓN", descripcion: "Abre 50 Arcas de Neón (entre todas tus partidas)", secreto: true, condicion: {"tipo": "TIPO_COFRES", "cofre": "neon", "valor": 50} },
+      { id: "cofre_neon_100", ic: "cofre:#c026d3:100", titulo: "CIUDAD ENCENDIDA", descripcion: "Abre 100 Arcas de Neón (entre todas tus partidas)", secreto: true, condicion: {"tipo": "TIPO_COFRES", "cofre": "neon", "valor": 100} },
+      { id: "cofre_electric_1", ic: "cofre:#eab308:1", titulo: "CORTOCIRCUITO", descripcion: "Abre tu primer Cuadro Eléctrico", secreto: true, condicion: {"tipo": "TIPO_COFRES", "cofre": "electric", "valor": 1} },
+      { id: "cofre_electric_50", ic: "cofre:#eab308:50", titulo: "ELECTRICISTA", descripcion: "Abre 50 Cuadros Eléctricos (entre todas tus partidas)", secreto: true, condicion: {"tipo": "TIPO_COFRES", "cofre": "electric", "valor": 50} },
+      { id: "cofre_electric_100", ic: "cofre:#eab308:100", titulo: "RED ELÉCTRICA", descripcion: "Abre 100 Cuadros Eléctricos (entre todas tus partidas)", secreto: true, condicion: {"tipo": "TIPO_COFRES", "cofre": "electric", "valor": 100} },
+      { id: "oro_3000", ic: "monedas", titulo: "BOLSILLOS ROTOS", descripcion: "Gasta 3.000 monedas de oro en total (entre todas tus partidas)", secreto: false, condicion: {"tipo": "ORO_ACUM", "valor": 3000} },
+      { id: "oro_1000", ic: "bolsa", titulo: "DERROCHE", descripcion: "Gasta 1.000 monedas de oro en una misma partida", secreto: false, condicion: {"tipo": "ORO_PARTIDA", "valor": 1000} },
+      { id: "maldicion_20", ic: "calavera", titulo: "BAJO LA SOMBRA", descripcion: "Supera un bucle acumulando más de 20 turnos de maldición", secreto: true, condicion: {"tipo": "EVENTO", "ev": "curse20"} },
+      { id: "nivel_10", ic: "nivel10", titulo: "CUMBRE", descripcion: "Acaba un bucle habiendo llegado al nivel 10", secreto: true, condicion: {"tipo": "EVENTO", "ev": "lvl10"} },
+      { id: "racha_10", ic: "llama:10", titulo: "RACHA IMPECABLE I", descripcion: "Encadena más de 10 cofres seguidos sin fallar", secreto: false, condicion: {"tipo": "RACHA", "valor": 10} },
+      { id: "racha_20", ic: "llama:20", titulo: "RACHA IMPECABLE II", descripcion: "Encadena más de 20 cofres seguidos sin fallar", secreto: false, condicion: {"tipo": "RACHA", "valor": 20} },
+      { id: "racha_30", ic: "llama:30", titulo: "RACHA IMPECABLE III", descripcion: "Encadena más de 30 cofres seguidos sin fallar", secreto: false, condicion: {"tipo": "RACHA", "valor": 30} },
+      { id: "robo_duende", ic: "mano", titulo: "MANOS LARGAS", descripcion: "Roba por primera vez al Duende", secreto: false, condicion: {"tipo": "EVENTO", "ev": "steal"} },
+      { id: "sin_tratos", ic: "sintrato", titulo: "NI UN TRATO", descripcion: "Termina un bucle sin hacer ningún trato con el Trapero", secreto: true, condicion: {"tipo": "EVENTO", "ev": "nodeal"} },
+      { id: "bucle_1", ic: "bucle:1", titulo: "OTRA VUELTA", descripcion: "Pasa el bucle 1", secreto: true, condicion: {"tipo": "EVENTO", "ev": "loop1"} },
+      { id: "bucle_2", ic: "bucle:2", titulo: "Y OTRA MÁS", descripcion: "Pasa el bucle 2", secreto: true, condicion: {"tipo": "EVENTO", "ev": "loop2"} },
+      { id: "bucle_3", ic: "bucle:3", titulo: "LA ÚLTIMA PUERTA", descripcion: "Pasa el bucle 3 y llega a los dos cofres finales", secreto: true, condicion: {"tipo": "EVENTO", "ev": "loop3"} },
+      { id: "final_bueno", ic: "sol", titulo: "LA LUZ DEL DÍA", descripcion: "Consigue el final bueno", secreto: true, condicion: {"tipo": "EVENTO", "ev": "good"} },
+      { id: "final_malo", ic: "grieta", titulo: "LIBRES", descripcion: "Consigue el final malo", secreto: true, condicion: {"tipo": "EVENTO", "ev": "bad"} },
+      { id: "cerrojo_limpio", ic: "corazones", titulo: "SIN UN ARAÑAZO", descripcion: "Supera los 6 puzles del cofre de la tienda sin gastar ninguna de tus 3 vidas", secreto: true, condicion: {"tipo": "EVENTO", "ev": "flawless"} },
+      { id: "puzles_90", ic: "diana", titulo: "PULSO DE CIRUJANO", descripcion: "Acaba un bucle con un 90 % de puzles superados (cada intento cuenta)", secreto: true, condicion: {"tipo": "EVENTO", "ev": "p90"} },
+      { id: "reciclaje_50", ic: "reciclar", titulo: "ECONOMÍA CIRCULAR", descripcion: "Recicla 50 ganzúas en total (entre todas tus partidas)", secreto: false, condicion: {"tipo": "RECICLADAS", "valor": 50} },
+      { id: "todos", ic: "trofeo", titulo: "COLECCIONISTA", descripcion: "Consigue todos los logros del juego", secreto: false, condicion: {"tipo": "TODOS"} }
     ]
   },
 

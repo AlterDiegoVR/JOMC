@@ -206,7 +206,8 @@ function glassShatterFx() {
   root.style.cssText = `position:fixed;left:${r.left}px;top:${r.top}px;width:${W}px;height:${H}px;z-index:20000;pointer-events:none;overflow:visible`;
   // 1) puntos: centro de impacto + dos anillos (el segundo pasa de las esquinas) con ángulos y radios irregulares
   const cx = W * (0.42 + Math.random() * 0.16), cy = H * (0.4 + Math.random() * 0.14);
-  const n = 11, diag = Math.hypot(W, H);
+  const lite = (typeof PERF !== 'undefined' && PERF.lagging()) || window.innerWidth < 700 || (window.matchMedia && matchMedia('(pointer:coarse)').matches);
+  const n = lite ? 6 : 11, diag = Math.hypot(W, H);   // [0.42] en móvil, 12 trozos en vez de 22: mucho menos DOM que clonar y animar
   const ang0 = Math.random() * Math.PI * 2, angs = [];
   for (let i = 0; i < n; i++) angs.push(ang0 + (i + (Math.random() - 0.5) * 0.55) * (Math.PI * 2 / n));
   const ring = (k, rmin, rmax) => angs.map(a => { const rr = diag * (rmin + Math.random() * (rmax - rmin)); return [cx + Math.cos(a) * rr, cy + Math.sin(a) * rr]; });
@@ -312,19 +313,20 @@ function triggerSensoryOverloadCollapse() {
   const appBody = document.getElementById('appBody') || document.body;
   appBody.classList.add('shake-screen');
 
-  let bursts = 0;
+  let bursts = 0, shattered = false;
+  const liteFx = (typeof PERF !== 'undefined' && PERF.lagging()) || window.innerWidth < 700 || (window.matchMedia && matchMedia('(pointer:coarse)').matches);   // [0.42]
   const overloadInterval = setInterval(() => {
     bursts++;
     const slow = typeof PERF !== 'undefined' && PERF.lagging();   // [0.207] solo si el móvil va justo: la mitad de partículas y un fanfare de cada dos
     if (typeof audio !== 'undefined' && audio.playUnlockFanfare && !(slow && bursts % 2)) audio.playUnlockFanfare('legendario');
     
-    if (typeof spawnParticles === 'function') {
+    if (typeof spawnParticles === 'function' && !shattered) {   // [0.42] mientras se rompe y cae el cristal no se lanzan más fuegos
       const cx = Math.random() * window.innerWidth;
       const cy = Math.random() * window.innerHeight;
-      spawnParticles(cx, cy, bursts % 2 === 0 ? '#c084fc' : '#f43f5e', slow ? 24 : 50, true);
+      spawnParticles(cx, cy, bursts % 2 === 0 ? '#c084fc' : '#f43f5e', slow ? 12 : (liteFx ? 26 : 50), true);
     }
 
-    if (bursts === 13) { try { glassShatterFx(); } catch (e) { glassShatterRestore(); } }   // [0.103] a mitad del colapso, la pantalla se rompe como un cristal
+    if (bursts === 13) { shattered = true; appBody.classList.remove('shake-screen'); try { glassShatterFx(); } catch (e) { glassShatterRestore(); } }   // [0.42] sin temblor ni fuegos durante el cristal   // [0.103] a mitad del colapso, la pantalla se rompe como un cristal
     if (bursts >= 35) {
       clearInterval(overloadInterval);
       appBody.classList.remove('shake-screen');
@@ -390,6 +392,7 @@ function executeDiffuseEchoTransition() {
         try { audio.restoreAll(); } catch (e) {}   // [0.209]
 
         // 🟢 TRANSICIÓN AL SIGUIENTE BUCLE (1→2, 2→3; el 3 es el último por ahora y se repite con el mismo final)
+        try { achEvent('loopEnd', STATE.currentLoop || 1); } catch (e) {}   // [0.42] logros
         try { nbReg('loop.' + (STATE.currentLoop || 1)); } catch (e) {}   // [0.40] cuaderno: la vuelta que acaba queda escrita
         STATE.currentLoop = Math.min((STATE.currentLoop || 1) + 1, 3);   // [0.203]
         glassShatterRestore();   // [0.103] el marco vuelve a verse
@@ -443,13 +446,16 @@ function triggerDuendeNarrativeVisit() {
     const key = ids[btn.id];
     const m = document.createElement('div');
     m.id = 'cardPreModal';
-    m.className = 'fixed inset-0 z-[9990] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-5 font-sans';
+    m.className = 'fixed inset-0 z-[9990] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-5 gx-ov';
     m.innerHTML = `
-      <div class="bg-slate-900 border-2 border-amber-500/70 rounded-3xl p-6 w-full max-w-xs shadow-2xl text-center flex flex-col items-center gap-3">
-        <h3 class="text-xl font-black text-amber-300 font-retro">CARTA ${NOMBRES[key]}</h3>
-        <p class="text-sm font-mono text-slate-200 leading-relaxed">${(((DATOS_JUEGO.TEXTOS_AYUDA.cartas || {})[key]) || '').replace(/^Carta [^:]+:\s*/, '').replace(/^./, ch => ch.toUpperCase())}</p>
-        <button id="cardPreUse" class="w-full py-3 bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-black text-sm rounded-xl shadow-lg cursor-pointer">USAR</button>
-        <button id="cardPreBack" class="w-full py-2.5 bg-slate-800 text-slate-300 font-bold text-xs rounded-xl cursor-pointer">VOLVER</button>
+      <div class="gm-card gx-card violet">
+        <i class="cr a"></i><i class="cr b"></i><i class="cr c"></i><i class="cr d"></i>
+        <div class="gm-seal">CARTA TÁCTICA</div>
+        <div class="gx-ico"><i class="${(btn.querySelector('i') || {}).className || 'fa-solid fa-scroll'}"></i></div>
+        <h3 class="gx-ttl">${NOMBRES[key]}</h3>
+        <p class="gx-tx">${(((DATOS_JUEGO.TEXTOS_AYUDA.cartas || {})[key]) || '').replace(/^Carta [^:]+:\s*/, '').replace(/^./, ch => ch.toUpperCase())}</p>
+        <button id="cardPreUse" class="gm-btn" type="button">USAR</button>
+        <button id="cardPreBack" class="gm-btn sec" type="button">VOLVER</button>
       </div>`;
     (uiHost() || document.body).appendChild(m);
     m.querySelector('#cardPreBack').addEventListener('click', () => m.remove());

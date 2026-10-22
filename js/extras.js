@@ -13,13 +13,16 @@ function askYesNo(titulo, texto, siLabel, onYes, onNo) {
   if (document.getElementById('askYesNoModal')) return;
   const m = document.createElement('div');
   m.id = 'askYesNoModal';
-  m.className = 'fixed inset-0 z-[9995] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-5 font-sans';
+  m.className = 'fixed inset-0 z-[9995] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-5 gx-ov';
   m.innerHTML = `
-    <div class="bg-slate-900 border-2 border-amber-500/70 rounded-3xl p-6 w-full max-w-xs shadow-2xl text-center flex flex-col items-center gap-3">
-      <h3 class="text-xl font-black text-amber-300 font-retro">${titulo}</h3>
-      <p class="text-sm font-mono text-slate-200 leading-relaxed">${texto}</p>
-      <button id="ynYes" class="w-full py-3 bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-black text-sm rounded-xl shadow-lg cursor-pointer">${siLabel}</button>
-      <button id="ynNo" class="w-full py-2.5 bg-slate-800 text-slate-300 font-bold text-xs rounded-xl cursor-pointer">NO, VOLVER</button>
+    <div class="gm-card gx-card">
+      <i class="cr a"></i><i class="cr b"></i><i class="cr c"></i><i class="cr d"></i>
+      <div class="gm-seal">¿SEGURO?</div>
+      <div class="gx-ico"><i class="fa-solid fa-circle-question"></i></div>
+      <h3 class="gx-ttl">${titulo}</h3>
+      <p class="gx-tx">${texto}</p>
+      <button id="ynYes" class="gm-btn" type="button">${siLabel}</button>
+      <button id="ynNo" class="gm-btn sec" type="button">NO, VOLVER</button>
     </div>`;
   (uiHost() || document.body).appendChild(m);
   m.querySelector('#ynYes').addEventListener('click', () => { m.remove(); if (onYes) onYes(); });
@@ -38,7 +41,21 @@ function updatePerkActions() {
   const c = document.getElementById('rerollPerkCost'); if (c) c.textContent = rerollCost() + ' GP';
   br.disabled = STATE.gold < rerollCost();
   br.title = helpPasiva('inconformista', { n: rerollCost() }); bs.title = helpPasiva('herrero');
+  _pkKey = '';
 }
+// [0.42] Coloca los dos botones de icono a los lados del cofre grande (coordenadas del lienzo = píxeles del marco)
+let _pkKey = '';
+function placePerkSide(ccx, ccy, dw, dh) {
+  const host = document.getElementById('perkActions'); if (!host || host.classList.contains('hidden')) return;
+  const busy = !!(minigameInProgress || !mainScreenFree()); if (host._busy !== busy) { host._busy = busy; host.style.visibility = busy ? 'hidden' : 'visible'; }
+  const key = [Math.round(ccx), Math.round(ccy), Math.round(dw)].join(',');
+  if (key === _pkKey) return; _pkKey = key;
+  const W = (document.getElementById('roomCanvas') || {}).width || 360, bw = 46, gap = 8, y = Math.round(ccy - bw / 2);
+  const br = document.getElementById('rerollPerkBtn'), bs = document.getElementById('smithPerkBtn');
+  if (br) { br.style.left = Math.max(4, Math.round(ccx - dw / 2 - gap - bw)) + 'px'; br.style.top = y + 'px'; }
+  if (bs) { bs.style.left = Math.min(W - bw - 4, Math.round(ccx + dw / 2 + gap)) + 'px'; bs.style.top = y + 'px'; }
+}
+window.addEventListener('resize', () => { _pkKey = ''; });
 function perkActionsBusy() { return minigameInProgress || isLootProcessing || document.getElementById('cofradiaModal') || !mainScreenFree(); }
 
 (function () {
@@ -72,32 +89,154 @@ function smithRate(prop) {
   const duende = ((DATOS_JUEGO.ECONOMIA.RECICLAJE.otorgadas || {})[prop]) || DATOS_JUEGO.ECONOMIA.RECICLAJE.herramientas_otorgadas;
   return { g: (cell && cell.g) ? +cell.g : 4, r: (cell && cell.r) ? +cell.r : duende };
 }
+// [0.42] Fragua en pixel art (88x60 px lógicos): yunque detallado, pieza al rojo, martillo que golpea de verdad, chispas. Devuelve { strike }.
+function smithForgeScene(cv) {
+  const cx = cv.getContext('2d'), W = 88, H = 60, AX = 7, AY = 27, TX = AX + 44, TOP = AY - 3;
+  let seed = 11; const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  const PAL = { K: '#100c16', D: '#241f2e', M: '#3a3445', L: '#565063', H: '#8a8397', W: '#d6d0df', R: '#7a3412', P: '#f08a3c', O: '#f97316', Y: '#ffe9a8', B: '#6b4423', N: '#3a2010', Q: '#a36a36' };
+  const AW = 75, AH = 32, sol = []; for (let y = 0; y < AH; y++) { sol.push([]); for (let x = 0; x < AW; x++) sol[y].push(0); }
+  (function () {
+    const fill = (x0, x1, y) => { for (let x = Math.max(0, Math.round(x0)); x <= Math.min(AW - 1, Math.round(x1)); x++) sol[y][x] = 1; };
+    for (let y = 0; y <= 5; y++) fill(18, 74, y);
+    for (let x = 0; x < 18; x++) { const t = (18 - x) / 18, yc = 3 + 4 * t * t, h = 0.5 + 2.9 * Math.pow(x / 18, 0.8); for (let y = Math.round(yc - h); y <= Math.round(yc + h); y++) if (y >= 0 && y < AH) sol[y][x] = 1; }
+    fill(20, 70, 6); fill(23, 66, 7); fill(26, 60, 8);
+    for (let y = 9; y <= 19; y++) { const hw = 13 - 3.2 * Math.sin(Math.PI * (y - 9) / 10); fill(42 - hw, 42 + hw, y); }
+    fill(27, 57, 20); fill(26, 58, 21); fill(24, 60, 22); fill(19, 65, 23);
+    for (let y = 24; y <= 31; y++) { const hw = 21 + Math.round((y - 24) * 0.5); fill(42 - hw, 42 + hw, y); }
+  })();
+  const S = (x, y) => x >= 0 && y >= 0 && x < AW && y < AH && sol[y][x] === 1;
+  const anv = document.createElement('canvas'); anv.width = AW; anv.height = AH; const ag = anv.getContext('2d');
+  for (let y = 0; y < AH; y++) for (let x = 0; x < AW; x++) {
+    if (!S(x, y)) continue;
+    let up = 0, le = 0, ri = 0, dn = 0;
+    while (S(x, y - 1 - up)) up++; while (S(x - 1 - le, y)) le++; while (S(x + 1 + ri, y)) ri++; while (S(x, y + 1 + dn)) dn++;
+    let k = 'M';
+    if (up === 0) k = (x >= 18) ? 'W' : 'H'; else if (up === 1) k = 'H'; else if (up <= 3) k = 'L'; else k = 'M';
+    if (le <= 1 && up > 1) k = 'L';
+    if (ri <= 1 && up > 0) k = 'D';
+    if (dn === 0 && up > 0) k = 'D';
+    if (dn === 1 && k !== 'D' && y > 6) k = (k === 'L') ? 'M' : 'D';
+    if (y === 6 || y === 7) { k = (y === 6) ? 'M' : 'D'; if (le <= 1) k = 'L'; }
+    if (y === 23 && x >= 19 && x <= 65) k = 'L';
+    if (y >= 24 && y <= 25 && k !== 'D') k = 'M';
+    const edge = (!S(x - 1, y) || !S(x + 1, y) || !S(x, y - 1) || !S(x, y + 1));
+    if (edge && !(up === 0 && S(x - 1, y) && S(x + 1, y))) k = 'K';
+    if (k !== 'K') {
+      const dxw = Math.abs(x - 44);
+      if (y <= 2 && dxw <= 12 && (k === 'W' || k === 'H') && rnd() < .5) k = 'P';
+      else if (y >= 24 && x < 30 && rnd() < .35) k = 'R';
+      else if (k === 'M' && rnd() < .14) k = 'L';
+      else if (k === 'D' && rnd() < .14) k = 'M';
+    }
+    ag.fillStyle = PAL[k]; ag.fillRect(x, y, 1, 1);
+  }
+  ag.fillStyle = PAL.K; ag.fillRect(62, 0, 3, 1); ag.fillRect(62, 1, 3, 2); ag.fillRect(54, 0, 1, 2);
+  ag.fillStyle = PAL.D; ag.fillRect(63, 1, 1, 1);
+  ag.fillStyle = PAL.W; for (let x = 22; x <= 72; x += 5) ag.fillRect(x, 0, 2, 1);
+  ag.fillStyle = PAL.H; ag.fillRect(31, 3, 3, 1); ag.fillRect(49, 2, 4, 1); ag.fillRect(68, 3, 2, 1);
+  ag.fillStyle = PAL.K; ag.fillRect(37, 4, 2, 1); ag.fillRect(58, 3, 1, 1);
+  // martillo (sprite local rotado por mapeo inverso)
+  const HL = 24, HH = 9, HW = 10, PXc = TX, PYc = TOP - (HL + HH);
+  const hamColor = (lx, ly) => {
+    if (ly >= 0 && ly < HL && lx >= -2 && lx < 2) { let c = lx < -0.8 ? 'Q' : (lx < 0.8 ? 'B' : 'N'); if (Math.floor(ly) % 5 === 0 && ly > HL - 9) c = 'N'; return c; }
+    if (ly >= HL - 1 && ly < HL + HH && lx >= -HW && lx < HW) {
+      const r = ly - (HL - 1), isEdge = (lx < -HW + 1.1 || lx >= HW - 1.1 || r < 1 || ly >= HL + HH - 1);
+      if (isEdge) return 'K'; if (r < 2.2) return 'W'; if (r < 3.6) return (lx < -HW + 3) ? 'H' : 'L';
+      if (lx < -HW + 2.4) return 'L'; if (lx >= HW - 2.6) return 'D'; return (r > 5) ? 'D' : 'M';
+    }
+    return null;
+  };
+  const ham = { st: 'idle', t0: 0 }, sp = [], REST = -40;
+  let squash = 0, shakeAt = 0, heatEl = null;
+  const impact = () => {
+    squash = shakeAt = performance.now();
+    for (let i = 0; i < 70; i++) { const a = -Math.PI * (0.05 + Math.random() * 0.9), v = 0.55 + Math.random() * 1.3; sp.push({ x: TX - 7 + Math.random() * 14, y: TOP, vx: Math.cos(a) * v * 1.5, vy: Math.sin(a) * v * 1.5 - 0.3, l: 0, m: 34 + Math.random() * 34, big: Math.random() < .25 }); }
+    if (heatEl) { heatEl.classList.add('flash'); setTimeout(() => heatEl && heatEl.classList.remove('flash'), 140); }
+  };
+  const angAt = now => {
+    if (ham.st === 'idle') return REST;
+    const t = now - ham.t0;
+    if (ham.st === 'wind') { if (t >= 110) { ham.st = 'hit'; ham.t0 = now; return REST - 6; } return REST - 6 * (t / 110); }
+    if (ham.st === 'hit') { if (t >= 85) { ham.st = 'rest'; ham.t0 = now; impact(); return 0; } const u = t / 85; return (REST - 6) * (1 - u * u); }
+    if (ham.st === 'rest') { if (t >= 420) { ham.st = 'idle'; return REST; } const v = Math.min(1, t / 420), e = 1 - Math.pow(1 - v, 3); if (t < 70) return 0; return REST * e; }
+    return REST;
+  };
+  const drawBar = () => {
+    const now = performance.now(), sq = (now - squash < 110), wl = sq ? 20 : 18, th = sq ? 2 : 3, x0 = TX - wl / 2, y0 = AY - th;
+    for (let i = 0; i < wl; i++) { const d = Math.abs(i - (wl - 1) / 2) / ((wl - 1) / 2); for (let j = 0; j < th; j++) { let k = d < .35 ? 'Y' : d < .75 ? 'O' : 'R'; if (j === 0 && d < .6 && !sq) k = 'Y'; if (j === th - 1 && d > .35) k = d < .75 ? 'O' : 'R'; cx.fillStyle = PAL[k]; cx.fillRect(x0 + i, y0 + j, 1, 1); } }
+    cx.globalAlpha = .5; cx.fillStyle = PAL.P; cx.fillRect(x0 + 2, AY, wl - 4, 1); cx.globalAlpha = 1;
+  };
+  const drawHammer = ang => {
+    const th = ang * Math.PI / 180, c = Math.cos(th), sn = Math.sin(th);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const dx = x + 0.5 - PXc, dy = y + 0.5 - PYc, lx = dx * c + dy * sn, ly = -dx * sn + dy * c, col = hamColor(lx, ly); if (col) { cx.fillStyle = PAL[col]; cx.fillRect(x, y, 1, 1); } }
+  };
+  let last = 0, alive = true;
+  const frame = now => {
+    if (!alive || !cv.isConnected) return;
+    const dt = Math.min(40, now - (last || now)) / 16.7; last = now;
+    cx.clearRect(0, 0, W, H);
+    cx.save(); cx.translate(0, (now - shakeAt < 70) ? 1 : 0);
+    cx.drawImage(anv, AX, AY); drawBar(); drawHammer(angAt(now));
+    cx.restore();
+    if (Math.random() < 0.26 * dt) sp.push({ x: TX - 8 + Math.random() * 16, y: TOP - 1, vx: (Math.random() - .5) * 0.18, vy: -(0.12 + Math.random() * 0.3), l: 0, m: 60 + Math.random() * 70, big: Math.random() < .2, amb: true });   // [0.42] más chispitas que suben
+    for (let i = sp.length - 1; i >= 0; i--) {
+      const q = sp[i]; q.l += dt; q.vy += (q.amb ? -0.002 : 0.045) * dt; q.x += q.vx * dt; q.y += q.vy * dt;
+      if (q.l > q.m || q.y > H || q.x < 0 || q.x > W) { sp.splice(i, 1); continue; }
+      const f = q.l / q.m; cx.fillStyle = f < .35 ? PAL.Y : f < .7 ? PAL.O : PAL.R; cx.fillRect(Math.round(q.x), Math.round(q.y), q.big && f < .5 ? 2 : 1, 1);
+    }
+    requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+  return {
+    setHeat(el) { heatEl = el; },
+    strike() { if (ham.st !== 'idle' && ham.st !== 'rest') return; ham.st = 'wind'; ham.t0 = performance.now(); },
+    stop() { alive = false; }
+  };
+}
+
 function openSmith() {
   document.querySelectorAll('#smithModal').forEach(e => e.remove());
   const m = document.createElement('div');
   m.id = 'smithModal';
-  m.className = 'fixed inset-0 z-[9993] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 font-sans';
+  m.className = 'smith-stage';
   (uiHost() || document.body).appendChild(m);
+  const lite = (typeof PERF !== 'undefined' && PERF.lagging && PERF.lagging());
+  let scene = null, built = false;
   const paint = () => {
     const list = SMITH_TOOLS.filter(t => STATE.level >= (t.minLvl ? t.minLvl() : 1) && (!t.unlocked || toolUnlocked(t.unlocked)));
     if (!list.length) list.push(SMITH_TOOLS[0]);
-    m.innerHTML = `<div class="smith-card">
-      <div class="smith-hdr"><i class="fa-solid fa-hammer"></i><b>EL HERRERO</b><span>Lv.${STATE.perks.herrero}</span></div>
-      <p class="smith-sub">Cambia ganzúas por herramientas, donde sea. Tienes <b>${STATE.picks}</b> ganzúas.</p>
-      <div class="smith-list">${list.map(t => {
-        const r = smithRate(t.prop), poor = STATE.picks < r.g;
-        const src = (typeof shopImg === 'function') ? shopImg(t.ic) : '';
-        return `<div class="smith-row${poor ? ' poor' : ''}">${src ? `<img src="${src}" alt="">` : ''}<div class="smith-tx"><b>${t.name} +${r.r}</b><span>Tienes ${STATE[t.prop] || 0}</span></div><button type="button" data-prop="${t.prop}"${poor ? ' disabled' : ''}>${r.g} Ganzúas</button></div>`;
-      }).join('')}</div>
-      <button id="smithClose" class="smith-close" type="button">CERRAR</button></div>`;
-    m.querySelectorAll('.smith-row button').forEach(b => b.addEventListener('click', () => {
-      const prop = b.getAttribute('data-prop'), r = smithRate(prop), t = SMITH_TOOLS.find(x => x.prop === prop);
-      if (STATE.picks < r.g) return;
-      STATE.picks -= r.g; STATE[prop] += r.r;
-      try { audio.init(); audio.playClick(0.9); } catch (e) {}
-      updateUI(); paint();
-    }));
-    m.querySelector('#smithClose').addEventListener('click', () => m.remove());
+    const pickSp = (typeof shopImg === 'function') ? shopImg('ic_ganzua') : '';
+    const rows = list.map(t => {
+      const r = smithRate(t.prop), poor = STATE.picks < r.g;
+      const src = (typeof shopImg === 'function') ? shopImg(t.ic) : '';
+      return `<div class="sm-row${poor ? ' poor' : ''}"><div class="sm-it">${src ? `<img src="${src}" alt="">` : ''}</div><div class="sm-tx"><div class="sm-nm">${t.name} +${r.r}</div><div class="sm-have">Tienes <i>${STATE[t.prop] || 0}</i></div></div><button type="button" class="sm-buy" data-prop="${t.prop}"${poor ? ' disabled' : ''}>${pickSp ? `<img src="${pickSp}" alt="">` : ''}<span>${r.g} Ganzúas</span></button></div>`;
+    }).join('');
+    if (!built) {
+      built = true;
+      m.innerHTML = `<div class="sm-forge"><canvas class="sm-scene" width="88" height="60"></canvas><div class="sm-heat"></div></div>
+        <div class="sm-card"><i class="rv a"></i><i class="rv b"></i><i class="rv c"></i><i class="rv d"></i>
+          <div class="sm-hd"><i class="fa-solid fa-hammer"></i><h1>EL HERRERO</h1><span class="sm-lv">Lv.${STATE.perks.herrero}</span></div>
+          <p class="sm-sub">Cambia ganzúas por herramientas, donde sea. Tienes <b id="smPk">${STATE.picks}</b> ganzúas.</p>
+          <div class="sm-rows" id="smRows">${rows}</div>
+          <button id="smithClose" class="sm-close" type="button">CERRAR</button></div>`;
+      // ascuas que suben por toda la pantalla, también por encima de las filas de reciclaje
+      const nE = lite ? 16 : 34;
+      for (let i = 0; i < nE; i++) { const e = document.createElement('i'); e.className = 'sm-ember' + (i % 4 === 0 ? ' big' : ''); e.style.left = (4 + Math.random() * 92) + '%'; e.style.setProperty('--d', (3.6 + Math.random() * 4.4) + 's'); e.style.setProperty('--dx', (Math.random() * 70 - 35) + 'px'); e.style.animationDelay = (-Math.random() * 8) + 's'; m.appendChild(e); }
+      scene = smithForgeScene(m.querySelector('.sm-scene')); scene.setHeat(m.querySelector('.sm-heat'));
+      m.querySelector('#smithClose').addEventListener('click', () => { if (scene) scene.stop(); m.remove(); });
+      m.addEventListener('click', e => {
+        const b = e.target.closest('.sm-buy'); if (!b || b.disabled) return;
+        const prop = b.getAttribute('data-prop'), r = smithRate(prop);
+        if (STATE.picks < r.g) return;
+        STATE.picks -= r.g; STATE[prop] += r.r;
+        try { achEvent('recycle', r.g); } catch (er) {}   // [0.42] logro de ganzúas recicladas
+        try { audio.init(); audio.playClick(0.9); } catch (er) {}
+        updateUI(); paint(); if (scene) scene.strike();
+      });
+    } else {
+      m.querySelector('#smRows').innerHTML = rows;
+      const pk = m.querySelector('#smPk'); if (pk) pk.textContent = STATE.picks;
+    }
   };
   paint();
 }

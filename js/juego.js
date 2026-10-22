@@ -124,7 +124,7 @@ function quickLevelUpFx() {
   b.className = 'lvl-quick';
   b.innerHTML = `<div class="lq-row lq-t">${letters('SUBIDA DE NIVEL', 0)}</div><div class="lq-row lq-n">${letters('NIVEL ' + STATE.level, 260)}</div>`;
   host.appendChild(b);
-  try { const cx = canvas ? canvas.width / 2 : 200, cy = canvas ? canvas.height * 0.33 : 200; spawnParticles(cx, cy, '#fbbf24', 55, false); spawnParticles(cx, cy, '#fff7cc', 30, false); } catch (e) {}
+  try { const cx = canvas ? canvas.width / 2 : 200, cy = canvas ? canvas.height * 0.33 : 200; const lite = (typeof PERF !== 'undefined' && PERF.lagging()) || window.innerWidth < 700; spawnParticles(cx, cy, '#fbbf24', lite ? 26 : 55, false); spawnParticles(cx, cy, '#fff7cc', lite ? 12 : 30, false); } catch (e) {}   // [0.42] menos partículas en móvil
   try { screenShake(5, 380); } catch (e) {}
   setTimeout(() => b.remove(), 1900);
 }

@@ -67,6 +67,7 @@ function finalResume() {
 /* ---------- Pantalla de los dos cofres ---------- */
 function finShowChoice() {
   const f = STATE.finalPhase; if (!f) return;
+  if ((STATE.currentLoop || 1) >= 3) { try { achEvent('loopEnd', 3); } catch (e) {} }   // [0.42] pasar el bucle 3 = llegar a los dos cofres
   f.stage = 'choice';
   finClearTimers(); FIN_RT.active = false; FIN_RT.sel = null;
   try { audio.musicRelease(); } catch (e) {}   // [0.38] en la pantalla de los dos cofres no suena el Cerrojo
@@ -255,7 +256,7 @@ function finalPuzzleWon() {
   STATE.screenChests = [];
   FIN_RT.seals++;
   try { audio.playUnlockFanfare('raro'); screenShake(4, 220); } catch (e) {}
-  if (FIN_RT.seals >= 6) { finEndBad(); return; }
+  if (FIN_RT.seals >= 6) { try { if (STATE.finalPhase && STATE.finalPhase.tries >= finCfg().INTENTOS) achEvent('flawless'); } catch (e) {} finEndBad(); return; }
   FIN_RT.idx++;
   FIN_RT.active = true;   // sigue en modo final hasta que arranque el siguiente puzle
   finShowGapChest();
@@ -298,9 +299,8 @@ function finSealedScreen() {
   const pick = { 1: null, 2: null, 3: null };
   const cols = [1, 2, 3].map(l => `
     <div class="fs-col" data-l="${l}">
-      <div class="fs-phrase">${P[l].frase}</div>
-      ${P[l].palabras.map(w => `<button type="button" class="fs-word" data-w="${w}">${w}</button>`).join('')}
-    </div>`).join('');
+      ${P[l].palabras.map(w => `<button type="button" class="fs-word" data-w="${w}"><span>${P[l].frase}</span> <b>${w}</b></button>`).join('')}
+    </div>`).join('');   // [0.42] cada opción es la FRASE entera con su palabra (ya no palabras sueltas)
   const ov = finEl('fin-ov fs-screen', `
     <div class="fs-head"><div class="fl-title">${T.SEALED_TITULO}</div><div class="fl-sub">${T.SEALED_SUB}</div>${STATE.testPassHint && STATE.passWords ? `<div class="fs-test">[MODO TEST] Correctas: ${[1, 2, 3].map(l => String(STATE.passWords[l]).toUpperCase()).join(' · ')}</div>` : ''}</div>
     <div class="fs-cols">${cols}</div>
@@ -414,6 +414,7 @@ function finCrackSVG() {
   return s;
 }
 function finEndBad() {
+  try { achEvent('bad'); } catch (e) {}   // [0.42] logro
   try { nbReg('fin.malo'); nbReg('npc.uno'); } catch (e) {}   // [0.40] cuaderno
   finEndCommon();
   const B = finCfg().FINAL_MALO, frame = uiHost();
@@ -527,6 +528,7 @@ function finDrawDoor(frameCv, skyCv, leafCv) {
   px(L, 19, 17, '#8a8a96'); px(L, 19, 18, '#8a8a96');
 }
 function finEndGood() {
+  try { achEvent('good'); } catch (e) {}   // [0.42] logro
   try { nbReg('fin.bueno'); } catch (e) {}   // [0.40] cuaderno
   finEndCommon();
   const G = finCfg().FINAL_BUENO, frame = uiHost();

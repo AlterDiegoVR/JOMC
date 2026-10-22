@@ -535,6 +535,7 @@ function buildSceneNote(p) {
     else el.innerHTML = '<span class="note-caret">|</span>';
   };
   fill();
+  try { nbReg('obj.postit'); if (p.kind === 'write') nbReg('obj.postit.escribir'); else if (p.kind === 'read') nbReg('obj.postit.familiar'); else if (p.kind === 'pass') nbReg('obj.postit.contra'); } catch (e) {}   // [0.42] cuaderno
   el.addEventListener('click', () => {
     if (p.kind === 'pass' && !p.written) { openPassEditor(el, p, fill); return; }   // [0.202]
     if (p.kind === 'write' && !p.written) { openNoteEditor(el, p, fill); return; }
@@ -786,7 +787,7 @@ function triggerLootExplosion() {
     STATE.opensByType = STATE.opensByType || {};
     STATE.opensByType[active.type.id] = (STATE.opensByType[active.type.id] || 0) + 1;
     STATE.cleanStreak++;
-    checkAchievements();
+    achEvent('chest', active);   // [0.42] logros (contador permanente por tipo de cofre)
 
     // CONSUMO DE GANZÚA POR TRATO "DEDOS ROTOS"
     if (active.type.consumible === 'picks' && STATE.picksBrokenOnUse) {
@@ -795,6 +796,7 @@ function triggerLootExplosion() {
     }
 
     if (STATE.cursedChestsLeft > 0) {
+      try { achEvent('curse'); } catch (e) {}   // [0.42] turnos de maldición del bucle
       STATE.cursedChestsLeft--;
       if (STATE.cursedChestsLeft === 0) {
         STATE.salvageCurseActive = false; STATE.curseHalf = false;
@@ -924,6 +926,7 @@ function triggerLootExplosion() {
       ? DATOS_JUEGO.MINIJUEGOS.AVANZADO.LOCKPICK.PENALIZACION_TANTEO : 0;
     lpState.tanteoUsed = false;
     if (tanteoPenalty > 0) {
+      try { nbReg('puz.wooden.tanteo'); nbReg('puz.wooden.tanteo.pena'); } catch (e) {}   // [0.42] cuaderno
       let tanteoGp = Math.floor(finalGp * tanteoPenalty);
       finalGp = Math.max(1, finalGp - tanteoGp);
       gpLines.push({ label: DATOS_JUEGO.MINIJUEGOS.AVANZADO.LOCKPICK.ETIQUETA_RECIBO, val: `-${tanteoGp} GP` });
