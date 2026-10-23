@@ -168,7 +168,8 @@ function getNarrativeTier() {
 function processNextQueuedEvent() {
   if (STATE.eventQueue.length > 0) {
     const nextEvent = STATE.eventQueue.shift();
-    setTimeout(() => nextEvent(), 250);
+    if (nextEvent && nextEvent.noDelay) nextEvent();   // [0.47] el regalo del Duende tras la subida de nivel entra al instante: no se ve la sala en medio
+    else setTimeout(() => nextEvent(), 250);
   }
 }
 
@@ -365,11 +366,13 @@ function applyWildcard(wc) {
     case 'MODIFICADOR':
       STATE.mods = STATE.mods || {};
       STATE.mods[wc.valor.id] = (STATE.mods[wc.valor.id] || 0) + (wc.valor.cofres != null ? wc.valor.cofres : wc.valor.usos);   // [0.096] 'usos' = Seda y Racha Congelada (caducan por fallos salvados, no por cofres)
+      if (wc.valor.id === 'malaRacha') try { showBono('racha', 'on', 0, STATE.mods.malaRacha); } catch (e) {}   // [0.47]
+      if (wc.valor.id === 'cofresOscuros') { try { updateChestSelectionUI(); } catch (e) {} }   // [0.47] la pantalla ya generada se repinta al activarse (selector, rareza y textos)
       break;
     case 'PERDER_ORO': {
-      const lost = Math.min(STATE.gold, wcGold(wc.valor));
+      const want = wcGold(wc.valor), lost = Math.min(STATE.gold, want);
       STATE.gold -= lost;
-      extra = `-${lost} GP`;
+      extra = lost <= 0 ? 'No tenías oro: no pierdes nada' : (lost < want ? `Solo tenías ${lost} GP: pierdes todo lo que tenías` : `-${lost} GP`);   // [0.47] la cantidad real, no la anunciada
       break;
     }
     case 'DAR_ORO':
@@ -393,9 +396,9 @@ function applyWildcard(wc) {
       Object.keys(wc.valor).forEach(prop => { STATE.abilities[prop] += wc.valor[prop]; });
       break;
     case 'PERDER_HERRAMIENTAS': {   // [0.092] nunca deja menos de 1 (para no bloquear la partida)
-      const lost = [];
-      Object.keys(wc.valor).forEach(prop => { const n = Math.max(0, Math.min(wc.valor[prop], (STATE[prop] || 0) - 1)); STATE[prop] -= n; if (n) lost.push(`-${n}`); });
-      extra = lost.length ? lost.join(', ') + (wc.valor.picks ? ' Ganzúa' : '') : 'Por suerte, no tenías de sobra';
+      const lost = []; let capped = false;
+      Object.keys(wc.valor).forEach(prop => { const n = Math.max(0, Math.min(wc.valor[prop], (STATE[prop] || 0) - 1)); STATE[prop] -= n; if (n) lost.push(`-${n}`); if (n < wc.valor[prop]) capped = true; });
+      extra = lost.length ? lost.join(', ') + (wc.valor.picks ? (lost.length && parseInt(lost[0].slice(1)) === 1 ? ' Ganzúa' : ' Ganzúas') : '') + (capped ? ' (te queda 1)' : '') : 'Solo te queda 1: no pierdes nada';   // [0.47] cantidad real y aviso del mínimo
       break;
     }
     case 'DAR_ORO_AZAR': {   // [0.210] Bolsa Olvidada: 30-80 GP en pasos de 5; a más nivel, más probable el premio alto (sin multiplicar por nivel)
@@ -433,6 +436,7 @@ function applyWildcard(wc) {
       break;
     case 'COFRES_PESADOS':
       STATE.heavyChestsLeft += wc.valor;
+      try { showBono('pesados', 'on', 0, STATE.heavyChestsLeft); } catch (e) {}   // [0.47]
       break;
     case 'MALDICION_CODICIA':
       STATE.greedCurseLeft += wc.valor;
@@ -445,6 +449,7 @@ function applyWildcard(wc) {
       break;
     case 'COFRES_OXIDADOS':   // [0.105] Cerrojos Oxidados: cada cofre pide entre 1 y 3 herramientas al azar
       STATE.oxidadoLeft += wc.valor;
+      try { showBono('oxidados', 'on', 0, STATE.oxidadoLeft); } catch (e) {}   // [0.47]
       break;
     case 'DAR_CARTA_RECARGA': {   // [0.105] da 1 carta y otra cada N cofres tras usarla
       STATE.abilities[wc.valor.prop]++;

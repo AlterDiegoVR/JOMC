@@ -223,6 +223,7 @@ function finRunPuzzle() {
   pzHardBadgeUpdate();
   { const mm0 = document.getElementById('minigameModal'); if (mm0) mm0.classList.remove('pz-seq'); }
   mentiraPuzzle = false; masterKeyActive = false; sedaPuzzle = false; puzzleToolPaid = null; puzzleStat = null;
+  if (TEST_AUTO) { minigameInProgress = true; finHud(); setTimeout(() => { if (FIN_RT.active && TEST_AUTO) finalPuzzleWon(); }, 450); return; }   // [0.47] Modo test automático: el cerrojo final se abre solo
   setPuzzleBackground(type.juego);
   if (type.juego === 'lockpick') startLockpickGame();
   else if (type.juego === 'tumbler') startTumblerGame();

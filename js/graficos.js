@@ -929,6 +929,7 @@ function triggerSecretDecorationReward(decor) {
         STATE.roomDarkUntil = STATE.chestsOpened + (DATOS_JUEGO.DECORACIONES_SALA.AMBIENTE_APAGADO_COFRES || 10);
         nightStealReset();   // [0.3] Nocturnidad recupera sus robos cada vez que la luz se apaga
         darkFlickerT0 = Date.now();
+        try { updateChestSelectionUI(); } catch (e) {}   // [0.47] Cofres a Oscuras: al apagarse la luz se refresca el selector y los textos
         setTimeout(() => audio.playDarkOut(), 120);   // [0.087b] progresión de notas graves
       };
       msg += " (¡La bombilla se funde! La celda queda a oscuras un buen rato.)";
@@ -937,6 +938,7 @@ function triggerSecretDecorationReward(decor) {
         // [0.087b] Cualquier cambio de ambiente enciende la luz si estaba apagada
         if ((STATE.roomDarkUntil || 0) > STATE.chestsOpened) STATE.roomDarkUntil = 0;
         STATE.roomThemeFilter = chosen;
+        try { updateChestSelectionUI(); } catch (e) {}   // [0.47]
       };
       msg += chosen === 'normal' ? " (La sala recupera su color original.)" : " (¡El ambiente de la sala ha cambiado!)";
     }

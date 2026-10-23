@@ -172,6 +172,7 @@ function applyLevelCard(cardData) {
 }
 
 function triggerLevelUpChoice(afterGift) {
+  if (typeof afterGift === 'function') afterGift.noDelay = true;   // [0.47]
   lvlClearTimers();
   const q0 = STATE.eventQueue.length;   // [0.46] lo que encole la wildcard (cartas tácticas, apagón...) se ejecuta justo después de elegir carta, y antes del regalo del Duende
   const lvlNum = document.getElementById('levelUpNum'); 
@@ -274,12 +275,20 @@ function triggerLevelUpChoice(afterGift) {
       
       applyLevelCard(cardData);   // [0.210] extraído para que también lo use Hallazgo Táctico+
 
-      const levelUpModal = document.getElementById('levelUpModal'); if (levelUpModal) levelUpModal.classList.add('hidden');
+      const levelUpModal = document.getElementById('levelUpModal');
       updateUI();
 
       const front = wcEvents.slice();   // [0.46] orden: efectos de la wildcard → regalo del Duende → siguiente nivel pendiente
       if (afterGift) front.push(afterGift);
       if (STATE.xp >= STATE.xpNext) front.push(() => processLevelUp());
+      // [0.47] Sin efectos de wildcard por medio, la escena del Duende entra en el mismo instante: nunca se ve la sala entre la carta y el Duende
+      if (afterGift && !wcEvents.length) {
+        STATE.eventQueue.unshift(...front.slice(1));
+        afterGift();
+        if (levelUpModal) levelUpModal.classList.add('hidden');
+        return;
+      }
+      if (levelUpModal) levelUpModal.classList.add('hidden');
       STATE.eventQueue.unshift(...front);
       processNextQueuedEvent();
     });
@@ -355,6 +364,15 @@ function openActiveChest() {
     if (modOn('mentirosos') && !isClimaxActive() && Math.random() < DATOS_JUEGO.MODS_WILDCARD.MENTIROSOS.PROB) {
       const alts = DATOS_JUEGO.COFRES.ESTANDAR.filter(t => t.juego !== active.type.juego && STATE.level >= chestMinLevel(t) && (t.consumible === 'picks' || toolUnlocked(t.consumible)));
       if (alts.length) { juegoShown = alts[Math.floor(Math.random() * alts.length)].juego; mentiraPuzzle = true; }
+    }
+    // [0.47] Modo test automático: el puzle se da por superado sin jugarlo (se cobran las herramientas como con la carta AUTO)
+    if (TEST_AUTO && !TEST_SERIES.active) {
+      if (toolProp !== 'picks' && !finalPuzzleMode()) STATE[toolProp] = Math.max(0, STATE[toolProp] - reqCount);
+      puzzleToolPaid = null; puzzleStat = null; minigameInProgress = false; masterKeyActive = false;
+      const mmA = document.getElementById('minigameModal'); if (mmA) mmA.classList.add('hidden');
+      try { audio.playUnlockFanfare('raro'); } catch (e) {}
+      updateUI(); triggerLootExplosion();
+      return;
     }
     setPuzzleBackground(juegoShown);   // [0.101] imagen de ambiente detrás del puzle
 

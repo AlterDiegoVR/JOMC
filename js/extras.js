@@ -260,7 +260,7 @@ function openSmith() {
     STATE.pulseraLeft = DATOS_JUEGO.CARTAS_210.PULSERA_VIP.COFRES;
     try { audio.init(); audio.playUnlockFanfare('epico'); } catch (e) {}
     updateUI();
-    showPersistentFeedback(`🎟️ PULSERA VIP: los próximos ${STATE.pulseraLeft} intentos son de cofres épicos o legendarios y no necesitas herramientas.`);
+    if (!(typeof showBono === 'function' && showBono('pulsera', 'on', 0, STATE.pulseraLeft))) showPersistentFeedback(`🎟️ PULSERA VIP: los próximos ${STATE.pulseraLeft} intentos son de cofres épicos o legendarios y no necesitas herramientas.`);   // [0.47]
     chestMutateFx(() => generateScreenChests());
   });
   const r = document.getElementById('abilityRuletaBtn');
@@ -376,11 +376,13 @@ function tacticTutorialShow(btn) {
   setTimeout(() => document.addEventListener('pointerdown', bye, true), 800);
   setTimeout(bye, 9000);
 }
+let tacFreeTicks = 0;   // [0.47] la sala debe estar libre en dos comprobaciones seguidas (así no se cuela en el hueco entre dos escenas, como la del Duende)
 setInterval(() => {
   try {
     if (typeof STATE === 'undefined' || !STATE || STATE.tacticTutorialSeen || document.getElementById('tacTutorial')) return;
     if (!TAC_BTNS.some(([id, k]) => (STATE.abilities[k] || 0) > 0)) return;
-    if (typeof nbRoomFree === 'function' && !nbRoomFree()) return;
+    if (typeof nbRoomFree === 'function' && !nbRoomFree()) { tacFreeTicks = 0; return; }
+    if (++tacFreeTicks < 2) return;
     const btn = TAC_BTNS.map(([id]) => document.getElementById(id)).find(b => b && !b.classList.contains('hidden') && b.getClientRects().length);
     if (btn) tacticTutorialShow(btn);
   } catch (e) {}

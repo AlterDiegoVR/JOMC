@@ -394,7 +394,7 @@ function renderMerchantShopGrid() {
 
   const nightOn = nightStealActive();   // [0.210] Nocturnidad y Alevosía
   const stealPossible = !!(STATE.perks.shopStealFree || nightOn);
-  if (!shopVisit) shopVisit = { l: !!STATE.perks.shopStealFree, n: nightOn, uL: false, uN: false };
+  if (!shopVisit) { shopVisit = { l: !!STATE.perks.shopStealFree, n: nightOn, uL: false, uN: false }; if (stealPossible) shopMode = 'robar'; }   // [0.47] la tentación: con robo disponible, ROBAR viene seleccionado y hay que elegir PAGAR
   if (!stealPossible) shopMode = 'pagar';
   // [0.42] Selector: solo si había robo disponible al entrar en la tienda; se desactiva cuando ya no queda ninguno
   if (shopVisit.l || shopVisit.n) {
@@ -641,7 +641,7 @@ function traperoCascade() {
   traperoTimers.push(setTimeout(() => { if (leave && !traperoForced) leave.classList.remove('hidden'); }, 120 + cards.length * step + 80));
 }
 
-function showTraperoDealFeedback(dealTitle, summaryText, onClose) {
+function showTraperoDealFeedback(dealTitle, summaryText, onClose, cardsHtml) {
   try { achEvent('deal'); } catch (e) {}   // [0.42] logros: tratos hechos en el bucle
   try { nbReg('npc.trapero.2'); } catch (e) {}   // [0.40] cuaderno
   if ((STATE.deudaTrapero || 0) > 0) { STATE.deudaTrapero--; saveDirty = true; }   // [0.46] una visita menos de deuda
@@ -655,7 +655,9 @@ function showTraperoDealFeedback(dealTitle, summaryText, onClose) {
     () => {
       if (typeof onClose === 'function') onClose();
       else closeTraperoShop();
-    }
+    },
+    null,
+    cardsHtml || null   // [0.47] cartas de wildcard (Doble Tirada, Apuesta)
   );
 }
 
@@ -961,16 +963,15 @@ function openTraperoShop() {
         } else if (deal.id === 'doble_tirada') {   // [0.46] una wildcard buena y otra mala
           if (traperoModal) traperoModal.classList.add('hidden');
           const rp = pickWildcard('pos'), rn = pickWildcard('neg');
-          const part = r => r ? `${r.wc.nombre}${r.extra ? ' (' + r.extra + ')' : ''}: ${String(wcDesc(r.wc)).replace(/[{}]/g, '')}` : '—';
+          const cards = [rp, rn].filter(Boolean).map(r => wcCardHtml(r.wc, 'win', r.extra));
           audio.playUnlockFanfare('epico'); updateUI();
-          showTraperoDealFeedback("Doble Tirada", `Lo bueno: ${part(rp)} Lo malo: ${part(rn)}`);
+          showTraperoDealFeedback("Doble Tirada", "Una buena y una mala. Así trabajo yo.", null, cards);
         } else if (deal.id === 'apuesta_trapero') {   // [0.46] moneda al aire
           if (traperoModal) traperoModal.classList.add('hidden');
           coinFlipFx(side => {
             const r = pickWildcard(side === 'cara' ? 'pos' : 'neg');
             updateUI();
-            const txt = r ? `${r.wc.nombre}${r.extra ? ' (' + r.extra + ')' : ''}: ${String(wcDesc(r.wc)).replace(/[{}]/g, '')}` : '';
-            showTraperoDealFeedback("Apuesta del Trapero", `${side === 'cara' ? 'Cara. La suerte es tuya.' : 'Cruz. Hoy la suerte es mía.'} ${txt}`);
+            showTraperoDealFeedback("Apuesta del Trapero", side === 'cara' ? 'Cara. La suerte es tuya.' : 'Cruz. Hoy la suerte es mía.', null, r ? [wcCardHtml(r.wc, 'win', r.extra)] : null);
           });
         } else if (deal.id === 'sin_red') {   // [0.46] sin Trato Injusto a cambio de un buen montón de ventajas
           const S = DATOS_JUEGO.TRATOS_46.SIN_RED;
@@ -984,6 +985,7 @@ function openTraperoShop() {
           const A = DATOS_JUEGO.TRATOS_210.ATAJO;
           STATE.xp += STATE.xpNext;   // se suma la XP completa del nivel: al subir se conserva lo que ya tenías
           STATE.atajoLeft = A.COFRES;
+          try { showBono('atajo', 'on', 0, A.COFRES); } catch (e) {}   // [0.47]
           if (traperoModal) traperoModal.classList.add('hidden');
           audio.playUnlockFanfare('epico');
           updateUI();

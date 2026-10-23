@@ -297,6 +297,9 @@ function testKeyHash(seq, salt) {
 
   // ---- menú de servicio (estilo arcade) ----
   const TM_PAGES = [
+    { title: 'MODO AUTOMÁTICO', rows: [   // [0.47] los puzles se dan por superados solos (también los del cerrojo final); solo hay que ir pulsando
+      { id: 'testAuto', label: 'PUZLES SUPERADOS SOLOS', kind: 'bool' }
+    ] },
     { title: 'AJUSTES DE PARTIDA', rows: [
       { id: 'final3', label: 'FINAL BUCLE 3 (TODO ABIERTO)', kind: 'bool' },   // [0.31] salta al cofre 70 del bucle 3 con todo desbloqueado y las 3 contraseñas
       { id: 'chest', label: 'IR AL COFRE', kind: 'num', min: 1, max: 100, def: 78 },
@@ -428,68 +431,82 @@ function testKeyHash(seq, salt) {
     (DATOS_JUEGO.WILDCARDS || []).forEach(w => set(!!v['wc_' + w.id], () => { try { applyWildcard(w); wcDone.push(w.nombre); } catch (e) { console.warn('Wildcard de test fallida', w.id, e); } }));   // [0.096]
     if (any) {
       statsPaused = true; statsGoldPrev = null;   // una partida con trucos no cuenta para las estadísticas
-      Object.keys(tmVals).forEach(k => { if (k !== 'pType' && k !== 'pVar') tmVals[k] = (k === 'clearAch' || k.indexOf('wc_') === 0 || (k.indexOf('ps_') === 0 && /oidoClinico|luckyLootChance|shopStealFree|picksBrokenOnUse|ps_sinRed|ps_tb_/.test(k))) ? false : null; });
+      Object.keys(tmVals).forEach(k => { if (k !== 'pType' && k !== 'pVar' && k !== 'testAuto') tmVals[k] = (k === 'clearAch' || k.indexOf('wc_') === 0 || (k.indexOf('ps_') === 0 && /oidoClinico|luckyLootChance|shopStealFree|picksBrokenOnUse|ps_sinRed|ps_tb_/.test(k))) ? false : null; });
       generateScreenChests(); keysBaseline = null; keyToastQueue.length = 0; updateUI();   // [0.091] sin avisos por los ajustes de test
       showPersistentFeedback('🛠️ [MODO TEST] Ajustes aplicados' + (wcDone.length ? ' (wildcards: ' + wcDone.join(', ') + ')' : '') + '. Esta partida ya no cuenta para las estadísticas.');
     }
     return any;
   }
-  let tmPage = 0, tmCursor = 0, tmKeyHandler = null;
+  // [0.47] Menú por GRUPOS desplegables: cada grupo se pliega en una fila y al pulsarla se abren sus opciones debajo, con el mismo aspecto
+  let tmOpen = {}, tmCursor = 0, tmKeyHandler = null;
+  const tmFlat = () => { const out = []; TM_PAGES.forEach((pg, g) => { out.push({ hdr: true, g, pg }); if (tmOpen[g]) { pg.rows.forEach(r => out.push({ g, r })); if (pg.puzzle) out.push({ g, act: true }); } }); return out; };
+  const tmActiveCount = pg => pg.rows.filter(r => { const v = tmVals[r.id]; return !r.always && v !== undefined && v !== null && v !== false; }).length;
+  function syncAuto() { TEST_AUTO = !!tmVals.testAuto; if (TEST_AUTO) { statsPaused = true; statsGoldPrev = null; } }
   window.openTestMenu = function () {
     audio.init();
+    tmVals.testAuto = !!TEST_AUTO;
     const o = overlay('testMenuModal', 10040);
     o.style.padding = '0';
     o.innerHTML = `<div class="tm-root" style="position:relative;width:100%;height:100%;display:flex;flex-direction:column;padding:10px 8px 8px;overflow:hidden;box-sizing:border-box">
       <div style="text-align:center;color:#ffe14a;font-size:26px;letter-spacing:.1em;line-height:1">— MODO TEST —</div>
-      <div style="text-align:center;color:#999;font-size:17px;margin-bottom:6px">JOMC v${DATOS_JUEGO.VERSION} · <span id="tmPg"></span></div>
+      <div style="text-align:center;color:#999;font-size:17px;margin-bottom:6px">JOMC v${DATOS_JUEGO.VERSION} · ${TM_PAGES.length} GRUPOS</div>
       <div id="tmScroll" style="flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain">
         <div id="tmRows"></div>
         <div id="tmNote" style="color:#8fd6ff;font-size:17px;min-height:42px;padding:4px 6px"></div>
       </div>
       <div id="tmFoot" style="flex:none;padding-top:6px;border-top:2px solid #333;background:#000">
-        <div style="display:flex;gap:6px"><button class="tm-btn" id="tmNext">NEXT PAGE ▶</button><button class="tm-btn go" id="tmGo">VALIDAR</button></div>
-        <div style="display:flex;gap:6px;margin-top:6px"><button class="tm-btn warn" id="tmExit">SALIR</button></div>
+        <div style="display:flex;gap:6px"><button class="tm-btn go" id="tmGo">VALIDAR</button><button class="tm-btn warn" id="tmExit">SALIR</button></div>
       </div>
     </div>`;   // [0.42] los controles de abajo quedan FIJOS; solo se desplazan las filas
-    const rowsEl = o.querySelector('#tmRows');
+    const rowsEl = o.querySelector('#tmRows'), noteEl = o.querySelector('#tmNote');
+    noteEl.textContent = 'Pulsa un grupo para abrirlo. Los ajustes activados se aplican UNA vez a la partida en curso con VALIDAR. OFF = no tocar. El modo automático se activa al momento.';
+    const exit = () => { if (tmKeyHandler) document.removeEventListener('keydown', tmKeyHandler, true); tmKeyHandler = null; close('testMenuModal'); };
+    const toggle = g => { tmOpen[g] = !tmOpen[g]; try { audio.playUiClick(); } catch (x) {} draw(); };
     const draw = () => {
-      const pg = TM_PAGES[tmPage];
-      o.querySelector('#tmPg').textContent = `PAGE ${tmPage + 1}/${TM_PAGES.length} · ${pg.title}`;
-      tmCursor = Math.min(tmCursor, pg.rows.length - 1);
-      rowsEl.innerHTML = pg.rows.map((r, i) => `<div class="tm-row ${i === tmCursor ? 'sel' : ''}" data-i="${i}"><span class="tm-lbl">${r.label}</span><span class="tm-arr" data-d="-1">◀</span><span class="tm-val ${(fmtVal(r) === 'OFF') ? 'off' : ''}">${fmtVal(r)}</span><span class="tm-arr" data-d="1">▶</span></div>`).join('');
-      o.querySelector('#tmGo').textContent = pg.puzzle ? 'LANZAR PUZLE' : 'VALIDAR';
-      o.querySelector('#tmNote').textContent = pg.puzzle ? 'Se prueba SOLO este puzle, en serie, con herramientas infinitas. VARIANTE = bucle x rareza (1x3 = bucle 1, épico). Se sale desde la barra superior.' : 'Los ajustes activados se aplican UNA vez a la partida en curso. OFF = no tocar.';
-      // flechas: pulsación y mantener
+      const flat = tmFlat();
+      tmCursor = Math.max(0, Math.min(tmCursor, flat.length - 1));
+      rowsEl.innerHTML = flat.map((it, i) => {
+        const sel = i === tmCursor ? ' sel' : '';
+        if (it.hdr) { const n = tmActiveCount(it.pg); return `<div class="tm-row tm-hdr${sel}" data-i="${i}" style="border-top:1px solid #333;color:#ffe14a"><span class="tm-lbl">${tmOpen[it.g] ? '▼' : '▶'} ${it.pg.title}</span><span class="tm-val ${n ? '' : 'off'}">${n ? '● ' + n : ''}</span></div>`; }
+        if (it.act) return `<div class="tm-row${sel}" data-i="${i}" style="padding-left:20px"><button class="tm-btn go" data-go="1" style="height:40px">LANZAR PUZLE</button></div>`;
+        const r = it.r;
+        return `<div class="tm-row${sel}" data-i="${i}" style="padding-left:30px"><span class="tm-lbl">${r.label}</span><span class="tm-arr" data-d="-1">◀</span><span class="tm-val ${(fmtVal(r) === 'OFF') ? 'off' : ''}">${fmtVal(r)}</span><span class="tm-arr" data-d="1">▶</span></div>`;
+      }).join('');
       rowsEl.querySelectorAll('.tm-row').forEach(rowEl => {
-        const i = +rowEl.dataset.i, r = pg.rows[i];
-        rowEl.addEventListener('click', e => { if (e.target.closest('.tm-arr')) return; tmCursor = i; draw(); try { audio.playUiClick(); } catch (x) {} });
+        const i = +rowEl.dataset.i, it = flat[i];
+        rowEl.addEventListener('click', e => {
+          if (e.target.closest('.tm-arr')) return;
+          if (e.target.closest('[data-go]')) { exit(); startTestSeries(tmVals.pType, tmVals.pVar); return; }
+          tmCursor = i;
+          if (it.hdr) toggle(it.g); else { draw(); try { audio.playUiClick(); } catch (x) {} }
+        });
+        if (!it.r) return;
+        const r = it.r;
         rowEl.querySelectorAll('.tm-arr').forEach(a => {
           let tm = null, iv = null, n = 0;
           const stop = () => { clearTimeout(tm); clearInterval(iv); };
-          const act = () => { n++; stepVal(r, +a.dataset.d, n > 12); const vEl = rowEl.querySelector('.tm-val'); vEl.textContent = fmtVal(r); vEl.classList.toggle('off', fmtVal(r) === 'OFF'); };
-          a.addEventListener('pointerdown', e => { e.preventDefault(); tmCursor = i; rowsEl.querySelectorAll('.tm-row').forEach((x, j) => x.classList.toggle('sel', j === i)); try { audio.playUiClick(); } catch (x) {} act(); tm = setTimeout(() => { iv = setInterval(act, 80); }, 420); });
+          const act = () => { n++; stepVal(r, +a.dataset.d, n > 12); if (r.id === 'testAuto') syncAuto(); const vEl = rowEl.querySelector('.tm-val'); vEl.textContent = fmtVal(r); vEl.classList.toggle('off', fmtVal(r) === 'OFF'); };
+          a.addEventListener('pointerdown', e => { e.preventDefault(); tmCursor = i; rowsEl.querySelectorAll('.tm-row').forEach((x, j) => x.classList.toggle('sel', j === i)); try { audio.playUiClick(); } catch (x) {} act(); tm = setTimeout(() => { iv = setInterval(act, 90); }, 420); });
           ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => a.addEventListener(ev, stop));
         });
       });
     };
     draw();
-    o.querySelector('#tmNext').addEventListener('click', () => { tmPage = (tmPage + 1) % TM_PAGES.length; tmCursor = 0; draw(); try { audio.playUiClick(); } catch (e) {} });
-    const exit = () => { if (tmKeyHandler) document.removeEventListener('keydown', tmKeyHandler, true); tmKeyHandler = null; close('testMenuModal'); };
     o.querySelector('#tmExit').addEventListener('click', exit);
     o.querySelector('#tmGo').addEventListener('click', () => {
-      const pg = TM_PAGES[tmPage];
-      if (pg.puzzle) { exit(); startTestSeries(tmVals.pType, tmVals.pVar); return; }
       if (applyTestCheats()) exit();
-      else { o.querySelector('#tmNote').textContent = 'No hay ningún ajuste activado (todo en OFF).'; try { audio.playTestDenied(); } catch (e) {} }
+      else { noteEl.textContent = 'No hay ningún ajuste activado (todo en OFF).'; try { audio.playTestDenied(); } catch (e) {} }
     });
-    // teclado (PC): ↑↓ elegir fila, ←→ cambiar valor, Enter valida
+    // teclado (PC): ↑↓ elegir fila, ←→ cambiar valor (o cerrar/abrir un grupo), Enter abre el grupo o valida
     tmKeyHandler = e => {
-      const pg = TM_PAGES[tmPage];
-      if (e.key === 'ArrowUp') tmCursor = (tmCursor + pg.rows.length - 1) % pg.rows.length;
-      else if (e.key === 'ArrowDown') tmCursor = (tmCursor + 1) % pg.rows.length;
-      else if (e.key === 'ArrowLeft') stepVal(pg.rows[tmCursor], -1, e.shiftKey);
-      else if (e.key === 'ArrowRight') stepVal(pg.rows[tmCursor], 1, e.shiftKey);
-      else if (e.key === 'Enter') { o.querySelector('#tmGo').click(); return; }
+      const flat = tmFlat(), it = flat[tmCursor] || {};
+      if (e.key === 'ArrowUp') tmCursor = (tmCursor + flat.length - 1) % flat.length;
+      else if (e.key === 'ArrowDown') tmCursor = (tmCursor + 1) % flat.length;
+      else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        const d = e.key === 'ArrowLeft' ? -1 : 1;
+        if (it.hdr) tmOpen[it.g] = d > 0; else if (it.r) { stepVal(it.r, d, e.shiftKey); if (it.r.id === 'testAuto') syncAuto(); }
+      }
+      else if (e.key === 'Enter') { if (it.hdr) { tmOpen[it.g] = !tmOpen[it.g]; } else if (it.act) { exit(); startTestSeries(tmVals.pType, tmVals.pVar); return; } else { o.querySelector('#tmGo').click(); return; } }
       else return;
       e.preventDefault(); e.stopPropagation(); draw();
     };

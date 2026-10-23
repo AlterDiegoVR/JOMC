@@ -1,0 +1,91 @@
+// [0.47] Bonos de píxel: sustituyen a los banners de efecto activado / agotado y al contador de fallos del Perdedor.
+// Bajan desde arriba, perforan el cuadro que toca, se quedan un instante y se van. No se quedan en pantalla.
+(function () {
+  const G={A:'010101111101101',B:'110101110101110',C:'011100100100011',D:'110101101101110',E:'111100110100111',F:'111100110100100',G:'011100101101011',H:'101101111101101',I:'111010010010111',J:'001001001101010',K:'101101110101101',L:'100100100100111',M:'101111111101101',N:'110101101101101',O:'010101101101010',P:'110101110100100',Q:'010101101111011',R:'110101110101101',S:'011100010001110',T:'111010010010010',U:'101101101101111',V:'101101101101010',W:'101101111111101',X:'101101010101101',Y:'101101010010010',Z:'111001010100111','0':'111101101101111','1':'010110010010111','2':'110001010100111','3':'110001010001110','4':'101101111001001','5':'111100110001110','6':'011100111101111','7':'111001010010010','8':'111101111101111','9':'111101111001110','/':'001001010100100'};
+  const CFG = {
+    perdedor: { n: 'PERDEDOR', who: 'd', tot: 5 },
+    pulsera:  { n: 'PULSERA VIP', who: 'd', tot: 5, on: 'ACTIVADA', end: 'AGOTADA' },
+    atajo:    { n: 'ATAJO', who: 'd', tot: 10, on: 'ACTIVADO', end: 'AGOTADO' },
+    pesados:  { n: 'COFRES PESADOS', who: 't', tot: 5, on: 'ACTIVADO', end: 'SE ACABO' },
+    oxidados: { n: 'CERROJOS OXIDADOS', who: 't', tot: 3, on: 'ACTIVADO', end: 'SE ACABO' },
+    racha:    { n: 'MALA RACHA', who: 't', tot: 10, on: 'ACTIVADA', end: 'SE ACABO' }
+  };
+  const COL = { d: { m: '#7b3fe0', m2: '#4a1fa0', st: '#1e0f40' }, t: { m: '#d63a55', m2: '#7a1730', st: '#0b1d3f' } };
+  const PAPER = '#efe3c4', PAPER2 = '#d9c9a3', INK = '#2a1a47';
+  const IMG = {};
+  let pop = null, cv = null, ctx = null, queue = [], busy = false, timers = [];
+
+  function build() {
+    if (pop) return true;
+    pop = document.createElement('div');
+    pop.id = 'bonoPop';
+    pop.style.cssText = 'position:fixed;left:50%;top:calc(10px + env(safe-area-inset-top,0px));width:min(360px,92vw);z-index:10200;pointer-events:none;transform:translate(-50%,-160%);transition:transform .35s steps(5);image-rendering:pixelated';
+    cv = document.createElement('canvas');
+    cv.width = 144; cv.height = 48;
+    cv.style.cssText = 'display:block;width:100%;height:auto;image-rendering:pixelated;image-rendering:crisp-edges';
+    pop.appendChild(cv);
+    document.body.appendChild(pop);
+    ctx = cv.getContext('2d');
+    try {
+      [['d', ASSETS.duende.base], ['t', ASSETS.trapero.base]].forEach(([k, src]) => { const i = new Image(); i.src = src; IMG[k] = i; });
+    } catch (e) {}
+    return true;
+  }
+  const px = (x, y, w, h, c) => { ctx.fillStyle = c; ctx.fillRect(x, y, w, h); };
+  function txt(x, y, s, c) { let cx = x; for (const ch of s) { const g = G[ch]; if (g) for (let i = 0; i < 15; i++) if (g[i] === '1') px(cx + (i % 3), y + ((i / 3) | 0), 1, 1, c); cx += 4; } }
+  const tw = s => Math.max(0, s.length * 4 - 1);
+  function ticket(c, u, mode, label) {
+    const P = COL[c.who], W = 144, H = 48;
+    ctx.clearRect(0, 0, W, H); ctx.imageSmoothingEnabled = false;
+    px(0, 0, W, H, INK); px(1, 1, W - 2, H - 2, PAPER);
+    for (let y = 2; y < H - 2; y++) for (let x = 36; x < W - 2; x++) if ((x * 3 + y * 5) % 11 === 0) px(x, y, 1, 1, PAPER2);
+    px(36, 1, W - 37, 10, P.m); for (let x = 37; x < W - 2; x += 2) px(x, 10, 1, 1, P.m2);
+    px(1, 1, 34, H - 2, P.st);
+    const im = IMG[c.who];
+    try { if (im && im.complete && im.naturalWidth) ctx.drawImage(im, 0, 0, 24, 34, 5, 7, 24, 34); } catch (e) {}
+    for (let y = 3; y < H - 3; y += 3) px(35, y, 1, 2, INK);
+    const cut = (x, y) => ctx.clearRect(x, y, 1, 1);
+    [[0,0],[1,0],[0,1],[W-1,0],[W-2,0],[W-1,1],[0,H-1],[1,H-1],[0,H-2],[W-1,H-1],[W-2,H-1],[W-1,H-2]].forEach(a => cut(a[0], a[1]));
+    for (const nx of [0, W - 1]) for (let dy = -4; dy <= 4; dy++) { const r = Math.round(Math.sqrt(17 - dy * dy)); for (let k = 0; k < r; k++) cut(nx + (nx ? -k : k), 24 + dy); }
+    for (const ny of [0, H - 1]) for (let dx = -3; dx <= 3; dx++) { const r = Math.round(Math.sqrt(11 - dx * dx)); for (let k = 0; k < r; k++) cut(35 + dx, ny + (ny ? -k : k)); }
+    txt(40, 3, c.n, '#fff');
+    const cnt = u + '/' + c.tot; txt(W - 5 - tw(cnt), 3, cnt, '#f5b932');
+    const two = c.tot > 5, cw = 13, ch = two ? 8 : 12, gap = 3, x0 = 40, y0 = two ? 14 : 16;
+    for (let i = 0; i < c.tot; i++) {
+      const cx = x0 + (i % 5) * (cw + gap), cy = y0 + ((i / 5) | 0) * (ch + 2), p = i < u, fr = mode === 'fresh' && i === u - 1;
+      px(cx, cy, cw, ch, INK); px(cx + 1, cy + 1, cw - 2, ch - 2, fr ? '#f5b932' : (p ? '#120a1c' : PAPER));
+      if (p && !fr) { const mx = cx + ((cw - 5) >> 1), my = cy + ((ch - 4) >> 1); px(mx + 1, my, 3, 4, '#000'); px(mx, my + 1, 5, 2, '#000'); px(mx + 1, my, 3, 1, '#3a2f55'); }
+      if (!p && !fr) { const n = String(i + 1); txt(cx + ((cw - tw(n)) >> 1), cy + ((ch - 5) >> 1), n, P.m2); }
+      if (fr) px(cx + ((cw - 3) >> 1), cy + ((ch - 3) >> 1), 3, 3, '#fff');
+    }
+    const by = two ? 38 : 34;
+    if (label && mode !== 'stamp') txt(x0, by, label, P.m2);
+    for (let x = W - 30; x < W - 5; x++) if ((x * 7 + 3) % 5 < 3) px(x, by - 1, 1, 7, INK);
+    for (let x = 40; x < W - 5; x++) if (!label && (x * 5 + 2) % 7 < 3) px(x, two ? 41 : 39, 1, 5, INK);
+    if (mode === 'stamp') { const t = label || ''; const w = tw(t) + 6; px(x0 + 20, two ? 20 : 21, w, 9, P.m); px(x0 + 21, two ? 21 : 22, w - 2, 7, PAPER); txt(x0 + 23, two ? 22 : 23, t, P.m); }
+  }
+  const at = (ms, f) => timers.push(setTimeout(f, ms));
+  function play(job) {
+    busy = true; build(); timers = [];
+    const c = Object.assign({}, CFG[job.id]), seq = [];
+    if (job.tot) c.tot = Math.min(10, job.tot);
+    if (job.kind === 'use') { const u = job.u; seq.push([c, u - 1, 'idle', 'FALLO ' + u + ' DE ' + c.tot], [c, u, 'fresh', 'FALLO ' + u + ' DE ' + c.tot], [c, u, 'idle', 'FALLO ' + u + ' DE ' + c.tot]); }
+    else if (job.kind === 'on') seq.push([c, 0, 'idle', c.on + ' ' + (job.tot || c.tot)]);
+    else seq.push([c, c.tot - 1, 'idle', ''], [c, c.tot, 'fresh', ''], [c, c.tot, 'stamp', c.end]);
+    at(30, () => { ticket(...seq[0]); pop.style.transform = 'translate(-50%,0)'; });
+    let t = 420;
+    for (let i = 1; i < seq.length; i++) { const s = seq[i]; at(t, () => ticket(...s)); t += s[2] === 'fresh' ? 200 : 300; }
+    at(t + 1500, () => { pop.style.transform = 'translate(-50%,-160%)'; });
+    at(t + 1500 + 450, () => { busy = false; next(); });
+  }
+  function next() { if (!busy && queue.length) play(queue.shift()); }
+  // kind: 'use' (u = fallos hasta ahora), 'on' (activación), 'end' (agotado). tot opcional: nº real de intentos/cofres.
+  window.showBono = function (id, kind, u, tot) {
+    try {
+      if (!CFG[id]) return false;
+      queue.push({ id, kind, u, tot });
+      next();
+      return true;
+    } catch (e) { return false; }
+  };
+})();

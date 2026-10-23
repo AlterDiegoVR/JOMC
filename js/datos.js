@@ -9,7 +9,7 @@
 
 const DATOS_JUEGO = {
   // [0.088] Versión visible en pantalla (esquina inferior central) para que las capturas la incluyan
-  VERSION: '0.46',
+  VERSION: '0.47',
   TUTORIAL_TACTICA: 'Aquí van tus cartas tácticas. Úsalas cuando quieras, pero con cabeza: se gastan al usarlas.',   // [0.46] texto de la flecha de la primera carta táctica (borrador mío)
   // [0.104] Efectos de la apertura automática de la secuencia final (cofres 101-110); la intensidad sube del primero al último (k = 0..1)
   SECUENCIA_FINAL_FX: { ACTIVAR: true, ESTALLIDOS_BASE: 2, ESTALLIDOS_EXTRA: 4, PARTICULAS_POR_ESTALLIDO: 40, HACIA_CENTRO_BASE: 30, HACIA_CENTRO_EXTRA: 60,
@@ -2240,7 +2240,8 @@ const DATOS_JUEGO = {
     },
     ECOS_FINALES: {
       MENSAJE_1: "Se ha ido.",
-      MENSAJE_2: "Volverá."
+      MENSAJE_2: "Volverá.",
+      BUCLE_2: { MENSAJE_1: "Otra vez, otra vez.", MENSAJE_2: "Tranquilo, todo va bien." }   // [0.47] el final del bucle 2: el Duende ya lo sabe, el Trapero lo calma
     }
   },
 
@@ -2385,16 +2386,16 @@ const DATOS_JUEGO = {
     { id: "suministros_inesperados_plus", nombre: "Suministros Inesperados+", tipo: "BENEFICIOSO", desc: "Encuentras una pequeña bolsa en un rincón: obtienes x4 consumibles al azar.", efecto: "OTORGAR_CONSUMIBLE_DOBLE_AZAR", valor: 4, minBucle: 2 },
     { id: "enrachado", nombre: "Enrachado", tipo: "BENEFICIOSO", desc: "Si tu racha supera los 10 cofres, su bonus de GP aumenta un 25%. Dura hasta que pierdas la racha.", efecto: "MODIFICADOR", valor: { id: "enrachado", usos: 1 } },
     { id: "nocturnidad_alevosia", nombre: "Nocturnidad y Alevosía", tipo: "BENEFICIOSO", desc: "Con la luz apagada el duende no puede verte... Robarle o no depende de ti.", efecto: "NOCTURNIDAD", valor: 10 },
-    { id: "llave_maestra", nombre: "Llave Maestra", tipo: "BENEFICIOSO", desc: "Usa 5 ganzúas para abrir cualquier cofre. Dura todo el bucle.", efecto: "MODIFICADOR", valor: { id: "llaveMaestra", usos: 1 } },
-    { id: "cofres_mentirosos", nombre: "Cofres Mentirosos", tipo: "PERJUDICIAL", desc: "No te puedes fiar ni de los cofres. 25% de posibilidades de que el cofre esconda un puzle que no le corresponda. Dura todo el bucle.", efecto: "MODIFICADOR", valor: { id: "mentirosos", usos: 1 } },
-    { id: "spooky_things", nombre: "Spooky Things", tipo: "PERJUDICIAL", desc: "¿Para qué tocas? Los objetos pueden esconder sorpresas desagradables. Dura todo el bucle.", efecto: "MODIFICADOR", valor: { id: "spooky", usos: 1 } },
+    { id: "llave_maestra", nombre: "Llave Maestra", tipo: "BENEFICIOSO", desc: "Usa 5 ganzúas para abrir cualquier cofre. Permanente.", efecto: "MODIFICADOR", valor: { id: "llaveMaestra", usos: 1 } },
+    { id: "cofres_mentirosos", nombre: "Cofres Mentirosos", tipo: "PERJUDICIAL", desc: "No te puedes fiar ni de los cofres. 25% de posibilidades de que el cofre esconda un puzle que no le corresponda. Permanente.", efecto: "MODIFICADOR", valor: { id: "mentirosos", usos: 1 } },
+    { id: "spooky_things", nombre: "Spooky Things", tipo: "PERJUDICIAL", desc: "¿Para qué tocas? Los objetos pueden esconder sorpresas desagradables. Permanente.", efecto: "MODIFICADOR", valor: { id: "spooky", usos: 1 } },
     { id: "apagon_financiero", nombre: "Apagón Financiero", tipo: "PERJUDICIAL", desc: "Se va la luz: pierdes 5 monedas por turno mientras esté apagada.", efecto: "APAGON_FINANCIERO", valor: 10 },
     // [0.46] Wildcards nuevas (nombres y textos: borrador mío). 'unico' = no sale si ya está activa; 'cond' = condición para poder salir
     { id: "mala_racha", nombre: "Mala Racha", tipo: "PERJUDICIAL", desc: "Durante 10 cofres tu racha se queda congelada: no sube. Si fallas, la pierdes.", efecto: "MODIFICADOR", valor: { id: "malaRacha", cofres: 10 }, unico: true },
     { id: "cura_espiritual", nombre: "Cura Espiritual", tipo: "BENEFICIOSO", desc: "Una calma extraña te recorre: se borran tus efectos negativos permanentes. La maldición sigue ahí.", efecto: "CURA_ESPIRITUAL", valor: 1, cond: "CURABLE" },
-    { id: "manos_ajenas", nombre: "Manos Ajenas", tipo: "PERJUDICIAL", desc: "Algo se mueve en la oscuridad: en cada turno con la luz apagada hay un 50% de que te roben una herramienta. Dura todo el bucle.", efecto: "MODIFICADOR", valor: { id: "manosAjenas", usos: 1 }, unico: true, peso: 0.7 },
-    { id: "cofres_oscuros", nombre: "Cofres a Oscuras", tipo: "PERJUDICIAL", desc: "Con la luz apagada, los cofres no son más que siluetas: no sabes cuál es cuál, aunque todos cuestan 1 herramienta. Dura todo el bucle.", efecto: "MODIFICADOR", valor: { id: "cofresOscuros", usos: 1 }, unico: true, peso: 0.7 },
-    { id: "precio_sangre", nombre: "Precio de la Sangre", tipo: "PERJUDICIAL", desc: "Mientras estés maldito, el Duende cobra más caro. Dura todo el bucle.", efecto: "MODIFICADOR", valor: { id: "precioSangre", usos: 1 }, unico: true, peso: 0.7, minBucle: 2 },
+    { id: "manos_ajenas", nombre: "Manos Ajenas", tipo: "PERJUDICIAL", desc: "Algo se mueve en la oscuridad: en cada turno con la luz apagada hay un 50% de que te roben una herramienta. Permanente.", efecto: "MODIFICADOR", valor: { id: "manosAjenas", usos: 1 }, unico: true, peso: 0.7 },
+    { id: "cofres_oscuros", nombre: "Cofres a Oscuras", tipo: "PERJUDICIAL", desc: "Con la luz apagada, los cofres no son más que siluetas: no sabes cuál es cuál, aunque todos cuestan 1 herramienta. Permanente.", efecto: "MODIFICADOR", valor: { id: "cofresOscuros", usos: 1 }, unico: true, peso: 0.7 },
+    { id: "precio_sangre", nombre: "Precio de la Sangre", tipo: "PERJUDICIAL", desc: "Mientras estés maldito, el Duende cobra más caro. Permanente.", efecto: "MODIFICADOR", valor: { id: "precioSangre", usos: 1 }, unico: true, peso: 0.7, minBucle: 2 },
     { id: "deuda_trapero", nombre: "Deuda con el Trapero", tipo: "PERJUDICIAL", desc: "En tus próximas 3 visitas al Trapero estarás obligado a aceptar uno de sus tratos.", efecto: "DEUDA_TRAPERO", valor: 3, minBucle: 2 }
   ],
 

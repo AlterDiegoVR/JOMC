@@ -200,6 +200,7 @@ function glassShatterFx() {
   const fr = document.getElementById('gameFrame');
   if (!fr || document.getElementById('shatterRoot')) return;
   killSceneVeil();   // [0.104] sin telón azul marino: los trozos copian la sala real, con sus cofres e interfaz
+  try { particles.length = 0; } catch (e) {}   // [0.47] se apagan los fuegos artificiales ya en el aire (menos memoria) y los trozos se copian de una sala limpia
   const r = fr.getBoundingClientRect(), W = r.width, H = r.height;
   const root = document.createElement('div');
   root.id = 'shatterRoot';
@@ -268,9 +269,9 @@ function glassShatterFx() {
       const out = Math.hypot(mx - cx, my - cy) || 1;
       const dx = (mx - cx) / out * (40 + Math.random() * 90), dy = H * (0.9 + Math.random() * 0.5), rot = (Math.random() - 0.5) * 80;
       try { w.animate([{ transform: 'translate(0,0) rotate(0deg)' }, { transform: `translate(${dx * 0.3}px,${dy * 0.08}px) rotate(${rot * 0.15}deg)`, offset: .18 }, { transform: `translate(${dx}px,${dy}px) rotate(${rot}deg)` }],
-        { duration: 1100 + Math.random() * 700, delay: Math.random() * 260, easing: 'cubic-bezier(.5,0,.9,.55)', fill: 'forwards' }); } catch (e) {}
+        { duration: 2300 + Math.random() * 1500, delay: Math.random() * 450, easing: 'cubic-bezier(.5,0,.9,.55)', fill: 'forwards' }); } catch (e) {}
     });
-    setTimeout(() => root.remove(), 2400);
+    setTimeout(() => root.remove(), 4600);   // [0.47] caída más lenta
   };
   const buildChunk = () => {
     if (!root.isConnected) return;
@@ -292,9 +293,9 @@ function glassShatterFx() {
       if (idx < shards.length) setTimeout(buildChunk, 0); else { built = true; fall(); }
     } catch (e) { glassShatterRestore(); }
   };
-  setTimeout(buildChunk, 0);
-  // 4) tiempo de grietas y caída
-  setTimeout(() => { timeUp = true; fall(); }, 380);
+  requestAnimationFrame(() => requestAnimationFrame(buildChunk));   // [0.47] primero se repinta la sala sin fuegos y luego se copian los trozos
+  // 4) tiempo de grietas y caída: [0.47] espera más larga con el cristal quebrado antes de que caigan los trozos
+  setTimeout(() => { timeUp = true; fall(); }, 1100);
 }
 function glassShatterRestore() { const fr = document.getElementById('gameFrame'); if (fr) fr.style.visibility = ''; const r = document.getElementById('shatterRoot'); if (r) r.remove(); starfieldStop(); }
 
@@ -330,7 +331,7 @@ function triggerSensoryOverloadCollapse() {
     if (bursts >= 35) {
       clearInterval(overloadInterval);
       appBody.classList.remove('shake-screen');
-      executeDiffuseEchoTransition();
+      setTimeout(executeDiffuseEchoTransition, 3800);   // [0.47] la galaxia del fondo aguanta el doble de tiempo
     }
   }, 100);
 }
@@ -356,7 +357,8 @@ function executeDiffuseEchoTransition() {
   }
   overlay.style.visibility = 'visible';   // [0.103] el marco puede estar oculto por el cristal roto; el aviso final sí se ve
 
-  const ecos = DATOS_JUEGO.NARRATIVA.ECOS_FINALES;
+  const ecos0 = DATOS_JUEGO.NARRATIVA.ECOS_FINALES;
+  const ecos = ((STATE.currentLoop || 1) === 2 && ecos0.BUCLE_2) ? Object.assign({}, ecos0, ecos0.BUCLE_2) : ecos0;   // [0.47] el bucle 2 tiene sus propias frases
 
   setTimeout(() => {
     overlay.classList.remove('opacity-0');
@@ -691,6 +693,7 @@ if (btnCofradia) btnCofradia.addEventListener('click', () => cofradiaStart());
 let globalPuzzleTimerInterval = null;
 let globalPuzzleTimeLeft = 10;
 let currentPuzzleConsumable = 'picks';
+let TEST_AUTO = false;   // [0.47] Modo test automático: los puzles se dan por superados solos
 let TEST_SERIES = { active: false };   // [0.090] Modo test: puzles en serie
 let sedaPuzzle = false;   // [0.210] el puzle en curso va con Manos de Seda (no se ha cobrado la herramienta al entrar)
 let puzzleToolPaid = null;   // [0.090] herramienta avanzada pagada al entrar al puzle en curso
@@ -773,7 +776,7 @@ function handleFailure(toolName = 'picks', reasonText = "Fallo en el puzle.") {
   mentiraPuzzle = false; masterKeyActive = false;
   sedaPuzzle = false;
   // [0.210] Pulsera VIP: un fallo también gasta uno de sus intentos
-  if (STATE.pulseraLeft > 0) { STATE.pulseraLeft--; if (STATE.pulseraLeft === 0) showPersistentFeedback('🎟️ Se acabó la Pulsera VIP.'); }
+  if (STATE.pulseraLeft > 0) { STATE.pulseraLeft--; if (STATE.pulseraLeft === 0) { if (!(typeof showBono === 'function' && showBono('pulsera', 'end', 0, DATOS_JUEGO.CARTAS_210.PULSERA_VIP.COFRES))) showPersistentFeedback('🎟️ Se acabó la Pulsera VIP.'); } }
   // [0.210] Atajo: un fallo dentro de los cofres del trato = pantalla de Game Over (o trato injusto)
   if (STATE.atajoLeft > 0) {
     STATE.atajoLeft = 0;
@@ -808,7 +811,7 @@ function handleFailure(toolName = 'picks', reasonText = "Fallo en el puzle.") {
       STATE.perdedorLootPending = true;
       showPersistentFeedback("💀 ¡5 Fallos completados! El botín (GP y XP) de tu siguiente cofre abierto será LEGENDARIO x2.");
     } else {
-      showPersistentFeedback(`💀 Fallo registrado (${STATE.fallosConsecutivos}/5) para la carta PERDEDOR.`);
+      if (!(typeof showBono === 'function' && showBono('perdedor', 'use', STATE.fallosConsecutivos))) showPersistentFeedback(`💀 Fallo registrado (${STATE.fallosConsecutivos}/5) para la carta PERDEDOR.`);   // [0.47] bono de píxel
     }
   }
 

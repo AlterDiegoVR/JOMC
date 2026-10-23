@@ -339,7 +339,7 @@ function tomeSlotFree(co) {
   for (const n of [co, co + 1]) if (n % f === 0 || traperoAt(n)) return false;
   return true;
 }
-function triggerSequentialDialogue(speaker, speechText, iconClass, subtitleText, titleColorClass, giftObj = null, onComplete = null, itemSrc = null) {
+function triggerSequentialDialogue(speaker, speechText, iconClass, subtitleText, titleColorClass, giftObj = null, onComplete = null, itemSrc = null, cardsHtml = null) {
   if (STATE.finalFree && (speaker === 'EL TRAPERO' || speaker === 'EL DUENDE')) { if (typeof onComplete === 'function') { try { onComplete(); } catch (e) {} } else processNextQueuedEvent(); return; }   // [0.40] tercer final: ni el Duende ni el Trapero vuelven a salir
   // [0.086] Las frases llevan su mood al final: "texto {alegre}". Se separa aquí y manda sobre el subtítulo.
   let taggedMood = null;
@@ -430,6 +430,16 @@ function triggerSequentialDialogue(speaker, speechText, iconClass, subtitleText,
   const dlgItem = document.getElementById('dlgItem');
   if (dlgItem) { if (itemSrc) { dlgItem.src = itemSrc; dlgItem.classList.remove('hidden'); } else dlgItem.classList.add('hidden'); }
 
+  const dlgCards = document.getElementById('dlgCards');   // [0.47] cartas de wildcard (una por hueco)
+  if (dlgCards) {
+    if (cardsHtml && cardsHtml.length) {
+      dlgCards.innerHTML = cardsHtml.map(h => `<div class="wcard-host">${h}</div>`).join('');
+      dlgCards.classList.remove('hidden');
+      dlgCards.querySelectorAll('.wcard').forEach(c => c.classList.add('pop'));
+      requestAnimationFrame(() => dlgCards.querySelectorAll('.wcard-host').forEach(h => { try { wcCardFit(h); } catch (e) {} }));
+    } else { dlgCards.classList.add('hidden'); dlgCards.innerHTML = ''; }
+  }
+
   const giftContainer = document.getElementById('npcGiftContainer');
   if (giftContainer) {
     if (giftObj) {
@@ -452,6 +462,7 @@ function triggerSequentialDialogue(speaker, speechText, iconClass, subtitleText,
       if (modal) modal.classList.add('hidden');
       if (dlgItem) dlgItem.classList.add('hidden');
       if (giftContainer) giftContainer.classList.add('hidden');
+      if (dlgCards) { dlgCards.classList.add('hidden'); dlgCards.innerHTML = ''; }
       if (typeof onComplete === 'function') {
         onComplete();
       } else {
@@ -816,16 +827,17 @@ function triggerLootExplosion() {
     const modsAtOpen = Object.assign({}, STATE.mods || {});   // [0.093] se evalúan antes de descontar
     if (STATE.mods) Object.keys(STATE.mods).forEach(k => { if (MODS_POR_USOS.includes(k)) return; if (STATE.mods[k] > 0) STATE.mods[k]--; if (STATE.mods[k] <= 0) delete STATE.mods[k]; });   // [0.096] Seda y Congelada no bajan por cofre
     const mo = id => modsAtOpen[id] > 0;
-    if (STATE.heavyChestsLeft > 0) STATE.heavyChestsLeft--;
+    if (modsAtOpen.malaRacha > 0 && !(STATE.mods && STATE.mods.malaRacha > 0)) try { showBono('racha', 'end', 0, 10); } catch (e) {}   // [0.47]
+    if (STATE.heavyChestsLeft > 0) { STATE.heavyChestsLeft--; if (STATE.heavyChestsLeft === 0) try { showBono('pesados', 'end', 0, 5); } catch (e) {}; }   // [0.47]
     if (STATE.greedCurseLeft > 0) STATE.greedCurseLeft--;
     if (STATE.harderPuzzlesLeft > 0) STATE.harderPuzzlesLeft--;
     if (STATE.extremePuzzlesLeft > 0) STATE.extremePuzzlesLeft--;   // [0.105]
-    if (STATE.oxidadoLeft > 0) STATE.oxidadoLeft--;
+    if (STATE.oxidadoLeft > 0) { STATE.oxidadoLeft--; if (STATE.oxidadoLeft === 0) try { showBono('oxidados', 'end', 0, 3); } catch (e) {}; }   // [0.47]
     rechargeTick();
     // [0.210] Pulsera VIP y Atajo: cada intento superado gasta uno; Llave Maestra y Mentirosos terminan con el cofre
     masterKeyActive = false; mentiraPuzzle = false; sedaPuzzle = false;
-    if (STATE.pulseraLeft > 0) { STATE.pulseraLeft--; if (STATE.pulseraLeft === 0) setTimeout(() => showPersistentFeedback('🎟️ Se acabó la Pulsera VIP.'), 0); }
-    if (STATE.atajoLeft > 0) { STATE.atajoLeft--; if (STATE.atajoLeft === 0) setTimeout(() => showPersistentFeedback('⚡ Atajo superado: ya no hay peligro.'), 0); }
+    if (STATE.pulseraLeft > 0) { STATE.pulseraLeft--; if (STATE.pulseraLeft === 0) { if (!(typeof showBono === 'function' && showBono('pulsera', 'end', 0, DATOS_JUEGO.CARTAS_210.PULSERA_VIP.COFRES))) setTimeout(() => showPersistentFeedback('🎟️ Se acabó la Pulsera VIP.'), 0); } }
+    if (STATE.atajoLeft > 0) { STATE.atajoLeft--; if (STATE.atajoLeft === 0) { if (!(typeof showBono === 'function' && showBono('atajo', 'end', 0, DATOS_JUEGO.TRATOS_210.ATAJO.COFRES))) setTimeout(() => showPersistentFeedback('⚡ Atajo superado: ya no hay peligro.'), 0); } }
 
     let baseGpMin = DATOS_JUEGO.ECONOMIA.RECOMPENSAS_BASE.gp_min;
     let baseGpMax = DATOS_JUEGO.ECONOMIA.RECOMPENSAS_BASE.gp_max;
@@ -1024,6 +1036,9 @@ function triggerLootExplosion() {
     if (mo('hambre')) { finalGp = Math.floor(finalGp * MW.HAMBRE_XP.GP_MULT); gpLines.push({ label: "🍽️ Hambre de XP", val: "sin GP" }); }
 
     STATE.active2XMultiplier = false;
+    // [0.47] El último cofre que se abre a mano antes de la secuencia automática no da experiencia: así no puede salir la ruleta de wildcards encima de la escena final
+    { const sq = DATOS_JUEGO.PROGRESIÓN.SECUENCIA_HISTORIA;
+      if (!STATE.sequenceBroken && !finalLoop3() && STATE.climaxPhase && STATE.chestsOpened === sq.COFRE_AUTO_OPEN_INICIO - 1) { finalXp = 0; xpLines = [{ label: "Última apertura manual", val: "0 XP" }]; } }
     STATE.gold += finalGp;
     STATE.xp += finalXp;
     manosAjenasTick();   // [0.46] Manos Ajenas: con la luz apagada, 50% de que te roben una herramienta
@@ -1059,7 +1074,7 @@ function triggerLootExplosion() {
       tomeFindHTML = `<div class="lt-find"><span class="lt-find-ex">!</span>${tomeImg ? `<img class="lt-find-img" src="${tomeImg}" alt="">` : ''}<div class="lt-find-txt"><b>${TM.AVISO_TITULO}</b><span>${TM.BANNER}</span></div><span class="lt-find-ex">!</span></div>`;
     }
     // [0.201] Bucle 2, nivel 2, cofre 2: aparece la linterna (no funciona todavía) y, justo al cerrar el botín, el Trapero comenta el "cacharro"
-    if ((STATE.currentLoop || 1) === 2 && STATE.level === 2 && !STATE.lanternFound && chestsSinceLevelUp === 2) {
+    if ((STATE.currentLoop || 1) === 2 && STATE.level >= 2 && !STATE.lanternFound && (STATE.level > 2 || chestsSinceLevelUp >= 2) && !isClimaxActive()) {   // [0.47] si una subida de nivel por carta/trato se saltó el cofre 2 del nivel 2, aparece en el primer hueco posible
       STATE.lanternFound = true; STATE.pendingTraperoLantern = true;
       // [0.31] El aviso de la linterna se hace notar como el del Tomo: bloque destacado arriba del botín con el objeto grande
       const LN = DATOS_JUEGO.NARRATIVA.LINTERNA, lanImg = (typeof ASSETS !== 'undefined' && ASSETS.objetos && ASSETS.objetos.linterna) || '';
