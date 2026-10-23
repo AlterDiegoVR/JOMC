@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — cuaderno.js — VERSIÓN 0.41
+// JUST ONE MORE CHEST — cuaderno.js — VERSIÓN 0.45
 // El cuaderno (el Tomo): registro de lo que el juego ha visto y pantalla del cuaderno.
 // REGLA: solo se escribe lo REGISTRADO. Nada de lo no descubierto aparece (ni secciones, ni páginas, ni notas).
 // Todos los textos y la lista de secciones están en DATOS_JUEGO.CUADERNO (datos.js). Este archivo solo tiene la lógica.
@@ -9,6 +9,8 @@
 const NB_KEY = 'justOneMoreChest_cuaderno_v1';
 let nbReg_ = {};      // { clave: { l: bucle, c: cofres abiertos, n: orden } }
 let nbCount = 0;
+let nbPending = 0;   // [0.45] anotaciones nuevas aún sin avisar (se agrupan en un solo banner)
+let nbQuiet = false;  // [0.45] true mientras nbSync pone al día el cuaderno justo al conseguirlo: esas entradas no avisan
 (function nbLoad() {
   try {
     const o = JSON.parse(window.localStorage.getItem(NB_KEY) || 'null');
@@ -22,6 +24,7 @@ function nbReg(key) {
   if (!key || nbReg_[key]) return false;
   nbReg_[key] = { l: (typeof STATE !== 'undefined' && STATE.currentLoop) || 1, c: (typeof STATE !== 'undefined' && STATE.chestsOpened) || 0, n: ++nbCount };
   nbSave();
+  if (!nbQuiet && key !== 'obj.tomo' && nbReg_['obj.tomo']) nbPending++;   // [0.45] anotación nueva (si ya se tiene el cuaderno y no es la puesta al día inicial)
   return true;
 }
 function nbHas(key) { return !!nbReg_[key]; }
@@ -32,6 +35,7 @@ let nbSyncT = 0;
 // Revisa el estado del juego y anota lo que ya se tiene (herramientas, maestrías, cartas, rachas, objetos...). Barato: se llama desde updateUI con límite de frecuencia.
 function nbSync(force) {
   const now = Date.now(); if (!force && now - nbSyncT < 700) return; nbSyncT = now;
+  nbQuiet = !nbReg_['obj.tomo'];   // [0.45] todo lo que se apunta en la sync en la que aún no había cuaderno queda sin aviso
   try {
     const S = STATE, C = DATOS_JUEGO.CUADERNO; if (!S || !C) return;
     ['picks', 'proPicks', 'usb', 'valves', 'batteries', 'fuses'].forEach(p => { if ((S[p] || 0) > 0 && toolUnlocked(p)) nbReg('herr.' + p); });
@@ -61,6 +65,7 @@ function nbSync(force) {
     if (S.salvageCurseActive && S.cursedChestsLeft > 0) nbReg('curse.trato');
     if ((S.currentLoop || 1) === 1 && (S.seqStage || 0) >= 1) nbReg('npc.trapero.advierte');
   } catch (e) {}
+  nbQuiet = false;
 }
 
 /* ---------- Contenido visible ---------- */
@@ -69,6 +74,8 @@ function nbLoopTag(k) {
   const maxL = Math.max((STATE && STATE.currentLoop) || 1, (typeof lifeStats !== 'undefined' && lifeStats.maxLoop) || 1);
   return maxL >= 2 ? DATOS_JUEGO.CUADERNO.ETIQUETA_BUCLE.replace('{n}', r.l) : '';   // en el bucle 1 el jugador no sabe que hay bucles
 }
+// [0.45] texto propio del cuaderno (DATOS_JUEGO.CUADERNO.TEXTOS_PROPIOS) o, si no hay, el del propio juego
+const nbOwn = (k, def) => { const o = (DATOS_JUEGO.CUADERNO.TEXTOS_PROPIOS || {})[k]; return o == null ? def : o; };
 const nbClean = s => String(s || '').replace(/[{}]/g, '');
 function nbNote(o) { return { h: o.h, t: o.t, tag: nbLoopTag(o.k), k: o.k }; }
 function nbWildcardNotes(kind) {
@@ -86,8 +93,8 @@ function nbSectionItems(sec) {
     case 'herram': return C.HERRAMIENTAS.filter(vis).map(nbNote);
     case 'objetos': return C.OBJETOS.filter(vis).map(nbNote);
     case 'rachas': return C.RACHAS.filter(vis).map(o => { const n = nbNote(o); n.t = n.t.replace('{min}', (DATOS_JUEGO.ECONOMIA.RACHAS_APERTURA || {}).MINIMO_PARA_BONUS); const best = (typeof lifeStats !== 'undefined' && lifeStats.bestStreak) || 0; if (best > 0) n.t += ' Mi mejor racha: ' + best + '.'; return n; });
-    case 'maestrias': return DATOS_JUEGO.CARTAS_NIVEL.PASIVAS.filter(c => nbHas('mae.' + c.id)).map(c => ({ h: c.titulo, t: c.desc, tag: nbLoopTag('mae.' + c.id), k: 'mae.' + c.id }));
-    case 'cartas': return Object.keys(C.CARTAS).filter(k => nbHas('carta.' + k)).map(k => ({ h: C.CARTAS[k], t: ((DATOS_JUEGO.TEXTOS_AYUDA.cartas || {})[k] || '').replace(/^Carta [^:]+:\s*/, ''), tag: nbLoopTag('carta.' + k), k: 'carta.' + k }));
+    case 'maestrias': return DATOS_JUEGO.CARTAS_NIVEL.PASIVAS.filter(c => nbHas('mae.' + c.id)).map(c => ({ h: c.titulo, t: nbOwn('mae.' + c.id, c.desc), tag: nbLoopTag('mae.' + c.id), k: 'mae.' + c.id }));
+    case 'cartas': return Object.keys(C.CARTAS).filter(k => nbHas('carta.' + k)).map(k => ({ h: C.CARTAS[k], t: nbOwn('carta.' + k, ((DATOS_JUEGO.TEXTOS_AYUDA.cartas || {})[k] || '').replace(/^Carta [^:]+:\s*/, '')), tag: nbLoopTag('carta.' + k), k: 'carta.' + k }));
     case 'comodin': case 'modif': return nbWildcardNotes(sec.id);
     case 'maldic': return C.MALDICIONES.filter(vis).map(nbNote).concat(nbWildcardNotes('maldic'));
     case 'pasado': return C.PASADO.filter(vis).map(nbNote);
@@ -109,7 +116,7 @@ let nbView = { v: 'index', sec: null, page: null };
 const nbEsc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 function nbOpen() {
-  nbSync(true);
+  nbSync(true); nbPending = 0; { const a = document.getElementById('nbAnnounce'); if (a) a.remove(); }   // [0.45]
   if (document.getElementById('nbOverlay')) return;
   nbView = { v: 'index', sec: null, page: null };
   const ov = document.createElement('div'); ov.id = 'nbOverlay'; ov.className = 'nbk';
@@ -155,3 +162,49 @@ function nbRender() {
   ov.querySelectorAll('.nbk-back').forEach(b => b.addEventListener('click', () => nbGo(b.dataset.go === 'index' ? { v: 'index' } : { v: 'section', sec: nbView.sec })));
   const sc = ov.querySelector('.nbk-scroll'); if (sc) sc.scrollTop = 0;
 }
+
+
+/* ---------- [0.45] Aviso de "nuevas anotaciones en el cuaderno" ----------
+   Varias anotaciones a la vez = un solo aviso. Solo sale con la sala principal en primer plano (nunca en una tienda, un puzle, un diálogo...);
+   si no, espera en cola hasta que la sala quede libre. Sin sonido. */
+const NB_BUSY_SEL = ['#minigameModal', '#dialogueModal', '#lootModal', '#levelUpModal', '#merchantModal', '#traperoShopModal', '#unfairDealModal', '#gameOverModal', '#nbOverlay',
+  '#coverScreen', '#resumeGameModal', '#resetConfirmModal', '#cardPreModal', '#cofradiaModal', '#askYesNoModal', '#smithModal', '#duendeReceiptModal', '#passBlock', '#noteEditor',
+  '#shatterRoot', '#diffuseEchoOverlay', '#starfieldBg', '#lvlFx', '#sceneVeil', '#gameOverStrike', '#fdr', '#flZoom', '#fsBack', '#fxBack', '#fgBack', '#persistentFeedbackBanner'];
+function nbElShown(sel) {
+  const el = document.querySelector(sel); if (!el) return false;
+  if (el.classList && el.classList.contains('hidden')) return false;
+  const cs = getComputedStyle(el); return cs.display !== 'none' && cs.visibility !== 'hidden' && el.getClientRects().length > 0;
+}
+function nbRoomFree() {
+  try {
+    if (typeof STATE === 'undefined' || !STATE) return false;
+    if (STATE.finalPhase || STATE.climaxPhase || (STATE.eventQueue && STATE.eventQueue.length)) return false;
+    if (typeof isLootProcessing !== 'undefined' && isLootProcessing) return false;
+    if (typeof achievementBannerBusy !== 'undefined' && achievementBannerBusy) return false;
+    if (typeof achievementBannerQueue !== 'undefined' && achievementBannerQueue.length) return false;
+    if (document.getElementById('nbAnnounce')) return false;
+    return !NB_BUSY_SEL.some(nbElShown);
+  } catch (e) { return false; }
+}
+function nbQuillSvg(sz) {
+  const O = '#1b1206';
+  return `<svg class="nb-ico" width="${sz}" height="${sz}" viewBox="0 0 40 40" aria-hidden="true">
+    <path d="M6 33 C6 27 9 23 13 22 L22 22 C25 22 26 25 24 27 L17 27 L24 28 C27 28 28 31 26 33 Z" fill="#f2c9a0" stroke="${O}" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M13 22 L13 17 C13 15 16 15 16 17 L16 22 M16 22 L16 19 C16 17 19 17 19 19 L19 22" fill="#f2c9a0" stroke="${O}" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M18 20 L35 4 C37 8 36 14 31 19 C27 23 22 24 18 20 Z" fill="#f8fafc" stroke="${O}" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M18 20 L33 7 M24 17 L29 14 M21 19 L25 11" stroke="#94a3b8" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <path d="M18 20 L14 25" stroke="${O}" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M7 36 C12 38 20 38 28 36" stroke="#38bdf8" stroke-width="2" fill="none" stroke-linecap="round" opacity=".8"/></svg>`;
+}
+function nbShowAnnounce() {
+  nbPending = 0;
+  let el = document.getElementById('nbAnnounce');
+  if (el) el.remove();
+  el = document.createElement('div');
+  el.id = 'nbAnnounce'; el.className = 'nb-ann';
+  el.innerHTML = `<div class="nb-card"><div class="nb-medal">${nbQuillSvg(38)}</div><div class="nb-tx">NUEVAS ANOTACIONES<br>EN EL CUADERNO</div></div>`;
+  uiHost().appendChild(el);
+  void el.offsetWidth; el.classList.add('show');
+  setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 450); }, 3200);
+}
+setInterval(() => { if (nbPending > 0 && nbRoomFree()) nbShowAnnounce(); }, 900);

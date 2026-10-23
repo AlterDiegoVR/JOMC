@@ -1220,3 +1220,10 @@ html:not(.narrow-layout) #pzHardBadge { font-size: 13px; }
 #abilityRiskBtn { background: rgb(67 20 7 / .8) !important; border-color: rgb(249 115 22 / .45) !important; color: #fdba74 !important; }
 #abilityRiskBtn:hover { background: rgb(124 45 18) !important; }
 #riskPotBar { background: rgb(67 20 7 / .9) !important; border-color: rgb(249 115 22 / .8) !important; color: #fdba74 !important; }
+
+/* [0.45] Aviso de nuevas anotaciones en el cuaderno */
+.nb-ann { position: absolute; left: 0; right: 0; bottom: 14px; z-index: 9997; display: flex; justify-content: center; padding: 0 12px; pointer-events: none; opacity: 0; transform: translateY(22px) scale(.96); transition: opacity .35s ease, transform .4s cubic-bezier(.2, 1.3, .4, 1); }
+.nb-ann.show { opacity: 1; transform: none; }
+.nb-card { display: flex; align-items: center; gap: 12px; padding: 8px 18px 8px 10px; border-radius: 10px; background: linear-gradient(180deg, #e9dcb8, #c9b583); border: 3px solid #6b4a1e; box-shadow: 0 0 0 2px #1b1206, 0 10px 26px rgba(0,0,0,.65), inset 0 0 0 2px #f4ead0; font-family: 'Outfit', sans-serif; }
+.nb-medal { flex: none; width: 46px; height: 46px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff7dc, #d9c48d); border: 2px solid #6b4a1e; }
+.nb-tx { font-weight: 800; font-size: 12px; letter-spacing: .12em; line-height: 1.35; color: #3a2610; }

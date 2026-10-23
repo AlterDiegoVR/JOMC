@@ -35,7 +35,7 @@ function finDelayNote(co) {
   if (co <= base || co >= finStartCo()) return null;
   const i = (R.DESP || []).indexOf(co - base); if (i < 0) return null;
   if (d === 1) return (R.POSTITS_NUEVOS || [])[i] || null;
-  const orig = finCfg().POSTITS_OBLIGATORIOS || []; return orig[i] ? orig[i].texto : null;
+  const orig = (finCfg().POSTITS_OBLIGATORIOS || []).filter(n => n.rep); return orig[i] ? orig[i].texto : null;   // [0.45] solo los 4 originales (rep)
 }
 // Gancho del cofre abierto (cofres.js): en el cofre de inicio habla el Trapero; en la siguiente aparición de la tienda salen los dos cofres
 function finalHook(co) {

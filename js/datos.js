@@ -9,7 +9,7 @@
 
 const DATOS_JUEGO = {
   // [0.088] Versión visible en pantalla (esquina inferior central) para que las capturas la incluyan
-  VERSION: '0.44',
+  VERSION: '0.45',
   // [0.104] Efectos de la apertura automática de la secuencia final (cofres 101-110); la intensidad sube del primero al último (k = 0..1)
   SECUENCIA_FINAL_FX: { ACTIVAR: true, ESTALLIDOS_BASE: 2, ESTALLIDOS_EXTRA: 4, PARTICULAS_POR_ESTALLIDO: 40, HACIA_CENTRO_BASE: 30, HACIA_CENTRO_EXTRA: 60,
     SACUDIDA_PX: 6, SACUDIDA_EXTRA_PX: 10, SACUDIDA_MS: 520, PULSO_ZOOM: 0.02, DESTELLO: 0.10 },
@@ -70,6 +70,22 @@ const DATOS_JUEGO = {
   CUADERNO: {
     ETIQUETA_BUCLE: 'descubierto en el bucle {n}',   // solo se muestra cuando el jugador ya ha pasado del bucle 1
     VACIO: 'Todas las páginas están en blanco. Se irá escribiendo solo.',
+    // [0.45] Textos propios del cuaderno para maestrías y cartas (la voz del protagonista). Si una clave no está aquí, se usa la descripción del propio juego.
+    TEXTOS_PROPIOS: {
+      "mae.mano_firme": "Me siento bien, los puzles resultan más llevaderos. +20% Margen de error en puzles.",
+      "mae.ojo_cazador": "La suerte está de mi lado, +15% Probabilidad de aparición de cofres Raros y Épicos.",
+      "mae.regateador": "El Duende me hace una rebajilla, excelente. -15% en los precios del Duende (+5% por nivel).",
+      "mae.pistones_lentos": "Aún no sé si es bueno o malo, pero los pistones van más rápido. -20% Velocidad en puzle de pistones.",
+      "mae.fondo_bolsillo": "Bro, ganar dinero es sencillo bro... +1 GP fijo y +15% extra en racha de aperturas.",
+      "mae.hombre_tranquilo": "Sin prisa se suele llegar antes, +2 segundos en todas las aperturas.",
+      "mae.oido_clinico": "Muestra la advertencia visual de Falso Punto Dulce cuando intento usar mis ganzúas.",
+      "mae.ladron": "El duende no presta demasiada atención a su mercancía. El primer ítem de la tienda del Duende es \"gratis\".",
+      "mae.electricista": "Maestría en Neón y Fusibles: Bonus de botín y EXP.",
+      "mae.cliente_vip": "El duende siempre tiene a la venta todas las herramientas, solo tengo que pulsar en ellas para ir rotándolas.",
+      "mae.exorcismo": "Aprendes a manejar las maldiciones a tu favor para aumentar tu SUERTE. Cuando me ha alcanzado la maldición empezaron a pasarme cosas buenas también.",
+      "carta.summonDuende": "Invoca al Duende y su tienda al momento.",
+      "carta.pulsera": "los próximos 5 cofres serán épicos o legendarios y no necesitan herramientas. "
+    },
     // Orden de las secciones; el número romano se asigna según cuántas haya visibles. tipo: 'paginas' (tarjetas → página con notas) | 'notas' (notas directas)
     SECCIONES: [
       { id: 'cofres',   nombre: 'Cofres y rarezas',    hint: 'normal, raro, épico, legendario',  color: '#8c5a2b', tipo: 'notas',   unidad: 'rarezas' },
@@ -96,38 +112,38 @@ const DATOS_JUEGO = {
     // --- Puzles: una página por tipo de cofre; notas por mecánica descubierta ('puz.<tipo>' abre la página) ---
     PUZLES: [
       { id: 'wooden', k: 'puz.wooden', titulo: 'Cofre de madera', sub: 'la ganzúa', notas: [
-        { k: 'puz.wooden', h: 'Qué hay que hacer', t: 'Mueve la ganzúa hasta dar con el punto dulce. Las zonas falsas hacen vibrar la herramienta.' },
+        { k: 'puz.wooden', h: 'Qué hay que hacer', t: 'Mueve la ganzúa hasta dar con el punto dulce. Los puntos dulces hacen vibrar la herramienta.' },
         { k: 'puz.wooden.tanteo', h: 'Probar el punto dulce', t: 'Si mantengo apretado el botón de probar y lo suelto, noto si el punto dulce es el bueno. Cuidado: se me puede romper la ganzúa.' },
-        { k: 'puz.wooden.tanteo.pena', h: 'Tantear ahora cuesta', t: 'Tantear con la ganzúa ya no sale gratis: me quita un 30 % del oro y de la experiencia de ese cofre.' },
+        { k: 'puz.wooden.tanteo.pena', h: 'Tantear ahora cuesta', t: 'Tantear con la ganzúa ya no sale gratis: el Trapero me quita un 30 % del oro y de la experiencia de ese cofre.' },
         { k: 'puz.wooden.destornillador', h: 'El destornillador', t: 'Después de la ganzúa viene una segunda fase: el destornillador se mueve con la barra de la izquierda y, al pasar por el centro del punto dulce, se nota un toquecito.' },
         { k: 'puz.wooden.falsos', h: 'Zonas falsas', t: 'Cuanto más valioso es el cofre, más trampas esconde la cerradura. En los de madera sencillos casi nunca hay zonas falsas; en los mejores, casi siempre.' },
         { k: 'puz.wooden.troll', h: 'Un cofre sin solución', t: 'Hoy encontré un cofre que no se podía abrir. Ningún punto era el bueno. De vez en cuando, uno de los mejores es un simple engaño.' }
       ] },
       { id: 'piston', k: 'puz.piston', titulo: 'Caja de acero', sub: 'los pistones', notas: [
-        { k: 'puz.piston', h: 'Qué hay que hacer', t: 'Fija el pistón activo con la unión latón/acero sobre la línea verde.' },
-        { k: 'puz.piston.solidarios', h: 'Pistones solidarios', t: 'Pulsa cuando el pistón 1 se cruce con otro: se unen y se mueven juntos. Une los demás igual.' },
+        { k: 'puz.piston', h: 'Qué hay que hacer', t: 'Fija el pistón activo con la unión latón/acero sobre la línea verde, y así con todos para abrir la cerradura.' },
+        { k: 'puz.piston.solidarios', h: 'Pistones solidarios', t: 'Estas cerraduras son distintas ahora... tengo que pulsar cuando el pistón 1 se cruce con otro: se unen y se mueven juntos hasta que dejo todos alineados.' },
         { k: 'puz.piston.sello', h: 'La línea azul', t: 'Con todos los pistones fijados, hay que detenerlos juntos sobre la línea azul.' },
         { k: 'puz.piston.rareza', h: 'Cajas mejores, pistones peor', t: 'Cuanto mejor es la caja, más pistones tiene, menos tiempo me deja y más justo hay que acertar.' }
       ] },
       { id: 'cyber', k: 'puz.cyber', titulo: 'Arca digital', sub: 'la terminal', notas: [
-        { k: 'puz.cyber', h: 'Qué hay que hacer', t: 'Elige la palabra de la lista. Cada intento te dice cuántas letras coinciden.' },
+        { k: 'puz.cyber', h: 'Qué hay que hacer', t: 'Elige la palabra de la lista. Cada intento te dice cuántas letras coinciden en la misma posición. Debo ir descartando...' },
         { k: 'puz.cyber.numeros', h: 'Números', t: 'A veces la lista no trae palabras, sino números. Cada intento me dice cuántas cifras coinciden.' },
-        { k: 'puz.cyber.longitud', h: 'Palabras largas', t: 'Cuanto mejor es el cofre, más largas son las palabras. Dentro de una misma lista todas miden lo mismo.' }
+        { k: 'puz.cyber.longitud', h: 'Palabras largas', t: 'Cuanto mejor es el cofre, más largas son las palabras y más opciones hay, se vuelve complicado.' }
       ] },
       { id: 'hydraulic', k: 'puz.hydraulic', titulo: 'Cofre de vapor', sub: 'las tuberías', notas: [
-        { k: 'puz.hydraulic', h: 'Qué hay que hacer', t: 'Gira las tuberías para llevar el agua de la válvula a la salida.' },
-        { k: 'puz.hydraulic.validar', h: 'Bombas y VALIDAR', t: 'Evita las bombas. El fluido no se ve hasta pulsar VALIDAR, y solo hay un intento.' },
+        { k: 'puz.hydraulic', h: 'Qué hay que hacer', t: 'Hay que girar las tuberías para llevar el agua de la válvula a la salida.' },
+        { k: 'puz.hydraulic.validar', h: 'Bombas y VALIDAR', t: 'Ahora aparecen bombas en el sistema... El fluido no entra en el circuito hasta que pulsas VALIDAR, y solo hay un intento.' },
         { k: 'puz.hydraulic.cruz', h: 'Piezas en cruz', t: 'Hay piezas con cuatro salidas: el agua sale por todos los lados. Con una bomba cerca, cuidado.' },
         { k: 'puz.hydraulic.giros', h: 'Giros contados', t: 'Algunos tableros limitan los giros que puedes dar. Pasarse del límite es fallar.' },
         { k: 'puz.hydraulic.obstaculos', h: 'Casillas muertas', t: 'Hay casillas por las que el agua no pasa. No explotan, pero cortan el camino. Mejor buscar otro.' }
       ] },
       { id: 'neon', k: 'puz.neon', titulo: 'Arca de neón', sub: 'las luces', notas: [
         { k: 'puz.neon', h: 'Qué hay que hacer', t: 'Memoriza la secuencia de luces y repítela con las mismas notas. Una sola pifia y se acaba.' },
-        { k: 'puz.neon.giro', h: 'El dial gira', t: 'Después de enseñarte la secuencia, el dial gira y las luces cambian de sitio.' },
+        { k: 'puz.neon.giro', h: 'El dial gira', t: 'Después de enseñarte la secuencia, el dial gira y las luces cambian de sitio. ' },
         { k: 'puz.neon.prisa', h: 'Luces con prisa', t: 'Cuanto mejor es el arca, más deprisa se encienden las luces. Hay que estar atento desde el primer destello.' }
       ] },
       { id: 'electric', k: 'puz.electric', titulo: 'Cuadro eléctrico', sub: 'los fusibles', notas: [
-        { k: 'puz.electric', h: 'Qué hay que hacer', t: 'Toca un fusible: se invierte él y sus vecinos. Deja todos los filamentos encendidos antes de quedarte sin jugadas. No hay reloj.' }
+        { k: 'puz.electric', h: 'Qué hay que hacer', t: 'Toca un fusible: se invierte él y sus vecinos. Deja todos los filamentos encendidos antes de quedarte sin jugadas.' }
       ] }
     ],
     // --- Herramientas (clave 'herr.<prop>', se registran al tener alguna) ---
@@ -142,21 +158,21 @@ const DATOS_JUEGO = {
     // --- Objetos en pantalla ---
     OBJETOS: [
       { k: 'obj.postit',     h: 'Los post-its',   t: 'Aparecen pegados en la sala. Algunos parecen escritos por alguien que ya estuvo aquí.' },
-      { k: 'obj.postit.escribir', h: 'Post-its en blanco', t: 'Algunos post-its están en blanco: puedo escribir lo que quiera. Voy a dejarme algo a mí mismo.' },
+      { k: 'obj.postit.escribir', h: 'Post-its en blanco', t: 'Algunos post-its están en blanco: puedo escribir lo que quiera. Voy a dejar algo escrito... ¿se unirá al resto de post its? ¿Quién los va a leer?' },
       { k: 'obj.postit.familiar', h: 'Un post-it conocido', t: 'Hoy me he encontrado un post-it y me era extrañamente familiar. Creo que lo he escrito yo.' },
-      { k: 'obj.postit.contra',   h: 'La frase a medias', t: 'Hay un post-it distinto: una frase sin terminar y un hueco para una palabra. Elijo una, y no sé para qué sirve. Todavía.' },
+      { k: 'obj.postit.contra',   h: 'La frase a medias', t: 'Hay un post-it distinto: una frase sin terminar y un hueco para una palabra. Elijo una, y no sé para qué sirve. No ha pasado nada diferente.' },
       { k: 'obj.adorno',         h: 'Los adornos',    t: 'Hay objetos viejos repartidos por la sala: velas, cráneos, espejos... Si los toco, hacen algo.' },
-      { k: 'obj.adorno.herr',    h: 'Adornos con herramientas', t: 'Algunos esconden una herramienta: una ganzúa, una llave USB, a veces una válvula. Y si ya conozco las demás, también pueden esconder pilas, fusibles o pines de acero.' },
-      { k: 'obj.adorno.oro',     h: 'Adornos con monedas', t: 'Otros esconden unas pocas monedas.' },
-      { k: 'obj.adorno.ambiente',h: 'Adornos que cambian la sala', t: 'A veces cambian el color de la sala. Y a veces la bombilla se funde y todo queda a oscuras unos cofres.' },
+      { k: 'obj.adorno.herr',    h: 'Adornos con herramientas', t: 'Algunos esconden una herramienta: una ganzúa, una llave USB, a veces una válvula...' },
+      { k: 'obj.adorno.oro',     h: 'Adornos con monedas', t: 'Otros esconden unas pocas monedas, no voy a hacerme rico así pero quizás me saquen de un apuro.' },
+      { k: 'obj.adorno.ambiente',h: 'Adornos que cambian la sala', t: 'A veces cambian el color de la sala. No parece que sirva de mucho, pero es bonito.' },
       { k: 'obj.adorno.mutan',   h: 'Luz misteriosa', t: 'Una luz extraña hace que los cofres de la pantalla cambien por otros.' },
       { k: 'obj.adorno.rayo',    h: 'Rayo de sombra', t: 'Un rayo de sombra puede convertir el cofre que tengo delante en legendario.' },
       { k: 'obj.adorno.temblor', h: 'Vibración', t: 'A veces tiembla la sala y los cofres se resienten: todos pierden algo de lo que eran. Los más humildes se desmoronan, aunque siempre queda uno en pie.' },
       { k: 'obj.adorno.maldito', h: 'Algo se pega', t: 'Hay días en que tocar un adorno me deja una maldición pegada durante unos cofres.' },
       { k: 'obj.adorno.nunca',   h: 'Lo que no esconden', t: 'Los adornos nunca dan cartas. Solo herramientas, monedas y cosas de la sala.' },
       { k: 'obj.linterna',   h: 'La linterna',    t: 'La encontré en un cofre. Sin pilas no sirve de nada.' },
-      { k: 'obj.oscuridad',  h: 'La sala a oscuras', t: 'A veces la luz se va y la sala queda a oscuras unos cofres.' },
-      { k: 'obj.tomo',       h: 'Este cuaderno',  t: 'Un viejo cuaderno de tapas gastadas. Se escribe solo, a medida que descubro cosas del mundo.' }
+      { k: 'obj.oscuridad',  h: 'La sala a oscuras', t: 'A veces la luz se va y la sala queda a oscuras unos cofres. Quizás me sirva de algo...' },
+      { k: 'obj.tomo',       h: 'Este cuaderno',  t: 'Un viejo cuaderno de tapas gastadas. Se escribe solo, a medida que descubro cosas del mundo. Por algún motivo habla en primera persona.' }
     ],
     // --- Rachas ---
     RACHAS: [
@@ -174,7 +190,7 @@ const DATOS_JUEGO = {
         { k: 'npc.duende.1', h: 'Primer encuentro', t: 'Un duende verde con una tienda en un rincón. Simpático, y de vez en cuando me regala una herramienta. Parece de fiar.' },
         { k: 'npc.duende.2', h: 'Cada vez más pegajoso', t: 'Ahora habla de oro. Mucho. Cada vez que me ve quiere que siga abriendo cofres.' },
         { k: 'npc.duende.3', h: 'Algo se le rompe', t: 'Ya casi no habla de otra cosa que no sea el oro. Se enfada si no le compro. Parece haber perdido la cabeza.' },
-        { k: 'npc.duende.4', h: 'Otra vez desde el principio', t: 'Vuelve a ser amable, como si no recordara nada. Yo sí lo recuerdo.' },
+        { k: 'npc.duende.4', h: 'Otra vez desde el principio', t: 'Vuelve a ser amable, como si no recordara nada. Yo sí lo recuerdo, creo.' },
         { k: 'npc.duende.5', h: 'Más desesperado', t: 'Algo ha cambiado. Quiere el oro con una prisa que antes no tenía.' },
         { k: 'npc.duende.6', h: 'La codicia lo cambia', t: 'Otra vez desde cero, y él peor. La primera vez me sorprendió su afán por el oro. Ahora me asusta: la codicia lo está transformando en otra cosa.' },
         { k: 'npc.duende.7', h: 'Su verdadera cara', t: 'Creo que esta es su verdadera cara, y no me gusta nada. Le brillan los ojos con cada moneda. De verdad ansía ese oro, pero ¿para qué?' },
@@ -199,15 +215,15 @@ const DATOS_JUEGO = {
       { k: 'arc.abrir', h: 'Abrir por abrir', t: 'Abro uno y aparece otro. No sé por qué sigo.' },
       { k: 'arc.postits', h: 'Los post-its', t: 'Hay notas pegadas por las paredes. No recuerdo haber escrito ninguna, pero algunas me resultan familiares.' },
       { k: 'arc.truco', h: 'Cogerle el truco', t: 'Las manos van solas. Algo me empuja a abrir uno más.' },
-      { k: 'arc.duende', h: 'El de la tienda', t: 'Me vende cosas como si esto fuera una tienda cualquiera. Nunca me pregunta dónde estamos.' },
+      { k: 'arc.duende', h: 'El de la tienda', t: 'Me vende cosas como si esto fuera una tienda cualquiera. Nunca me responde preguntas sobre qué está pasando.' },
       { k: 'arc.trapero', h: 'El de los tratos', t: 'Habla poco y sabe demasiado. No me fío, pero le escucho.' },
       { k: 'arc.escribir', h: 'Escribir', t: 'Hay notas en blanco. Dejo una escrita, no sé por qué. Quizás le sirva de ayuda a alguien, o quizás me la vuelva a encontrar y pueda entender algo de lo que está pasando.' },
       { k: 'arc.luz', h: 'A oscuras', t: 'Se apagó la luz y seguí abriendo cofres a ciegas.' },
       { k: 'loop.1', h: 'Primera vuelta', t: 'Hice todo lo que el Trapero me dijo, pero todo parece haber vuelto a empezar.' },
       { k: 'loop.2', h: 'Segunda vuelta', t: 'No me lo creo: otra vez al principio. Es la tercera vez que me despierto en esta misma sala. Sabía lo que me esperaba y aun así hice lo mismo. Y todo vuelve a empezar.' },
       { k: 'fin.bueno', h: 'Las tres palabras', t: 'Acerté las tres palabras. La contraseña la tenía yo todo este tiempo. Al fin, me voy.' },
-      { k: 'fin.malo',  h: 'Los seis sellos', t: 'Rompí los seis sellos. Eran la misma cosa y les di lo que querían. Ahora me toca a mí atender la tienda. Debo salir de aquí, cueste lo que cueste. Haré lo que sea.' },
-      { k: 'fin.libre', h: 'Las dos cerraduras', t: 'Fallé las dos cerraduras. Ni el Duende ni el Trapero han vuelto. Solo quedan los cofres, uno tras otro, sin fin.' }
+      { k: 'fin.malo',  h: 'Los seis sellos', t: 'Rompí los seis sellos. Eran la misma cosa y les di lo que querían. Ahora me toca a mí atender la tienda. Debo salir de aquí, cueste lo que cueste. Haré lo que sea y a quien sea...' },
+      { k: 'fin.libre', h: 'Las dos cerraduras', t: 'Fallé las dos cerraduras. Ni el Duende ni el Trapero han vuelto. Solo quedan los cofres, uno tras otro, uno tras otro tras otro...' }
     ]
   },
 
@@ -221,10 +237,13 @@ const DATOS_JUEGO = {
     NOMBRES_CUNAS: ['GANZÚA', 'PISTONES', 'LLAVE DE PASO', 'PANTALLA', 'LUCES', 'FUSIBLE'],
     RULETA: { ZOOM: 1.8, ZOOM_MS: 900, PASOS: 22, MS_INICIO: 55, MS_FINAL: 520, PARPADEOS: 8, PARPADEO_MS: 150 },
     POSTITS_OBLIGATORIOS: [   // BORRADOR: post-its del bucle 3 sobre una segunda cerradura. Salen SIEMPRE (sustituyen al post-it normal de ese cofre). {cofre: nº de cofres abiertos, texto}
-      { cofre: 62, texto: "¿Y si el Duende también tiene su propia cerradura?" },
-      { cofre: 68, texto: "Todo cofre se abre... ¿por qué no puedo abrir el suyo?" },
-      { cofre: 73, texto: "Si el cofre del Duende tiene cerradura, tiene que haber una llave." },
-      { cofre: 77, texto: "Una segunda cerradura. Escondida. Lo sé." }
+      { cofre: 57, texto: "Hay otro cofre, lleva sellado mucho tiempo y esos dos no me quieren hablar de él" },   // [0.45] sobre el cofre sellado (no se repite en los retrasos)
+      { cofre: 62, texto: "¿Y si el cofre donde vive el Duende también tiene su propia cerradura?", rep: true },
+      { cofre: 65, texto: "La contraseña del otro cofre la cargas en tu memoria" },   // [0.45]
+      { cofre: 68, texto: "Todo cofre se abre... ¿por qué no puedo abrir el suyo?", rep: true },
+      { cofre: 71, texto: "¿Qué esconde ese cofre sellado?" },   // [0.45]
+      { cofre: 73, texto: "Si el cofre del Duende tiene cerradura, tiene que haber una llave.", rep: true },
+      { cofre: 77, texto: "Hay una segunda cerradura. Escondida. Lo sé.", rep: true }   // rep: true = los repite el segundo retraso (89-99...)
     ],
     RETRASO: {   // [0.40] BORRADOR (textos inventados por Claude). Si al llegar al cofre 79 faltan puzles por conocer, todo se pospone 10 cofres (89, 99...)
       DESP: [2, 5, 7, 9],   // en qué cofre del tramo de 10 sale cada post-it (2 = dos cofres después del inicio del tramo)
@@ -235,6 +254,7 @@ const DATOS_JUEGO = {
         "Todavía no. Aún no estoy listo para su cerradura."
       ]   // los siguientes retrasos (89-99...) repiten los de POSTITS_OBLIGATORIOS
     },
+    TRAPERO_SELLADO: { DESDE_COFRE: 65, TEXTO: "¿Un cofre sellado? No pierdas el tiempo con eso. {alerta}" },   // [0.45] bucle 3: en la primera visita del Trapero a partir de DESDE_COFRE (y antes de que arranque el final) saluda con esta frase, una sola vez
     REVELACION: [   // BORRADOR: lo dice el Trapero en el cofre 79 (una frase por ventana)
       "El Duende vive en un cofre... y todo cofre tiene su cerradura. {conspira}",
       "Esa tienda tan simpática no es más que otro cofre. Y toda cerradura puede abrirse. {alerta}"

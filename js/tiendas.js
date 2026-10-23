@@ -557,7 +557,12 @@ function triggerTraperoShopSequence() {
   if (STATE.finalFree) { processNextQueuedEvent(); return; }   // [0.40] tercer final: ni el Duende ni el Trapero vuelven a salir
   const tier = getNarrativeTier();
   const phrases = narr('TRAPERO_FRASES')[tier];
-  const t = shopSplitMood(phrases[Math.floor(Math.random() * phrases.length)]);
+  let t = shopSplitMood(phrases[Math.floor(Math.random() * phrases.length)]);
+  // [0.45] Bucle 3: en una visita del Trapero (a partir del cofre indicado, una sola vez) le sale la frase sobre el cofre sellado
+  try {
+    const TS = (DATOS_JUEGO.FINAL3 || {}).TRAPERO_SELLADO;
+    if (TS && finalLoop3() && !STATE.traperoSellado && !STATE.finalPhase && STATE.chestsOpened >= TS.DESDE_COFRE) { t = shopSplitMood(TS.TEXTO); STATE.traperoSellado = true; saveDirty = true; }
+  } catch (e) {}
   const cfg = shopCfg().TRAPERO || {};
   const fadeMs = cfg.FUNDIDO_MS || 600;
   const modal = document.getElementById('traperoShopModal');
