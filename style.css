@@ -1227,3 +1227,35 @@ html:not(.narrow-layout) #pzHardBadge { font-size: 13px; }
 .nb-card { display: flex; align-items: center; gap: 12px; padding: 8px 18px 8px 10px; border-radius: 10px; background: linear-gradient(180deg, #e9dcb8, #c9b583); border: 3px solid #6b4a1e; box-shadow: 0 0 0 2px #1b1206, 0 10px 26px rgba(0,0,0,.65), inset 0 0 0 2px #f4ead0; font-family: 'Outfit', sans-serif; }
 .nb-medal { flex: none; width: 46px; height: 46px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff7dc, #d9c48d); border: 2px solid #6b4a1e; }
 .nb-tx { font-weight: 800; font-size: 12px; letter-spacing: .12em; line-height: 1.35; color: #3a2610; }
+
+/* [0.46] Menú de Hallazgo Táctico+ en turquesa (distinto de la subida de nivel) */
+#levelUpModal.tp-mode .tp-title { display: block; font-size: 1.35rem; font-weight: 900; letter-spacing: .06em; color: #5eead4; text-shadow: 0 0 14px rgba(45,212,191,.5); }
+#levelUpModal.tp-mode { background-image: radial-gradient(ellipse at 50% 0%, rgba(13,148,136,.28), transparent 60%); }
+
+/* [0.46] Flecha y mensaje de la primera carta táctica */
+.tac-tut { position: absolute; left: 0; right: 0; z-index: 9996; pointer-events: none; transition: opacity .4s; }
+.tac-arrow { position: absolute; width: 0; height: 0; margin-left: -11px; border-left: 11px solid transparent; border-right: 11px solid transparent; border-bottom: 18px solid #fbbf24; filter: drop-shadow(0 0 6px rgba(251,191,36,.8)); animation: tacBlink .8s ease-in-out infinite; }
+.tac-msg { position: absolute; left: 14px; right: 14px; top: 24px; background: #1e1b4b; border: 1px solid #fbbf24; color: #fde68a; border-radius: 12px; padding: 9px 12px; font: 600 12px/1.35 ui-monospace, monospace; text-align: center; box-shadow: 0 6px 20px rgba(0,0,0,.5); }
+@keyframes tacBlink { 0%, 100% { opacity: 1; transform: translateY(0); } 50% { opacity: .45; transform: translateY(-4px); } }
+
+/* [0.46] Deuda con el Trapero */
+.tshop-debt { position: absolute; z-index: 3; left: calc(var(--u) * 16); right: calc(var(--u) * 16); bottom: calc(var(--u) * 11); min-height: calc(var(--u) * 13); display: flex; align-items: center; justify-content: center; text-align: center; font-family: 'Outfit', sans-serif; font-weight: 800; font-size: calc(var(--u) * 3.6); letter-spacing: .06em; color: #fecaca; background: rgba(69,10,10,.9); border: calc(var(--u) * .8) solid #ef4444; border-radius: calc(var(--u) * 3); padding: calc(var(--u) * 1.5); animation: tacBlink 1.8s ease-in-out infinite; pointer-events: none; }
+
+/* [0.46] Moneda de la Apuesta del Trapero */
+.coin-ov { position: absolute; inset: 0; z-index: 10060; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(5,3,10,.82); transition: opacity .38s; animation: fadeInCoin .25s ease-out; }
+@keyframes fadeInCoin { from { opacity: 0; } to { opacity: 1; } }
+.coin-stage { position: relative; width: 150px; height: 260px; perspective: 700px; display: flex; align-items: flex-end; justify-content: center; }
+.coin { width: 120px; height: 120px; position: absolute; bottom: 20px; transform-style: preserve-3d; animation: coinUp var(--ms) cubic-bezier(.25,.1,.3,1) forwards; }
+.coin-f { position: absolute; inset: 0; border-radius: 50%; backface-visibility: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border: 5px solid #92400e; background: radial-gradient(circle at 35% 30%, #fde68a, #f59e0b 60%, #b45309); color: #78350f; box-shadow: inset 0 0 0 4px rgba(120,53,15,.35), 0 0 18px rgba(251,191,36,.35); }
+.coin-f i { font-size: 34px; } .coin-f span { font: 900 14px ui-monospace, monospace; letter-spacing: .12em; }
+.coin-b { transform: rotateY(180deg); background: radial-gradient(circle at 35% 30%, #e2e8f0, #94a3b8 60%, #475569); border-color: #334155; color: #1e293b; }
+@keyframes coinUp {
+  0% { transform: translateY(0) rotateY(0); }
+  45% { transform: translateY(-190px) rotateY(calc(var(--turns) * 160deg)); }
+  78% { transform: translateY(0) rotateY(calc(var(--turns) * 330deg)); }
+  86% { transform: translateY(-22px) rotateY(calc(var(--turns) * 345deg)); }
+  100% { transform: translateY(0) rotateY(calc(var(--turns) * 360deg)); }
+}
+.coin-shadow { position: absolute; bottom: 8px; left: 50%; width: 90px; height: 14px; margin-left: -45px; border-radius: 50%; background: rgba(0,0,0,.55); filter: blur(4px); }
+.coin-res { margin-top: 18px; min-height: 36px; font: 900 28px ui-monospace, monospace; letter-spacing: .2em; color: #fde68a; opacity: 0; transform: scale(.7); transition: opacity .3s, transform .35s cubic-bezier(.2,1.4,.4,1); text-shadow: 0 0 16px rgba(251,191,36,.7); }
+.coin-res.show { opacity: 1; transform: none; }

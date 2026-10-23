@@ -1,5 +1,5 @@
 // ==========================================================================
-// JUST ONE MORE CHEST — cuaderno.js — VERSIÓN 0.45
+// JUST ONE MORE CHEST — cuaderno.js — VERSIÓN 0.46
 // El cuaderno (el Tomo): registro de lo que el juego ha visto y pantalla del cuaderno.
 // REGLA: solo se escribe lo REGISTRADO. Nada de lo no descubierto aparece (ni secciones, ni páginas, ni notas).
 // Todos los textos y la lista de secciones están en DATOS_JUEGO.CUADERNO (datos.js). Este archivo solo tiene la lógica.
@@ -166,14 +166,15 @@ function nbRender() {
 
 /* ---------- [0.45] Aviso de "nuevas anotaciones en el cuaderno" ----------
    Varias anotaciones a la vez = un solo aviso. Solo sale con la sala principal en primer plano (nunca en una tienda, un puzle, un diálogo...);
-   si no, espera en cola hasta que la sala quede libre. Sin sonido. */
+   si no, espera en cola hasta que la sala quede libre. Con sonido de lápiz sobre papel (0.46). */
 const NB_BUSY_SEL = ['#minigameModal', '#dialogueModal', '#lootModal', '#levelUpModal', '#merchantModal', '#traperoShopModal', '#unfairDealModal', '#gameOverModal', '#nbOverlay',
   '#coverScreen', '#resumeGameModal', '#resetConfirmModal', '#cardPreModal', '#cofradiaModal', '#askYesNoModal', '#smithModal', '#duendeReceiptModal', '#passBlock', '#noteEditor',
   '#shatterRoot', '#diffuseEchoOverlay', '#starfieldBg', '#lvlFx', '#sceneVeil', '#gameOverStrike', '#fdr', '#flZoom', '#fsBack', '#fxBack', '#fgBack', '#persistentFeedbackBanner'];
 function nbElShown(sel) {
   const el = document.querySelector(sel); if (!el) return false;
   if (el.classList && el.classList.contains('hidden')) return false;
-  const cs = getComputedStyle(el); return cs.display !== 'none' && cs.visibility !== 'hidden' && el.getClientRects().length > 0;
+  const cs = getComputedStyle(el); if (parseFloat(cs.opacity) < 0.05) return false;   // [0.46] telón/capas que se quedan en el DOM con opacidad 0 no ocupan la sala
+  return cs.display !== 'none' && cs.visibility !== 'hidden' && el.getClientRects().length > 0;
 }
 function nbRoomFree() {
   try {
@@ -204,6 +205,7 @@ function nbShowAnnounce() {
   el.id = 'nbAnnounce'; el.className = 'nb-ann';
   el.innerHTML = `<div class="nb-card"><div class="nb-medal">${nbQuillSvg(38)}</div><div class="nb-tx">NUEVAS ANOTACIONES<br>EN EL CUADERNO</div></div>`;
   uiHost().appendChild(el);
+  try { audio.init(); audio.playNotebookNote(); } catch (e) {}
   void el.offsetWidth; el.classList.add('show');
   setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 450); }, 3200);
 }

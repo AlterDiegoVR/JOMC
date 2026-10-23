@@ -1033,7 +1033,7 @@ function checkGameOver(force) {   // [0.210] force: el Atajo lanza el Game Over 
   if (gameOverSeq) return;
   gameOverSeq = true;
   whenBannerClosed(() => runGameOverStrike(() => {
-    if ((STATE.salvageCurseActive && STATE.cursedChestsLeft > 0) || STATE.finalFree) { showFinalGameOver(); return; }   // [0.40] en el tercer final no hay trato del Trapero
+    if ((STATE.salvageCurseActive && STATE.cursedChestsLeft > 0) || STATE.finalFree || STATE.sinRed) { showFinalGameOver(); return; }   // [0.46] Sin Red: no hay Trato Injusto, se muere directamente   // [0.40] en el tercer final no hay trato del Trapero
     openUnfairDeal();
   }));
 }

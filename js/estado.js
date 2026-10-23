@@ -16,7 +16,7 @@ function getXpForLevel(lvl) {
 let curseHold = false;   // [0.096] el tinte de maldición se mantiene hasta que se cierra el mensaje de fin de maldición
 const STATE = {
   currentLoop: 1, // Control de Bucle (1 o 2)
-  finDelay: 0, finalFree: false, traperoSellado: false,   // [0.45] traperoSellado: el Trapero ya dijo lo del cofre sellado; [0.40] retrasos de +10 cofres antes del final / tercer final (juego libre sin Duende ni Trapero)
+  finDelay: 0, finalFree: false, traperoSellado: false, tacticTutorialSeen: false, sinRed: false, deudaTrapero: 0,   // [0.46] tacticTutorialSeen: ya se enseñó la flecha de la primera carta táctica; [0.45] traperoSellado: el Trapero ya dijo lo del cofre sellado; [0.40] retrasos de +10 cofres antes del final / tercer final (juego libre sin Duende ni Trapero)
   finalPhase: null,   // [0.3] final del bucle 3: null | { stage, tries, tiendaLocked, selladoLocked, wedge } (ver final.js)
   level: DATOS_JUEGO.CONFIG_INICIAL.NIVEL,
   xp: 0,
@@ -198,7 +198,9 @@ function getDiscountPct() {
 }
 
 function getDiscountMultiplier() {
-  return 1 - getDiscountPct();
+  let m = 1 - getDiscountPct();
+  if (modOn('precioSangre') && (STATE.cursedChestsLeft || 0) > 0) m *= 1 + ((DATOS_JUEGO.MODS_WILDCARD.PRECIO_SANGRE || {}).PCT || 0.3);   // [0.46] Precio de la Sangre: maldito = el Duende cobra más
+  return m;
 }
 
 /* ---------- Botón de silencio ---------- */
@@ -326,7 +328,7 @@ function getUnlockedConsumables() {
 // [0.093] Oro fijo de los wildcards escalado por nivel; y descripción con {n} escalado
 function wcGold(n) { return Math.max(1, Math.round(n * (1 + ((DATOS_JUEGO.MODS_WILDCARD || {}).ESCALA_ORO_POR_NIVEL || 0) * Math.max(0, STATE.level - 1)))); }
 function wcDesc(wc) { return String(wc.desc).replace(/\{(\d+)\}/g, (m, n) => wcGold(+n)); }
-const MODS_POR_USOS = ['seda', 'congelada', 'destino', 'enrachado', 'mentirosos', 'spooky', 'llaveMaestra', 'apagonFin', 'nocturnidad'];   // [0.3] Apagón Financiero y Nocturnidad también duran todo el bucle   // [0.104] 'destino' dura toda la partida (hasta el reinicio del bucle)
+const MODS_POR_USOS = ['seda', 'congelada', 'destino', 'enrachado', 'mentirosos', 'spooky', 'llaveMaestra', 'apagonFin', 'nocturnidad', 'manosAjenas', 'cofresOscuros', 'precioSangre'];   // [0.46]   // [0.3] Apagón Financiero y Nocturnidad también duran todo el bucle   // [0.104] 'destino' dura toda la partida (hasta el reinicio del bucle)
 // (comentario anterior:)   // [0.096] caducan por USOS (un fallo salvado = 1), no por cofres abiertos
 function useMod(id) { if (!STATE.mods || !(STATE.mods[id] > 0)) return 0; STATE.mods[id]--; const left = STATE.mods[id]; if (left <= 0) delete STATE.mods[id]; saveDirty = true; return Math.max(0, left); }
 function modOn(id) { return !!(STATE.mods && STATE.mods[id] > 0); }
@@ -339,7 +341,8 @@ function shuffleU(arr) { const a = Array.from(arr); for (let i = a.length - 1; i
 function isRoomDark() { return (STATE.roomDarkUntil || 0) > STATE.chestsOpened; }
 // [0.3] Cada vez que la luz se apaga de nuevo en el bucle, Nocturnidad y Alevosía recupera sus robos
 function nightStealReset() { if (modOn('nocturnidad')) STATE.nightStealsLeft = (DATOS_JUEGO.MODS_WILDCARD.NOCTURNIDAD || {}).ROBOS || 2; }
-function darkenRoom(cofres) { nightStealReset(); STATE.roomDarkUntil = STATE.chestsOpened + cofres; try { darkFlickerT0 = Date.now(); } catch (e) {} try { audio.init(); audio.playDarkOut(); } catch (e) {} }
+function darkenRoom(cofres) { nightStealReset(); STATE.roomDarkUntil = STATE.chestsOpened + cofres; try { updateChestSelectionUI(); } catch (e) {}   // [0.46] las siluetas/etiquetas de Cofres a Oscuras se refrescan al apagarse la luz
+   try { darkFlickerT0 = Date.now(); } catch (e) {} try { audio.init(); audio.playDarkOut(); } catch (e) {} }
 
 // [0.105] Cartas que vuelven: Fortuna Doble (Doble o Nada) y Escudo Prestado. La cuenta empieza al USAR la carta y baja con cada cofre abierto.
 const RECHARGE_NOMBRES = { riskPot: 'Carta Doble o Nada', shield: 'Carta Escudo', auto: 'Carta Auto-Open' };
@@ -404,6 +407,15 @@ function applyWildcard(wc) {
       const g = v.min + k * v.paso; STATE.gold += g; extra = `+${g} GP`;
       break;
     }
+    case 'CURA_ESPIRITUAL': {   // [0.46] borra los efectos negativos permanentes (nunca la maldición)
+      const cured = cureSpiritual();
+      extra = cured.length ? 'Se borra: ' + cured.join(', ') : 'No había nada que curar';
+      break;
+    }
+    case 'DEUDA_TRAPERO':   // [0.46] las próximas visitas al Trapero obligan a aceptar un trato
+      STATE.deudaTrapero = wc.valor;
+      extra = `📜 Próximas ${wc.valor} visitas del Trapero: trato obligatorio`;
+      break;
     case 'ELEGIR_TACTICAS':   // [0.210] Hallazgo Táctico+: al acabar la pantalla de nivel salen 3 cartas tácticas y eliges 2
       STATE.eventQueue.push(() => openTacticPicker(wc.valor));
       extra = `🃏 Elegirás ${wc.valor} cartas tácticas`;
@@ -467,11 +479,11 @@ function applyWildcard(wc) {
 }
 
 // [0.092] Elige el wildcard (con 'peso' opcional), lo aplica YA (así el guardado nunca se pierde) y devuelve {wc, extra, isBad}
-function pickWildcard() {
+function pickWildcard(mode) {   // [0.46] mode: 'pos' (siempre positiva: Ruleta, Doble Tirada, Apuesta) | 'neg' (siempre negativa) | sin valor = reparto normal
   const wcList = DATOS_JUEGO.WILDCARDS || [];
   if (wcList.length === 0) return null;
-  const wantBad = Math.random() < getWildcardBadChance();
-  const okList = wcList.filter(w => (!w.minNivel || STATE.level >= w.minNivel) && (!w.minBucle || (STATE.currentLoop || 1) >= w.minBucle));   // [0.210] minBucle; [0.42] con la sala a oscuras SÍ pueden salir las dos cartas (solo el ambiente decorativo no re-apaga)
+  const wantBad = mode === 'neg' ? true : mode === 'pos' ? false : Math.random() < getWildcardBadChance();
+  const okList = wcList.filter(w => (!w.minNivel || STATE.level >= w.minNivel) && (!w.minBucle || (STATE.currentLoop || 1) >= w.minBucle) && wcCondOk(w));   // [0.46] wcCondOk; [0.210] minBucle; [0.42] con la sala a oscuras SÍ pueden salir las dos cartas (solo el ambiente decorativo no re-apaga)
   let pool = okList.filter(w => (w.tipo === 'PERJUDICIAL') === wantBad);
   if (pool.length === 0) pool = okList.length ? okList : wcList;
   const pw = w => ((STATE.currentLoop || 1) === 1 && w.pesoBucle1 != null) ? w.pesoBucle1 : (w.peso != null ? w.peso : 1);   // [0.210] peso propio en el bucle 1
@@ -551,7 +563,7 @@ function runWildcardRoulette(res, onDone) {
 const SAVE_KEY = 'justOneMoreChest_save_v1';
 const SAVE_VERSION = 1;
 const SAVE_KEYS = [
-  'currentLoop', 'finalPhase', 'finDelay', 'finalFree', 'traperoSellado', 'level', 'xp', 'gold', 'chestsOpened', 'chestsAtLevelUp', 'chestCounterUnlocked',
+  'currentLoop', 'finalPhase', 'finDelay', 'finalFree', 'traperoSellado', 'tacticTutorialSeen', 'sinRed', 'deudaTrapero', 'level', 'xp', 'gold', 'chestsOpened', 'chestsAtLevelUp', 'chestCounterUnlocked',
   'cleanStreak', 'paranoiaStage', 'traperoVisits', 'lastTraperoChest', 'salvageDealsCount', 'salvageCurseActive',
   'picks', 'proPicks', 'usb', 'valves', 'batteries', 'batteriesUnlocked', 'fuses', 'fusesUnlocked', 'lanternFound', 'noXpChestsLeft', 'picksBrokenOnUse', 'tanteoExplainedLoop', 'xpBoostChestsLeft', 'torpezas',
   'seqStage', 'traperoStrikes', 'seqLastBuyCo', 'seqLastChance', 'climaxPhase', 'sequenceBroken', 'infinite', 'perks', 'abilities',
@@ -837,7 +849,7 @@ function resetGame(keepLoop) {
   STATE.traperoVisits = 0;
   STATE.lastTraperoChest = 0;
   STATE.eventQueue = [];
-  STATE.finDelay = 0; STATE.finalFree = false; STATE.traperoSellado = false;
+  STATE.finDelay = 0; STATE.finalFree = false; STATE.traperoSellado = false; STATE.sinRed = false; STATE.deudaTrapero = 0;   // [0.46]
   STATE.finalPhase = null; if (typeof finalCleanup === 'function') finalCleanup();   // [0.3]
   STATE.salvageDealsCount = 0;
   STATE.salvageCurseActive = false;

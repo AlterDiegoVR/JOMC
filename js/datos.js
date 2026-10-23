@@ -9,7 +9,8 @@
 
 const DATOS_JUEGO = {
   // [0.088] Versión visible en pantalla (esquina inferior central) para que las capturas la incluyan
-  VERSION: '0.45',
+  VERSION: '0.46',
+  TUTORIAL_TACTICA: 'Aquí van tus cartas tácticas. Úsalas cuando quieras, pero con cabeza: se gastan al usarlas.',   // [0.46] texto de la flecha de la primera carta táctica (borrador mío)
   // [0.104] Efectos de la apertura automática de la secuencia final (cofres 101-110); la intensidad sube del primero al último (k = 0..1)
   SECUENCIA_FINAL_FX: { ACTIVAR: true, ESTALLIDOS_BASE: 2, ESTALLIDOS_EXTRA: 4, PARTICULAS_POR_ESTALLIDO: 40, HACIA_CENTRO_BASE: 30, HACIA_CENTRO_EXTRA: 60,
     SACUDIDA_PX: 6, SACUDIDA_EXTRA_PX: 10, SACUDIDA_MS: 520, PULSO_ZOOM: 0.02, DESTELLO: 0.10 },
@@ -421,7 +422,7 @@ const DATOS_JUEGO = {
       FRASES_SIN_GANZUAS: ['FALTAN GANZÚAS', 'NO TIENE SUFICIENTES', 'TRAIGA MÁS GANZÚAS'],
       FRASES_COMPRA: ['¡EXCELENTE ELECCIÓN!', '¡ASÍ SE HACE!', 'UNO MÁS... SIEMPRE UNO MÁS', 'HE AHÍ, HE AHÍ'],
       // [0.42] Regalo por no robar (BORRADOR MÍO: textos inventados)
-      FRASES_REGALO: ['HE VISTO LA TENTACIÓN EN TUS OJOS Y AUN ASÍ HAS HECHO LO CORRECTO. TOMA, POR LA CASA.', 'PODÍAS HABERTE LLEVADO LO QUE QUISIERAS Y NO LO HAS HECHO. ESO SE PREMIA.', 'MANOS QUIETAS... NO ES COMÚN POR AQUÍ. ESTO ES PARA TI.'],
+      FRASES_REGALO: ['HE VISTO LA TENTACIÓN EN TUS OJOS Y AUN ASÍ HAS HECHO LO CORRECTO. TOMA, TE LO HAS GANADO.'],   // [0.46] una sola frase (la suya)
       BOTONES_SELECTOR: { PAGAR: 'PAGAR', ROBAR: 'ROBAR' },
       FRASES_ROBO: ['...ME HA PARECIDO VER ALGO', '¿DÓNDE HA IDO MI MERCANCÍA?', 'QUÉ MANOS TAN LISTAS'],
       FRASES_RECICLAJE: ['EL TALLER LO AGRADECE', 'DE LATÓN A ACERO', 'BUEN CANJE'],
@@ -453,7 +454,8 @@ const DATOS_JUEGO = {
         pacto_sangre: 'PACTO', pacto_sombra: 'PACTO', amor_arte: 'PACTO', dedos_rotos: 'PACTO',
         contrato_leonino: 'CONTRATO', purga_maldicion: 'PURGA', empujon_siniestro: 'EMPUJÓN',
         cambio_trabajo: 'CAMBIO', maestria_doble_filo: 'DOBLE FILO', contador_cofres_trapero: 'CONTADOR',
-        purga_maldicion_plus: 'PURGA', otra_oportunidad: 'OLVIDO', atajo: 'ATAJO'
+        purga_maldicion_plus: 'PURGA', otra_oportunidad: 'OLVIDO', atajo: 'ATAJO',
+        doble_tirada: 'TIRADA', apuesta_trapero: 'APUESTA', sin_red: 'SIN RED'   // [0.46]
       }
     },
 
@@ -2307,7 +2309,16 @@ const DATOS_JUEGO = {
                    FRASES: ["💡 En la oscuridad, alguien te está hurgando en los bolsillos...", "💡 Notas unos dedos ajenos rebuscando entre tus monedas.", "💡 Algo tintinea en la penumbra... y no es tu oro.", "💡 Una mano fría te aligera el bolsillo mientras no ves nada."] },
     NOCTURNIDAD: { ROBOS: 2 },                         // objetos que puedes robar con la luz apagada (Nocturnidad y Alevosía)
     LLAVE_MAESTRA: { GANZUAS: 5 },
-    SEDA_TOPE_PUZLES: 5
+    SEDA_TOPE_PUZLES: 5,
+    // [0.46]
+    MANOS_AJENAS: { PROB: 0.5, FRASES: ["🖐️ Unas manos ajenas te han quitado {n} en la oscuridad.", "🖐️ Algo roza tu mochila en la penumbra: te falta {n}.", "🖐️ Notas un tirón en la oscuridad. Ya no tienes {n}."] },
+    PRECIO_SANGRE: { PCT: 0.3 },
+    DEUDA_TRAPERO: { VISITAS: 3 }
+  },
+  // [0.46] Tratos nuevos del Trapero (bucle 2 en adelante)
+  TRATOS_46: {
+    SIN_RED: { HERRAMIENTAS_CADA: 5, GP: 200, REGALOS_MAX: 2 },
+    MONEDA_MS: 2200
   },
   // [0.210] Cartas nuevas: parámetros
   CARTAS_210: {
@@ -2333,7 +2344,8 @@ const DATOS_JUEGO = {
     manos_seda: 'fa-hand-sparkles',
     hallazgo_tactico_plus: 'fa-layer-group', suministros_inesperados_plus: 'fa-boxes-packing', enrachado: 'fa-fire-flame-curved', nocturnidad_alevosia: 'fa-moon',
     llave_maestra: 'fa-unlock-keyhole', cofres_mentirosos: 'fa-masks-theater', spooky_things: 'fa-spider', apagon_financiero: 'fa-plug-circle-xmark', cofres_solitarios: 'fa-cube', niebla_botin: 'fa-cloud', racha_congelada: 'fa-snowflake',
-    reloj_lento: 'fa-hourglass-half', hambre_xp: 'fa-utensils', cofre_destino: 'fa-compass', reloj_roto: 'fa-stopwatch', ganzua_perdida: 'fa-screwdriver'
+    reloj_lento: 'fa-hourglass-half', hambre_xp: 'fa-utensils', cofre_destino: 'fa-compass', reloj_roto: 'fa-stopwatch', ganzua_perdida: 'fa-screwdriver',
+    mala_racha: 'fa-arrow-trend-down', cura_espiritual: 'fa-hand-holding-heart', manos_ajenas: 'fa-hand', cofres_oscuros: 'fa-eye-slash', precio_sangre: 'fa-droplet', deuda_trapero: 'fa-file-contract'   // [0.46]
   },
 
   WILDCARDS: [
@@ -2376,7 +2388,14 @@ const DATOS_JUEGO = {
     { id: "llave_maestra", nombre: "Llave Maestra", tipo: "BENEFICIOSO", desc: "Usa 5 ganzúas para abrir cualquier cofre. Dura todo el bucle.", efecto: "MODIFICADOR", valor: { id: "llaveMaestra", usos: 1 } },
     { id: "cofres_mentirosos", nombre: "Cofres Mentirosos", tipo: "PERJUDICIAL", desc: "No te puedes fiar ni de los cofres. 25% de posibilidades de que el cofre esconda un puzle que no le corresponda. Dura todo el bucle.", efecto: "MODIFICADOR", valor: { id: "mentirosos", usos: 1 } },
     { id: "spooky_things", nombre: "Spooky Things", tipo: "PERJUDICIAL", desc: "¿Para qué tocas? Los objetos pueden esconder sorpresas desagradables. Dura todo el bucle.", efecto: "MODIFICADOR", valor: { id: "spooky", usos: 1 } },
-    { id: "apagon_financiero", nombre: "Apagón Financiero", tipo: "PERJUDICIAL", desc: "Se va la luz: pierdes 5 monedas por turno mientras esté apagada.", efecto: "APAGON_FINANCIERO", valor: 10 }
+    { id: "apagon_financiero", nombre: "Apagón Financiero", tipo: "PERJUDICIAL", desc: "Se va la luz: pierdes 5 monedas por turno mientras esté apagada.", efecto: "APAGON_FINANCIERO", valor: 10 },
+    // [0.46] Wildcards nuevas (nombres y textos: borrador mío). 'unico' = no sale si ya está activa; 'cond' = condición para poder salir
+    { id: "mala_racha", nombre: "Mala Racha", tipo: "PERJUDICIAL", desc: "Durante 10 cofres tu racha se queda congelada: no sube. Si fallas, la pierdes.", efecto: "MODIFICADOR", valor: { id: "malaRacha", cofres: 10 }, unico: true },
+    { id: "cura_espiritual", nombre: "Cura Espiritual", tipo: "BENEFICIOSO", desc: "Una calma extraña te recorre: se borran tus efectos negativos permanentes. La maldición sigue ahí.", efecto: "CURA_ESPIRITUAL", valor: 1, cond: "CURABLE" },
+    { id: "manos_ajenas", nombre: "Manos Ajenas", tipo: "PERJUDICIAL", desc: "Algo se mueve en la oscuridad: en cada turno con la luz apagada hay un 50% de que te roben una herramienta. Dura todo el bucle.", efecto: "MODIFICADOR", valor: { id: "manosAjenas", usos: 1 }, unico: true, peso: 0.7 },
+    { id: "cofres_oscuros", nombre: "Cofres a Oscuras", tipo: "PERJUDICIAL", desc: "Con la luz apagada, los cofres no son más que siluetas: no sabes cuál es cuál, aunque todos cuestan 1 herramienta. Dura todo el bucle.", efecto: "MODIFICADOR", valor: { id: "cofresOscuros", usos: 1 }, unico: true, peso: 0.7 },
+    { id: "precio_sangre", nombre: "Precio de la Sangre", tipo: "PERJUDICIAL", desc: "Mientras estés maldito, el Duende cobra más caro. Dura todo el bucle.", efecto: "MODIFICADOR", valor: { id: "precioSangre", usos: 1 }, unico: true, peso: 0.7, minBucle: 2 },
+    { id: "deuda_trapero", nombre: "Deuda con el Trapero", tipo: "PERJUDICIAL", desc: "En tus próximas 3 visitas al Trapero estarás obligado a aceptar uno de sus tratos.", efecto: "DEUDA_TRAPERO", valor: 3, minBucle: 2 }
   ],
 
   // 🟢 TRATOS DEL TRAPERO
@@ -2399,7 +2418,11 @@ const DATOS_JUEGO = {
       // [0.210] Tratos nuevos
       { id: "purga_maldicion_plus", titulo: "Purga de Maldición+", desc: "Entrega 5 ganzúas para mitigar los efectos de Maldición." },
       { id: "otra_oportunidad", titulo: "Otra Oportunidad", desc: "Olvidas todo lo que te acompaña a cambio de 10 ganzúas y 3 herramientas avanzadas." },
-      { id: "atajo", titulo: "Atajo", desc: "Sube un nivel, pero un solo fallo en los próximos 10 cofres te condena al fin." }
+      { id: "atajo", titulo: "Atajo", desc: "Sube un nivel, pero un solo fallo en los próximos 10 cofres te condena al fin." },
+      // [0.46] Tratos nuevos (bucle 2 en adelante; nombres y textos: borrador mío)
+      { id: "doble_tirada", titulo: "Doble Tirada", desc: "Dos tiradas de wildcard: una buena y una mala. El Trapero nunca da sin quitar.", minBucle: 2 },
+      { id: "apuesta_trapero", titulo: "Apuesta del Trapero", desc: "Una moneda al aire. Cara, una wildcard buena. Cruz, una mala.", minBucle: 2 },
+      { id: "sin_red", titulo: "Sin Red", desc: "Si fallas, no habrá segunda oportunidad. A cambio: +5 de cada herramienta que conozcas, +200 GP, los cofres legendarios cuestan 1 herramienta... y alguna cosa más por descubrir.", minBucle: 2 }
     ]
   },
 

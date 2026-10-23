@@ -369,6 +369,36 @@ class AudioEngine {
       this._tone(f * 0.34, f * 0.34, 0.07, 'sine', 0.035, d);
     });
   }
+  // [0.46] Moneda de la Apuesta del Trapero: lanzamiento (tintineo suave que se espacia) y caída con rebotes metálicos (mismos parciales que las monedas de la caja)
+  playCoinFlip(ms = 2200) {
+    if (!this.ctx || this.muted) return;
+    const s = ms / 1000;
+    this._noise(0.05, 0.08, 0, 3000); this._tone(1500, 900, 0.07, 'sine', 0.05, 0);   // lanzamiento: golpe con el pulgar
+    for (let i = 0; i < 9; i++) { const d = 0.12 + (s * 0.78) * Math.pow(i / 9, 0.8); this._tone(2300 - i * 60, 2300 - i * 60, 0.03, 'sine', 0.018, d); }   // gira en el aire
+    const land = s * 0.88;
+    [0, 0.17, 0.30, 0.39, 0.45].forEach((dd, i) => {   // rebotes cada vez más rápidos y suaves
+      const v = 0.11 * Math.pow(0.6, i), f = 1850 + (i % 3) * 230;
+      this._noise(0.035, v, land + dd, 4200);
+      this._tone(f, f, 0.1, 'sine', v * 0.55, land + dd);
+      this._tone(f * 1.52, f * 1.52, 0.07, 'sine', v * 0.3, land + dd);
+      this._tone(f * 0.34, f * 0.34, 0.08, 'sine', v * 0.35, land + dd);
+    });
+  }
+  // [0.46] Aviso del cuaderno: "Apunte rápido", tres trazos cortos de lápiz sobre papel (ruido filtrado con grano)
+  playNotebookNote() {
+    if (!this.ctx || this.muted) return;
+    const c = this.ctx, t0 = c.currentTime + 0.03;
+    [[0, .09, 3800, 5200, 1], [.14, .08, 4300, 3600, .9], [.27, .11, 3500, 5000, 1]].forEach(([dt, dur, f0, f1, gv]) => {
+      const t = t0 + dt, src = c.createBufferSource(); src.buffer = _nbuf(c); src.loop = true;
+      const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 1.1; bp.frequency.setValueAtTime(f0, t); bp.frequency.linearRampToValueAtTime(f1, t + dur);
+      const hp = c.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 1800;
+      const gn = c.createGain(), N = Math.max(8, Math.round(dur * 220)), cv = new Float32Array(N);
+      for (let i = 0; i < N; i++) cv[i] = Math.sin(Math.PI * (i + .5) / N) * (.35 + .65 * Math.random()) * gv * .22;
+      gn.gain.setValueCurveAtTime(cv, t, dur);
+      src.connect(bp); bp.connect(hp); hp.connect(gn); gn.connect(this.dest());
+      src.start(t, Math.random() * 1.4); src.stop(t + dur + .05);
+    });
+  }
   playIntro() {     // dungeon synth ascendente al empezar (reverso del game over)
     if (!this.ctx || this.muted) return;
     [185, 196, 233, 277, 311, 370, 392].forEach((f, i) => this._tone(f, f * 1.01, 0.6, 'triangle', 0.1, i * 0.3));

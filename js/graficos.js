@@ -32,7 +32,7 @@ if (ART_ON) {
   ['celdaParpadeo1', 'celdaParpadeo2', 'celdaApagada'].forEach(k => { if (ASSETS[k]) loadArt(k, ASSETS[k]); });
 }
 // [0.202] Niebla Espesa: la rareza que se VE es siempre la normal (sprite, halo, marco, color del brazo); la real solo se descubre en el botín
-function chestVisRarity(c) { return (c && c.fog) ? CHEST_RARITIES[0] : (c && c.rarity); }
+function chestVisRarity(c) { return (c && (c.fog || chestSilOn())) ? CHEST_RARITIES[0] : (c && c.rarity); }   // [0.46] Cofres a Oscuras: tampoco se ve la rareza
 // [0.086] Sprite de cofre según tipo y rareza (la normal usa el sprite base)
 function chestSpriteSrc(type, rarity) {
   if (!ART_ON || !type) return null;
@@ -660,9 +660,10 @@ function renderRoom() {
     // [0.085] Cofre con sprite: brillo del color de rareza + sprite pixelado
     // [0.086] Halo reforzado por rareza (más grande y opaco; aro exterior en épico y legendario)
     const g = DATOS_JUEGO.GRAFICOS;
-    const im = ART[chestImgKey];
-    const sc = Math.min((canvas.width * g.COFRE_ANCHO_PCT) / im.naturalWidth, (canvas.height * 0.24) / im.naturalHeight);
-    const dw = im.naturalWidth * sc, dh = im.naturalHeight * sc;
+    const im0 = ART[chestImgKey];
+    const im = chestSilOn() ? silCanvasOf(im0, chestImgKey) : im0;   // [0.46] Cofres a Oscuras: solo la silueta
+    const sc = Math.min((canvas.width * g.COFRE_ANCHO_PCT) / im0.naturalWidth, (canvas.height * 0.24) / im0.naturalHeight);
+    const dw = im0.naturalWidth * sc, dh = im0.naturalHeight * sc;
     const mobileMulti = !isWideLayout() && (STATE.screenChests.length > 1 || chestHoldLift);   // [0.106] chestHoldLift: tras la Cofradía se conserva la altura
     const ccx = canvas.width / 2, ccy = canvas.height * (g.COFRE_Y_PCT - (mobileMulti ? (g.COFRE_SUBE_MOVIL_MULTI || 0) : 0));
     const bob = Math.sin(Date.now() * 0.002) * 2;
@@ -710,7 +711,7 @@ function renderRoom() {
     }
     // [0.090] Vapor animado (solo Cofre de Vapor): bocanadas pixeladas que suben, crecen y se desvanecen
     const vap = g.VAPOR_ANIMADO;
-    if (vap && vap.ACTIVAR && activeChest.type.id === 'hydraulic' && im._steamless) {
+    if (vap && vap.ACTIVAR && activeChest.type.id === 'hydraulic' && im._steamless && !chestSilOn()) {
       const t0 = Date.now(), px = dw / im.naturalWidth, ox = ccx - dw / 2, oy = ccy - dh / 2 + bob;
       for (let i = 0; i < vap.BOCANADAS; i++) {
         const ph = ((t0 / vap.CICLO_MS) + i / vap.BOCANADAS) % 1;
@@ -729,7 +730,7 @@ function renderRoom() {
     }
     // [0.091] Animaciones de cofre: pistones (Acero), pantalla y leds (Digital), aguja de presión (Vapor)
     const aco = g.ANIMACION_COFRES;
-    if (aco && aco.ACTIVAR && im.naturalWidth === 56) {
+    if (aco && aco.ACTIVAR && im.naturalWidth === 56 && !chestSilOn()) {   // [0.46] en silueta no se animan luces ni pistones
       const pxs = dw / im.naturalWidth, oxs = ccx - dw / 2, oys = ccy - dh / 2 + bob;
       const R = (X, Y, W, H, col) => { const x0 = Math.round(oxs + X * pxs), y0 = Math.round(oys + Y * pxs); ctx.fillStyle = col; ctx.fillRect(x0, y0, Math.round(oxs + (X + W) * pxs) - x0, Math.round(oys + (Y + H) * pxs) - y0); };
       drawChestAnim(activeChest.type.id, R, aco, ctx, oxs, oys, pxs);

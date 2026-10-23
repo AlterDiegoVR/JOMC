@@ -350,6 +350,8 @@ function testKeyHash(seq, salt) {
       { id: 'ps_tor_vapor', label: 'TORPEZA VAPOR (LV)', kind: 'num', min: 1, max: 5, def: 1 },
       { id: 'ps_tor_neon', label: 'TORPEZA NEÓN (LV)', kind: 'num', min: 1, max: 5, def: 1 },
       { id: 'ps_picksBrokenOnUse', label: 'DEDOS ROTOS', kind: 'bool' },
+      { id: 'ps_sinRed', label: 'SIN RED (TRATO DEL TRAPERO)', kind: 'bool' },   // [0.46]
+      { id: 'ps_deuda', label: 'DEUDA CON EL TRAPERO (VISITAS)', kind: 'num', min: 1, max: 9, def: 3 },
       { id: 'ps_tb_harderMinigames', label: 'PUZLES DUROS (PERMANENTE)', kind: 'bool' },
       { id: 'ps_tb_shortPipeTimer', label: 'TIEMPO CORTO EN VAPOR', kind: 'bool' },
       { id: 'ps_tb_bonusXp', label: 'XP EXTRA (PERMANENTE)', kind: 'bool' },
@@ -418,13 +420,15 @@ function testKeyHash(seq, salt) {
     set(!!v.ps_luckyLootChance, () => { STATE.perks.luckyLootChance = 0.15; });
     set(!!v.ps_shopStealFree, () => { STATE.perks.shopStealFree = true; });
     set(!!v.ps_picksBrokenOnUse, () => { STATE.picksBrokenOnUse = true; });
+    set(!!v.ps_sinRed, () => { STATE.sinRed = true; });   // [0.46]
+    set(v.ps_deuda != null, () => { STATE.deudaTrapero = v.ps_deuda; });
     ['harderMinigames', 'shortPipeTimer', 'bonusXp', 'doubleGold'].forEach(k => set(!!v['ps_tb_' + k], () => { STATE.traperoBuffs = STATE.traperoBuffs || {}; STATE.traperoBuffs[k] = true; }));
     set(v.ps_heavy != null, () => { STATE.heavyChestsLeft = v.ps_heavy; });
     const wcDone = [];
     (DATOS_JUEGO.WILDCARDS || []).forEach(w => set(!!v['wc_' + w.id], () => { try { applyWildcard(w); wcDone.push(w.nombre); } catch (e) { console.warn('Wildcard de test fallida', w.id, e); } }));   // [0.096]
     if (any) {
       statsPaused = true; statsGoldPrev = null;   // una partida con trucos no cuenta para las estadísticas
-      Object.keys(tmVals).forEach(k => { if (k !== 'pType' && k !== 'pVar') tmVals[k] = (k === 'clearAch' || k.indexOf('wc_') === 0 || (k.indexOf('ps_') === 0 && /oidoClinico|luckyLootChance|shopStealFree|picksBrokenOnUse|ps_tb_/.test(k))) ? false : null; });
+      Object.keys(tmVals).forEach(k => { if (k !== 'pType' && k !== 'pVar') tmVals[k] = (k === 'clearAch' || k.indexOf('wc_') === 0 || (k.indexOf('ps_') === 0 && /oidoClinico|luckyLootChance|shopStealFree|picksBrokenOnUse|ps_sinRed|ps_tb_/.test(k))) ? false : null; });
       generateScreenChests(); keysBaseline = null; keyToastQueue.length = 0; updateUI();   // [0.091] sin avisos por los ajustes de test
       showPersistentFeedback('🛠️ [MODO TEST] Ajustes aplicados' + (wcDone.length ? ' (wildcards: ' + wcDone.join(', ') + ')' : '') + '. Esta partida ya no cuenta para las estadísticas.');
     }

@@ -171,8 +171,9 @@ function applyLevelCard(cardData) {
   }
 }
 
-function triggerLevelUpChoice() {
+function triggerLevelUpChoice(afterGift) {
   lvlClearTimers();
+  const q0 = STATE.eventQueue.length;   // [0.46] lo que encole la wildcard (cartas tácticas, apagón...) se ejecuta justo después de elegir carta, y antes del regalo del Duende
   const lvlNum = document.getElementById('levelUpNum'); 
   if (lvlNum) {
     lvlNum.textContent = `NIVEL ${STATE.level}`;
@@ -198,6 +199,7 @@ function triggerLevelUpChoice() {
   // [0.092] Fanfarria + cartel; ruleta de wildcard (se aplica ya, se muestra al frenar); SIGUIENTE; y entonces las 3 mejoras como cofres abiertos
   try { audio.init(); audio.playLevelUpFanfare(); } catch (e) {}
   const wcRes = pickWildcard();
+  const wcEvents = STATE.eventQueue.splice(q0);
   updateUI();
   const revealChoices = () => {
     if (nextBtn) nextBtn.classList.add('hidden');   // en la pantalla de las 3 cartas ya no hace falta
@@ -275,9 +277,10 @@ function triggerLevelUpChoice() {
       const levelUpModal = document.getElementById('levelUpModal'); if (levelUpModal) levelUpModal.classList.add('hidden');
       updateUI();
 
-      if (STATE.xp >= STATE.xpNext) {
-        STATE.eventQueue.unshift(() => processLevelUp());
-      }
+      const front = wcEvents.slice();   // [0.46] orden: efectos de la wildcard → regalo del Duende → siguiente nivel pendiente
+      if (afterGift) front.push(afterGift);
+      if (STATE.xp >= STATE.xpNext) front.push(() => processLevelUp());
+      STATE.eventQueue.unshift(...front);
       processNextQueuedEvent();
     });
 

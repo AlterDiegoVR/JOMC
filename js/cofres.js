@@ -126,8 +126,9 @@ function getRequiredToolCount(rarity) {
   if (isClimaxActive()) return 0;
   if ((STATE.pulseraLeft || 0) > 0 || masterKeyActive) return 0;   // [0.210] Pulsera VIP y Llave Maestra: el cofre no pide herramientas
   if (rarity.fogOne) return 1;   // [0.202] Niebla Espesa: todos los cofres cuestan 1 herramienta
+  if (chestSilOn()) return 1;   // [0.46] Cofres a Oscuras: con la luz apagada, todos cuestan 1
 
-  let base = rarity.toolFixed != null ? rarity.toolFixed : (rarity.id === 'legendario' ? 2 : 1);   // [0.105] Cerrojos Oxidados fija 1-3
+  let base = rarity.toolFixed != null ? rarity.toolFixed : (rarity.id === 'legendario' ? (STATE.sinRed ? 1 : 2) : 1);   // [0.46] Sin Red: los legendarios cuestan 1   // [0.105] Cerrojos Oxidados fija 1-3
   if (STATE.heavyChestsLeft > 0 && rarity.id !== 'normal') {
     base += 1;
   }
@@ -146,10 +147,11 @@ function updateChestSelectionUI() {
       STATE.screenChests.forEach((c, idx) => {
         const btn = document.createElement('button');
         const isSelected = idx === STATE.activeChestIdx;
+        const silOn = chestSilOn();   // [0.46]
         btn.className = `p-2 rounded-xl text-xs font-bold border flex flex-col items-center gap-1 transition-all ${chestVisRarity(c).border} ${isSelected ? 'bg-slate-800 scale-105 ring-2 ring-amber-400' : 'bg-slate-900/80 opacity-70'}`;
         btn.innerHTML = `
-          <span class="text-[9px] font-extrabold font-mono" style="color: ${c.fog ? '#94a3b8' : c.rarity.color}">${c.fog ? '???' : c.rarity.name}</span>
-          ${ART_ON && ASSETS.cofres[c.type.id] ? `<img src="${chestSpriteSrc(c.type, c.fog ? CHEST_RARITIES[0] : c.rarity)}" alt="" style="image-rendering:pixelated;width:44px;height:auto">` : '<i class="fa-solid fa-box text-sm"></i>'}
+          <span class="text-[9px] font-extrabold font-mono" style="color: ${(c.fog || silOn) ? '#94a3b8' : c.rarity.color}">${(c.fog || silOn) ? '???' : c.rarity.name}</span>
+          ${ART_ON && ASSETS.cofres[c.type.id] ? `<img src="${silOn ? (chestSilSrc(c.type) || chestSpriteSrc(c.type, CHEST_RARITIES[0])) : chestSpriteSrc(c.type, c.fog ? CHEST_RARITIES[0] : c.rarity)}" alt="" style="image-rendering:pixelated;width:44px;height:auto">` : '<i class="fa-solid fa-box text-sm"></i>'}
         `;
         btn.addEventListener('click', () => {
           audio.init();
@@ -168,16 +170,17 @@ function updateChestSelectionUI() {
   if (active) {
     const badge = document.getElementById('chestRarityBadge');
     if (badge) {
-      badge.textContent = active.fog ? '???' : active.rarity.name;
-      badge.style.borderColor = active.fog ? '#94a3b8' : active.rarity.color;
-      badge.style.color = active.fog ? '#94a3b8' : active.rarity.color;
+      const hid = active.fog || chestSilOn();   // [0.46]
+      badge.textContent = hid ? '???' : active.rarity.name;
+      badge.style.borderColor = hid ? '#94a3b8' : active.rarity.color;
+      badge.style.color = hid ? '#94a3b8' : active.rarity.color;
     }
 
     const title = document.getElementById('chestTitle');
-    if (title) title.textContent = active.type.nombre;
+    if (title) title.textContent = chestSilOn() ? '???' : active.type.nombre;   // [0.46]
 
     const subtitle = document.getElementById('chestSubtitle');
-    if (subtitle) subtitle.textContent = active.type.desc;
+    if (subtitle) subtitle.textContent = chestSilOn() ? '' : active.type.desc;   // [0.46]
 
     const reqCount = getRequiredToolCount(active.rarity);
     // [0.088] singular y plural correctos ("1 PIN DE ACERO", "2 PINES DE ACERO")
@@ -206,6 +209,7 @@ function updateChestSelectionUI() {
         reqEl.className = "text-[10px] font-bold text-amber-400 mb-3 bg-slate-900 px-2.5 py-0.5 rounded-md border border-slate-800";
         reqEl.textContent = `REQUIERE: ${reqCount} ${toolTitle}`;
       }
+      if (chestSilOn() && !isClimaxActive() && !(STATE.pulseraLeft > 0) && !canUseMasterKey(active)) { reqEl.className = "text-[10px] font-bold text-slate-300 mb-3 bg-slate-900 px-2.5 py-0.5 rounded-md border border-slate-700"; reqEl.textContent = 'REQUIERE: 1 HERRAMIENTA'; }   // [0.46] en silueta no se sabe cuál
     }
 
     const btnText = document.getElementById('openChestBtnText');
@@ -214,6 +218,7 @@ function updateChestSelectionUI() {
       if (active.type.juego === 'tumbler') btnText.textContent = `USAR PIN (${reqCount})`;
       if (active.type.juego === 'hack') btnText.textContent = `CONECTAR USB (${reqCount})`;
       if (active.type.juego === 'pipe') btnText.textContent = `GIRAR VÁLVULA (${reqCount})`;
+      if (chestSilOn() && !isClimaxActive()) btnText.textContent = 'ABRIR COFRE (1)';   // [0.46]
     }
   }
 
@@ -788,7 +793,7 @@ function triggerLootExplosion() {
     statsAdd('chests', 1); if (puzzleStat) { statsPuzzle(puzzleStat, true); puzzleStat = null; }   // [0.090]
     STATE.opensByType = STATE.opensByType || {};
     STATE.opensByType[active.type.id] = (STATE.opensByType[active.type.id] || 0) + 1;
-    STATE.cleanStreak++;
+    if (!modOn('malaRacha')) STATE.cleanStreak++;   // [0.46] Mala Racha: la racha se queda congelada (si fallas, se pierde)
     achEvent('chest', active);   // [0.42] logros (contador permanente por tipo de cofre)
 
     // CONSUMO DE GANZÚA POR TRATO "DEDOS ROTOS"
@@ -1021,6 +1026,7 @@ function triggerLootExplosion() {
     STATE.active2XMultiplier = false;
     STATE.gold += finalGp;
     STATE.xp += finalXp;
+    manosAjenasTick();   // [0.46] Manos Ajenas: con la luz apagada, 50% de que te roben una herramienta
     // [0.210] Apagón Financiero: alguien te hurga los bolsillos en cada cofre mientras dura
     if (mo('apagonFin') && STATE.gold > 0 && (STATE.roomDarkUntil || 0) >= STATE.chestsOpened) {   // [0.3] solo mientras la luz esté apagada (el efecto dura todo el bucle)
       const lostA = Math.min(STATE.gold, DATOS_JUEGO.MODS_WILDCARD.APAGON.GP_POR_TURNO);
@@ -1227,18 +1233,22 @@ function processLevelUp(fromDeal) {
     else if (STATE.level === 5) { STATE.valves += 1; giftObj = { name: "Válvula Hidráulica", icon: "fa-faucet" }; }
 
     const speechText = loopB3 ? loopB3 : loopB2 ? DATOS_JUEGO.NARRATIVA.DUENDE_DESBLOQUEOS_BUCLE2[unlockKey] : DATOS_JUEGO.NARRATIVA.DUENDE_DESBLOQUEOS[unlockKey];
-    triggerSequentialDialogue(
-      "EL DUENDE",
-      speechText,
-      "fa-hat-wizard",
-      `¡DESBLOQUEO DE NIVEL ${STATE.level}!`,
-      "text-purple-300",
-      giftObj,
-      () => {
-        updateUI();
-        triggerLevelUpChoice();
-      }
-    );
+    // [0.46] Orden nuevo: primero la subida de nivel (wildcard + elección de carta), y DESPUÉS el regalo del Duende
+    const lvlGift = STATE.level;
+    triggerLevelUpChoice(() => {
+      triggerSequentialDialogue(
+        "EL DUENDE",
+        speechText,
+        "fa-hat-wizard",
+        `¡DESBLOQUEO DE NIVEL ${lvlGift}!`,
+        "text-purple-300",
+        giftObj,
+        () => {
+          updateUI();
+          processNextQueuedEvent();
+        }
+      );
+    });
   } else {
     triggerLevelUpChoice();
   }

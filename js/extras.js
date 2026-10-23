@@ -288,7 +288,7 @@ function openRouletteOnly() {
   bn.innerHTML = (typeof wcFirstSpinHtml === 'function') ? wcFirstSpinHtml() : ''; bn.className = 'wcard-host lvl-card-spin'; bn.style.minHeight = 'min(300px, 40vh)';
   lm.style.overflowY = 'hidden'; lm.classList.remove('hidden');
   try { audio.init(); audio.playLevelUpFanfare(); } catch (e) {}
-  const res = pickWildcard();
+  const res = pickWildcard('pos');   // [0.46] la carta RULETA siempre da una wildcard positiva
   updateUI();
   lvlTimers.push(setTimeout(() => runWildcardRoulette(res, () => {
     nextBtn.classList.remove('invisible');
@@ -312,10 +312,11 @@ function openTacticPicker(n) {
   const hdr = lm.querySelector('h2'), sub = hdr && hdr.previousElementSibling;
   const saved = { sub: sub ? sub.textContent : '', h: hdr ? hdr.textContent : '' };
   if (sub) sub.textContent = 'HALLAZGO TÁCTICO+';
-  if (hdr) { hdr.classList.remove('rainbow-text'); hdr.textContent = `ELIGE ${n}`; }
+  if (hdr) { hdr.classList.remove('rainbow-text'); hdr.innerHTML = `<span class="tp-title">${n} DE 3 CARTAS TÁCTICAS</span>`; }   // [0.46] menú propio, en tono turquesa, distinto del de subida de nivel (índigo)
+  lm.classList.add('tp-mode');
   bn.classList.add('hidden'); nextBtn.classList.add('hidden');
   const label = choices.querySelector('div'); const savedLabel = label ? label.textContent : '';
-  if (label) label.textContent = `Elige ${n} cartas tácticas:`;
+  if (label) label.textContent = `CARTA 1 DE ${Math.min(n, 3)} · toca una`;
   choices.classList.remove('hidden');
   grid.innerHTML = '';
   const pool = shuffleU(levelCardPool(true)).slice(0, 3);
@@ -328,10 +329,10 @@ function openTacticPicker(n) {
       <div class="lvl-chest-glow"></div>
       <div class="lvl-sparks"><i></i><i></i><i></i><i></i><i></i></div>
       <div class="lvl-chest-back" style="background-image:url('${art.back}')"></div>
-      <div class="lvl-card bg-slate-900 border border-indigo-500/60 rounded-xl flex items-center gap-2.5 text-left shadow-xl group-hover:border-indigo-300">
-        <div class="w-10 h-10 flex-none rounded-xl bg-indigo-950 border border-indigo-500 flex items-center justify-center text-indigo-400 text-lg"><i class="fa-solid ${cd.icono}"></i></div>
+      <div class="lvl-card bg-slate-900 border border-teal-500/70 rounded-xl flex items-center gap-2.5 text-left shadow-xl group-hover:border-teal-300">
+        <div class="w-10 h-10 flex-none rounded-xl bg-teal-950 border border-teal-500 flex items-center justify-center text-teal-300 text-lg"><i class="fa-solid ${cd.icono}"></i></div>
         <div class="min-w-0">
-          <span class="text-[9px] font-extrabold font-mono uppercase px-2 py-0.5 bg-indigo-950 text-indigo-300 rounded-full border border-indigo-800">${cd.tipo}</span>
+          <span class="text-[9px] font-extrabold font-mono uppercase px-2 py-0.5 bg-teal-950 text-teal-300 rounded-full border border-teal-800">${cd.tipo}</span>
           <div class="text-white font-black text-xs mt-1">${cd.titulo}</div>
           <div class="text-[10px] text-slate-400 font-mono mt-0.5">${cd.desc}</div>
         </div>
@@ -344,10 +345,10 @@ function openTacticPicker(n) {
       applyLevelCard(cd);
       updateUI();
       left--;
-      if (label) label.textContent = left > 0 ? `Elige ${left} más:` : '';
+      if (label) label.textContent = left > 0 ? `CARTA ${Math.min(n, 3) - left + 1} DE ${Math.min(n, 3)} · toca otra` : '';
       if (left <= 0) {
         setTimeout(() => {
-          lm.classList.add('hidden'); choices.classList.add('hidden');
+          lm.classList.add('hidden'); lm.classList.remove('tp-mode'); choices.classList.add('hidden');
           if (sub) sub.textContent = saved.sub; if (hdr) { hdr.textContent = saved.h; hdr.classList.add('rainbow-text'); }
           if (label) label.textContent = savedLabel;
           updateUI();
@@ -360,3 +361,27 @@ function openTacticPicker(n) {
   lm.style.overflowY = 'auto'; lm.classList.remove('hidden');
   [...grid.children].forEach((el, i) => { el.style.opacity = '0'; setTimeout(() => { el.style.opacity = ''; el.classList.add('lvl-chest-in'); try { audio.playCardRise(); } catch (e) {} }, 120 + i * 260); });
 }
+
+/* ---------- [0.46] Primera carta táctica usable: flecha parpadeante + mensajito (una sola vez) ---------- */
+const TAC_BTNS = [['abilityAutoBtn', 'auto'], ['ability2xBtn', 'double'], ['abilityShieldBtn', 'shield'], ['abilityRiskBtn', 'riskPot'], ['abilityPerdedorBtn', 'perdedor'], ['abilitySummonDuendeBtn', 'summonDuende'], ['abilityCofradiaBtn', 'cofradia'], ['abilityRerollBtn', 'reroll'], ['abilityPulseraBtn', 'pulsera'], ['abilityRuletaBtn', 'ruleta']];
+function tacticTutorialShow(btn) {
+  STATE.tacticTutorialSeen = true; try { if (typeof saveGame === 'function') saveGame(); } catch (e) {}
+  const host = uiHost(), fr = host.getBoundingClientRect(), r = btn.getBoundingClientRect();
+  const el = document.createElement('div'); el.id = 'tacTutorial'; el.className = 'tac-tut';
+  const cx = r.left - fr.left + r.width / 2, top = r.bottom - fr.top + 4;
+  el.style.top = top + 'px';
+  el.innerHTML = `<div class="tac-arrow" style="left:${cx}px"></div><div class="tac-msg">${DATOS_JUEGO.TUTORIAL_TACTICA || 'Aquí van tus cartas tácticas. Úsalas cuando quieras, pero con cabeza: se gastan al usarlas.'}</div>`;
+  host.appendChild(el);
+  let gone = false; const bye = () => { if (gone) return; gone = true; el.style.opacity = '0'; setTimeout(() => el.remove(), 400); document.removeEventListener('pointerdown', bye, true); };
+  setTimeout(() => document.addEventListener('pointerdown', bye, true), 800);
+  setTimeout(bye, 9000);
+}
+setInterval(() => {
+  try {
+    if (typeof STATE === 'undefined' || !STATE || STATE.tacticTutorialSeen || document.getElementById('tacTutorial')) return;
+    if (!TAC_BTNS.some(([id, k]) => (STATE.abilities[k] || 0) > 0)) return;
+    if (typeof nbRoomFree === 'function' && !nbRoomFree()) return;
+    const btn = TAC_BTNS.map(([id]) => document.getElementById(id)).find(b => b && !b.classList.contains('hidden') && b.getClientRects().length);
+    if (btn) tacticTutorialShow(btn);
+  } catch (e) {}
+}, 1000);

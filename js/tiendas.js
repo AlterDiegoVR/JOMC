@@ -224,12 +224,19 @@ function showShopReceipt(onCloseCallback) {
   if (session) session.guiltPhrase = null;
   const giftText = session && session.giftPhrase ? session.giftPhrase : null;   // [0.42]
   if (session) session.giftPhrase = null;
+  const giftItems = session && session.giftItems ? session.giftItems : [];   // [0.46]
+  if (session) session.giftItems = null;
   const originalCallback = onCloseCallback;
   onCloseCallback = () => {
     // [0.44] el agradecimiento del Duende por no robar sale como una escena: fondo de tienda y el Duende en grande hablando (antes era un banner)
     if (giftText) {
       let ok = false;
-      try { triggerSequentialDialogue('EL DUENDE', giftText, 'fa-hat-wizard', 'Encuentro Casual', 'text-purple-300', null, () => { if (originalCallback) originalCallback(); }); ok = true; } catch (e) {}
+      try {
+        // [0.46] el premio se ve dentro de la escena: objeto grande flotando junto al Duende y su nombre en el aviso de regalo
+        let gSrc = null; try { shopArtInit(); gSrc = giftItems.length ? shopImg(giftItems[0].ic) : null; } catch (e) {}
+        const gObj = giftItems.length ? { name: giftItems.map(g => g.name).join(' + '), icon: giftItems[0].icon } : null;
+        triggerSequentialDialogue('EL DUENDE', giftText, 'fa-hat-wizard', 'Encuentro Casual', 'text-purple-300', gObj, () => { if (originalCallback) originalCallback(); }, gSrc || null); ok = true;
+      } catch (e) {}
       if (!ok && originalCallback) originalCallback();
     } else if (originalCallback) originalCallback();
     if (guiltText) { try { spawnStickyNote(guiltText); } catch (e) {} }   // [0.209] ya no es un banner (la voz del protagonista): aparece como un post-it más en la sala
@@ -516,13 +523,15 @@ function shopGiveNoStealGift() {
   if (v.n && !v.uN && !STATE.giftNight) { STATE.giftNight = true; n++; }
   if (!n) return;
   if (!STATE.shopSession) resetShopSession();
+  const gifts = [];
   for (let i = 0; i < n; i++) {
     const slot = STATE.currentShopOffer[Math.floor(Math.random() * STATE.currentShopOffer.length)];
     const item = slot.vipTools ? Object.assign({}, slot.vipTools[Math.floor(Math.random() * slot.vipTools.length)]) : slot;
     const vis = SHOP_VIS[item.id] || { n: item.name.toUpperCase(), ic: 'ic_ganzua' };
     grantItem(item);
-    STATE.shopSession.items.push({ name: item.name, costText: 'REGALO', icon: item.icon, ic: vis.ic, isStolen: false, isGift: true });
+    gifts.push({ name: item.name, icon: item.icon, ic: vis.ic });   // [0.46] el premio ya no va en el recibo: se ve en la escena del Duende
   }
+  STATE.shopSession.giftItems = gifts;
   const fr = shopCfg().FRASES_REGALO || ['HAS HECHO LO CORRECTO. TOMA.'];
   STATE.shopSession.giftPhrase = fr[Math.floor(Math.random() * fr.length)];
   try { achEvent('gift'); } catch (e) {}
@@ -552,6 +561,7 @@ closeMerchantBtns.forEach(btn => {
 
 // [0.102] Entrada del Trapero: juego -> negro -> pantalla de tratos. Habla arriba; al continuar, los tratos aparecen en cascada.
 let traperoTimers = [];
+let traperoForced = false;   // [0.46] Deuda: sin 'NO TRATAR · SALIR' hasta aceptar un trato
 function triggerTraperoShopSequence() {
   try { if (!STATE.finalFree) { nbReg('npc.trapero.1'); if ((STATE.currentLoop || 1) >= 2) nbReg('npc.trapero.5'); if ((STATE.currentLoop || 1) >= 3) nbReg('npc.trapero.6'); } } catch (e) {}   // [0.40] cuaderno
   if (STATE.finalFree) { processNextQueuedEvent(); return; }   // [0.40] tercer final: ni el Duende ni el Trapero vuelven a salir
@@ -621,12 +631,20 @@ function traperoCascade() {
       if (cfg.SONIDO_CASCADA !== false) { try { audio.init(); audio.playDealBell(i); } catch (e) {} }   // [0.105]
     }, 120 + i * step));
   });
-  traperoTimers.push(setTimeout(() => { if (leave) leave.classList.remove('hidden'); }, 120 + cards.length * step + 80));
+  // [0.46] Deuda con el Trapero: aviso con las visitas que quedan y sin botón de salir
+  let dn = document.getElementById('traperoDebtNote'); if (dn) dn.remove();
+  if (traperoForced && leave && leave.parentNode) {
+    dn = document.createElement('div'); dn.id = 'traperoDebtNote'; dn.className = 'tshop-debt';
+    dn.textContent = `DEUDA · DEBES ACEPTAR UN TRATO · QUEDAN ${STATE.deudaTrapero} ${STATE.deudaTrapero === 1 ? 'VISITA' : 'VISITAS'}`;
+    leave.parentNode.insertBefore(dn, leave);
+  }
+  traperoTimers.push(setTimeout(() => { if (leave && !traperoForced) leave.classList.remove('hidden'); }, 120 + cards.length * step + 80));
 }
 
 function showTraperoDealFeedback(dealTitle, summaryText, onClose) {
   try { achEvent('deal'); } catch (e) {}   // [0.42] logros: tratos hechos en el bucle
   try { nbReg('npc.trapero.2'); } catch (e) {}   // [0.40] cuaderno
+  if ((STATE.deudaTrapero || 0) > 0) { STATE.deudaTrapero--; saveDirty = true; }   // [0.46] una visita menos de deuda
   triggerSequentialDialogue(
     "EL TRAPERO",
     summaryText,
@@ -669,6 +687,8 @@ function openTraperoShop() {
     if (deal.id === 'purga_maldicion_plus' && !(STATE.cursedChestsLeft > 0 && !STATE.curseHalf)) return false;
     if (deal.id === 'otra_oportunidad' && unlockedAdvancedTools().length === 0) return false;
     if (deal.id === 'atajo' && ((STATE.atajoLeft || 0) > 0 || isClimaxActive())) return false;
+    if (deal.minBucle && (STATE.currentLoop || 1) < deal.minBucle) return false;   // [0.46] tratos nuevos: bucle 2 en adelante
+    if (deal.id === 'sin_red' && (STATE.sinRed || isClimaxActive() || STATE.finalFree)) return false;
     return true;
   });
 
@@ -681,7 +701,11 @@ function openTraperoShop() {
     });
   }
 
-  const selectedDeals = shuffleU(deals).slice(0, 3);
+  // [0.46] Deuda con el Trapero: solo se ofrecen tratos que se puedan aceptar; si no hay ninguno, el bloqueo se levanta
+  const debt = (STATE.deudaTrapero || 0) > 0;
+  const usable = debt ? deals.filter(traperoDealUsable) : deals;
+  traperoForced = debt && usable.length > 0;
+  const selectedDeals = shuffleU(traperoForced ? usable : deals).slice(0, 3);
   try { selectedDeals.forEach(d => { if (typeof nbReg === 'function') nbReg('trato.' + d.id); }); } catch (e) {}   // [0.42] cuaderno: todo trato ofrecido queda anotado
 
   selectedDeals.forEach(deal => {
@@ -934,6 +958,28 @@ function openTraperoShop() {
           audio.playUnlockFanfare('epico');
           updateUI();
           showTraperoDealFeedback("Otra Oportunidad", `Olvidas maestrías, torpezas, efectos y cartas tácticas. A cambio recibes +${O.GANZUAS} Ganzúas (${gotTxt}).`);
+        } else if (deal.id === 'doble_tirada') {   // [0.46] una wildcard buena y otra mala
+          if (traperoModal) traperoModal.classList.add('hidden');
+          const rp = pickWildcard('pos'), rn = pickWildcard('neg');
+          const part = r => r ? `${r.wc.nombre}${r.extra ? ' (' + r.extra + ')' : ''}: ${String(wcDesc(r.wc)).replace(/[{}]/g, '')}` : '—';
+          audio.playUnlockFanfare('epico'); updateUI();
+          showTraperoDealFeedback("Doble Tirada", `Lo bueno: ${part(rp)} Lo malo: ${part(rn)}`);
+        } else if (deal.id === 'apuesta_trapero') {   // [0.46] moneda al aire
+          if (traperoModal) traperoModal.classList.add('hidden');
+          coinFlipFx(side => {
+            const r = pickWildcard(side === 'cara' ? 'pos' : 'neg');
+            updateUI();
+            const txt = r ? `${r.wc.nombre}${r.extra ? ' (' + r.extra + ')' : ''}: ${String(wcDesc(r.wc)).replace(/[{}]/g, '')}` : '';
+            showTraperoDealFeedback("Apuesta del Trapero", `${side === 'cara' ? 'Cara. La suerte es tuya.' : 'Cruz. Hoy la suerte es mía.'} ${txt}`);
+          });
+        } else if (deal.id === 'sin_red') {   // [0.46] sin Trato Injusto a cambio de un buen montón de ventajas
+          const S = DATOS_JUEGO.TRATOS_46.SIN_RED;
+          STATE.sinRed = true; STATE.gold += S.GP;
+          const adv = unlockedAdvancedTools(); STATE.picks += S.HERRAMIENTAS_CADA; adv.forEach(p => { STATE[p] += S.HERRAMIENTAS_CADA; });
+          const gifts = sinRedRegalos(); gifts.forEach(g => g.f());
+          if (traperoModal) traperoModal.classList.add('hidden');
+          audio.playUnlockFanfare('epico'); updateUI();
+          showTraperoDealFeedback("Sin Red", `Ya no hay segundas oportunidades: si fallas, es el fin. Recibes +${S.HERRAMIENTAS_CADA} de cada herramienta que conoces, +${S.GP} GP y tus cofres legendarios cuestan 1 herramienta. Y además: ${gifts.map(g => g.txt).join(' y ')}.`);
         } else if (deal.id === 'atajo') {   // [0.210]
           const A = DATOS_JUEGO.TRATOS_210.ATAJO;
           STATE.xp += STATE.xpNext;   // se suma la XP completa del nivel: al subir se conserva lo que ya tenías

@@ -184,6 +184,12 @@ function updateUI() {
       { active: modOn('mentirosos'), text: `🎭 Mentirosos`, shortText: `🎭`, desc: `Cofres Mentirosos: un ${Math.round(DATOS_JUEGO.MODS_WILDCARD.MENTIROSOS.PROB * 100)}% de las veces el puzle no es el del cofre. Dura todo el bucle.` },
       { active: modOn('spooky'), text: `🕷️ Spooky`, shortText: `🕷️`, desc: `Spooky Things: tocar objetos de la sala tiene un ${Math.round(DATOS_JUEGO.MODS_WILDCARD.SPOOKY.PROB * 100)}% de maldecirte. Dura todo el bucle.` },
       { active: modOn('apagonFin'), text: `💡 Apagón`, shortText: `💡`, desc: `Apagón Financiero: pierdes ${DATOS_JUEGO.MODS_WILDCARD.APAGON.GP_POR_TURNO} GP en cada cofre mientras la luz esté apagada. Dura todo el bucle.` },
+      { active: modOn('malaRacha'), text: `📉 Mala racha x${(STATE.mods||{}).malaRacha}`, shortText: `📉 x${(STATE.mods||{}).malaRacha}`, desc: `Mala Racha: tu racha no sube durante ${(STATE.mods||{}).malaRacha} cofres más. Si fallas, la pierdes.`, isTorpeza: true },
+      { active: modOn('manosAjenas'), text: `🖐️ Manos ajenas`, shortText: `🖐️`, desc: `Manos Ajenas: con la luz apagada, un ${Math.round(DATOS_JUEGO.MODS_WILDCARD.MANOS_AJENAS.PROB * 100)}% de que te roben una herramienta en cada cofre. Dura todo el bucle.` },
+      { active: modOn('cofresOscuros'), text: `👁️ A oscuras`, shortText: `👁️`, desc: `Cofres a Oscuras: con la luz apagada solo ves la silueta de los cofres y todos cuestan 1 herramienta. Dura todo el bucle.` },
+      { active: modOn('precioSangre'), text: `🩸 Precio de sangre`, shortText: `🩸`, desc: `Precio de la Sangre: mientras estés maldito, el Duende cobra un ${Math.round(DATOS_JUEGO.MODS_WILDCARD.PRECIO_SANGRE.PCT * 100)}% más. Dura todo el bucle.` },
+      { active: (STATE.deudaTrapero || 0) > 0, text: `📜 Deuda x${STATE.deudaTrapero}`, shortText: `📜 x${STATE.deudaTrapero}`, desc: `Deuda con el Trapero: en tus próximas ${STATE.deudaTrapero} visitas tendrás que aceptar uno de sus tratos.` },
+      { active: !!STATE.sinRed, text: `⚠️ Sin red`, shortText: `⚠️`, desc: `Sin Red: si fallas, no hay segunda oportunidad. Los cofres legendarios cuestan 1 herramienta.`, isBoost: true },
       { active: (STATE.atajoLeft || 0) > 0, text: `⚡ Atajo x${STATE.atajoLeft}`, shortText: `⚡ x${STATE.atajoLeft}`, desc: `Atajo: si fallas un cofre durante los próximos ${STATE.atajoLeft}, es el fin.` }
     );
     const activePerks = perkList.filter(p => p.active);
