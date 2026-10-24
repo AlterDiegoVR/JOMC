@@ -1329,3 +1329,6 @@ html:not(.narrow-layout) .sticky-note.scene-note:not(.pass-note) { width: 270px 
 
 /* [0.51] el recibo del Duende se salía 2 px por la derecha (sello girado) y aparecía una barra de desplazamiento horizontal */
 #duendeReceiptModal > .rc-wrap { overflow-x: hidden !important; padding-right: 3px; box-sizing: border-box; }
+
+/* [0.51] PC: al pasar el ratón el post-it solo se endereza; sin escalar, para que la letra no cambie de tamaño ni se vea movida */
+html:not(.narrow-layout) .sticky-note:not(.pass-note):hover { transform: rotate(0deg); }
