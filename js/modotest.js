@@ -119,6 +119,9 @@ function testKeyHash(seq, salt) {
         ${(typeof infUnlocked === 'function' && infUnlocked()) ? b('optInf', 'fa-infinity', 'MODO INFINITO', 'bg-gradient-to-r from-violet-800 to-fuchsia-800 text-white') : ''}
         ${b('optNew', 'fa-rotate-left', 'EMPEZAR DE NUEVO', 'bg-rose-950/80 active:bg-rose-900 text-rose-200')}
         ${b('optTest', 'fa-flask', 'MODO TEST', 'bg-slate-950 text-slate-400')}
+        <div class="flex items-center gap-2 mt-1" data-noi18n><span class="text-[10px] font-extrabold text-slate-400 tracking-widest flex-none"><i class="fa-solid fa-language"></i> IDIOMA / LANGUAGE</span>
+          <button id="optLangEs" class="flex-1 py-2 font-extrabold text-xs rounded-lg border cursor-pointer ${(window.LANG || 'es') === 'es' ? 'bg-amber-600 border-amber-300 text-white' : 'bg-slate-800 border-slate-600 text-slate-300'}">ESPAÑOL</button>
+          <button id="optLangEn" class="flex-1 py-2 font-extrabold text-xs rounded-lg border cursor-pointer ${(window.LANG || 'es') === 'en' ? 'bg-amber-600 border-amber-300 text-white' : 'bg-slate-800 border-slate-600 text-slate-300'}">ENGLISH</button></div>
         <button id="optClose" class="mt-1 w-full py-2.5 bg-slate-800 active:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl cursor-pointer">Cerrar</button>
         <div id="optVersion" class="text-center text-[10px] font-mono text-slate-500 tracking-widest">v${DATOS_JUEGO.VERSION}</div>
       </div>`;
@@ -126,6 +129,8 @@ function testKeyHash(seq, salt) {
     // [0.40] CUADERNO (solo si ya se ha encontrado): abre el cuaderno de verdad (cuaderno.js)
     if (q('optTome')) q('optTome').addEventListener('click', () => { close('optionsModal'); nbOpen(); });
     q('optClose').addEventListener('click', () => close('optionsModal'));
+    q('optLangEs').addEventListener('click', () => { if (window.LANG !== 'es') setLang('es'); });
+    q('optLangEn').addEventListener('click', () => { if (window.LANG !== 'en') setLang('en'); });
     q('optStats').addEventListener('click', () => { close('optionsModal'); openStatsBoard(); });
     q('optList').addEventListener('click', () => { close('optionsModal'); openAchievementsList(); });
     if (q('optInf')) q('optInf').style.background = 'linear-gradient(90deg,#5b21b6,#a21caf)';

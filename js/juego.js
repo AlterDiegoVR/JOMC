@@ -239,10 +239,10 @@ function triggerLevelUpChoice(afterGift) {
       const nextLvl = currentLvl + 1;
       const nextPct = Math.round(getMasteryTorpezaPct(nextLvl) * 100);
       descText = `Sube a Nivel ${nextLvl} (+${nextPct}% botín y EXP).`;
-      titleText = `${cardData.titulo} (Lv.${currentLvl} ➔ ${nextLvl})`;
+      titleText = `${tr(cardData.titulo)} (Lv.${currentLvl} ➔ ${nextLvl})`;
     } else if (herreroLvl > 0) {
       descText = `Sube el Herrero a Nivel ${herreroLvl + 1}: reciclajes más baratos y generosos.`;
-      titleText = `${cardData.titulo} (Lv.${herreroLvl} ➔ ${herreroLvl + 1})`;
+      titleText = `${tr(cardData.titulo)} (Lv.${herreroLvl} ➔ ${herreroLvl + 1})`;
     } else if (['clasico', 'mecanico', 'informatico', 'fontanero', 'electricista'].includes(cardData.id)) {
       const basePct = Math.round(DATOS_JUEGO.ECONOMIA.PORCENTAJE_MAESTRIA_TORPEZA_BASE * 100);
       descText = `Nivel 1: +${basePct}% de botín y EXP en sus cofres.`;

@@ -45,8 +45,8 @@
     return true;
   }
   const px = (x, y, w, h, c) => { ctx.fillStyle = c; ctx.fillRect(x, y, w, h); };
-  function txt(x, y, s, c) { let cx = x; for (const ch of s) { const g = G[ch]; if (g) for (let i = 0; i < 15; i++) if (g[i] === '1') px(cx + (i % 3), y + ((i / 3) | 0), 1, 1, c); cx += 4; } }
-  const tw = s => Math.max(0, s.length * 4 - 1);
+  function txt(x, y, s, c) { s = tr(s); let cx = x; for (const ch of s) { const g = G[ch]; if (g) for (let i = 0; i < 15; i++) if (g[i] === '1') px(cx + (i % 3), y + ((i / 3) | 0), 1, 1, c); cx += 4; } }
+  const tw = s => Math.max(0, tr(s).length * 4 - 1);
   function ticket(c, u, mode, label) {
     const P = COL[c.who], W = 144, H = 48;
     ctx.clearRect(0, 0, W, H); ctx.imageSmoothingEnabled = false;
@@ -86,7 +86,7 @@
     // [0.51] al concederse (o al equipar el Perdedor) el ticket se ve más grande en PC y lleva un pequeño texto explicativo
     const big = job.kind === 'on' || job.kind === 'equip', wide = (() => { try { return typeof isWideLayout === 'function' && isWideLayout(); } catch (e) { return false; } })();
     pop.style.width = big && wide ? 'min(640px, 62vw)' : 'min(360px, 92vw)';
-    if (big && DESC[job.id]) { tx.textContent = DESC[job.id].replace('{n}', job.tot || c.tot); tx.style.display = ''; tx.style.fontSize = wide ? '15px' : '13px'; } else tx.style.display = 'none';
+    if (big && DESC[job.id]) { tx.textContent = tr(DESC[job.id]).replace('{n}', job.tot || c.tot); tx.style.display = ''; tx.style.fontSize = wide ? '15px' : '13px'; } else tx.style.display = 'none';
     if (job.kind === 'use') { const u = job.u; seq.push([c, u - 1, 'idle', 'FALLO ' + u + ' DE ' + c.tot], [c, u, 'fresh', 'FALLO ' + u + ' DE ' + c.tot], [c, u, 'idle', 'FALLO ' + u + ' DE ' + c.tot]); }
     else if (job.kind === 'on') seq.push([c, 0, 'idle', c.on + ' ' + (job.tot || c.tot)]);
     else if (job.kind === 'equip') seq.push([c, job.u || 0, 'idle', 'FALLO ' + (job.u || 0) + ' DE ' + c.tot]);   // Perdedor equipado

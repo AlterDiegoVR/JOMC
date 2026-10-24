@@ -9,7 +9,7 @@
 
 const DATOS_JUEGO = {
   // [0.088] Versión visible en pantalla (esquina inferior central) para que las capturas la incluyan
-  VERSION: '0.51c',
+  VERSION: '0.52-en',
   TUTORIAL_TACTICA: 'Aquí van tus cartas tácticas. Úsalas cuando quieras, pero con cabeza: se gastan al usarlas.',   // [0.46] texto de la flecha de la primera carta táctica (borrador mío)
   // [0.104] Efectos de la apertura automática de la secuencia final (cofres 101-110); la intensidad sube del primero al último (k = 0..1)
   SECUENCIA_FINAL_FX: { ACTIVAR: true, ESTALLIDOS_BASE: 2, ESTALLIDOS_EXTRA: 4, PARTICULAS_POR_ESTALLIDO: 40, HACIA_CENTRO_BASE: 30, HACIA_CENTRO_EXTRA: 60,
@@ -61,9 +61,9 @@ const DATOS_JUEGO = {
     COFRE: 53,
     HUECO: '',   // [0.203] el hueco es ahora una línea continua con cursor (CSS .pass-gap); sin texto
     BUCLES: {
-      1: { frase: 'Los cofres son como', palabras: ['espejos', 'jaulas', 'relojes', 'puertas', 'sueños', 'deudas', 'vicios', 'regalos', 'promesas', 'bucles'] },
-      2: { frase: 'El ORO es genial pero', palabras: ['pesa', 'quema', 'miente', 'cansa', 'ciega', 'engaña', 'acaba', 'envenena', 'pasa', 'duele'] },
-      3: { frase: 'Ahora sé que la salida es', palabras: ['parar', 'soltar', 'dormir', 'creer', 'romper', 'olvidar', 'recordar', 'esperar', 'escribir', 'mirar'] }
+      1: { frase: 'Los cofres son como', palabras: ['espejos', 'jaulas', 'ventanas', 'puertas', 'sueños', 'deudas', 'vicios', 'regalos', 'promesas', 'bucles'] },
+      2: { frase: 'El ORO es genial pero', palabras: ['pesa', 'quema', 'miente', 'cansa', 'ciega', 'engaña', 'obsesiona', 'envenena', 'pasa', 'duele'] },
+      3: { frase: 'Ahora sé que la salida es', palabras: ['parar', 'seguir', 'dormir', 'creer', 'romper', 'olvidar', 'recordar', 'esperar', 'escribir', 'imposible'] }
     }
   },
   // [0.40] EL CUADERNO. Solo se escribe lo que el juego ha REGISTRADO (nbReg en cuaderno.js): lo no descubierto no aparece (ni secciones, ni páginas, ni notas).

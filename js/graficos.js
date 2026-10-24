@@ -380,7 +380,7 @@ function drawLockOverlay(lx, ly, lr, chest) {
   ctx.globalAlpha = 1;
   // etiqueta de coste: solo si hacen falta 2+ herramientas o si faltan (con 1 sola no se pinta)
   if (req > 1 || missing > 0) {
-    const label = missing ? `faltan ${missing}` : `x${req}`;
+    const label = missing ? tr(`faltan ${missing}`) : `x${req}`;
     ctx.font = `bold ${fs}px monospace`;
     const tw = ctx.measureText(label).width + 14;
     const bx = lx - tw / 2, by = ly - lr - fs - 12;
@@ -411,7 +411,7 @@ function drawLockOverlay(lx, ly, lr, chest) {
     }
     const armedMsg = armed && openedN < (fl.COFRES_POR_TIPO_TOCA_OTRA_VEZ || 5);   // [0.089] se quita tras 5 aciertos por tipo
     if (armedMsg || showMsg) {
-    const txt = armedMsg ? 'TOCA OTRA VEZ PARA ABRIR' : (fl.TEXTO || 'TOCA EL CERROJO PARA ABRIR');
+    const txt = tr(armedMsg ? 'TOCA OTRA VEZ PARA ABRIR' : (fl.TEXTO || 'TOCA EL CERROJO PARA ABRIR'));
     const ty = ly + lr + (armedMsg ? 8 : 36);
     ctx.font = `bold ${fs}px monospace`;
     const hw = ctx.measureText(txt).width + 16;
@@ -872,7 +872,7 @@ function spawnSpookyPerimeterDecoration() {
     descriptor: descriptor, color: '#f59e0b', used: false
   });
 
-  return `${chosenDecor.icono} ${chosenDecor.nombre} — "${descriptor}"`;
+  return `${chosenDecor.icono} ${tr(chosenDecor.nombre)} — "${tr(descriptor)}"`;
 }
 
 // [0.088] Cambio de ambiente en espera: se ejecuta cuando el banner de feedback ya está cerrado

@@ -244,12 +244,16 @@ function setHelp(el, text) {
 // [0.089b] delayKey (opcional): tipo de mensaje de "clic compulsivo". Las primeras VECES de cada tipo, por partida, el botón de cerrar aparece tras RETARDO_MS.
 // [0.104] Resalta palabras clave de un texto (para quien lee en diagonal): devuelve HTML seguro. Listas en DATOS_JUEGO.PALABRAS_CLAVE
 function kwHighlight(text) {
+  // [EN] versión inglesa: se traduce el texto y se resalta con las listas de palabras clave inglesas
+  const EN_ = typeof LANG !== 'undefined' && LANG === 'en' && window.I18N_DATA && I18N_DATA.kw && I18N_DATA.kw.MALAS;
+  if (EN_) text = tr(String(text == null ? '' : text));
   const esc = String(text == null ? '' : text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  const cfg = DATOS_JUEGO.PALABRAS_CLAVE || {};
+  const cfg = EN_ ? Object.assign({}, DATOS_JUEGO.PALABRAS_CLAVE, I18N_DATA.kw) : (DATOS_JUEGO.PALABRAS_CLAVE || {});
   if (cfg.ACTIVAR === false) return esc;
   const bad = (cfg.MALAS || []).join('|'), good = (cfg.BUENAS || []).join('|');
   const W = list => list && '(?<![\\p{L}])(?:' + list + ')(?![\\p{L}])';
-  const re = new RegExp('(' + [W(bad), W(good), '[+\\-]?#?\\d+(?:[.,]\\d+)?(?:\\s?(?:cofres?|GP|XP|ganz[uú]as?|llaves?|segundos?|%))?'].filter(Boolean).join('|') + ')', 'giu');
+  const unit = EN_ ? I18N_DATA.kw.UNIT : '(?:cofres?|GP|XP|ganz[uú]as?|llaves?|segundos?|%)';
+  const re = new RegExp('(' + [W(bad), W(good), '[+\\-]?#?\\d+(?:[.,]\\d+)?(?:\\s?' + unit + ')?'].filter(Boolean).join('|') + ')', 'giu');
   const badRe = bad ? new RegExp('^(?:' + bad + ')$', 'iu') : null;
   return esc.replace(re, m => `<b class="${badRe && badRe.test(m) ? 'kw kw-bad' : 'kw'}">${m}</b>`);
 }
@@ -553,7 +557,7 @@ function buildSceneNote(p) {
   el.style.visibility = 'hidden';
   if (p.kind === 'pass') el.classList.add('pass-note');   // [0.202] algo mayor, con brillo y parpadeo
   const fill = () => {
-    if (p.kind === 'pass') { const B = DATOS_JUEGO.CONTRASENA.BUCLES[p.loop]; el.innerHTML = p.written ? '' : `${B.frase} <span class="pass-gap">${DATOS_JUEGO.CONTRASENA.HUECO}</span>`; if (p.written) { el.textContent = `"${B.frase} ${p.text}"`; el.classList.add('player-text'); el.classList.remove('pass-pending'); } else el.classList.add('pass-pending'); return; }
+    if (p.kind === 'pass') { const B = DATOS_JUEGO.CONTRASENA.BUCLES[p.loop]; el.innerHTML = p.written ? '' : `${B.frase} <span class="pass-gap">${DATOS_JUEGO.CONTRASENA.HUECO}</span>`; if (p.written) { el.textContent = `"${tr(B.frase)} ${tr(p.text)}"`; el.classList.add('player-text'); el.classList.remove('pass-pending'); } else el.classList.add('pass-pending'); return; }
     if (p.kind === 'read' || p.written) { el.textContent = p.text ? `"${p.text}"` : ''; el.classList.add('player-text'); }   // [0.096] cursiva
     else el.innerHTML = '<span class="note-caret">|</span>';
   };
@@ -859,7 +863,7 @@ function triggerLootExplosion() {
     let baseXp = Math.floor((Math.random() * (baseXpMax - baseXpMin) + baseXpMin) * lootMultiplier);
 
     let gpLines = [];
-    gpLines.push({ label: `Base ${lootRarityName}`, val: `+${baseGp} GP` });
+    gpLines.push({ label: `Base ${tr(lootRarityName)}`, val: `+${baseGp} GP` });
     let finalGp = baseGp;
 
     const configRachas = DATOS_JUEGO.ECONOMIA.RACHAS_APERTURA;
@@ -968,7 +972,7 @@ function triggerLootExplosion() {
     }
 
     let xpLines = [];
-    xpLines.push({ label: `Base ${lootRarityName}`, val: `+${baseXp} XP` });
+    xpLines.push({ label: `Base ${tr(lootRarityName)}`, val: `+${baseXp} XP` });
     let finalXp = baseXp;
 
     if (masteryLevel > 0) {
