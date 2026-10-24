@@ -1326,3 +1326,6 @@ html:not(.narrow-layout) .sticky-note.scene-note:not(.pass-note) { width: 270px 
 
 /* [0.51] PC: la línea de cartas tácticas no tapa los adornos de la sala; solo las cartas reciben el clic */
 @media (min-width: 900px) { .tac-line { pointer-events: none; } .tac-line > * { pointer-events: auto; } }
+
+/* [0.51] el recibo del Duende se salía 2 px por la derecha (sello girado) y aparecía una barra de desplazamiento horizontal */
+#duendeReceiptModal > .rc-wrap { overflow-x: hidden !important; padding-right: 3px; box-sizing: border-box; }
