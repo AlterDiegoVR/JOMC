@@ -6,9 +6,9 @@
    - Los contadores de partida / de bucle viven en STATE.achG ({ g: partida, l: bucle }).
    ========================================================================== */
 const ACH_PROG_KEY = 'justOneMoreChest_logros_prog_v1';
-let achProg = { types: {}, recycled: 0, flags: {} };
+let achProg = { types: {}, recycled: 0, flags: {}, runs: {} };   // [0.51] runs: últimos 10 resultados de puzle por tipo de cofre
 (function achProgLoad() {
-  try { const o = JSON.parse(window.localStorage.getItem(ACH_PROG_KEY) || 'null'); if (o && typeof o === 'object') achProg = { types: o.types || {}, recycled: +o.recycled || 0, flags: o.flags || {} }; } catch (e) {}
+  try { const o = JSON.parse(window.localStorage.getItem(ACH_PROG_KEY) || 'null'); if (o && typeof o === 'object') achProg = { types: o.types || {}, recycled: +o.recycled || 0, flags: o.flags || {}, runs: o.runs || {} }; } catch (e) {}
 })();
 function achProgSave() { try { window.localStorage.setItem(ACH_PROG_KEY, JSON.stringify(achProg)); } catch (e) {} }
 
@@ -28,17 +28,32 @@ function achEvent(ev, data) {
   const a = achG();
   switch (ev) {
     case 'chest': { const id = data && data.type && data.type.id; if (id) { achProg.types[id] = (achProg.types[id] || 0) + 1; achProgSave(); } break; }
-    case 'recycle': achProg.recycled += (data || 0); achProgSave(); break;
+    case 'recycle': achProg.recycled += (data || 0); a.g.recycled = (a.g.recycled || 0) + (data || 0); achProgSave(); break;
+    // [0.51] eventos de los logros nuevos
+    case 'canSteal': a.l.canSteal = true; break;                                   // en este bucle hubo una visita a la tienda con robo disponible
+    case 'shopOpen': a.l.shopV = 0; break;                                         // empieza una visita a la tienda del Duende
+    case 'shopBuy': a.l.shopV = (a.l.shopV || 0) + (data || 0); if (a.l.shopV >= 200 && !achProg.flags.shop200) { achProg.flags.shop200 = Date.now(); achProgSave(); } break;
+    case 'gold': if ((data || 0) >= 1000 && !achProg.flags.gp1000) { achProg.flags.gp1000 = Date.now(); achProgSave(); } break;
+    case 'bote': if ((data || 0) >= 300 && !achProg.flags.bote300) { achProg.flags.bote300 = Date.now(); achProgSave(); } break;
+    case 'mastery3': if (!achProg.flags.mastery3) { achProg.flags.mastery3 = Date.now(); achProgSave(); } break;
+    case 'runT': {   // data = { t: tipo de cofre, ok }: 10 puzles seguidos superados de ese tipo (no cuenta el tramo final automático)
+      if (typeof isClimaxActive === 'function' && isClimaxActive()) break;
+      const t = data && data.t; if (!t) break;
+      const r = (achProg.runs[t] = achProg.runs[t] || []); r.push(data.ok ? 1 : 0); while (r.length > 10) r.shift();
+      if (r.length >= 10 && r.every(v => v === 1) && !achProg.flags['run_' + t]) achProg.flags['run_' + t] = Date.now();
+      achProgSave(); break;
+    }
     case 'deal': a.l.deals = (a.l.deals || 0) + 1; break;
     case 'curse': a.l.curse = (a.l.curse || 0) + 1; break;
     case 'puzzle': if (typeof isClimaxActive === 'function' && isClimaxActive()) break;   // [0.44] el tramo final (sin puzle o automático) no cuenta para el 90%
       a.l.tot = (a.l.tot || 0) + 1; if (data) a.l.ok = (a.l.ok || 0) + 1; break;
     case 'spent': a.g.spent = (a.g.spent || 0) + (data || 0); break;
-    case 'steal': case 'flawless': case 'good': case 'bad': case 'gift': if (ev !== 'gift') achProg.flags[ev] = Date.now(); achProgSave(); break;
+    case 'steal': case 'flawless': case 'good': case 'bad': case 'gift': if (ev === 'steal') a.l.stole = true; if (ev !== 'gift') achProg.flags[ev] = Date.now(); achProgSave(); break;
     case 'loopEnd': {   // data = nº de bucle que se acaba de pasar
       achProg.flags['loop' + data] = achProg.flags['loop' + data] || Date.now();
       if ((a.l.curse || 0) > 20) achProg.flags.curse20 = achProg.flags.curse20 || Date.now();
       if ((STATE.level || 1) >= 10) achProg.flags.lvl10 = achProg.flags.lvl10 || Date.now();
+      if (a.l.canSteal && !a.l.stole) achProg.flags.goodboy = achProg.flags.goodboy || Date.now();   // [0.51] BUEN CHICO
       if (!(a.l.deals || 0)) achProg.flags.nodeal = achProg.flags.nodeal || Date.now();
       if ((a.l.tot || 0) > 0 && (a.l.ok || 0) / a.l.tot >= 0.9) achProg.flags.p90 = achProg.flags.p90 || Date.now();
       achProgSave(); break;
@@ -56,6 +71,7 @@ function achMetric(l) {
     case 'ORO_PARTIDA': return (a.g.spent || 0) >= c.valor;
     case 'RACHA': return (STATE.cleanStreak || 0) > c.valor;
     case 'RECICLADAS': return achProg.recycled >= c.valor;
+    case 'RECICLADAS_PARTIDA': return (a.g.recycled || 0) >= c.valor;   // [0.51]
     case 'EVENTO': return !!achProg.flags[c.ev];
     case 'TODOS': return DATOS_JUEGO.LOGROS.LISTA.every(x => x === l || x.condicion.tipo === 'TODOS' || achievementsUnlocked[x.id]);
   }
@@ -113,6 +129,8 @@ function achIcon(key, size) {
         <rect x="16" y="17" width="8" height="8" rx="1.5" fill="#fbbf24" stroke="${O}" stroke-width="1.5"/><rect x="19" y="20" width="2" height="3" fill="${O}"/>`;
       if (tier === '50') g += `<circle cx="32" cy="32" r="7" fill="#cbd5e1" stroke="${O}" stroke-width="2"/>` + num('50', 32, 35, 6, '#0f172a');
       else if (tier === '100') g += `<circle cx="32" cy="32" r="8" fill="#fbbf24" stroke="${O}" stroke-width="2"/>` + num('100', 32, 35, 5, '#451a03');
+      else if (tier === '200') g += `<circle cx="32" cy="32" r="8" fill="#f97316" stroke="${O}" stroke-width="2"/>` + num('200', 32, 35, 5, '#fff7ed');   // [0.51]
+      else if (tier === 'ok') g += `<circle cx="31" cy="31" r="8" fill="#22c55e" stroke="${O}" stroke-width="2"/><path d="M27 31 L30 34.500 L36 27.500" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;   // [0.51] 10 puzles seguidos
       break;
     }
     case 'monedas':
@@ -120,7 +138,7 @@ function achIcon(key, size) {
         <ellipse cx="27" cy="21" rx="9" ry="4" fill="#d97706" stroke="${O}" stroke-width="2"/><rect x="18" y="15" width="18" height="6" fill="#fbbf24" stroke="${O}" stroke-width="2"/><ellipse cx="27" cy="15" rx="9" ry="4" fill="#fcd34d" stroke="${O}" stroke-width="2"/>${num('$', 27, 18, 7, '#78350f')}`;
       break;
     case 'bolsa':
-      g = `<path d="M13 12 L16 6 H24 L27 12" fill="#92400e" stroke="${O}" stroke-width="2"/><path d="M13 12 Q4 20 6 30 Q8 36 20 36 Q32 36 34 30 Q36 20 27 12 Z" fill="#b45309" stroke="${O}" stroke-width="2"/><path d="M12 12 H28" stroke="#fbbf24" stroke-width="3"/>${num('$', 20, 30, 12, '#fde68a')}<circle cx="32" cy="8" r="3" fill="#fbbf24" stroke="${O}" stroke-width="1.5"/><circle cx="8" cy="10" r="2.5" fill="#fbbf24" stroke="${O}" stroke-width="1.5"/>`;
+      g = `<path d="M13 12 L16 6 H24 L27 12" fill="#92400e" stroke="${O}" stroke-width="2"/><path d="M13 12 Q4 20 6 30 Q8 36 20 36 Q32 36 34 30 Q36 20 27 12 Z" fill="#b45309" stroke="${O}" stroke-width="2"/><path d="M12 12 H28" stroke="#fbbf24" stroke-width="3"/>${num('$', 20, 30, 12, '#fde68a')}<circle cx="32" cy="8" r="3" fill="#fbbf24" stroke="${O}" stroke-width="1.5"/><circle cx="8" cy="10" r="2.5" fill="#fbbf24" stroke="${O}" stroke-width="1.5"/>` + (p[1] ? `<circle cx="31" cy="31" r="8" fill="#fbbf24" stroke="${O}" stroke-width="2"/>` + num(p[1], 31, 34, 6, '#451a03') : '');
       break;
     case 'calavera':
       g = `<path d="M8 20 Q8 5 20 5 Q32 5 32 20 Q32 25 28 27 V33 H12 V27 Q8 25 8 20 Z" fill="#e5e7eb" stroke="${O}" stroke-width="2"/><ellipse cx="14.5" cy="20" rx="4" ry="4.5" fill="${O}"/><ellipse cx="25.5" cy="20" rx="4" ry="4.5" fill="${O}"/><path d="M20 24 L18 28 H22 Z" fill="${O}"/><path d="M16 33 V29 M20 33 V29 M24 33 V29" stroke="${O}" stroke-width="2"/><circle cx="14.5" cy="20" r="1.4" fill="#a78bfa"/><circle cx="25.5" cy="20" r="1.4" fill="#a78bfa"/>`;
@@ -158,7 +176,22 @@ function achIcon(key, size) {
       g = `<circle cx="20" cy="20" r="16" fill="#f8fafc" stroke="${O}" stroke-width="2"/><circle cx="20" cy="20" r="11" fill="#ef4444" stroke="${O}" stroke-width="1.500"/><circle cx="20" cy="20" r="6" fill="#f8fafc" stroke="${O}" stroke-width="1.500"/><circle cx="20" cy="20" r="2.500" fill="#ef4444"/><path d="M20 20 L35 5" stroke="${O}" stroke-width="3"/><path d="M31 4 L36 4 L36 9 Z" fill="#fbbf24" stroke="${O}" stroke-width="1.500"/>`;
       break;
     case 'reciclar':
-      g = `<path d="M9 14 A12 12 0 0 1 28 9" fill="none" stroke="#4ade80" stroke-width="4.500" stroke-linecap="round"/><path d="M32 4 L33 15 L22 13 Z" fill="#4ade80" stroke="${O}" stroke-width="1.500" stroke-linejoin="round"/><path d="M31 26 A12 12 0 0 1 12 31" fill="none" stroke="#4ade80" stroke-width="4.500" stroke-linecap="round"/><path d="M8 36 L7 25 L18 27 Z" fill="#4ade80" stroke="${O}" stroke-width="1.500" stroke-linejoin="round"/><circle cx="17" cy="20" r="4" fill="#fbbf24" stroke="${O}" stroke-width="1.500"/><path d="M20 20 H30 M26 20 V24 M30 20 V23" stroke="${O}" stroke-width="2.500" fill="none"/>`;
+      g = `<path d="M9 14 A12 12 0 0 1 28 9" fill="none" stroke="#4ade80" stroke-width="4.500" stroke-linecap="round"/><path d="M32 4 L33 15 L22 13 Z" fill="#4ade80" stroke="${O}" stroke-width="1.500" stroke-linejoin="round"/><path d="M31 26 A12 12 0 0 1 12 31" fill="none" stroke="#4ade80" stroke-width="4.500" stroke-linecap="round"/><path d="M8 36 L7 25 L18 27 Z" fill="#4ade80" stroke="${O}" stroke-width="1.500" stroke-linejoin="round"/><circle cx="17" cy="20" r="4" fill="#fbbf24" stroke="${O}" stroke-width="1.500"/><path d="M20 20 H30 M26 20 V24 M30 20 V23" stroke="${O}" stroke-width="2.500" fill="none"/>` + (p[1] ? `<circle cx="20" cy="20" r="6.500" fill="#f8fafc" stroke="${O}" stroke-width="2"/>` + num('1', 20, 23, 9, '#14532d') : '');
+      break;
+    case 'dado':   // [0.51] bote de riesgo
+      g = `<rect x="6" y="6" width="28" height="28" rx="5" fill="#f8fafc" stroke="${O}" stroke-width="2"/><g fill="${O}"><circle cx="13" cy="13" r="2.600"/><circle cx="27" cy="13" r="2.600"/><circle cx="20" cy="20" r="2.600"/><circle cx="13" cy="27" r="2.600"/><circle cx="27" cy="27" r="2.600"/></g><circle cx="31" cy="31" r="7" fill="#fbbf24" stroke="${O}" stroke-width="2"/>` + num('$', 31, 34, 8, '#78350f');
+      break;
+    case 'alcancia':   // [0.51] 1000 GP a la vez
+      g = `<ellipse cx="19" cy="23" rx="14" ry="11" fill="#f9a8d4" stroke="${O}" stroke-width="2"/><path d="M29 15 L33 9 L35 17" fill="#f9a8d4" stroke="${O}" stroke-width="2" stroke-linejoin="round"/><circle cx="29" cy="21" r="1.600" fill="${O}"/><ellipse cx="36" cy="24" rx="3" ry="2.500" fill="#f472b6" stroke="${O}" stroke-width="1.500"/><path d="M10 31 V36 M26 31 V36" stroke="${O}" stroke-width="3" stroke-linecap="round"/><rect x="13" y="12.500" width="9" height="2.600" rx="1" fill="${O}"/><circle cx="17.500" cy="6.500" r="4.500" fill="#fbbf24" stroke="${O}" stroke-width="1.500"/>` + num('1K', 12, 27, 7, '#831843');
+      break;
+    case 'estrella':   // [0.51] maestría al nivel 3
+      g = `<path d="M20 3 L25 14 L37 15.500 L28 24 L30.500 36 L20 30 L9.500 36 L12 24 L3 15.500 L15 14 Z" fill="#a78bfa" stroke="${O}" stroke-width="2" stroke-linejoin="round"/>` + num('3', 20, 26, 12, '#fff');
+      break;
+    case 'aureola':   // [0.51] buen chico
+      g = `<ellipse cx="20" cy="6.500" rx="9" ry="3" fill="none" stroke="#fde047" stroke-width="3"/><circle cx="20" cy="23" r="14" fill="#fcd9a8" stroke="${O}" stroke-width="2"/><circle cx="15" cy="21" r="1.800" fill="${O}"/><circle cx="25" cy="21" r="1.800" fill="${O}"/><path d="M14 27 Q20 33 26 27" fill="none" stroke="${O}" stroke-width="2" stroke-linecap="round"/>`;
+      break;
+    case 'tienda':   // [0.51] 200 GP en una visita
+      g = `<path d="M5 15 L8 5 H32 L35 15 Z" fill="#a78bfa" stroke="${O}" stroke-width="2" stroke-linejoin="round"/><path d="M5 15 Q9.500 21 14 15 Q18.500 21 23 15 Q27.500 21 32 15 H35" fill="#7c3aed" stroke="${O}" stroke-width="2"/><rect x="7" y="19" width="26" height="16" fill="#fcd34d" stroke="${O}" stroke-width="2"/><rect x="15" y="25" width="10" height="10" fill="#92400e" stroke="${O}" stroke-width="1.500"/><circle cx="31" cy="31" r="8" fill="#fbbf24" stroke="${O}" stroke-width="2"/>` + num('200', 31, 34, 5, '#451a03');
       break;
     default:   // trofeo
       g = `<path d="M11 5 H29 V16 Q29 25 20 26 Q11 25 11 16 Z" fill="#fbbf24" stroke="${O}" stroke-width="2"/><path d="M11 8 H5 Q4 18 12 20 M29 8 H35 Q36 18 28 20" fill="none" stroke="#fbbf24" stroke-width="3"/><path d="M11 8 H5 Q4 18 12 20 M29 8 H35 Q36 18 28 20" fill="none" stroke="${O}" stroke-width="1" opacity=".5"/><rect x="17" y="26" width="6" height="6" fill="#d97706" stroke="${O}" stroke-width="1.500"/><rect x="11" y="32" width="18" height="5" rx="1.500" fill="#92400e" stroke="${O}" stroke-width="2"/><path d="M15 9 V16" stroke="#fff" stroke-opacity=".5" stroke-width="2.500" stroke-linecap="round"/>`;
@@ -190,4 +223,4 @@ function showNextAchievementBanner() {
 }
 
 /* ---------- Borrar todos los datos: ya se limpia por prefijo (justOneMoreChest_); aquí solo se vacía lo cargado ---------- */
-function achWipeProgress() { achProg = { types: {}, recycled: 0, flags: {} }; try { window.localStorage.removeItem(ACH_PROG_KEY); } catch (e) {} }
+function achWipeProgress() { achProg = { types: {}, recycled: 0, flags: {}, runs: {} }; try { window.localStorage.removeItem(ACH_PROG_KEY); } catch (e) {} }

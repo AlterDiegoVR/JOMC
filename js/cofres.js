@@ -341,6 +341,10 @@ function tomeSlotFree(co) {
 }
 function triggerSequentialDialogue(speaker, speechText, iconClass, subtitleText, titleColorClass, giftObj = null, onComplete = null, itemSrc = null, cardsHtml = null) {
   if (STATE.finalFree && (speaker === 'EL TRAPERO' || speaker === 'EL DUENDE')) { if (typeof onComplete === 'function') { try { onComplete(); } catch (e) {} } else processNextQueuedEvent(); return; }   // [0.40] tercer final: ni el Duende ni el Trapero vuelven a salir
+  // [0.51] Si el Duende da una herramienta (regalo de nivel o visita narrativa) y no se pasó dibujo, se enseña el de la herramienta junto a él
+  if (!itemSrc && giftObj && giftObj.icon && typeof ART_ON !== 'undefined' && ART_ON && typeof shopImg === 'function') {
+    try { shopArtInit(); const k = ({ 'fa-key': 'ic_ganzua', 'fa-screwdriver': 'ic_pin', 'fa-microchip': 'ic_usb', 'fa-faucet': 'ic_valvula', 'fa-battery-half': 'ic_pila', 'fa-bolt': 'ic_fusible' })[giftObj.icon]; if (k) itemSrc = shopImg(k) || null; } catch (e) {}
+  }
   // [0.086] Las frases llevan su mood al final: "texto {alegre}". Se separa aquí y manda sobre el subtítulo.
   let taggedMood = null;
   if (typeof speechText === 'string') {
@@ -348,6 +352,7 @@ function triggerSequentialDialogue(speaker, speechText, iconClass, subtitleText,
     if (mm) { taggedMood = mm[1]; speechText = speechText.slice(0, mm.index); }
   }
   try { audio.init(); audio.playDialogueMelody(speaker); } catch (e) {}   // [0.089b]
+  try { const dmm = document.getElementById('dialogueModal'); if (dmm) dmm.dataset.npc = speaker; } catch (e) {}   // [0.51] la música sabe quién habla
   const npcName = document.getElementById('npcName');
   if (npcName) {
     npcName.textContent = speaker;

@@ -1319,3 +1319,10 @@ html:not(.narrow-layout) #pzHardBadge { font-size: 13px; }
 #infMark { position: absolute; right: 12px; bottom: 8px; z-index: 15; font: 800 10px 'Outfit', sans-serif; letter-spacing: .12em; color: #8a93a8; pointer-events: none; }
 #infMark.inf { color: #c4b5fd; text-shadow: 0 0 6px #7c3aed; }
 #gameFrame.final-on #infMark { display: none; }
+
+/* [0.51] PC: post-its algo más grandes y con la letra mayor (no afecta al post-it de la contraseña ni al móvil) */
+html:not(.narrow-layout) .sticky-note:not(.pass-note) { font-size: 15px !important; line-height: 1.3 !important; padding: 14px !important; }
+html:not(.narrow-layout) .sticky-note.scene-note:not(.pass-note) { width: 270px !important; }
+
+/* [0.51] PC: la línea de cartas tácticas no tapa los adornos de la sala; solo las cartas reciben el clic */
+@media (min-width: 900px) { .tac-line { pointer-events: none; } .tac-line > * { pointer-events: auto; } }

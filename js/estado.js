@@ -334,7 +334,11 @@ const MODS_POR_USOS = ['seda', 'congelada', 'destino', 'enrachado', 'mentirosos'
 function useMod(id) { if (!STATE.mods || !(STATE.mods[id] > 0)) return 0; STATE.mods[id]--; const left = STATE.mods[id]; if (left <= 0) delete STATE.mods[id]; saveDirty = true; return Math.max(0, left); }
 function modOn(id) { return !!(STATE.mods && STATE.mods[id] > 0); }
 // [0.210] Perder la racha también apaga el comodín Enrachado
-function breakStreak() { STATE.cleanStreak = 0; if (STATE.mods && STATE.mods.enrachado) { delete STATE.mods.enrachado; showPersistentFeedback('🔥 Has perdido la racha: el Enrachado se acaba.'); } }
+function breakStreak() {
+  const prev = STATE.cleanStreak || 0; STATE.cleanStreak = 0;
+  // [0.51] El Enrachado solo se pierde si la racha perdida era superior a 10
+  if (STATE.mods && STATE.mods.enrachado && prev > ((DATOS_JUEGO.MODS_WILDCARD.ENRACHADO || {}).RACHA_MIN || 10)) { delete STATE.mods.enrachado; showPersistentFeedback('🔥 Has perdido la racha: el Enrachado se acaba.'); }
+}
 // [0.210] Cartas tácticas que ya pueden salir (algunas solo desde el bucle 2)
 function tacticasDisponibles() { return DATOS_JUEGO.CARTAS_NIVEL.TACTICAS.filter(c => !c.minBucle || (STATE.currentLoop || 1) >= c.minBucle); }
 // [0.31] Barajado uniforme (Fisher-Yates). Sustituye a sort(() => 0.5 - Math.random()), que está sesgado y repetía los primeros elementos
@@ -463,7 +467,7 @@ function applyWildcard(wc) {
       const prop = TACTICA_A_HABILIDAD[card.id];
       if (prop) STATE.abilities[prop]++;
       extra = prop ? `🃏 Carta: ${card.titulo}` : `Carta: ${card.titulo}`;   // [0.105] premio visible
-      if (prop) showPersistentFeedback(`🃏 Has encontrado: ${card.titulo}`);
+      if (prop) { const m = `🃏 Has encontrado: ${card.titulo}`; if (WC_DEFER) WC_MSG = m; else showPersistentFeedback(m); }   // [0.51] con ruleta, el aviso sale DESPUÉS de que pare
       break;
     }
     case 'OTORGAR_CONSUMIBLE_DOBLE_AZAR': {
@@ -484,7 +488,8 @@ function applyWildcard(wc) {
 }
 
 // [0.092] Elige el wildcard (con 'peso' opcional), lo aplica YA (así el guardado nunca se pierde) y devuelve {wc, extra, isBad}
-function pickWildcard(mode) {   // [0.46] mode: 'pos' (siempre positiva: Ruleta, Doble Tirada, Apuesta) | 'neg' (siempre negativa) | sin valor = reparto normal
+let WC_DEFER = false, WC_MSG = null;
+function pickWildcard(mode, defer) {   // [0.46] mode: 'pos' (siempre positiva: Ruleta, Doble Tirada, Apuesta) | 'neg' (siempre negativa) | sin valor = reparto normal
   const wcList = DATOS_JUEGO.WILDCARDS || [];
   if (wcList.length === 0) return null;
   const wantBad = mode === 'neg' ? true : mode === 'pos' ? false : Math.random() < getWildcardBadChance();
@@ -495,8 +500,11 @@ function pickWildcard(mode) {   // [0.46] mode: 'pos' (siempre positiva: Ruleta,
   const tot = pool.reduce((a, w) => a + pw(w), 0);
   let r = Math.random() * tot, wc = pool[pool.length - 1];
   for (const w of pool) { r -= pw(w); if (r <= 0) { wc = w; break; } }
+  WC_DEFER = !!defer; WC_MSG = null;
   const extra = applyWildcard(wc);
-  return { wc, extra, isBad: wc.tipo === 'PERJUDICIAL' };
+  WC_DEFER = false;
+  const msg = WC_MSG; WC_MSG = null;
+  return { wc, extra, isBad: wc.tipo === 'PERJUDICIAL', msg };
 }
 
 // [0.092] Ruleta de la subida de nivel: la carta cambia con "ruiditos" cada vez más lentos hasta la ganadora (con su sonido y explicación).
@@ -560,6 +568,7 @@ function runWildcardRoulette(res, onDone) {
     paint(res.wc, 'win', res.extra);
     try { if (res.isBad) { audio.playBreak(); screenShake(5, 260); } else audio.playUnlockFanfare('raro'); } catch (e) {}
     updateUI();
+    if (res.msg) setTimeout(() => { try { showPersistentFeedback(res.msg); } catch (e) {} }, 650);   // [0.51] el aviso llega un momento después de parar la ruleta
     lvlTimers.push(setTimeout(onDone, cfg.PAUSA_TRAS_RULETA_MS != null ? cfg.PAUSA_TRAS_RULETA_MS : 450));
   }, acc + (cfg.RULETA_MS_FINAL_PAUSA || 520)));
 }
@@ -641,6 +650,7 @@ function statsPuzzle(juego, ok) {
   if (!STATE.stats) STATE.stats = blankStats();
   [STATE.stats, lifeStats].forEach(S => { if (S.puz[juego]) S.puz[juego][ok ? 'ok' : 'fail']++; });
   try { achEvent('puzzle', ok); } catch (e) {}   // [0.42] logros
+  try { achEvent('runT', { t: ({ lockpick: 'wooden', tumbler: 'piston', hack: 'cyber', pipe: 'hydraulic', sequence: 'neon', fuses: 'electric' })[juego], ok }); } catch (e) {}   // [0.51] 10 puzles seguidos por tipo
   lifeStatsDirty = true;
 }
 function trackStats() {
@@ -651,6 +661,12 @@ function trackStats() {
     if (d > 0) statsAdd('goldEarned', d); else if (d < 0) { statsAdd('goldSpent', -d); try { achEvent('spent', -d); } catch (e) {} }   // [0.42]
   }
   statsGoldPrev = STATE.gold;
+  // [0.51] logros: 1000 GP a la vez y maestría al nivel 3
+  try {
+    if (STATE.gold >= 1000 && !achProg.flags.gp1000) achEvent('gold', STATE.gold);
+    const P = STATE.perks || {};
+    if (!achProg.flags.mastery3 && Math.max(P.bonusMadera || 0, P.bonusAcero || 0, P.bonusDigital || 0, P.bonusVapor || 0, P.bonusNeon || 0) >= 3) achEvent('mastery3');
+  } catch (e) {}
   [[STATE.stats, 'cur'], [lifeStats, 'life']].forEach(([S]) => {
     if (STATE.level > S.maxLevel) { S.maxLevel = STATE.level; lifeStatsDirty = true; }
     if ((STATE.currentLoop || 1) > S.maxLoop) { S.maxLoop = STATE.currentLoop || 1; lifeStatsDirty = true; }

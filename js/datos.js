@@ -9,7 +9,7 @@
 
 const DATOS_JUEGO = {
   // [0.088] Versión visible en pantalla (esquina inferior central) para que las capturas la incluyan
-  VERSION: '0.5',
+  VERSION: '0.51',
   TUTORIAL_TACTICA: 'Aquí van tus cartas tácticas. Úsalas cuando quieras, pero con cabeza: se gastan al usarlas.',   // [0.46] texto de la flecha de la primera carta táctica (borrador mío)
   // [0.104] Efectos de la apertura automática de la secuencia final (cofres 101-110); la intensidad sube del primero al último (k = 0..1)
   SECUENCIA_FINAL_FX: { ACTIVAR: true, ESTALLIDOS_BASE: 2, ESTALLIDOS_EXTRA: 4, PARTICULAS_POR_ESTALLIDO: 40, HACIA_CENTRO_BASE: 30, HACIA_CENTRO_EXTRA: 60,
@@ -350,7 +350,7 @@ const DATOS_JUEGO = {
       movil:      { GENERAL: 1, PEQUENOS: 2.0, BOTIN: 0.5 }
     },
     CANAL_VIVO: { ACTIVAR: true, NIVEL: 0.0015 },
-    MUSICA: { VOLUMEN: 0.7, BUCLE_COFRES: 5, NIVELES: { I: 0.12, A: 0.25, J: 0.22 }, FUNDIDO_SALIDA: 0.8, FUNDIDO_CAMBIO: 1, BAJA_EN_SIMON: 0.04 }   // [0.38] VOLUMEN: 0.7 es el del artefacto de pruebas (música en musica.js). NIVELES: volumen propio por pieza (1 = normal). FUNDIDO_*: segundos al apagar o cambiar de pieza. BAJA_EN_SIMON: nivel de la música con el Simón en pantalla. BUCLE_COFRES: cuántos cofres del bucle suena la pieza ambiental I al empezar
+    MUSICA: { VOLUMEN: 0.7, BUCLE_COFRES: 5, NIVELES: { I: 0.12, A: 0.25, J: 0.22, Imal: 0.105, L: 0.13, J2: 0.1}, FUNDIDO_SALIDA: 0.8, FUNDIDO_CAMBIO: 1, BAJA_EN_SIMON: 0.04 }   // [0.38] VOLUMEN: 0.7 es el del artefacto de pruebas (música en musica.js). NIVELES: volumen propio por pieza (1 = normal). FUNDIDO_*: segundos al apagar o cambiar de pieza. BAJA_EN_SIMON: nivel de la música con el Simón en pantalla. BUCLE_COFRES: cuántos cofres del bucle suena la pieza ambiental I al empezar
   },
 
   // [0.089b] Zumbido grave que muta despacio, solo cuando el cofre seleccionado es legendario (se calla al empezar el puzle y con el botón de silencio)
@@ -577,9 +577,11 @@ const DATOS_JUEGO = {
       { id: "cofre_wooden_1", ic: "cofre:#a16207:1", titulo: "ASTILLAS", descripcion: "Abre tu primer Cofre de Madera", secreto: false, condicion: {"tipo": "TIPO_COFRES", "cofre": "wooden", "valor": 1} },
       { id: "cofre_wooden_50", ic: "cofre:#a16207:50", titulo: "CARPINTERO", descripcion: "Abre 50 Cofres de Madera (entre todas tus partidas)", secreto: false, condicion: {"tipo": "TIPO_COFRES", "cofre": "wooden", "valor": 50} },
       { id: "cofre_wooden_100", ic: "cofre:#a16207:100", titulo: "TALA TOTAL", descripcion: "Abre 100 Cofres de Madera (entre todas tus partidas)", secreto: false, condicion: {"tipo": "TIPO_COFRES", "cofre": "wooden", "valor": 100} },
+      { id: "cofre_wooden_200", ic: "cofre:#a16207:200", titulo: "ASERRADERO", descripcion: "Abre 200 Cofres de Madera (entre todas tus partidas)", secreto: false, condicion: {"tipo": "TIPO_COFRES", "cofre": "wooden", "valor": 200} },
       { id: "cofre_piston_1", ic: "cofre:#64748b:1", titulo: "ACERO FRÍO", descripcion: "Abre tu primera Caja de Acero", secreto: false, condicion: {"tipo": "TIPO_COFRES", "cofre": "piston", "valor": 1} },
       { id: "cofre_piston_50", ic: "cofre:#64748b:50", titulo: "CERRAJERO", descripcion: "Abre 50 Cajas de Acero (entre todas tus partidas)", secreto: false, condicion: {"tipo": "TIPO_COFRES", "cofre": "piston", "valor": 50} },
       { id: "cofre_piston_100", ic: "cofre:#64748b:100", titulo: "ACERO TEMPLADO", descripcion: "Abre 100 Cajas de Acero (entre todas tus partidas)", secreto: false, condicion: {"tipo": "TIPO_COFRES", "cofre": "piston", "valor": 100} },
+      { id: "cofre_piston_200", ic: "cofre:#64748b:200", titulo: "ACERÍA", descripcion: "Abre 200 Cajas de Acero (entre todas tus partidas)", secreto: false, condicion: {"tipo": "TIPO_COFRES", "cofre": "piston", "valor": 200} },
       { id: "cofre_cyber_1", ic: "cofre:#0891b2:1", titulo: "CLAVE DE ACCESO", descripcion: "Abre tu primera Arca Digital", secreto: false, condicion: {"tipo": "TIPO_COFRES", "cofre": "cyber", "valor": 1} },
       { id: "cofre_cyber_50", ic: "cofre:#0891b2:50", titulo: "HACKER", descripcion: "Abre 50 Arcas Digitales (entre todas tus partidas)", secreto: false, condicion: {"tipo": "TIPO_COFRES", "cofre": "cyber", "valor": 50} },
       { id: "cofre_cyber_100", ic: "cofre:#0891b2:100", titulo: "ROOT", descripcion: "Abre 100 Arcas Digitales (entre todas tus partidas)", secreto: false, condicion: {"tipo": "TIPO_COFRES", "cofre": "cyber", "valor": 100} },
@@ -588,18 +590,23 @@ const DATOS_JUEGO = {
       { id: "cofre_hydraulic_100", ic: "cofre:#0d9488:100", titulo: "DILUVIO", descripcion: "Abre 100 Cofres de Vapor (entre todas tus partidas)", secreto: true, condicion: {"tipo": "TIPO_COFRES", "cofre": "hydraulic", "valor": 100} },
       { id: "cofre_neon_1", ic: "cofre:#c026d3:1", titulo: "PRIMERA CHISPA", descripcion: "Abre tu primera Arca de Neón", secreto: true, condicion: {"tipo": "TIPO_COFRES", "cofre": "neon", "valor": 1} },
       { id: "cofre_neon_50", ic: "cofre:#c026d3:50", titulo: "LUCES DE NEÓN", descripcion: "Abre 50 Arcas de Neón (entre todas tus partidas)", secreto: true, condicion: {"tipo": "TIPO_COFRES", "cofre": "neon", "valor": 50} },
-      { id: "cofre_neon_100", ic: "cofre:#c026d3:100", titulo: "CIUDAD ENCENDIDA", descripcion: "Abre 100 Arcas de Neón (entre todas tus partidas)", secreto: true, condicion: {"tipo": "TIPO_COFRES", "cofre": "neon", "valor": 100} },
       { id: "cofre_electric_1", ic: "cofre:#eab308:1", titulo: "CORTOCIRCUITO", descripcion: "Abre tu primer Cuadro Eléctrico", secreto: true, condicion: {"tipo": "TIPO_COFRES", "cofre": "electric", "valor": 1} },
       { id: "cofre_electric_50", ic: "cofre:#eab308:50", titulo: "ELECTRICISTA", descripcion: "Abre 50 Cuadros Eléctricos (entre todas tus partidas)", secreto: true, condicion: {"tipo": "TIPO_COFRES", "cofre": "electric", "valor": 50} },
-      { id: "cofre_electric_100", ic: "cofre:#eab308:100", titulo: "RED ELÉCTRICA", descripcion: "Abre 100 Cuadros Eléctricos (entre todas tus partidas)", secreto: true, condicion: {"tipo": "TIPO_COFRES", "cofre": "electric", "valor": 100} },
-      { id: "oro_3000", ic: "monedas", titulo: "BOLSILLOS ROTOS", descripcion: "Gasta 3.000 monedas de oro en total (entre todas tus partidas)", secreto: false, condicion: {"tipo": "ORO_ACUM", "valor": 3000} },
-      { id: "oro_1000", ic: "bolsa", titulo: "DERROCHE", descripcion: "Gasta 1.000 monedas de oro en una misma partida", secreto: false, condicion: {"tipo": "ORO_PARTIDA", "valor": 1000} },
+      { id: "oro_3000", ic: "monedas", titulo: "BOLSILLOS ROTOS", descripcion: "Gasta 3.000 GP en total (entre todas tus partidas)", secreto: false, condicion: {"tipo": "ORO_ACUM", "valor": 3000} },
+      { id: "oro_1000", ic: "bolsa", titulo: "DERROCHE", descripcion: "Gasta 1.000 GP en una misma partida", secreto: false, condicion: {"tipo": "ORO_PARTIDA", "valor": 1000} },
+      { id: "oro_2000", ic: "bolsa:2K", titulo: "MANIRROTO", descripcion: "Gasta 2.000 GP en una misma partida", secreto: false, condicion: {"tipo": "ORO_PARTIDA", "valor": 2000} },
+      { id: "gp_1000", ic: "alcancia", titulo: "ALCANCÍA LLENA", descripcion: "Llega a tener 1.000 GP a la vez", secreto: false, condicion: {"tipo": "EVENTO", "ev": "gp1000"} },
+      { id: "tienda_200", ic: "tienda", titulo: "CLIENTE ESTRELLA", descripcion: "Gasta 200 GP o más en una sola visita a la tienda del Duende", secreto: false, condicion: {"tipo": "EVENTO", "ev": "shop200"} },
+      { id: "bote_300", ic: "dado", titulo: "GOLPE DE SUERTE", descripcion: "Cobra un Bote de Riesgo de 300 GP o más de una vez", secreto: false, condicion: {"tipo": "EVENTO", "ev": "bote300"} },
       { id: "maldicion_20", ic: "calavera", titulo: "BAJO LA SOMBRA", descripcion: "Supera un bucle acumulando más de 20 turnos de maldición", secreto: true, condicion: {"tipo": "EVENTO", "ev": "curse20"} },
       { id: "nivel_10", ic: "nivel10", titulo: "CUMBRE", descripcion: "Acaba un bucle habiendo llegado al nivel 10", secreto: true, condicion: {"tipo": "EVENTO", "ev": "lvl10"} },
       { id: "racha_10", ic: "llama:10", titulo: "RACHA IMPECABLE I", descripcion: "Encadena más de 10 cofres seguidos sin fallar", secreto: false, condicion: {"tipo": "RACHA", "valor": 10} },
       { id: "racha_20", ic: "llama:20", titulo: "RACHA IMPECABLE II", descripcion: "Encadena más de 20 cofres seguidos sin fallar", secreto: false, condicion: {"tipo": "RACHA", "valor": 20} },
       { id: "racha_30", ic: "llama:30", titulo: "RACHA IMPECABLE III", descripcion: "Encadena más de 30 cofres seguidos sin fallar", secreto: false, condicion: {"tipo": "RACHA", "valor": 30} },
+      { id: "racha_40", ic: "llama:40", titulo: "RACHA IMPECABLE IV", descripcion: "Encadena más de 40 cofres seguidos sin fallar", secreto: false, condicion: {"tipo": "RACHA", "valor": 40} },
       { id: "robo_duende", ic: "mano", titulo: "MANOS LARGAS", descripcion: "Roba por primera vez al Duende", secreto: false, condicion: {"tipo": "EVENTO", "ev": "steal"} },
+      { id: "buen_chico", ic: "aureola", titulo: "BUEN CHICO", descripcion: "Acaba un bucle sin robar al Duende pudiendo hacerlo", secreto: true, condicion: {"tipo": "EVENTO", "ev": "goodboy"} },
+      { id: "maestria_3", ic: "estrella", titulo: "MAESTRO DEL OFICIO", descripcion: "Lleva cualquier maestría al nivel 3", secreto: false, condicion: {"tipo": "EVENTO", "ev": "mastery3"} },
       { id: "sin_tratos", ic: "sintrato", titulo: "NI UN TRATO", descripcion: "Termina un bucle sin hacer ningún trato con el Trapero", secreto: true, condicion: {"tipo": "EVENTO", "ev": "nodeal"} },
       { id: "bucle_1", ic: "bucle:1", titulo: "OTRA VUELTA", descripcion: "Pasa el bucle 1", secreto: true, condicion: {"tipo": "EVENTO", "ev": "loop1"} },
       { id: "bucle_2", ic: "bucle:2", titulo: "Y OTRA MÁS", descripcion: "Pasa el bucle 2", secreto: true, condicion: {"tipo": "EVENTO", "ev": "loop2"} },
@@ -608,7 +615,14 @@ const DATOS_JUEGO = {
       { id: "final_malo", ic: "grieta", titulo: "LIBRES", descripcion: "Consigue el final malo", secreto: true, condicion: {"tipo": "EVENTO", "ev": "bad"} },
       { id: "cerrojo_limpio", ic: "corazones", titulo: "SIN UN ARAÑAZO", descripcion: "Supera los 6 puzles del cofre de la tienda sin gastar ninguna de tus 3 vidas", secreto: true, condicion: {"tipo": "EVENTO", "ev": "flawless"} },
       { id: "puzles_90", ic: "diana", titulo: "PULSO DE CIRUJANO", descripcion: "Acaba un bucle con un 90 % de puzles superados (cada intento cuenta)", secreto: true, condicion: {"tipo": "EVENTO", "ev": "p90"} },
-      { id: "reciclaje_50", ic: "reciclar", titulo: "ECONOMÍA CIRCULAR", descripcion: "Recicla 50 ganzúas en total (entre todas tus partidas)", secreto: false, condicion: {"tipo": "RECICLADAS", "valor": 50} },
+      { id: "racha_tipo_wooden", ic: "cofre:#a16207:ok", titulo: "DEDOS DE SEDA", descripcion: "Supera 10 puzles madera seguidos sin fallar ninguno", secreto: true, condicion: {"tipo": "EVENTO", "ev": "run_wooden"} },
+      { id: "racha_tipo_piston", ic: "cofre:#64748b:ok", titulo: "NERVIOS DE ACERO", descripcion: "Supera 10 puzles acero seguidos sin fallar ninguno", secreto: true, condicion: {"tipo": "EVENTO", "ev": "run_piston"} },
+      { id: "racha_tipo_cyber", ic: "cofre:#0891b2:ok", titulo: "CERO ERRORES", descripcion: "Supera 10 puzles digitales seguidos sin fallar ninguno", secreto: true, condicion: {"tipo": "EVENTO", "ev": "run_cyber"} },
+      { id: "racha_tipo_hydraulic", ic: "cofre:#0d9488:ok", titulo: "PRESIÓN PERFECTA", descripcion: "Supera 10 puzles de vapor seguidos sin fallar ninguno", secreto: true, condicion: {"tipo": "EVENTO", "ev": "run_hydraulic"} },
+      { id: "racha_tipo_neon", ic: "cofre:#c026d3:ok", titulo: "LUCES EN ORDEN", descripcion: "Supera 10 puzles de neón seguidos sin fallar ninguno", secreto: true, condicion: {"tipo": "EVENTO", "ev": "run_neon"} },
+      { id: "racha_tipo_electric", ic: "cofre:#eab308:ok", titulo: "SIN CORTOCIRCUITOS", descripcion: "Supera 10 puzles de fusibles seguidos sin fallar ninguno", secreto: true, condicion: {"tipo": "EVENTO", "ev": "run_electric"} },
+      { id: "reciclaje_50", ic: "reciclar", titulo: "ECONOMÍA CIRCULAR", descripcion: "Recicla 100 ganzúas en total (entre todas tus partidas)", secreto: false, condicion: {"tipo": "RECICLADAS", "valor": 100} },
+      { id: "reciclaje_50p", ic: "reciclar:1", titulo: "RECICLADOR AL POR MAYOR", descripcion: "Recicla 50 ganzúas en una misma partida", secreto: false, condicion: {"tipo": "RECICLADAS_PARTIDA", "valor": 50} },
       { id: "todos", ic: "trofeo", titulo: "COLECCIONISTA", descripcion: "Consigue todos los logros del juego", secreto: false, condicion: {"tipo": "TODOS"} }
     ]
   },
@@ -832,6 +846,7 @@ const DATOS_JUEGO = {
       VELOCIDAD_BASE_DIFICIL: 0.70,
       VELOCIDAD_LEGENDARIA: 0.85,
       BONO_MANO_FIRME: 1.5,    // [0.085] tolerancia extra por nivel de Mano Firme (antes 3)
+      MULT_ZONA_BUCLE_2: 0.85,   // [0.51] desde el bucle 2 la zona verde de los pistones mide este % de la normal
       TOLERANCIA_NORMAL: 9,    // [0.086] ±% del carril (0.085: 7); la banda verde dibujada = zona de acierto real
       TOLERANCIA_DIFICIL: 5,   // [0.086] (0.085: 4)
       MARGEN_INVISIBLE_PCT: 2.5,   // [0.088] margen NO visible, simétrico (arriba y abajo), que se suma a la tolerancia al juzgar el acierto
@@ -2385,7 +2400,7 @@ const DATOS_JUEGO = {
     // [0.210] Wildcards nuevas. 'pesoBucle1' = peso en el bucle 1 (en los demás, 'peso'); 'minBucle' = bucle mínimo. Valores en MODS_WILDCARD.
     { id: "hallazgo_tactico_plus", nombre: "Hallazgo Táctico+", tipo: "BENEFICIOSO", desc: "Obtén 2 Cartas Tácticas a elegir entre 3.", efecto: "ELEGIR_TACTICAS", valor: 2, pesoBucle1: 0.25 },
     { id: "suministros_inesperados_plus", nombre: "Suministros Inesperados+", tipo: "BENEFICIOSO", desc: "Encuentras una pequeña bolsa en un rincón: obtienes x4 consumibles al azar.", efecto: "OTORGAR_CONSUMIBLE_DOBLE_AZAR", valor: 4, minBucle: 2 },
-    { id: "enrachado", nombre: "Enrachado", tipo: "BENEFICIOSO", desc: "Si tu racha supera los 10 cofres, su bonus de GP aumenta un 25%. Dura hasta que pierdas la racha.", efecto: "MODIFICADOR", valor: { id: "enrachado", usos: 1 } },
+    { id: "enrachado", nombre: "Enrachado", tipo: "BENEFICIOSO", desc: "Si tu racha supera los 10 cofres, su bonus de GP aumenta un 25%. Dura hasta que pierdas una racha de más de 10.", efecto: "MODIFICADOR", valor: { id: "enrachado", usos: 1 } },
     { id: "nocturnidad_alevosia", nombre: "Nocturnidad y Alevosía", tipo: "BENEFICIOSO", desc: "Con la luz apagada el duende no puede verte... Robarle o no depende de ti.", efecto: "NOCTURNIDAD", valor: 10 },
     { id: "llave_maestra", nombre: "Llave Maestra", tipo: "BENEFICIOSO", desc: "Usa 5 ganzúas para abrir cualquier cofre. Permanente.", efecto: "MODIFICADOR", valor: { id: "llaveMaestra", usos: 1 } },
     { id: "cofres_mentirosos", nombre: "Cofres Mentirosos", tipo: "PERJUDICIAL", desc: "No te puedes fiar ni de los cofres. 25% de posibilidades de que el cofre esconda un puzle que no le corresponda. Permanente.", efecto: "MODIFICADOR", valor: { id: "mentirosos", usos: 1 } },

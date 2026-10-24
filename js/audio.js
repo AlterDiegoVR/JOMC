@@ -523,6 +523,31 @@ class AudioEngine {
       osc.stop(this.ctx.currentTime + idx * 0.05 + 0.35);
     });
   }
+
+  // [0.51] Tickets perforables (aparece, perforar, sello, desaparece)
+  playTicketOut() {
+  if (!this.ctx || this.muted) return;
+  for (let i = 0; i < 6; i++) { this._noise(0.025, 0.07, i * 0.055, 2500 + i * 250); this._tone(900 + i * 60, 700 + i * 60, 0.03, 'square', 0.025, i * 0.055); }
+  this._tone(1568, 1568, 0.35, 'sine', 0.05, 0.38); this._tone(2093, 2093, 0.45, 'sine', 0.035, 0.44);
+  }
+  playTicketIn() {
+  if (!this.ctx || this.muted) return;
+  const c = this.ctx, t = c.currentTime, n = Math.floor(c.sampleRate * 0.28), buf = c.createBuffer(1, n, c.sampleRate), d = buf.getChannelData(0);
+  for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+  const src = c.createBufferSource(); src.buffer = buf;
+  const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 1.1; bp.frequency.setValueAtTime(3200, t); bp.frequency.exponentialRampToValueAtTime(450, t + 0.26);
+  const g = c.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.14, t + 0.04); g.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
+  src.connect(bp); bp.connect(g); g.connect(this.dest()); src.start(t);
+  this._tone(660, 330, 0.18, 'triangle', 0.04, 0.05);
+  }
+  playTicketPunch() {
+  if (!this.ctx || this.muted) return;
+  this._noise(0.03, 0.14, 0, 1800); this._tone(240, 120, 0.07, 'square', 0.1, 0); this._tone(1850, 1400, 0.1, 'triangle', 0.04, 0.02);
+  }
+  playTicketStamp() {
+  if (!this.ctx || this.muted) return;
+  this._tone(110, 50, 0.22, 'sine', 0.22, 0); this._noise(0.05, 0.12, 0, 1200); this._tone(300, 190, 0.1, 'square', 0.07, 0.1); this._noise(0.04, 0.08, 0.1, 2500);
+  }
 }
 // [0.38] La música del juego está en musica.js (piezas elegidas por el jugador); la generada en la 0.37 se ha quitado.
 const audio = new AudioEngine();
@@ -532,7 +557,7 @@ const audio = new AudioEngine();
   AudioEngine.prototype[n] = function (...a) { this.lastSound = performance.now(); return f.apply(this, a); };
 });
 // [0.090] Categorías de volumen: los sonidos pequeños (clics, avisos) y los de botín pasan por su bus, con volumen distinto en escritorio y móvil
-[[ 'busSmall', ['playClick', 'playChestMutate', 'playUiClick', 'playDecoyBuzz', 'playPaperRustle', 'playLockCharge', 'playDecorTap', 'playCardBeep', 'playKeyPickup', 'playKeySpend', 'playSwoosh', 'playRouletteTick', 'playCardRise'] ],
+[[ 'busSmall', ['playClick', 'playChestMutate', 'playUiClick', 'playDecoyBuzz', 'playPaperRustle', 'playLockCharge', 'playDecorTap', 'playCardBeep', 'playKeyPickup', 'playKeySpend', 'playSwoosh', 'playRouletteTick', 'playCardRise', 'playTicketOut', 'playTicketIn', 'playTicketPunch', 'playTicketStamp'] ],
  [ 'busLoot', ['playUnlockFanfare', 'playCashRegister', 'playLevelUpFanfare', 'playLevelUpQuick'] ]].forEach(([bus, names]) => names.forEach(n => {
   const f = AudioEngine.prototype[n];
   AudioEngine.prototype[n] = function (...a) { const prev = this._bus; this._bus = this[bus] || null; try { return f.apply(this, a); } finally { this._bus = prev; } };

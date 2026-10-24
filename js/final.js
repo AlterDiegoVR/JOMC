@@ -44,9 +44,10 @@ function finalHook(co) {
   if (co === start && !f) {
     if (!finAllPuzzlesUnlocked()) { STATE.finDelay = (STATE.finDelay || 0) + 1; saveDirty = true; return; }   // [0.40] faltan puzles por conocer: todo se pospone 10 cofres
     finalArm();
-    (finCfg().REVELACION || []).forEach((txt, i, arr) => {
-      STATE.eventQueue.push(() => triggerSequentialDialogue('EL TRAPERO', txt, 'fa-mask', i === 0 ? 'Advertencia' : 'Instrucción', 'text-rose-400', null, () => processNextQueuedEvent()));
-    });
+    // [0.51] Las frases del Trapero van encadenadas en una sola escena: la siguiente se abre en el mismo instante que se cierra la anterior (sin destello de sala)
+    const rev = finCfg().REVELACION || [];
+    const say = i => triggerSequentialDialogue('EL TRAPERO', rev[i], 'fa-mask', i === 0 ? 'Advertencia' : 'Instrucción', 'text-rose-400', null, () => { if (i + 1 < rev.length) say(i + 1); else processNextQueuedEvent(); });
+    if (rev.length) STATE.eventQueue.push(() => say(0));
     return;
   }
   const freq = DATOS_JUEGO.PROGRESIÓN.INTERVALOS_VISITAS.DUENDE_INTERVALO;

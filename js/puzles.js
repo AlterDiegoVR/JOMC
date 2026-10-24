@@ -525,6 +525,7 @@ function startTumblerGame() {
 
   let allowedTolerance = pzHardLevel() === 2 ? pzXtr().TUMBLER.TOLERANCIA : (pzHardLevel() === 1 ? configT.TOLERANCIA_DIFICIL : configT.TOLERANCIA_NORMAL);
   allowedTolerance += (STATE.perks.sweetSpot * (configT.BONO_MANO_FIRME || 1.5));
+  if ((STATE.currentLoop || 1) >= 2) allowedTolerance = Math.max(3, allowedTolerance * (configT.MULT_ZONA_BUCLE_2 != null ? configT.MULT_ZONA_BUCLE_2 : 0.85));   // [0.51] desde el bucle 2, la zona verde es algo más pequeña
   tumblerShearTol = allowedTolerance;
   if (shearLine) shearLine.style.height = `${Math.max(10, allowedTolerance * 1.8)}px`;
 

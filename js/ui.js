@@ -167,8 +167,8 @@ function updateUI() {
       { active: modOn('destino'), text: `🎲 Destino`, shortText: `🎲`, desc: `Cofre del Destino: las pantallas pueden mostrar hasta 4 cofres a elegir.`, isBoost: true },
       { active: modOn('relojMalo'), text: `⌛ Tiempo -30% x${(STATE.mods||{}).relojMalo}`, shortText: `⌛ x${(STATE.mods||{}).relojMalo}`, desc: `Reloj Roto: -30% de tiempo en los puzles durante ${(STATE.mods||{}).relojMalo} cofres más.`, isTorpeza: true },
       { active: STATE.extremePuzzlesLeft > 0, text: `☠ Extremos x${STATE.extremePuzzlesLeft}`, shortText: `☠ x${STATE.extremePuzzlesLeft}`, desc: `${STATE.extremeSrc || 'Pulso Tembloroso'}: los próximos ${STATE.extremePuzzlesLeft} puzles son extremos.`, isTorpeza: true },
-      { active: STATE.oxidadoLeft > 0, text: `🔒 Oxidados x${STATE.oxidadoLeft}`, shortText: `🔒 x${STATE.oxidadoLeft}`, desc: `Cerrojos Oxidados: los próximos ${STATE.oxidadoLeft} cofres piden entre 1 y 3 herramientas al azar.`, isTorpeza: true },
-      { active: STATE.heavyChestsLeft > 0, text: `📜 Contrato x${STATE.heavyChestsLeft}`, shortText: `📜 x${STATE.heavyChestsLeft}`, desc: `Contrato Leonino: los próximos ${STATE.heavyChestsLeft} cofres Raros o superiores piden +1 herramienta.`, isTorpeza: true }
+      { bono: ['oxidados', STATE.oxidadoLeft], active: STATE.oxidadoLeft > 0, text: `🔒 Oxidados x${STATE.oxidadoLeft}`, shortText: `🔒 x${STATE.oxidadoLeft}`, desc: `Cerrojos Oxidados: los próximos ${STATE.oxidadoLeft} cofres piden entre 1 y 3 herramientas al azar.`, isTorpeza: true },
+      { bono: ['pesados', STATE.heavyChestsLeft], active: STATE.heavyChestsLeft > 0, text: `📜 Contrato x${STATE.heavyChestsLeft}`, shortText: `📜 x${STATE.heavyChestsLeft}`, desc: `Contrato Leonino: los próximos ${STATE.heavyChestsLeft} cofres Raros o superiores piden +1 herramienta.`, isTorpeza: true }
     );
     // [0.210] Insignias de lo nuevo (pasivas, comodines con duración y tratos)
     const M = STATE.mods || {}, P = STATE.perks;
@@ -180,17 +180,17 @@ function updateUI() {
       { active: modOn('enrachado'), text: `🔥 Enrachado`, shortText: `🔥`, desc: `Enrachado: con racha de más de ${DATOS_JUEGO.MODS_WILDCARD.ENRACHADO.RACHA_MIN} cofres, el bonus de racha sube un ${Math.round(DATOS_JUEGO.MODS_WILDCARD.ENRACHADO.PCT * 100)}%. Se acaba al perder la racha.`, isBoost: true },
       { active: modOn('llaveMaestra'), text: `🗝️ Llave Maestra`, shortText: `🗝️`, desc: `Llave Maestra: si no tienes las herramientas de un cofre, puedes abrirlo con ${DATOS_JUEGO.MODS_WILDCARD.LLAVE_MAESTRA.GANZUAS} ganzúas. Dura todo el bucle.`, isBoost: true },
       { active: modOn('nocturnidad'), text: `🌑 Nocturnidad x${STATE.nightStealsLeft || 0}`, shortText: `🌑 x${STATE.nightStealsLeft || 0}`, desc: `Nocturnidad y Alevosía: con la luz apagada puedes robar ${STATE.nightStealsLeft} objeto(s) en la tienda del Duende.`, isBoost: true },
-      { active: (STATE.pulseraLeft || 0) > 0, text: `🎟️ Pulsera x${STATE.pulseraLeft}`, shortText: `🎟️ x${STATE.pulseraLeft}`, desc: `Pulsera VIP: los próximos ${STATE.pulseraLeft} intentos son de cofres épicos/legendarios y sin gastar herramientas.`, isBoost: true },
+      { bono: ['pulsera', STATE.pulseraLeft || 0], active: (STATE.pulseraLeft || 0) > 0, text: `🎟️ Pulsera x${STATE.pulseraLeft}`, shortText: `🎟️ x${STATE.pulseraLeft}`, desc: `Pulsera VIP: los próximos ${STATE.pulseraLeft} intentos son de cofres épicos/legendarios y sin gastar herramientas.`, isBoost: true },
       { active: modOn('mentirosos'), text: `🎭 Mentirosos`, shortText: `🎭`, desc: `Cofres Mentirosos: un ${Math.round(DATOS_JUEGO.MODS_WILDCARD.MENTIROSOS.PROB * 100)}% de las veces el puzle no es el del cofre. Dura todo el bucle.` },
       { active: modOn('spooky'), text: `🕷️ Spooky`, shortText: `🕷️`, desc: `Spooky Things: tocar objetos de la sala tiene un ${Math.round(DATOS_JUEGO.MODS_WILDCARD.SPOOKY.PROB * 100)}% de maldecirte. Dura todo el bucle.` },
       { active: modOn('apagonFin'), text: `💡 Apagón`, shortText: `💡`, desc: `Apagón Financiero: pierdes ${DATOS_JUEGO.MODS_WILDCARD.APAGON.GP_POR_TURNO} GP en cada cofre mientras la luz esté apagada. Dura todo el bucle.` },
-      { active: modOn('malaRacha'), text: `📉 Mala racha x${(STATE.mods||{}).malaRacha}`, shortText: `📉 x${(STATE.mods||{}).malaRacha}`, desc: `Mala Racha: tu racha no sube durante ${(STATE.mods||{}).malaRacha} cofres más. Si fallas, la pierdes.`, isTorpeza: true },
+      { bono: ['racha', (STATE.mods || {}).malaRacha || 0], active: modOn('malaRacha'), text: `📉 Mala racha x${(STATE.mods||{}).malaRacha}`, shortText: `📉 x${(STATE.mods||{}).malaRacha}`, desc: `Mala Racha: tu racha no sube durante ${(STATE.mods||{}).malaRacha} cofres más. Si fallas, la pierdes.`, isTorpeza: true },
       { active: modOn('manosAjenas'), text: `🖐️ Manos ajenas`, shortText: `🖐️`, desc: `Manos Ajenas: con la luz apagada, un ${Math.round(DATOS_JUEGO.MODS_WILDCARD.MANOS_AJENAS.PROB * 100)}% de que te roben una herramienta en cada cofre. Dura todo el bucle.` },
       { active: modOn('cofresOscuros'), text: `👁️ A oscuras`, shortText: `👁️`, desc: `Cofres a Oscuras: con la luz apagada solo ves la silueta de los cofres y todos cuestan 1 herramienta. Dura todo el bucle.` },
       { active: modOn('precioSangre'), text: `🩸 Precio de sangre`, shortText: `🩸`, desc: `Precio de la Sangre: mientras estés maldito, el Duende cobra un ${Math.round(DATOS_JUEGO.MODS_WILDCARD.PRECIO_SANGRE.PCT * 100)}% más. Dura todo el bucle.` },
       { active: (STATE.deudaTrapero || 0) > 0, text: `📜 Deuda x${STATE.deudaTrapero}`, shortText: `📜 x${STATE.deudaTrapero}`, desc: `Deuda con el Trapero: en tus próximas ${STATE.deudaTrapero} visitas tendrás que aceptar uno de sus tratos.` },
       { active: !!STATE.sinRed, text: `⚠️ Sin red`, shortText: `⚠️`, desc: `Sin Red: si fallas, no hay segunda oportunidad. Los cofres legendarios cuestan 1 herramienta.`, isBoost: true },
-      { active: (STATE.atajoLeft || 0) > 0, text: `⚡ Atajo x${STATE.atajoLeft}`, shortText: `⚡ x${STATE.atajoLeft}`, desc: `Atajo: si fallas un cofre durante los próximos ${STATE.atajoLeft}, es el fin.` }
+      { bono: ['atajo', STATE.atajoLeft || 0], active: (STATE.atajoLeft || 0) > 0, text: `⚡ Atajo x${STATE.atajoLeft}`, shortText: `⚡ x${STATE.atajoLeft}`, desc: `Atajo: si fallas un cofre durante los próximos ${STATE.atajoLeft}, es el fin.` }
     );
     const activePerks = perkList.filter(p => p.active);
     const activePerksCount = activePerks.length;
@@ -206,6 +206,7 @@ function updateUI() {
       
       badge.addEventListener('click', () => {
         showPersistentFeedback(`ℹ️ ${p.desc}`);
+        if (p.bono) { try { showBono(p.bono[0], 'info', p.bono[1]); } catch (e) {} }   // [0.51] además del aviso, el ticket perforable con lo que queda
       });
 
       perksBar.appendChild(badge);

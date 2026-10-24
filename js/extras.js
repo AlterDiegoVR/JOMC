@@ -288,7 +288,7 @@ function openRouletteOnly() {
   bn.innerHTML = (typeof wcFirstSpinHtml === 'function') ? wcFirstSpinHtml() : ''; bn.className = 'wcard-host lvl-card-spin'; bn.style.minHeight = 'min(300px, 40vh)';
   lm.style.overflowY = 'hidden'; lm.classList.remove('hidden');
   try { audio.init(); audio.playLevelUpFanfare(); } catch (e) {}
-  const res = pickWildcard('pos');   // [0.46] la carta RULETA siempre da una wildcard positiva
+  const res = pickWildcard('pos', true);   // [0.46] la carta RULETA siempre da una wildcard positiva
   updateUI();
   lvlTimers.push(setTimeout(() => runWildcardRoulette(res, () => {
     nextBtn.classList.remove('invisible');

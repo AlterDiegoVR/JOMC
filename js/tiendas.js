@@ -205,6 +205,7 @@ function triggerMerchantShopModalSequence() {
 }
 
 function resetShopSession() {
+  try { achEvent('shopOpen'); } catch (e) {}   // [0.51] logro: gasto por visita
   STATE.shopSession = {
     items: [],
     totalGold: 0,
@@ -394,7 +395,7 @@ function renderMerchantShopGrid() {
 
   const nightOn = nightStealActive();   // [0.210] Nocturnidad y Alevosía
   const stealPossible = !!(STATE.perks.shopStealFree || nightOn);
-  if (!shopVisit) { shopVisit = { l: !!STATE.perks.shopStealFree, n: nightOn, uL: false, uN: false }; if (stealPossible) shopMode = 'robar'; }   // [0.47] la tentación: con robo disponible, ROBAR viene seleccionado y hay que elegir PAGAR
+  if (!shopVisit) { shopVisit = { l: !!STATE.perks.shopStealFree, n: nightOn, uL: false, uN: false }; if (stealPossible) { shopMode = 'robar'; try { achEvent('canSteal'); } catch (e) {} } }   // [0.47] la tentación: con robo disponible, ROBAR viene seleccionado y hay que elegir PAGAR
   if (!stealPossible) shopMode = 'pagar';
   // [0.42] Selector: solo si había robo disponible al entrar en la tienda; se desactiva cuando ya no queda ninguno
   if (shopVisit.l || shopVisit.n) {
@@ -443,6 +444,7 @@ function renderMerchantShopGrid() {
           dshopSay(shopRandom(cfg.FRASES_ROBO), 'sorpresa');
         } else {
           STATE.gold -= currentPrice;
+          try { achEvent('shopBuy', currentPrice); } catch (e) {}   // [0.51]
           const spoke = grantItem(item);   // [0.104] el contador de cofres ya trae su propia frase
           if (item.isChestCounter) STATE.currentShopOffer = STATE.currentShopOffer.filter(s => s !== slot);   // [0.34] se agota al comprarlo
 
@@ -565,6 +567,7 @@ let traperoForced = false;   // [0.46] Deuda: sin 'NO TRATAR · SALIR' hasta ace
 function triggerTraperoShopSequence() {
   try { if (!STATE.finalFree) { nbReg('npc.trapero.1'); if ((STATE.currentLoop || 1) >= 2) nbReg('npc.trapero.5'); if ((STATE.currentLoop || 1) >= 3) nbReg('npc.trapero.6'); } } catch (e) {}   // [0.40] cuaderno
   if (STATE.finalFree) { processNextQueuedEvent(); return; }   // [0.40] tercer final: ni el Duende ni el Trapero vuelven a salir
+  try { audio.init(); audio.musicHint('A', 7000); } catch (e) {}   // [0.51] la música A arranca ya con la frase de apertura (antes de la pantalla de tratos)
   const tier = getNarrativeTier();
   const phrases = narr('TRAPERO_FRASES')[tier];
   let t = shopSplitMood(phrases[Math.floor(Math.random() * phrases.length)]);

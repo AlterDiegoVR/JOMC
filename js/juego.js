@@ -199,7 +199,7 @@ function triggerLevelUpChoice(afterGift) {
   lvlSpectacle();
   // [0.092] Fanfarria + cartel; ruleta de wildcard (se aplica ya, se muestra al frenar); SIGUIENTE; y entonces las 3 mejoras como cofres abiertos
   try { audio.init(); audio.playLevelUpFanfare(); } catch (e) {}
-  const wcRes = pickWildcard();
+  const wcRes = pickWildcard(undefined, true);
   const wcEvents = STATE.eventQueue.splice(q0);
   updateUI();
   const revealChoices = () => {
@@ -284,8 +284,8 @@ function triggerLevelUpChoice(afterGift) {
       // [0.47] Sin efectos de wildcard por medio, la escena del Duende entra en el mismo instante: nunca se ve la sala entre la carta y el Duende
       if (afterGift && !wcEvents.length) {
         STATE.eventQueue.unshift(...front.slice(1));
-        afterGift();
         if (levelUpModal) levelUpModal.classList.add('hidden');
+        setTimeout(afterGift, 100);   // [0.51] una décima de segundo de sala antes de la pantalla del Duende
         return;
       }
       if (levelUpModal) levelUpModal.classList.add('hidden');

@@ -539,6 +539,7 @@ if (claimRiskBtn) {
   claimRiskBtn.addEventListener('click', () => {
     if (STATE.riskModeActive && STATE.riskPot > 0) {
       audio.init(); audio.playCashRegister();   // [0.089]
+      try { achEvent('bote', STATE.riskPot); } catch (e) {}   // [0.51] logro
       STATE.gold += STATE.riskPot;
       showPersistentFeedback(`💰 ¡Has cobrado el Bote de Riesgo de ${STATE.riskPot} GP!`);
       STATE.riskPot = 0;
@@ -558,6 +559,7 @@ if (btnPerdedor) {
       audio.playClick(0.8);
       updateUI();
       showPersistentFeedback("💀 Carta PERDEDOR equipada: tras 5 fallos (seguidos o no), el botín del siguiente cofre será Legendario x2.");
+      try { showBono('perdedor', 'equip', 0); } catch (x) {}   // [0.51] además del aviso, el ticket perforable
     }
   });
 }

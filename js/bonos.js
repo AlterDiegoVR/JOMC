@@ -10,10 +10,20 @@
     oxidados: { n: 'CERROJOS OXIDADOS', who: 't', tot: 3, on: 'ACTIVADO', end: 'SE ACABO' },
     racha:    { n: 'MALA RACHA', who: 't', tot: 10, on: 'ACTIVADA', end: 'SE ACABO' }
   };
+  // [0.51] texto explicativo que acompaña al ticket cuando se concede la carta o el efecto ({n} = nº de cofres/intentos)
+  const DESC = {
+    perdedor: 'Tras 5 fallos (seguidos o no), el botín del siguiente cofre será Legendario x2.',
+    pulsera: 'Los próximos {n} intentos son de cofres épicos o legendarios y no gastan herramientas.',
+    atajo: 'Si fallas un cofre durante los próximos {n}, es el fin.',
+    pesados: 'Los próximos {n} cofres Raros o superiores piden +1 herramienta.',
+    oxidados: 'Los próximos {n} cofres piden entre 1 y 3 herramientas al azar.',
+    racha: 'Tu racha no sube durante {n} cofres más. Si fallas, la pierdes.'
+  };
+  const LAST = {};   // último total concedido de cada efecto (para enseñar cuántos quedan al pulsar su icono)
   const COL = { d: { m: '#7b3fe0', m2: '#4a1fa0', st: '#1e0f40' }, t: { m: '#d63a55', m2: '#7a1730', st: '#0b1d3f' } };
   const PAPER = '#efe3c4', PAPER2 = '#d9c9a3', INK = '#2a1a47';
   const IMG = {};
-  let pop = null, cv = null, ctx = null, queue = [], busy = false, timers = [];
+  let pop = null, cv = null, tx = null, ctx = null, queue = [], busy = false, timers = [];
 
   function build() {
     if (pop) return true;
@@ -24,6 +34,9 @@
     cv.width = 144; cv.height = 48;
     cv.style.cssText = 'display:block;width:100%;height:auto;image-rendering:pixelated;image-rendering:crisp-edges';
     pop.appendChild(cv);
+    tx = document.createElement('div');
+    tx.style.cssText = 'margin:6px auto 0;max-width:94%;padding:6px 10px;border-radius:8px;background:rgba(15,10,30,.94);border:1px solid #f5b932;color:#fde68a;font:600 13px/1.3 ui-monospace,Menlo,Consolas,monospace;text-align:center;display:none';
+    pop.appendChild(tx);
     document.body.appendChild(pop);
     ctx = cv.getContext('2d');
     try {
@@ -69,13 +82,20 @@
     busy = true; build(); timers = [];
     const c = Object.assign({}, CFG[job.id]), seq = [];
     if (job.tot) c.tot = Math.min(10, job.tot);
+    if (job.kind === 'on' && job.tot) LAST[job.id] = job.tot;
+    // [0.51] al concederse (o al equipar el Perdedor) el ticket se ve más grande en PC y lleva un pequeño texto explicativo
+    const big = job.kind === 'on' || job.kind === 'equip', wide = (() => { try { return typeof isWideLayout === 'function' && isWideLayout(); } catch (e) { return false; } })();
+    pop.style.width = big && wide ? 'min(640px, 62vw)' : 'min(360px, 92vw)';
+    if (big && DESC[job.id]) { tx.textContent = DESC[job.id].replace('{n}', job.tot || c.tot); tx.style.display = ''; tx.style.fontSize = wide ? '15px' : '13px'; } else tx.style.display = 'none';
     if (job.kind === 'use') { const u = job.u; seq.push([c, u - 1, 'idle', 'FALLO ' + u + ' DE ' + c.tot], [c, u, 'fresh', 'FALLO ' + u + ' DE ' + c.tot], [c, u, 'idle', 'FALLO ' + u + ' DE ' + c.tot]); }
     else if (job.kind === 'on') seq.push([c, 0, 'idle', c.on + ' ' + (job.tot || c.tot)]);
+    else if (job.kind === 'equip') seq.push([c, job.u || 0, 'idle', 'FALLO ' + (job.u || 0) + ' DE ' + c.tot]);   // Perdedor equipado
+    else if (job.kind === 'info') { const left = Math.max(0, job.u || 0), tot = Math.max(job.tot || c.tot, left); c.tot = Math.min(10, tot); seq.push([c, Math.min(c.tot, c.tot - Math.min(c.tot, left)), 'idle', 'QUEDAN ' + left]); }   // estado actual al pulsar su icono
     else seq.push([c, c.tot - 1, 'idle', ''], [c, c.tot, 'fresh', ''], [c, c.tot, 'stamp', c.end]);
-    at(30, () => { ticket(...seq[0]); pop.style.transform = 'translate(-50%,0)'; });
+    at(30, () => { ticket(...seq[0]); pop.style.transform = 'translate(-50%,0)'; try { audio.init(); audio.playTicketOut(); } catch (e) {} });
     let t = 420;
-    for (let i = 1; i < seq.length; i++) { const s = seq[i]; at(t, () => ticket(...s)); t += s[2] === 'fresh' ? 200 : 300; }
-    at(t + 3800, () => { pop.style.transform = 'translate(-50%,-160%)'; });
+    for (let i = 1; i < seq.length; i++) { const s = seq[i]; at(t, () => { ticket(...s); try { if (s[2] === 'fresh') audio.playTicketPunch(); else if (s[2] === 'stamp') audio.playTicketStamp(); } catch (e) {} }); t += s[2] === 'fresh' ? 200 : 300; }
+    at(t + 3800, () => { pop.style.transform = 'translate(-50%,-160%)'; try { audio.playTicketIn(); } catch (e) {} });
     at(t + 3800 + 450, () => { busy = false; next(); });
   }
   // [0.5] El bono solo sale con la habitación libre (sin diálogos, tiendas ni ventanas encima): mientras tanto espera en cola
@@ -84,6 +104,7 @@
     if (busy || !queue.length) return;
     let free = true;
     try { free = typeof mainScreenFree === 'function' ? mainScreenFree() : true; } catch (e) {}
+    if (queue[0] && queue[0].force) free = true;   // [0.51] al pulsar un icono el ticket sale aunque haya un aviso encima
     if (free && !(typeof STATE !== 'undefined' && (STATE.finalPhase || STATE.gameOver))) { play(queue.shift()); return; }
     if (!waitT) waitT = setTimeout(() => { waitT = null; next(); }, 350);
   }
@@ -91,7 +112,9 @@
   window.showBono = function (id, kind, u, tot) {
     try {
       if (!CFG[id]) return false;
-      queue.push({ id, kind, u, tot });
+      const force = kind === 'info' || kind === 'equip';
+      if (kind === 'info' && !tot) tot = LAST[id] || CFG[id].tot;
+      queue.push({ id, kind, u, tot, force });
       next();
       return true;
     } catch (e) { return false; }
