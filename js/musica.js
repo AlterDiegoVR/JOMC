@@ -580,8 +580,8 @@ function musWanted() {
   if (musVisible('gameOverModal')) return null;
   const now = performance.now(), S = (typeof STATE !== 'undefined') ? STATE : null;
   // [0.51] Las escenas de los personajes forman una "cadena" (Trapero = A, tienda del Duende = J) que no se corta entre pantallas: solo se suelta tras 2 s sin ninguna escena en pantalla
-  const busy = ['dialogueModal', 'traperoShopModal', 'merchantModal', 'lootModal', 'levelUpModal', 'unfairDealModal'].some(musVisible);
-  if (busy) MUS.lastBusy = now; else if (MUS.chain && now - (MUS.lastBusy || 0) > 2000) MUS.chain = null;
+  const busy = ['dialogueModal', 'traperoShopModal', 'merchantModal', 'duendeReceiptModal', 'lootModal', 'levelUpModal', 'unfairDealModal'].some(musVisible);   // [0.55] el recibo del Duende también cuenta como escena
+  if (busy) MUS.lastBusy = now; else if (MUS.chain && now - (MUS.lastBusy || 0) > 900) MUS.chain = null;   // [0.55] antes 2000 ms: la música de la sala tardaba en volver tras la tienda del Duende
   const hint = MUS.hint && now < MUS.hintUntil ? MUS.hint : null;
   if (!hint) MUS.hint = null;
   if (musVisible('traperoShopModal') || hint === 'A') MUS.chain = 'T';
@@ -596,7 +596,9 @@ function musWanted() {
   }
   if (MUS.chain === 'T') return 'A';
   if (MUS.chain === 'D') return 'J';
-  if (S && !S.finalPhase) {
+  // [0.55] con el final armado (último cofre normal antes de los dos cofres definitivos) la sala suena como siempre; en cuanto salen los dos cofres entra la pieza del Cerrojo
+  const finArmed = !!(S && S.finalPhase && S.finalPhase.stage === 'armed' && !musVisible('dialogueModal'));
+  if (S && (!S.finalPhase || finArmed)) {
     const dark = (S.roomDarkUntil || 0) > (S.chestsOpened || 0), cursed = (S.cursedChestsLeft || 0) > 0 || (typeof curseHold !== 'undefined' && curseHold);
     MUS.far = dark && cursed;   // [0.51b] oscuridad + maldición: suena la maldición sorda y lejana; solo oscuridad: silencio
     if (dark && !cursed) return null;   // apagón: la música se calla

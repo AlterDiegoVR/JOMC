@@ -446,7 +446,7 @@ document.addEventListener('click', (e) => {
   }
 
   if (
-    ['closeTraperoBtn', 'closeTraperoShopBtn', 'declineTraperoBtn'].includes(id) ||
+    ['closeTraperoBtn', 'closeTraperoShopBtn', 'declineTraperoBtn', 'leaveTraperoShopBtn'].includes(id) ||
     (btn.closest('#traperoModal, #traperoShopModal') && (text.includes('RECHAZAR') || text.includes('CERRAR') || text.includes('VOLVER') || text.includes('SALIR')))
   ) {
     closeTraperoShop();

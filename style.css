@@ -1034,6 +1034,7 @@ html:not(.narrow-layout) #pzHardBadge { font-size: 13px; }
 /* tapa del cofre del Duende */
 .fin-lid { position: absolute; inset: 0; z-index: 58; background: #000; overflow: hidden; perspective: 900px; }
 .fin-lid > div { position: absolute; }
+.fin-lid.px { background: var(--ds-relleno) center top / 100% auto repeat-y, #67472d; image-rendering: pixelated; }   /* [0.55] puerta de pixel art, igual que .fl-lock */
 .lid-planks { inset: 6% 5%; border-radius: 40% 40% 6% 6% / 22% 22% 4% 4%; background: repeating-linear-gradient(90deg, #6b4423 0 38px, #3e2812 38px 41px, #7a4f29 41px 78px, #3e2812 78px 81px); box-shadow: inset 0 0 40px rgba(0,0,0,.6), 0 0 30px rgba(0,0,0,.8); transform-origin: 50% 0; transition: transform 1.6s cubic-bezier(.5,0,.2,1); }
 .lid-band { left: 5%; right: 5%; height: 8%; background: linear-gradient(#4a4a55, #2a2a32); border-top: 2px solid #7d7d8a; border-bottom: 2px solid #1a1a20; transition: transform 1.6s cubic-bezier(.5,0,.2,1); transform-origin: 50% 0; }
 .lid-band.b1 { top: 20%; } .lid-band.b2 { top: 62%; }
@@ -1286,7 +1287,7 @@ html:not(.narrow-layout) #pzHardBadge { font-size: 13px; }
 /* [0.5] en todo el final (dos cofres, clave, cerrojo) se quita el HUD; las voces se leen en grande arriba */
 #gameFrame #persistentHUD { transition: opacity .6s; }
 #gameFrame.final-on #persistentHUD { opacity: 0; visibility: hidden; pointer-events: none; }
-.fin-voice .fv-bub { top: 5%; width: min(92%, 380px); padding: 14px 16px; border-radius: 14px; gap: 6px; }
+.fin-voice .fv-bub { top: 17%; width: min(92%, 380px); padding: 14px 16px; border-radius: 14px; gap: 6px; }
 .fin-voice b { font-size: 13px; }
 .fin-voice span { font: 700 22px/1.3 'Outfit', sans-serif; }
 /* [0.5] Cofre sellado frase a frase */

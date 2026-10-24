@@ -160,6 +160,8 @@ function finLockScreen(restart, msg) {
   const go = ov.querySelector('#flGo'), back = ov.querySelector('#flBack');
   back.addEventListener('click', () => { if (restart) return; finShowChoice(); });
   if (restart) back.classList.add('hidden');
+  // [0.55] la cerradura grande también se abre pulsando sobre ella (igual que el botón)
+  [placa, wheel].forEach(el => { el.style.cursor = 'pointer'; el.addEventListener('click', () => { if (!go.disabled && !go.classList.contains('hidden')) go.click(); }); });   // solo la placa dorada de la cerradura
   go.addEventListener('click', () => {
     try { audio.init(); } catch (e) {}
     go.disabled = true; back.classList.add('hidden'); go.classList.add('hidden');
@@ -169,7 +171,7 @@ function finLockScreen(restart, msg) {
 }
 function finInfo() {
   const f = STATE.finalPhase, T = finCfg().TEXTOS;
-  const txt = `${T.INTENTOS}: ${f ? f.tries : 0} · ${T.SELLO.replace('{n}', Math.min(6, FIN_RT.seals + 1))}`;
+  const txt = `${tr(T.INTENTOS)}: ${f ? f.tries : 0} · ${tr(T.SELLO.replace('{n}', Math.min(6, FIN_RT.seals + 1)))}`;
   const a = document.getElementById('flInfo'); if (a) a.textContent = txt;
 }
 function finRoulette(ov, zoom, wheel, placa) {
@@ -207,7 +209,7 @@ function finHud() {
   const f = STATE.finalPhase, T = finCfg().TEXTOS;
   let pips = '';
   for (let i = 0; i < 6; i++) pips += `<i class="${i < FIN_RT.seals ? 'on' : (i === FIN_RT.seals ? 'cur' : '')}"></i>`;
-  h.innerHTML = `<div class="fh-pips">${pips}</div><div class="fh-txt">${T.SELLO.replace('{n}', Math.min(6, FIN_RT.seals + 1))} · ${T.INTENTOS} ${f ? f.tries : 0}</div>`;
+  h.innerHTML = `<div class="fh-pips">${pips}</div><div class="fh-txt">${tr(T.SELLO.replace('{n}', Math.min(6, FIN_RT.seals + 1)))} · ${tr(T.INTENTOS)} ${f ? f.tries : 0}</div>`;
 }
 function finRunPuzzle() {
   const f = STATE.finalPhase; if (!f) return;
@@ -467,7 +469,9 @@ function finBadBlack(B) {
   finLater(() => {   // la pantalla del puzle ya no hace falta: queda el negro con la tapa del cofre del Duende
     try { hideAllMinigameUI(); } catch (e) {}
     ['finalCrack', 'finalMix'].forEach(finRemove); frame.classList.remove('fin-shake', 'final-on');
-    const lid = finEl('fin-lid', '<div class="lid-planks"></div><div class="lid-band b1"></div><div class="lid-band b2"></div><div class="lid-lock"></div><div class="lid-dust"></div>', 'finalLid');
+    try { shopArtInit(); } catch (e) {}
+    // [0.55] misma puerta y cerradura de pixel art que la pantalla del cerrojo (antes era una tapa dibujada con CSS)
+    const lid = finEl('fin-lid px', `<div class="fl-stage"><div class="fl-zoom"><img class="fl-shop" src="${shopImg('cerrado')}" alt=""></div></div>`, 'finalLid');
     frame.appendChild(lid);
     finRemove('finalBlack');
     // sonidos de una partida normal (cofres, suma, botín): solo se oyen

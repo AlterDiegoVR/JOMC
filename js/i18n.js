@@ -124,6 +124,12 @@
     if (DATA.adv && MJ.AVANZADO && MJ.AVANZADO.HACK) { MJ.AVANZADO.HACK.BANCOS_PALABRAS = DATA.adv; }
   } catch (e) {}
 
+  // ---- Imágenes con texto dentro: versión inglesa (cartel SHOP del cofre-tienda de la escena final) ----
+  function swapArt() {
+    try { if (DATA.img && DATA.img.finalTienda && typeof ASSETS !== 'undefined' && ASSETS.final) ASSETS.final.tienda = DATA.img.finalTienda; } catch (e) {}
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', swapArt); else swapArt();
+
   // ---- DOM: observador ----
   var SKIPTAG = { SCRIPT: 1, STYLE: 1, TEXTAREA: 1, NOSCRIPT: 1 };
   var ATTRS = ['title', 'placeholder', 'alt', 'aria-label'];

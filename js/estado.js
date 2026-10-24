@@ -370,8 +370,8 @@ function applyWildcard(wc) {
     case 'MODIFICADOR':
       STATE.mods = STATE.mods || {};
       STATE.mods[wc.valor.id] = (STATE.mods[wc.valor.id] || 0) + (wc.valor.cofres != null ? wc.valor.cofres : wc.valor.usos);   // [0.096] 'usos' = Seda y Racha Congelada (caducan por fallos salvados, no por cofres)
-      if (wc.valor.id === 'malaRacha') try { showBono('racha', 'on', 0, STATE.mods.malaRacha); } catch (e) {}   // [0.47]
-      if (wc.valor.id === 'cofresOscuros') { try { updateChestSelectionUI(); } catch (e) {} }   // [0.47] la pantalla ya generada se repinta al activarse (selector, rareza y textos)
+      if (wc.valor.id === 'malaRacha') wcFx(() => { try { showBono('racha', 'on', 0, STATE.mods.malaRacha); } catch (e) {} });   // [0.47]
+      if (wc.valor.id === 'cofresOscuros') wcFx(() => { try { updateChestSelectionUI(); } catch (e) {} });   // [0.47] la pantalla ya generada se repinta al activarse (selector, rareza y textos)
       break;
     case 'PERDER_ORO': {
       const want = wcGold(wc.valor), lost = Math.min(STATE.gold, want);
@@ -440,7 +440,7 @@ function applyWildcard(wc) {
       break;
     case 'COFRES_PESADOS':
       STATE.heavyChestsLeft += wc.valor;
-      try { showBono('pesados', 'on', 0, STATE.heavyChestsLeft); } catch (e) {}   // [0.47]
+      wcFx(() => { try { showBono('pesados', 'on', 0, STATE.heavyChestsLeft); } catch (e) {} });   // [0.47]
       break;
     case 'MALDICION_CODICIA':
       STATE.greedCurseLeft += wc.valor;
@@ -453,12 +453,12 @@ function applyWildcard(wc) {
       break;
     case 'COFRES_OXIDADOS':   // [0.105] Cerrojos Oxidados: cada cofre pide entre 1 y 3 herramientas al azar
       STATE.oxidadoLeft += wc.valor;
-      try { showBono('oxidados', 'on', 0, STATE.oxidadoLeft); } catch (e) {}   // [0.47]
+      wcFx(() => { try { showBono('oxidados', 'on', 0, STATE.oxidadoLeft); } catch (e) {} });   // [0.47]
       break;
     case 'DAR_CARTA_RECARGA': {   // [0.105] da 1 carta y otra cada N cofres tras usarla
       STATE.abilities[wc.valor.prop]++;
       rechargeArm(wc.valor.prop, wc.valor.cofres);
-      extra = '+1 ' + (RECHARGE_NOMBRES[wc.valor.prop] || 'Carta');
+      extra = '+1 ' + tr(RECHARGE_NOMBRES[wc.valor.prop] || 'Carta');
       break;
     }
     case 'OTORGAR_CARTA_TACTICA_AZAR': {
@@ -466,7 +466,7 @@ function applyWildcard(wc) {
       const card = tacticas[Math.floor(Math.random() * tacticas.length)];
       const prop = TACTICA_A_HABILIDAD[card.id];
       if (prop) STATE.abilities[prop]++;
-      extra = prop ? `🃏 Carta: ${card.titulo}` : `Carta: ${card.titulo}`;   // [0.105] premio visible
+      extra = prop ? tr(`🃏 Carta: ${card.titulo}`) : tr(`Carta: ${card.titulo}`);   // [0.105] premio visible
       if (prop) { const m = `🃏 Has encontrado: ${card.titulo}`; if (WC_DEFER) WC_MSG = m; else showPersistentFeedback(m); }   // [0.51] con ruleta, el aviso sale DESPUÉS de que pare
       break;
     }
@@ -488,7 +488,9 @@ function applyWildcard(wc) {
 }
 
 // [0.092] Elige el wildcard (con 'peso' opcional), lo aplica YA (así el guardado nunca se pierde) y devuelve {wc, extra, isBad}
-let WC_DEFER = false, WC_MSG = null;
+let WC_DEFER = false, WC_MSG = null, WC_FX = [];
+// [0.55] Efectos visibles de una wildcard (tickets, repintados): con ruleta se guardan y salen cuando ella se detiene; sin ruleta, al momento
+function wcFx(fn) { if (WC_DEFER) WC_FX.push(fn); else fn(); }
 function pickWildcard(mode, defer) {   // [0.46] mode: 'pos' (siempre positiva: Ruleta, Doble Tirada, Apuesta) | 'neg' (siempre negativa) | sin valor = reparto normal
   const wcList = DATOS_JUEGO.WILDCARDS || [];
   if (wcList.length === 0) return null;
@@ -500,11 +502,12 @@ function pickWildcard(mode, defer) {   // [0.46] mode: 'pos' (siempre positiva: 
   const tot = pool.reduce((a, w) => a + pw(w), 0);
   let r = Math.random() * tot, wc = pool[pool.length - 1];
   for (const w of pool) { r -= pw(w); if (r <= 0) { wc = w; break; } }
-  WC_DEFER = !!defer; WC_MSG = null;
+  WC_DEFER = !!defer; WC_MSG = null; WC_FX = [];
   const extra = applyWildcard(wc);
   WC_DEFER = false;
   const msg = WC_MSG; WC_MSG = null;
-  return { wc, extra, isBad: wc.tipo === 'PERJUDICIAL', msg };
+  const fx = WC_FX; WC_FX = [];
+  return { wc, extra, isBad: wc.tipo === 'PERJUDICIAL', msg, fx };
 }
 
 // [0.092] Ruleta de la subida de nivel: la carta cambia con "ruiditos" cada vez más lentos hasta la ganadora (con su sonido y explicación).
@@ -568,6 +571,7 @@ function runWildcardRoulette(res, onDone) {
     paint(res.wc, 'win', res.extra);
     try { if (res.isBad) { audio.playBreak(); screenShake(5, 260); } else audio.playUnlockFanfare('raro'); } catch (e) {}
     updateUI();
+    (res.fx || []).forEach(fn => { try { fn(); } catch (e) {} });   // [0.55] tickets y repintados de la wildcard, ya con la ruleta parada
     if (res.msg) setTimeout(() => { try { showPersistentFeedback(res.msg); } catch (e) {} }, 650);   // [0.51] el aviso llega un momento después de parar la ruleta
     lvlTimers.push(setTimeout(onDone, cfg.PAUSA_TRAS_RULETA_MS != null ? cfg.PAUSA_TRAS_RULETA_MS : 450));
   }, acc + (cfg.RULETA_MS_FINAL_PAUSA || 520)));
