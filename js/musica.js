@@ -545,6 +545,13 @@ function musStart(id) {
   musStopCur(musCfg().FUNDIDO_CAMBIO != null ? musCfg().FUNDIDO_CAMBIO : 1);
   const level = (musCfg().VOLUMEN != null ? musCfg().VOLUMEN : 0.7) * ((musCfg().NIVELES || {})[id] != null ? musCfg().NIVELES[id] : 1);   // NIVELES: volumen propio de cada pieza (más bajas las de fondo y las tiendas)
   const fx = makeFx(c, p, level, audio.master || c.destination);
+  // [0.51b] "Lejanía": filtro que quita agudos + menos volumen; solo se cierra cuando coinciden oscuridad y maldición
+  try {
+    const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 0.5; lp.frequency.value = 18000;
+    const fg = c.createGain(); fg.gain.value = 1;
+    fx.vol.disconnect(); fx.vol.connect(lp); lp.connect(fg); fg.connect(audio.master || c.destination);
+    fx.far = { lp, fg, on: false };
+  } catch (e) { fx.far = null; }
   const T0 = c.currentTime + 0.15; let passes = 0, queue = [];
   fx.vol.gain.setValueAtTime(0.0001, c.currentTime); fx.vol.gain.linearRampToValueAtTime(fx.target, c.currentTime + 1.2);
   function enqueue() {
@@ -590,8 +597,10 @@ function musWanted() {
   if (MUS.chain === 'T') return 'A';
   if (MUS.chain === 'D') return 'J';
   if (S && !S.finalPhase) {
-    if ((S.roomDarkUntil || 0) > (S.chestsOpened || 0)) return null;   // apagón: la música se calla
-    if ((S.cursedChestsLeft || 0) > 0 || (typeof curseHold !== 'undefined' && curseHold)) return 'Imal';   // maldición: variación de I
+    const dark = (S.roomDarkUntil || 0) > (S.chestsOpened || 0), cursed = (S.cursedChestsLeft || 0) > 0 || (typeof curseHold !== 'undefined' && curseHold);
+    MUS.far = dark && cursed;   // [0.51b] oscuridad + maldición: suena la maldición sorda y lejana; solo oscuridad: silencio
+    if (dark && !cursed) return null;   // apagón: la música se calla
+    if (cursed) return 'Imal';   // maldición: variación de I
     return 'I';   // música de fondo de toda la partida
   }
   return null;
@@ -605,6 +614,7 @@ function musDucked() {
 function musDirector() {
   let w = null; try { w = musWanted(); } catch (e) {}
   const m = MUS.cur;
+  if (m && m.fx.far) { try { const on = !!MUS.far && m.id === 'Imal'; if (m.fx.far.on !== on) { m.fx.far.on = on; const t = m.c.currentTime; m.fx.far.lp.frequency.setTargetAtTime(on ? 380 : 18000, t, 0.5); m.fx.far.fg.gain.setTargetAtTime(on ? 0.45 : 1, t, 0.5); } } catch (e) {} }
   if (m) { try { const d = musDucked(); if (m.duckV !== d) { m.duckV = d; m.fx.duck.gain.setTargetAtTime(d, m.c.currentTime, 0.12); } } catch (e) {} }
   if (w === (m && m.id) || (!w && !m)) return;
   if (!w) { musStopCur(musCfg().FUNDIDO_SALIDA != null ? musCfg().FUNDIDO_SALIDA : 0.8); return; }
@@ -617,6 +627,7 @@ AudioEngine.prototype.musicHint = function (id, ms) { MUS.hint = id; MUS.hintUnt
 AudioEngine.prototype.musicForce = function (id) { MUS.force = id; musDirector(); };
 AudioEngine.prototype.musicRelease = function () { MUS.force = null; musDirector(); };
 AudioEngine.prototype.musicDuck = function () { return MUS.cur ? MUS.cur.duckV : null; };
+AudioEngine.prototype.musicFar = function () { const f = MUS.cur && MUS.cur.fx.far; return f ? { on: f.on, hz: Math.round(f.lp.frequency.value), g: +f.fg.gain.value.toFixed(2) } : null; };
 AudioEngine.prototype.musicNow = function () { return MUS.cur ? MUS.cur.id : null; };
 AudioEngine.prototype.musicSwell = function () {};   // [0.38] ya no existe el crescendo de la 0.37
 AudioEngine.prototype.musicStop = function (fade) { MUS.force = null; musStopCur(fade); };
