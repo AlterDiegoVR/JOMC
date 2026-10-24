@@ -457,7 +457,7 @@ function triggerDuendeNarrativeVisit() {
         <div class="gm-seal">CARTA TÁCTICA</div>
         <div class="gx-ico"><i class="${(btn.querySelector('i') || {}).className || 'fa-solid fa-scroll'}"></i></div>
         <h3 class="gx-ttl">${NOMBRES[key]}</h3>
-        <p class="gx-tx">${(((DATOS_JUEGO.TEXTOS_AYUDA.cartas || {})[key]) || '').replace(/^Carta [^:]+:\s*/, '').replace(/^./, ch => ch.toUpperCase())}</p>
+        <p class="gx-tx">${tr((((DATOS_JUEGO.TEXTOS_AYUDA.cartas || {})[key]) || '')).replace(/^(?:Carta [^:]+|[^:]+ card):\s*/, '').replace(/^./, ch => ch.toUpperCase())}</p>
         <button id="cardPreUse" class="gm-btn" type="button">USAR</button>
         <button id="cardPreBack" class="gm-btn sec" type="button">VOLVER</button>
       </div>`;

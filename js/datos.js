@@ -9,7 +9,7 @@
 
 const DATOS_JUEGO = {
   // [0.088] Versión visible en pantalla (esquina inferior central) para que las capturas la incluyan
-  VERSION: '0.52-en',
+  VERSION: '0.52b-en',
   TUTORIAL_TACTICA: 'Aquí van tus cartas tácticas. Úsalas cuando quieras, pero con cabeza: se gastan al usarlas.',   // [0.46] texto de la flecha de la primera carta táctica (borrador mío)
   // [0.104] Efectos de la apertura automática de la secuencia final (cofres 101-110); la intensidad sube del primero al último (k = 0..1)
   SECUENCIA_FINAL_FX: { ACTIVAR: true, ESTALLIDOS_BASE: 2, ESTALLIDOS_EXTRA: 4, PARTICULAS_POR_ESTALLIDO: 40, HACIA_CENTRO_BASE: 30, HACIA_CENTRO_EXTRA: 60,

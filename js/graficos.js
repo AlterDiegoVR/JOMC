@@ -887,14 +887,14 @@ setInterval(() => {
 function triggerSecretDecorationReward(decor) {
   let roll = Math.random() * 100;
   const _nb = k => { try { nbReg('obj.adorno'); nbReg('obj.adorno.nunca'); if (k) nbReg(k); } catch (e) {} };   // [0.42] cuaderno: explica los adornos conforme ocurren
-  let msg = `Inspeccionaste ${decor.name}. "${decor.descriptor.toUpperCase()}"`;
+  let msg = `${tr("Inspeccionaste")} ${tr(decor.name)}. "${tr(decor.descriptor).toUpperCase()}"`;
   // [0.210] Spooky Things: tocar un objeto puede maldecirte unos cofres
   if (modOn('spooky') && Math.random() < DATOS_JUEGO.MODS_WILDCARD.SPOOKY.PROB) {
     const nC = DATOS_JUEGO.MODS_WILDCARD.SPOOKY.COFRES_MALDICION;
     STATE.cursedChestsLeft += nC; _nb('obj.adorno.maldito');
     try { audio.init(); audio.playBreak(); } catch (e) {}
     updateUI();
-    showPersistentFeedback(msg + ` (¡Algo se te pega a los dedos! Maldición durante ${nC} cofres.)`);
+    showPersistentFeedback(msg + ' ' + tr(`(¡Algo se te pega a los dedos! Maldición durante ${nC} cofres.)`));
     return;
   }
   // [0.210] Exorcismo: bajo maldición, se duplica la probabilidad de que el objeto dé una herramienta (65-97 = herramientas)
@@ -922,7 +922,7 @@ function triggerSecretDecorationReward(decor) {
       // [0.089] El efecto de color del objeto se cancela: la maldición (o la narrativa final desde el Tier 5) manda. La oscuridad sí convive.
       if (cursedNow && !finalTier) {
         const lst = DATOS_JUEGO.TEXTOS_AMBIENTE_MALDICION || [];
-        if (lst.length) msg += ' ' + lst[Math.floor(Math.random() * lst.length)];
+        if (lst.length) msg += ' ' + tr(lst[Math.floor(Math.random() * lst.length)]);
       }
     } else if (chosen === 'apagado') {
       pendingAmbient = () => {
@@ -932,7 +932,7 @@ function triggerSecretDecorationReward(decor) {
         try { updateChestSelectionUI(); } catch (e) {}   // [0.47] Cofres a Oscuras: al apagarse la luz se refresca el selector y los textos
         setTimeout(() => audio.playDarkOut(), 120);   // [0.087b] progresión de notas graves
       };
-      msg += " (¡La bombilla se funde! La celda queda a oscuras un buen rato.)";
+      msg += tr(" (¡La bombilla se funde! La celda queda a oscuras un buen rato.)");
     } else {
       pendingAmbient = () => {
         // [0.087b] Cualquier cambio de ambiente enciende la luz si estaba apagada
@@ -940,26 +940,26 @@ function triggerSecretDecorationReward(decor) {
         STATE.roomThemeFilter = chosen;
         try { updateChestSelectionUI(); } catch (e) {}   // [0.47]
       };
-      msg += chosen === 'normal' ? " (La sala recupera su color original.)" : " (¡El ambiente de la sala ha cambiado!)";
+      msg += chosen === 'normal' ? tr(" (La sala recupera su color original.)") : tr(" (¡El ambiente de la sala ha cambiado!)");
     }
     audio.playClick(0.9);
   } else if (roll >= 20 && roll < 35) {
     _nb('obj.adorno.mutan');
     chestMutateFx(() => generateScreenChests());
-    msg += " (¡Luz misteriosa! Los cofres mutan).";
+    msg += tr(" (¡Luz misteriosa! Los cofres mutan).");
     audio.playUnlockFanfare('raro');
   } else if (roll >= 35 && roll < 45) {
     const active = STATE.screenChests[STATE.activeChestIdx];
     _nb('obj.adorno.rayo');
     if (active && active.rarity.id !== 'legendario') {
       chestMutateFx(() => { active.rarity = active.fog ? Object.assign({}, CHEST_RARITIES[3], { fogOne: true }) : CHEST_RARITIES[3]; updateChestSelectionUI(); });   // [0.097b] el cambio real también tras el banner
-      msg += " (¡Un rayo de sombra eleva el cofre a LEGENDARIO!)";
+      msg += tr(" (¡Un rayo de sombra eleva el cofre a LEGENDARIO!)");
       audio.playUnlockFanfare('legendario');
     } else {
       STATE.gold += 5;
-      msg += " (+5 GP descubiertos)";
+      msg += tr(" (+5 GP descubiertos)");
     }
-  } else if (roll >= 45 && roll < 65) { _nb('obj.adorno.oro'); STATE.gold += 2; msg += " (+2 GP secretos)"; }
+  } else if (roll >= 45 && roll < 65) { _nb('obj.adorno.oro'); STATE.gold += 2; msg += tr(" (+2 GP secretos)"); }
   else if (roll >= 65 && roll < 97) {
     // [0.44] el adorno puede dar cualquier herramienta ya desbloqueada (también pilas, fusibles y pines de acero)
     _nb('obj.adorno.herr');
@@ -969,11 +969,11 @@ function triggerSecretDecorationReward(decor) {
     let w = Math.random() * pool.reduce((a, x) => a + x[1], 0), pick = pool[0];
     for (const x of pool) { if (w < x[1]) { pick = x; break; } w -= x[1]; }
     STATE[pick[0]] = (STATE[pick[0]] || 0) + 1;
-    msg += ` (+1 ${pick[2]} hallad${pick[0] === 'picks' || pick[0] === 'batteries' || pick[0] === 'valves' ? 'a' : 'o'})`;
+    msg += ' ' + tr(`(+1 ${pick[2]} hallad${pick[0] === 'picks' || pick[0] === 'batteries' || pick[0] === 'valves' ? 'a' : 'o'})`);
   }
   else {
     // [0.44] el temblor ocurre al cerrar el banner y hace que todos los cofres pierdan una rareza (los normales desaparecen, pero siempre queda uno)
-    _nb('obj.adorno.temblor'); msg += " (¡Vibración sísmica en la sala! Los cofres se resienten.)";
+    _nb('obj.adorno.temblor'); msg += tr(" (¡Vibración sísmica en la sala! Los cofres se resienten.)");
     chestMutateFx(() => {
       const appBody = document.getElementById('appBody');
       if (appBody) { appBody.classList.add('shake-screen'); setTimeout(() => appBody.classList.remove('shake-screen'), 600); }

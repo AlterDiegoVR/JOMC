@@ -958,11 +958,11 @@ function openTraperoShop() {
           const adv = unlockedAdvancedTools(), got = {};
           for (let i = 0; i < O.AVANZADAS; i++) { const pr = adv[Math.floor(Math.random() * adv.length)]; STATE[pr] += 1; got[pr] = (got[pr] || 0) + 1; }
           const NOM = { proPicks: 'Pin de Acero', usb: 'Llave USB', valves: 'Válvula', batteries: 'Pila', fuses: 'Fusible' };
-          const gotTxt = Object.keys(got).map(k => `+${got[k]} ${NOM[k] || k}`).join(', ');
+          const gotTxt = Object.keys(got).map(k => `+${got[k]} ${tr(NOM[k] || k)}`).join(', ');
           if (traperoModal) traperoModal.classList.add('hidden');
           audio.playUnlockFanfare('epico');
           updateUI();
-          showTraperoDealFeedback("Otra Oportunidad", `Olvidas maestrías, torpezas, efectos y cartas tácticas. A cambio recibes +${O.GANZUAS} Ganzúas (${gotTxt}).`);
+          showTraperoDealFeedback("Otra Oportunidad", tr(`Olvidas maestrías, torpezas, efectos y cartas tácticas. A cambio recibes +${O.GANZUAS} Ganzúas (${gotTxt}).`));
         } else if (deal.id === 'doble_tirada') {   // [0.46] una wildcard buena y otra mala
           if (traperoModal) traperoModal.classList.add('hidden');
           const rp = pickWildcard('pos'), rn = pickWildcard('neg');

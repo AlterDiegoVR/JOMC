@@ -59,6 +59,9 @@
     var lead = m[1], body = m[2], trail = m[3];
     if (!body || !/[A-Za-zÀ-ÿ]/.test(body)) return raw;
     // texto entre comillas ("frase"): se traduce lo de dentro
+    // frase completa tal cual en el diccionario (p. ej. «Frase entre comillas francesas»): gana al desenvuelto
+    var whole = E.get(body.replace(/\s+/g, ' '));
+    if (whole != null) return lead + whole + trail;
     var qm = body.match(/^(["“«])([\s\S]+?)(["”»])$/);
     if (qm && depth < 4) { var qi = core(qm[2], depth + 1); return qi !== qm[2] ? lead + qm[1] + qi + qm[3] + trail : raw; }
     var norm = body.replace(/\s+/g, ' ');
