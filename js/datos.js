@@ -9,7 +9,7 @@
 
 const DATOS_JUEGO = {
   // [0.088] Versión visible en pantalla (esquina inferior central) para que las capturas la incluyan
-  VERSION: '0.47',
+  VERSION: '0.5',
   TUTORIAL_TACTICA: 'Aquí van tus cartas tácticas. Úsalas cuando quieras, pero con cabeza: se gastan al usarlas.',   // [0.46] texto de la flecha de la primera carta táctica (borrador mío)
   // [0.104] Efectos de la apertura automática de la secuencia final (cofres 101-110); la intensidad sube del primero al último (k = 0..1)
   SECUENCIA_FINAL_FX: { ACTIVAR: true, ESTALLIDOS_BASE: 2, ESTALLIDOS_EXTRA: 4, PARTICULAS_POR_ESTALLIDO: 40, HACIA_CENTRO_BASE: 30, HACIA_CENTRO_EXTRA: 60,
@@ -278,6 +278,7 @@ const DATOS_JUEGO = {
       SEALED_TITULO: 'COFRE SELLADO',
       SEALED_SUB: 'Una palabra de cada frase. Un solo intento.',
       SEALED_BTN: 'PROBAR COMBINACIÓN',
+      SEALED_LISTO: 'Las tres frases están puestas.',
       SEALED_CONFIRMA_T: 'UN SOLO INTENTO',
       SEALED_CONFIRMA: 'Si te equivocas, el cofre se bloqueará para siempre. ¿Probar esta combinación?',
       SEALED_CONFIRMA_BTN: 'PROBAR',

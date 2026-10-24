@@ -67,3 +67,35 @@ function startInfiniteMode() {
   generateScreenChests(); updateUI();
   try { showPersistentFeedback('ℹ️ MODO INFINITO: no hay final. Los cofres no paran, y cada vez piden más.'); } catch (e) {}
 }
+
+/* ---------- [0.5] Elegir modo al empezar (solo con el infinito desbloqueado) y marca fija del modo ---------- */
+function modeChoiceMaybe() {
+  try {
+    if (!infUnlocked() || STATE.infinite || (STATE.chestsOpened || 0) > 0 || document.getElementById('modeChoice') || document.getElementById('resumeGameModal') || document.getElementById('coverScreen')) return;
+  } catch (e) { return; }
+  const ov = document.createElement('div');
+  ov.id = 'modeChoice';
+  ov.className = 'mode-choice';
+  ov.innerHTML = `<div class="mc-box">
+    <div class="mc-title">ELIGE MODO</div>
+    <button type="button" class="mc-btn mc-n" data-m="n"><b>NORMAL</b><span>La historia, con su final.</span></button>
+    <button type="button" class="mc-btn mc-i" data-m="i"><b>∞ INFINITO</b><span>Sin final. Los cofres no paran y cada vez piden más.</span></button>
+  </div>`;
+  uiHost().appendChild(ov);
+  ov.querySelectorAll('.mc-btn').forEach(b => b.addEventListener('click', () => {
+    try { audio.init(); audio.playClick(0.8); } catch (e) {}
+    ov.remove();
+    if (b.dataset.m === 'i') startInfiniteMode();
+  }));
+}
+function infMarkTick() {
+  try {
+    let m = document.getElementById('infMark');
+    const show = infUnlocked() && !document.getElementById('coverScreen');
+    if (!show) { if (m) m.remove(); return; }
+    if (!m) { m = document.createElement('div'); m.id = 'infMark'; uiHost().appendChild(m); }
+    const t = infOn() ? '∞ INFINITO' : 'NORMAL';
+    if (m.textContent !== t) { m.textContent = t; m.classList.toggle('inf', infOn()); }
+  } catch (e) {}
+}
+setInterval(infMarkTick, 1000);

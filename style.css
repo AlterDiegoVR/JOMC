@@ -966,12 +966,18 @@ html:not(.narrow-layout) #pzHardBadge { font-size: 13px; }
 .fc-chest { pointer-events: auto; position: relative; flex: 0 0 44cqw; width: 44cqw; background: none; border: 0; padding: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: transform .2s, filter .2s; }
 .fc-chest::after { content: ''; position: absolute; left: 10%; right: 10%; bottom: 3%; height: 7%; border-radius: 50%; background: rgba(8, 8, 12, .5); z-index: -1; }
 .fc-spr { display: block; width: 100%; aspect-ratio: 36 / 44; background-size: 800% 100%; background-repeat: no-repeat; image-rendering: pixelated; }
-.fc-chest.sel { transform: translateY(-6px) scale(1.04); }
-.fc-chest.sel .fc-spr { filter: drop-shadow(0 0 7px #f5d77a) brightness(1.1); }
-.fc-chest.dim { filter: brightness(.6) saturate(.7); }
-.fc-chest.locked .fc-spr { filter: grayscale(1) brightness(.5); }
-.fc-lock { display: none; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-style: normal; font-size: 30px; }
+.fc-chest::before { content: ''; position: absolute; left: -12%; right: -12%; top: -8%; bottom: -4%; border-radius: 50%; background: radial-gradient(circle, rgba(245, 215, 122, .55), rgba(245, 215, 122, 0) 66%); opacity: 0; z-index: -1; pointer-events: none; }
+/* [0.5] tres estados: normal (se puede elegir), seleccionado (halo de luz que respira) y bloqueado (oscuro, gris y con candado grande); "sin elegir" solo baja un poco */
+.fc-chest.sel { transform: translateY(-6px) scale(1.05); }
+.fc-chest.sel::before { opacity: 1; animation: fcHalo 1.5s ease-in-out infinite alternate; }
+.fc-chest.sel .fc-spr { filter: drop-shadow(0 0 9px #f5d77a) brightness(1.12); animation: fcPop .35s ease-out; }
+.fc-chest.dim { filter: brightness(.72) saturate(.85); }
+.fc-chest.locked, .fc-chest.locked.dim { filter: none; cursor: default; }
+.fc-chest.locked .fc-spr { filter: grayscale(1) brightness(.32) contrast(1.1); }
+.fc-lock { display: none; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-style: normal; font-size: 44px; filter: drop-shadow(0 0 8px rgba(0, 0, 0, .9)); }
 .fc-chest.locked .fc-lock { display: block; }
+@keyframes fcHalo { from { transform: scale(.94); opacity: .55; } to { transform: scale(1.08); opacity: 1; } }
+@keyframes fcPop { 0% { filter: drop-shadow(0 0 0 #f5d77a) brightness(1.7); } 100% { filter: drop-shadow(0 0 9px #f5d77a) brightness(1.12); } }
 .fc-cartel { position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); width: min(88cqw, 340px); pointer-events: auto; text-align: center; padding: 10px 12px 12px; background: linear-gradient(#35261a, #241912); border: 3px solid #6b4a2b; border-radius: 8px; box-shadow: 0 0 0 2px #120d09, 0 8px 24px rgba(0, 0, 0, .6); display: flex; flex-direction: column; gap: 6px; align-items: center; }
 .fc-title { font-family: 'Outfit', sans-serif; font-weight: 900; letter-spacing: .08em; font-size: 22px; color: #f1d36a; text-shadow: 0 2px 0 #120d09; }
 .fc-sub { font-size: 12px; line-height: 1.35; color: #e8dcc0; }
@@ -1026,7 +1032,7 @@ html:not(.narrow-layout) #pzHardBadge { font-size: 13px; }
 .fin-black { position: absolute; inset: 0; z-index: 60; background: #000; opacity: 0; transition: opacity 1.8s ease; }
 .fin-black.on { opacity: 1; }
 /* tapa del cofre del Duende */
-.fin-lid { position: absolute; inset: 0; z-index: 58; background: #000; overflow: hidden; perspective: 900px; transition: opacity .9s ease .9s; }
+.fin-lid { position: absolute; inset: 0; z-index: 58; background: #000; overflow: hidden; perspective: 900px; }
 .fin-lid > div { position: absolute; }
 .lid-planks { inset: 6% 5%; border-radius: 40% 40% 6% 6% / 22% 22% 4% 4%; background: repeating-linear-gradient(90deg, #6b4423 0 38px, #3e2812 38px 41px, #7a4f29 41px 78px, #3e2812 78px 81px); box-shadow: inset 0 0 40px rgba(0,0,0,.6), 0 0 30px rgba(0,0,0,.8); transform-origin: 50% 0; transition: transform 1.6s cubic-bezier(.5,0,.2,1); }
 .lid-band { left: 5%; right: 5%; height: 8%; background: linear-gradient(#4a4a55, #2a2a32); border-top: 2px solid #7d7d8a; border-bottom: 2px solid #1a1a20; transition: transform 1.6s cubic-bezier(.5,0,.2,1); transform-origin: 50% 0; }
@@ -1034,8 +1040,9 @@ html:not(.narrow-layout) #pzHardBadge { font-size: 13px; }
 .lid-lock { left: 50%; top: 40%; width: 56px; height: 66px; margin-left: -28px; background: linear-gradient(#f2c94c, #b8860b); border: 3px solid #5a3d08; border-radius: 8px; box-shadow: 0 0 18px rgba(245,200,70,.5); transition: transform 1.6s cubic-bezier(.5,0,.2,1); transform-origin: 50% -100%; }
 .lid-lock::after { content: ''; position: absolute; left: 50%; top: 40%; width: 10px; height: 18px; margin-left: -5px; background: #2a1608; border-radius: 5px 5px 2px 2px; }
 .lid-dust { inset: 0; background: radial-gradient(ellipse at 50% 45%, rgba(245,215,122,.18), transparent 60%); }
-.fin-lid.open { opacity: 0; }
-.fin-lid.open .lid-planks, .fin-lid.open .lid-band, .fin-lid.open .lid-lock { transform: rotateX(-100deg) translateY(-10%); }
+/* [0.5] la tapa sube como la persiana de la tienda del Duende: se sacude y se va hacia arriba */
+.fin-lid.shake { animation: dshopShake .09s steps(2) infinite; }
+.fin-lid.open { transform: translateY(-104%); transition: transform 1.4s cubic-bezier(.55, .05, .85, .35); }
 /* escena de la tienda del Duende */
 #dialogueModal.dlg-d .fin-badui, .fin-badui { position: absolute; inset: 0; z-index: 70; pointer-events: none; }
 .fin-badui .fx-opts { position: absolute; left: 0; right: 0; bottom: 8%; display: flex; flex-direction: column; gap: 10px; align-items: center; padding: 0 20px; pointer-events: auto; }
@@ -1269,3 +1276,46 @@ html:not(.narrow-layout) #pzHardBadge { font-size: 13px; }
 .dlg-cards .wcard.pop { animation: dlgCardIn .45s cubic-bezier(.2,1.4,.4,1) both; }
 .dlg-cards .wcard-host:nth-child(2) .wcard.pop { animation-delay: .35s; }
 @keyframes dlgCardIn { from { transform: translateY(24px) scale(.7) rotate(-6deg); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* [0.5] ratón del aventurero invisible (final malo) */
+.fx-cursor { position: absolute; left: 0; top: 0; z-index: 60; pointer-events: none; opacity: 0; transition: opacity .3s; filter: drop-shadow(0 2px 3px rgba(0,0,0,.7)); }
+.fx-cursor.show { opacity: 1; }
+.fx-cursor.click svg { transform: scale(.82); }
+.fx-cursor svg { transition: transform .1s; transform-origin: 0 0; display: block; }
+
+/* [0.5] en todo el final (dos cofres, clave, cerrojo) se quita el HUD; las voces se leen en grande arriba */
+#gameFrame #persistentHUD { transition: opacity .6s; }
+#gameFrame.final-on #persistentHUD { opacity: 0; visibility: hidden; pointer-events: none; }
+.fin-voice .fv-bub { top: 5%; width: min(92%, 380px); padding: 14px 16px; border-radius: 14px; gap: 6px; }
+.fin-voice b { font-size: 13px; }
+.fin-voice span { font: 700 22px/1.3 'Outfit', sans-serif; }
+/* [0.5] Cofre sellado frase a frase */
+.fs-stack { position: absolute; left: 12px; right: 12px; top: 150px; display: flex; flex-direction: column; gap: 8px; }
+.fs-slot { min-height: 46px; display: flex; align-items: center; justify-content: center; text-align: center; padding: 6px 10px; border: 1px dashed rgba(241, 211, 106, .3); border-radius: 10px; background: rgba(11, 12, 16, .35); font: 700 15px/1.25 'Outfit', sans-serif; color: #aeb7cc; }
+.fs-slot.on { border: 1px solid #bfeeed; background: rgba(90, 161, 160, .18); }
+.fs-slot.drop { animation: fsDrop .5s ease-out; }
+.fs-slot b { color: #f1d36a; font-weight: 800; }
+.fs-big { position: absolute; left: 12px; right: 12px; top: 340px; text-align: center; display: flex; flex-direction: column; gap: 10px; align-items: center; }
+.fs-big.pop { animation: fsPop .45s ease-out; }
+.fs-num { font-size: 11px; font-weight: 800; letter-spacing: .14em; color: #bfeeed; }
+.fs-line { font: 800 28px/1.3 'Outfit', sans-serif; color: #f4efe2; text-shadow: 0 2px 0 #000; }
+.fs-gap { font: 900 26px 'Outfit', sans-serif; letter-spacing: .1em; color: #f1d36a; background: rgba(241, 211, 106, .12); border: 2px dashed #f1d36a; border-radius: 10px; padding: 2px 14px; cursor: pointer; animation: finPulse .9s ease-in-out infinite alternate; }
+.fs-done { font: 800 20px 'Outfit', sans-serif; color: #bfeeed; }
+.fs-picker { position: absolute; left: 12px; right: 12px; top: 470px; bottom: 120px; overflow-y: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-content: start; z-index: 3; }
+.fs-picker.hidden { display: none; }
+.fs-pw { padding: 12px 8px; font: 800 18px 'Outfit', sans-serif; color: #f1d36a; background: #20263a; border: 1px solid #565c70; border-radius: 10px; cursor: pointer; }
+.fs-pw:active { background: #5aa1a0; color: #06121a; }
+.fs-row { display: flex; gap: 10px; }
+@keyframes fsDrop { from { transform: translateY(80px) scale(1.3); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes fsPop { from { transform: scale(.9); opacity: 0; } to { transform: none; opacity: 1; } }
+/* [0.5] elegir modo y marca fija del modo */
+.mode-choice { position: absolute; inset: 0; z-index: 10120; background: rgba(5, 6, 12, .94); display: flex; align-items: center; justify-content: center; padding: 20px; }
+.mc-box { width: min(92%, 380px); display: flex; flex-direction: column; gap: 14px; text-align: center; }
+.mc-title { font: 900 26px 'Outfit', sans-serif; letter-spacing: .14em; color: #f1d36a; text-shadow: 0 2px 0 #000; }
+.mc-btn { display: flex; flex-direction: column; gap: 4px; padding: 16px 14px; border-radius: 14px; cursor: pointer; border: 2px solid #6b4a2b; background: linear-gradient(#35261a, #241912); color: #e8dcc0; }
+.mc-btn b { font: 900 20px 'Outfit', sans-serif; letter-spacing: .08em; color: #f1d36a; }
+.mc-btn span { font-size: 13px; line-height: 1.35; }
+.mc-i { border-color: #a78bfa; background: linear-gradient(#2d1b5a, #1a1033); } .mc-i b { color: #d8c8ff; }
+#infMark { position: absolute; right: 12px; bottom: 8px; z-index: 15; font: 800 10px 'Outfit', sans-serif; letter-spacing: .12em; color: #8a93a8; pointer-events: none; }
+#infMark.inf { color: #c4b5fd; text-shadow: 0 0 6px #7c3aed; }
+#gameFrame.final-on #infMark { display: none; }

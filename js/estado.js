@@ -729,7 +729,7 @@ function isGameIdle() {
     const el = document.getElementById(id);
     if (el && !el.classList.contains('hidden')) return false;
   }
-  const overlays = ['askYesNoModal', 'smithModal', 'duendeReceiptModal', 'diffuseEchoOverlay', 'resumeGameModal', 'resetConfirmModal', 'cardPreModal'];
+  const overlays = ['askYesNoModal', 'smithModal', 'duendeReceiptModal', 'diffuseEchoOverlay', 'resumeGameModal', 'resetConfirmModal', 'cardPreModal', 'modeChoice'];
   for (const id of overlays) {
     if (document.getElementById(id)) return false;
   }
@@ -788,6 +788,7 @@ function showResumePrompt(data) {
     clearSave();
     resetGame();
     autosaveEnabled = true;
+    try { modeChoiceMaybe(); } catch (e) {}   // [0.5]
   });
 }
 

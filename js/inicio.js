@@ -11,7 +11,7 @@ function attachCoverClose(cover) {
     if (!audio.ctx) { try { audio.init(); audio.playClick(0.8); requestGameFullscreen(); } catch (e) {} return; }
     if (cover.dataset.closing) return; cover.dataset.closing = '1';
     cover.style.opacity = '0';
-    setTimeout(() => cover.remove(), 450);
+    setTimeout(() => { cover.remove(); try { modeChoiceMaybe(); } catch (e) {} }, 450);   // [0.5] con el infinito desbloqueado se elige modo
     try { audio.init(); audio.playClick(0.8); audio.playIntro(); } catch (e) {}
     try { requestGameFullscreen(); } catch (e) {}   // [0.088]
   });

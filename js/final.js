@@ -70,7 +70,7 @@ function finShowChoice() {
   if ((STATE.currentLoop || 1) >= 3) { try { achEvent('loopEnd', 3); } catch (e) {} }   // [0.42] pasar el bucle 3 = llegar a los dos cofres
   f.stage = 'choice';
   finClearTimers(); FIN_RT.active = false; FIN_RT.sel = null;
-  try { audio.musicRelease(); } catch (e) {}   // [0.38] en la pantalla de los dos cofres no suena el Cerrojo
+  try { audio.musicForce('K'); } catch (e) {}   // [0.5] en la pantalla de los dos cofres y en la de la clave suena la pieza del Cerrojo final
   ['finalLock', 'finalSealed', 'finalHud'].forEach(finRemove);
   uiHost().classList.add('final-on');
   STATE.screenChests = [];
@@ -275,7 +275,7 @@ function finalPuzzleFailed() {
   if (f.tries <= 0) {
     f.tiendaLocked = true; finRemove('finalLock');
     if (f.selladoLocked) { finNoExit(); return; }
-    finShowChoice(); FIN_RT.sel = 'tienda'; finPaintChoice();
+    finShowChoice(); FIN_RT.sel = null; finPaintChoice();   // [0.5] ídem: el cofre sellado se ve normal
     showPersistentFeedback(finT('ATASCADA'));
     return;
   }
@@ -297,26 +297,48 @@ function finNoExit() {
 function finSealedScreen() {
   const f = STATE.finalPhase, T = finCfg().TEXTOS, P = DATOS_JUEGO.CONTRASENA.BUCLES;
   finRemove('finalSealed');
+  // [0.5] Frase a frase: sale la frase en grande con su hueco; al tocarlo se elige la palabra y la frase ya completa se coloca en su sitio (arriba, medio, abajo)
   const pick = { 1: null, 2: null, 3: null };
-  const cols = [1, 2, 3].map(l => `
-    <div class="fs-col" data-l="${l}">
-      ${P[l].palabras.map(w => `<button type="button" class="fs-word" data-w="${w}"><span>${P[l].frase}</span> <b>${w}</b></button>`).join('')}
-    </div>`).join('');   // [0.42] cada opción es la FRASE entera con su palabra (ya no palabras sueltas)
+  let cur = 1;
+  const SLOTS = ['ARRIBA', 'MEDIO', 'ABAJO'];
   const ov = finEl('fin-ov fs-screen', `
     <div class="fs-head"><div class="fl-title">${T.SEALED_TITULO}</div><div class="fl-sub">${T.SEALED_SUB}</div>${STATE.testPassHint && STATE.passWords ? `<div class="fs-test">[MODO TEST] Correctas: ${[1, 2, 3].map(l => String(STATE.passWords[l]).toUpperCase()).join(' · ')}</div>` : ''}</div>
-    <div class="fs-cols">${cols}</div>
-    <div class="fl-foot"><button type="button" class="fc-go" id="fsGo" disabled>${T.SEALED_BTN}</button><button type="button" class="fl-back" id="fsBack">← VOLVER</button></div>`, 'finalSealed');
+    <div class="fs-stack">${[1, 2, 3].map(l => `<div class="fs-slot" data-l="${l}"><span class="fs-slot-t"></span></div>`).join('')}</div>
+    <div class="fs-big" id="fsBig"></div>
+    <div class="fs-picker hidden" id="fsPicker"></div>
+    <div class="fl-foot"><button type="button" class="fc-go" id="fsGo" disabled>${T.SEALED_BTN}</button><div class="fs-row"><button type="button" class="fl-back" id="fsRedo">↺ REHACER</button><button type="button" class="fl-back" id="fsBack">← VOLVER</button></div></div>`, 'finalSealed');
   uiHost().appendChild(ov);
-  const go = ov.querySelector('#fsGo');
-  ov.querySelectorAll('.fs-col').forEach(col => {
-    col.querySelectorAll('.fs-word').forEach(b => b.addEventListener('click', () => {
+  const big = ov.querySelector('#fsBig'), picker = ov.querySelector('#fsPicker'), go = ov.querySelector('#fsGo'), redo = ov.querySelector('#fsRedo');
+  const slotEl = l => ov.querySelector(`.fs-slot[data-l="${l}"]`);
+  const phraseHtml = (l, w) => `<span class="fs-ph">${P[l].frase}</span> ${w ? `<b class="fs-w">${w}</b>` : '<button type="button" class="fs-gap" id="fsGap">· · · · ·</button>'}`;
+  function showBig() {
+    picker.classList.add('hidden'); picker.innerHTML = '';
+    if (cur > 3) { big.innerHTML = `<div class="fs-done">${T.SEALED_LISTO || 'Las tres frases están puestas.'}</div>`; go.disabled = false; return; }
+    big.innerHTML = `<div class="fs-num">${SLOTS[cur - 1]} · ${cur} / 3</div><div class="fs-line">${phraseHtml(cur, null)}</div>`;
+    big.classList.remove('pop'); void big.offsetWidth; big.classList.add('pop');
+    go.disabled = true;
+    big.querySelector('#fsGap').addEventListener('click', openPicker);
+  }
+  function openPicker() {
+    try { audio.init(); audio.playUiClick(); } catch (e) {}
+    const l = cur;
+    picker.innerHTML = P[l].palabras.map(w => `<button type="button" class="fs-pw" data-w="${w}">${w}</button>`).join('');
+    picker.classList.remove('hidden');
+    picker.querySelectorAll('.fs-pw').forEach(b => b.addEventListener('click', () => {
       try { audio.init(); audio.playUiClick(); } catch (e) {}
-      const l = +col.dataset.l;
       pick[l] = b.dataset.w;
-      col.querySelectorAll('.fs-word').forEach(x => x.classList.toggle('on', x === b));
-      go.disabled = !(pick[1] && pick[2] && pick[3]);
+      const sl = slotEl(l); sl.classList.add('on'); sl.querySelector('.fs-slot-t').innerHTML = phraseHtml(l, pick[l]);
+      sl.classList.remove('drop'); void sl.offsetWidth; sl.classList.add('drop');
+      cur++; showBig();
     }));
+  }
+  redo.addEventListener('click', () => {
+    try { audio.init(); audio.playUiClick(); } catch (e) {}
+    pick[1] = pick[2] = pick[3] = null; cur = 1;
+    ov.querySelectorAll('.fs-slot').forEach(sl => { sl.classList.remove('on', 'drop'); sl.querySelector('.fs-slot-t').innerHTML = ''; });
+    showBig();
   });
+  showBig();
   ov.querySelector('#fsBack').addEventListener('click', () => finShowChoice());
   go.addEventListener('click', () => {
     askYesNo(T.SEALED_CONFIRMA_T, T.SEALED_CONFIRMA, T.SEALED_CONFIRMA_BTN, () => {
@@ -327,7 +349,7 @@ function finSealedScreen() {
       try { audio.playBreak(); screenShake(7, 320); } catch (e) {}
       finRemove('finalSealed');
       if (f.tiendaLocked) { finNoExit(); return; }
-      finShowChoice(); FIN_RT.sel = 'sellado'; finPaintChoice();
+      finShowChoice(); FIN_RT.sel = null; finPaintChoice();   // [0.5] nada seleccionado: la tienda se ve normal para poder elegirla
       showPersistentFeedback(T.SEALED_FALLO);
     });
   });
@@ -465,7 +487,11 @@ function finBadOpen(B) {
   const ui = finEl('fin-badui', `<div class="fx-opts">${B.BIENVENIDAS.map((p, k) => `<button type="button" class="fx-opt" data-k="${k}">${p}</button>`).join('')}</div>`, 'finBadUI');
   frame.appendChild(ui);
   const lid = document.getElementById('finalLid');
-  if (lid) { lid.classList.add('open'); try { audio.playLockOpen('wooden'); audio.playLightOn(); } catch (e) {} finLater(() => finRemove('finalLid'), 1900); }
+  if (lid) {   // [0.5] persiana: se sacude y sube, con el sonido de la persiana de la tienda
+    lid.classList.add('shake'); try { audio.playShutter(); } catch (e) {}
+    finLater(() => { lid.classList.remove('shake'); void lid.offsetWidth; lid.classList.add('open'); try { audio.playLightOn(); } catch (e) {} }, 450);
+    finLater(() => finRemove('finalLid'), 450 + 1700);
+  }
   ui.querySelectorAll('.fx-opt').forEach(b => b.addEventListener('click', () => {
     try { audio.init(); audio.playDialogueMelody('EL DUENDE'); } catch (e) {}
     const say = b.textContent;
@@ -483,22 +509,48 @@ function finBadSales(B, ui, dm) {
   ui.insertAdjacentHTML('beforeend', `<div class="fx-gp"><span id="fxGp">0</span> GP</div>
     <div class="fx-list">${items.map(it => `<div class="fx-it"><img src="${shopImg(it.ic)}" alt=""><span class="nm">${it.n}</span><span class="pr">${it.p}<img src="${shopImg('moneda')}" alt="GP"></span></div>`).join('')}</div>`);
   const gpEl = ui.querySelector('#fxGp'), rows = ui.querySelectorAll('.fx-it'); let gp = 0;
-  items.forEach((it, k) => {
-    finLater(() => {
-      rows.forEach(r => r.classList.remove('on')); rows[k].classList.add('on'); rows[k].classList.add('bought');
-      rows[k].scrollIntoView({ block: 'nearest' });
-      try { audio.playCashRegister(); } catch (e) {}
-      const from = gp, goal = from + it.p, t0 = performance.now();
-      const step = now => { const p = Math.min(1, (now - t0) / (B.SITIO_MS * 0.8)); gp = Math.round(from + (goal - from) * p); gpEl.textContent = gp; if (p < 1) requestAnimationFrame(step); };
-      requestAnimationFrame(step);
-    }, 900 + k * B.SITIO_MS);
+  // [0.5] El aventurero invisible elige con un ratón: pasa por encima de varios objetos, duda, y se queda con solo 4 o 5
+  const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const idx = shuffle(items.map((_, i) => i));
+  const nBuy = Math.min(items.length, 4 + Math.floor(Math.random() * 2));
+  const buy = new Set(idx.slice(0, nBuy)), skipped = idx.slice(nBuy, nBuy + 3);
+  const path = shuffle(idx.slice(0, nBuy + skipped.length).map(i => ({ i, buy: buy.has(i) })));
+  if (skipped.length) path.splice(Math.max(1, path.length - 2), 0, { i: skipped[0], buy: false });   // vuelve a mirar uno que ya había descartado
+  const bought = path.filter(st => st.buy).reduce((n, st) => n + items[st.i].p, 0);
+  const cur = finEl('fx-cursor', '<svg viewBox="0 0 12 18" width="22" height="33" shape-rendering="crispEdges"><polygon points="0,0 0,14 3,11 5,16 7,15 5,10 9,10" fill="#fff" stroke="#000" stroke-width="1"/></svg>', 'fxCursor');
+  ui.appendChild(cur);
+  const at = (el) => { const u = ui.getBoundingClientRect(), r = el.getBoundingClientRect(); return { x: r.left - u.left + r.width * 0.62, y: r.top - u.top + r.height * 0.55 }; };
+  const place = (pt, ms) => { cur.style.transition = ms ? `left ${ms}ms cubic-bezier(.4,0,.2,1), top ${ms}ms cubic-bezier(.4,0,.2,1)` : 'none'; cur.style.left = pt.x + 'px'; cur.style.top = pt.y + 'px'; };
+  const MOVE = Math.round(B.SITIO_MS * 0.8);
+  let t = 900;
+  finLater(() => { const u = ui.getBoundingClientRect(); place({ x: u.width * 0.5, y: u.height * 0.15 }, 0); cur.classList.add('show'); }, t - 200);
+  path.forEach((st, k) => {
+    const row = rows[st.i];
+    finLater(() => { row.scrollIntoView({ block: 'nearest' }); place(at(row), MOVE); }, t);
+    t += MOVE + 120;
+    finLater(() => { rows.forEach(r => r.classList.remove('on')); row.classList.add('on'); }, t);
+    t += st.buy ? 380 : 650;   // los que descarta los mira más rato: duda
+    if (st.buy) {
+      finLater(() => {
+        cur.classList.add('click'); setTimeout(() => cur.classList.remove('click'), 160);
+        row.classList.add('bought');
+        try { audio.playCashRegister(); } catch (e) {}
+        const from = gp, goal = from + items[st.i].p, t0 = performance.now();
+        const step = now => { const p = Math.min(1, (now - t0) / (B.SITIO_MS * 0.8)); gp = Math.round(from + (goal - from) * p); gpEl.textContent = gp; if (p < 1) requestAnimationFrame(step); };
+        requestAnimationFrame(step);
+      }, t);
+      t += B.SITIO_MS * 0.5;
+    } else {
+      finLater(() => row.classList.remove('on'), t);
+      t += 120;
+    }
   });
   finLater(() => {
-    rows.forEach(r => r.classList.remove('on')); gpEl.textContent = total;
+    rows.forEach(r => r.classList.remove('on')); gpEl.textContent = bought; cur.classList.remove('show');
     if (sp) sp.innerHTML = B.ORO_LINEA;
     ui.insertAdjacentHTML('beforeend', `<div class="fx-end"><div class="fx-fin">${B.FIN}</div><button type="button" class="fc-go" id="fxBack">${B.VOLVER}</button></div>`);
     ui.querySelector('#fxBack').addEventListener('click', finRestart);
-  }, 900 + items.length * B.SITIO_MS + 500);
+  }, t + 500);
 }
 
 /* ---------- FINAL BUENO: Gafas de Ver, la puerta de dungeon al fondo de la habitación y la luz azul del día ---------- */

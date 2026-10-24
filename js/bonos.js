@@ -5,7 +5,7 @@
   const CFG = {
     perdedor: { n: 'PERDEDOR', who: 'd', tot: 5 },
     pulsera:  { n: 'PULSERA VIP', who: 'd', tot: 5, on: 'ACTIVADA', end: 'AGOTADA' },
-    atajo:    { n: 'ATAJO', who: 'd', tot: 10, on: 'ACTIVADO', end: 'AGOTADO' },
+    atajo:    { n: 'ATAJO', who: 't', tot: 10, on: 'ACTIVADO', end: 'AGOTADO' },
     pesados:  { n: 'COFRES PESADOS', who: 't', tot: 5, on: 'ACTIVADO', end: 'SE ACABO' },
     oxidados: { n: 'CERROJOS OXIDADOS', who: 't', tot: 3, on: 'ACTIVADO', end: 'SE ACABO' },
     racha:    { n: 'MALA RACHA', who: 't', tot: 10, on: 'ACTIVADA', end: 'SE ACABO' }
@@ -75,10 +75,18 @@
     at(30, () => { ticket(...seq[0]); pop.style.transform = 'translate(-50%,0)'; });
     let t = 420;
     for (let i = 1; i < seq.length; i++) { const s = seq[i]; at(t, () => ticket(...s)); t += s[2] === 'fresh' ? 200 : 300; }
-    at(t + 1500, () => { pop.style.transform = 'translate(-50%,-160%)'; });
-    at(t + 1500 + 450, () => { busy = false; next(); });
+    at(t + 3800, () => { pop.style.transform = 'translate(-50%,-160%)'; });
+    at(t + 3800 + 450, () => { busy = false; next(); });
   }
-  function next() { if (!busy && queue.length) play(queue.shift()); }
+  // [0.5] El bono solo sale con la habitación libre (sin diálogos, tiendas ni ventanas encima): mientras tanto espera en cola
+  let waitT = null;
+  function next() {
+    if (busy || !queue.length) return;
+    let free = true;
+    try { free = typeof mainScreenFree === 'function' ? mainScreenFree() : true; } catch (e) {}
+    if (free && !(typeof STATE !== 'undefined' && (STATE.finalPhase || STATE.gameOver))) { play(queue.shift()); return; }
+    if (!waitT) waitT = setTimeout(() => { waitT = null; next(); }, 350);
+  }
   // kind: 'use' (u = fallos hasta ahora), 'on' (activación), 'end' (agotado). tot opcional: nº real de intentos/cofres.
   window.showBono = function (id, kind, u, tot) {
     try {
